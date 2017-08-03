@@ -39,7 +39,7 @@ class DocumentSetExportController @Inject() (
     filename: String,
     documentSetId: Long,
     request: AuthorizedRequest[_],
-    createRows: (MetadataSchema,Source[(Document,Seq[Long]), akka.NotUsed],Seq[Tag]) => Rows)
+    createRows: (MetadataSchema,Source[(Document, immutable.Seq[Long]), akka.NotUsed], immutable.Seq[Tag]) => Rows)
   : Future[Result] = {
     val futureStuff = for {
       maybeDocumentSet <- documentSetBackend.show(documentSetId)
@@ -86,19 +86,19 @@ class DocumentSetExportController @Inject() (
     serveExport(format, filename, documentSetId, request, DocumentsWithColumnTags.apply)
   }
 
-  private def documentsWithTagIdsSource(documentSetId: Long, documentIds: Seq[Long]): Source[(Document,Seq[Long]), akka.NotUsed] = {
-    val futureSource: Future[Source[(Document,Seq[Long]), akka.NotUsed]] = for {
+  private def documentsWithTagIdsSource(documentSetId: Long, documentIds: immutable.Seq[Long]): Source[(Document,immutable.Seq[Long]), akka.NotUsed] = {
+    val futureSource: Future[Source[(Document,immutable.Seq[Long]), akka.NotUsed]] = for {
       documents <- documentBackend.index(documentSetId, documentIds)
       documentIdToTagIds <- documentTagBackend.indexMany(documentIds)
     } yield {
-      val tuples: Seq[(Document,Seq[Long])] = documents.map((d) => (d -> documentIdToTagIds(d.id)))
+      val tuples: immutable.Seq[(Document,immutable.Seq[Long])] = documents.map((d) => (d -> documentIdToTagIds(d.id)))
       Source(tuples.to[immutable.Iterable])
     }
 
     Source.fromFutureSource(futureSource).mapMaterializedValue(_ => akka.NotUsed)
   }
 
-  private def streamDocumentsWithTagIds(documentSetId: Long, selection: Selection): Source[(Document,Seq[Long]), akka.NotUsed] = {
+  private def streamDocumentsWithTagIds(documentSetId: Long, selection: Selection): Source[(Document,immutable.Seq[Long]), akka.NotUsed] = {
     val futureSource = selection.getAllDocumentIds.map { documentIds =>
       val batches = documentIds.grouped(BatchSize)
 

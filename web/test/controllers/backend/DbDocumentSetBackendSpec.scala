@@ -1,5 +1,7 @@
 package controllers.backend
 
+import scala.collection.immutable
+
 import models.pagination.PageRequest
 import com.overviewdocs.metadata.{MetadataField,MetadataFieldDisplay,MetadataFieldType,MetadataSchema}
 import com.overviewdocs.models.tables.{ApiTokens,DocumentSetUsers,DocumentSets,Views}
@@ -19,7 +21,7 @@ class DbDocumentSetBackendSpec extends DbBackendSpecification {
       blockingDatabase.option(DocumentSetUsers.filter(_.documentSetId === documentSetId))
     }
 
-    def findViews(documentSetId: Long): Seq[View] = {
+    def findViews(documentSetId: Long): immutable.Seq[View] = {
       val tokens = ApiTokens.filter(_.documentSetId === documentSetId).map(_.token)
       blockingDatabase.seq(Views.filter(_.apiToken in tokens).sortBy(_.id))
     }
@@ -63,7 +65,7 @@ class DbDocumentSetBackendSpec extends DbBackendSpecification {
       factory.plugin(name="plugin1", url="http://plugin1.url", autocreate=true, autocreateOrder=2)
       factory.plugin(name="plugin2", url="http://plugin2.url", autocreate=true, autocreateOrder=1)
       val documentSet = await(backend.create(DocumentSet.CreateAttributes("title"), "foo@bar.com"))
-      findViews(documentSet.id).map(_.title) must beEqualTo(Seq("plugin2", "plugin1"))
+      findViews(documentSet.id).map(_.title) must beEqualTo(Vector("plugin2", "plugin1"))
     }
   }
 
@@ -114,7 +116,7 @@ class DbDocumentSetBackendSpec extends DbBackendSpecification {
       val result = await(backend.indexPageByOwner(email, pageRequest))
 
       result.pageInfo.total must beEqualTo(4)
-      result.items.map(_.id) must beEqualTo(Seq(dsu4.documentSetId, dsu3.documentSetId))
+      result.items.map(_.id) must beEqualTo(Vector(dsu4.documentSetId, dsu3.documentSetId))
     }
 
     "ignore a deleted DocumentSet" in new IndexPageByOwnerScope {
@@ -131,26 +133,26 @@ class DbDocumentSetBackendSpec extends DbBackendSpecification {
       val documentSet = factory.documentSet()
       factory.documentSetUser(documentSet.id, "user2@example.org", DocumentSetUser.Role(false))
       factory.documentSetUser(documentSet.id, "user3@example.org", DocumentSetUser.Role(true))
-      await(backend.indexByViewerEmail("user@example.org")) must beEqualTo(Seq())
+      await(backend.indexByViewerEmail("user@example.org")) must beEqualTo(Vector())
     }
 
     "not find an owned DocumentSet" in new IndexByViewerEmailScope {
       val documentSet = factory.documentSet()
       factory.documentSetUser(documentSet.id, "user@example.org", DocumentSetUser.Role(true))
-      await(backend.indexByViewerEmail("user@example.org")) must beEqualTo(Seq())
+      await(backend.indexByViewerEmail("user@example.org")) must beEqualTo(Vector())
     }
 
     "not find a DocumentSet with no owner" in new IndexByViewerEmailScope {
       val documentSet = factory.documentSet()
       factory.documentSetUser(documentSet.id, "user@example.org", DocumentSetUser.Role(false))
-      await(backend.indexByViewerEmail("user@example.org")) must beEqualTo(Seq())
+      await(backend.indexByViewerEmail("user@example.org")) must beEqualTo(Vector())
     }
 
     "find a DocumentSet and its owner" in new IndexByViewerEmailScope {
       val documentSet = factory.documentSet()
       factory.documentSetUser(documentSet.id, "user@example.org", DocumentSetUser.Role(false))
       factory.documentSetUser(documentSet.id, "owner@example.org", DocumentSetUser.Role(true))
-      await(backend.indexByViewerEmail("user@example.org")) must beEqualTo(Seq((documentSet, "owner@example.org")))
+      await(backend.indexByViewerEmail("user@example.org")) must beEqualTo(Vector((documentSet, "owner@example.org")))
     }
 
     "work with multiple results" in new IndexByViewerEmailScope {
@@ -160,7 +162,7 @@ class DbDocumentSetBackendSpec extends DbBackendSpecification {
       val documentSet2 = factory.documentSet()
       factory.documentSetUser(documentSet2.id, "user@example.org", DocumentSetUser.Role(false))
       factory.documentSetUser(documentSet2.id, "owner2@example.org", DocumentSetUser.Role(true))
-      await(backend.indexByViewerEmail("user@example.org")) must containTheSameElementsAs(Seq(
+      await(backend.indexByViewerEmail("user@example.org")) must containTheSameElementsAs(Vector(
         (documentSet1, "owner1@example.org"),
         (documentSet2, "owner2@example.org")
       ))
@@ -173,7 +175,7 @@ class DbDocumentSetBackendSpec extends DbBackendSpecification {
       val documentSet2 = factory.documentSet(createdAt=new java.sql.Timestamp(23456L))
       factory.documentSetUser(documentSet2.id, "user@example.org", DocumentSetUser.Role(false))
       factory.documentSetUser(documentSet2.id, "owner2@example.org", DocumentSetUser.Role(true))
-      await(backend.indexByViewerEmail("user@example.org")).map(_._1.id) must beEqualTo(Seq(documentSet2.id, documentSet1.id))
+      await(backend.indexByViewerEmail("user@example.org")).map(_._1.id) must beEqualTo(Vector(documentSet2.id, documentSet1.id))
     }
   }
 
@@ -183,20 +185,20 @@ class DbDocumentSetBackendSpec extends DbBackendSpecification {
     "not find a non-public DocumentSet" in new IndexPublicScope {
       val documentSet = factory.documentSet(isPublic=false)
       factory.documentSetUser(documentSet.id, "owner@example.org", DocumentSetUser.Role(true))
-      await(backend.indexPublic) must beEqualTo(Seq())
+      await(backend.indexPublic) must beEqualTo(Vector())
     }
 
     "not find a DocumentSet with no owner" in new IndexPublicScope {
       val documentSet = factory.documentSet(isPublic=true)
       factory.documentSetUser(documentSet.id, "viewer@example.org", DocumentSetUser.Role(false))
-      await(backend.indexPublic) must beEqualTo(Seq())
+      await(backend.indexPublic) must beEqualTo(Vector())
     }
 
     "find a DocumentSet and its owner" in new IndexPublicScope {
       val documentSet = factory.documentSet(isPublic=true)
       factory.documentSetUser(documentSet.id, "user@example.org", DocumentSetUser.Role(false))
       factory.documentSetUser(documentSet.id, "owner@example.org", DocumentSetUser.Role(true))
-      await(backend.indexPublic) must beEqualTo(Seq((documentSet, "owner@example.org")))
+      await(backend.indexPublic) must beEqualTo(Vector((documentSet, "owner@example.org")))
     }
 
     "work with multiple results" in new IndexPublicScope {
@@ -206,7 +208,7 @@ class DbDocumentSetBackendSpec extends DbBackendSpecification {
       val documentSet2 = factory.documentSet(isPublic=true)
       factory.documentSetUser(documentSet2.id, "user@example.org", DocumentSetUser.Role(false))
       factory.documentSetUser(documentSet2.id, "owner2@example.org", DocumentSetUser.Role(true))
-      await(backend.indexPublic) must containTheSameElementsAs(Seq(
+      await(backend.indexPublic) must containTheSameElementsAs(Vector(
         (documentSet1, "owner1@example.org"),
         (documentSet2, "owner2@example.org")
       ))
@@ -217,7 +219,7 @@ class DbDocumentSetBackendSpec extends DbBackendSpecification {
       factory.documentSetUser(documentSet1.id, "owner1@example.org", DocumentSetUser.Role(true))
       val documentSet2 = factory.documentSet(isPublic=true, createdAt=new java.sql.Timestamp(23456L))
       factory.documentSetUser(documentSet2.id, "owner2@example.org", DocumentSetUser.Role(true))
-      await(backend.indexPublic).map(_._1.id) must beEqualTo(Seq(documentSet2.id, documentSet1.id))
+      await(backend.indexPublic).map(_._1.id) must beEqualTo(Vector(documentSet2.id, documentSet1.id))
     }
   }
 
@@ -277,7 +279,7 @@ class DbDocumentSetBackendSpec extends DbBackendSpecification {
 
   "#updateMetadataSchema" should {
     trait UpdateMetadataSchemaScope extends BaseScope {
-      val sampleMetadataSchema = MetadataSchema(1, Seq(
+      val sampleMetadataSchema = MetadataSchema(1, Vector(
         MetadataField("foo", MetadataFieldType.String, MetadataFieldDisplay.TextInput),
         MetadataField("bar", MetadataFieldType.String, MetadataFieldDisplay.Div)
       ))

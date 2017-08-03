@@ -2,6 +2,7 @@ package com.overviewdocs.jobhandler.documentset
 
 import akka.actor.{Actor,ActorRef,ActorSystem}
 import akka.stream.ActorMaterializer
+import scala.collection.immutable
 import scala.concurrent.{ExecutionContext,Future}
 
 import com.overviewdocs.database.Database
@@ -57,7 +58,7 @@ class SortRunner(
   }
 
   lazy val inserter = DocumentIdLists.map(dil => (dil.documentSetId, dil.fieldName, dil.document32BitIds))
-  private def writeIds(documentSetId: Int, fieldName: String, ids: Array[Int]): Future[Unit] = {
-    database.runUnit(inserter.+=((documentSetId, fieldName, ids)))
+  private def writeIds(documentSetId: Int, fieldName: String, ids: immutable.Seq[Int]): Future[Unit] = {
+    database.runUnit(inserter.+=((documentSetId, fieldName, ids.toVector)))
   }
 }

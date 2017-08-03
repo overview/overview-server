@@ -8,6 +8,7 @@ import play.api.http.HeaderNames.CONTENT_TYPE
 import play.api.i18n.MessagesApi
 import play.api.mvc.{Request,Result}
 import play.api.test.FakeRequest
+import scala.collection.immutable
 import scala.concurrent.Future
 
 import com.overviewdocs.query.{Field,PhraseQuery}
@@ -40,7 +41,7 @@ class SelectionHelpersSpec extends ControllerSpecification with Mockito with Awa
       def test(queryString: String, expect: Either[Result,SelectionRequest]) = {
         f(1L, queryString) must beEqualTo(expect)
       }
-      def test(data: Seq[(String,String)], expect: Either[Result,SelectionRequest]) = {
+      def test(data: immutable.Seq[(String,String)], expect: Either[Result,SelectionRequest]) = {
         f(1L, data: _*) must beEqualTo(expect)
       }
     }
@@ -51,19 +52,19 @@ class SelectionHelpersSpec extends ControllerSpecification with Mockito with Awa
       }
 
       "make a SelectionRequest with documents" in new SelectionScope {
-        test("/?documents=1,2,3", Right(SelectionRequest(1L, documentIds=Seq(1L, 2L, 3L))))
+        test("/?documents=1,2,3", Right(SelectionRequest(1L, documentIds=Vector(1L, 2L, 3L))))
       }
 
       "make a SelectionRequest with nodes" in new SelectionScope {
-        test("/?nodes=2,3,4", Right(SelectionRequest(1L, nodeIds=Seq(2L, 3L, 4L))))
+        test("/?nodes=2,3,4", Right(SelectionRequest(1L, nodeIds=Vector(2L, 3L, 4L))))
       }
 
       "make a SelectionRequest with tags" in new SelectionScope {
-        test("/?tags=3,4,5", Right(SelectionRequest(1L, tagIds=Seq(3L, 4L, 5L))))
+        test("/?tags=3,4,5", Right(SelectionRequest(1L, tagIds=Vector(3L, 4L, 5L))))
       }
 
       "make a SelectionRequest with storeObjects" in new SelectionScope {
-        test("/?objects=5,6,7", Right(SelectionRequest(1L, storeObjectIds=Seq(5L, 6L, 7L))))
+        test("/?objects=5,6,7", Right(SelectionRequest(1L, storeObjectIds=Vector(5L, 6L, 7L))))
       }
 
       "make a SelectionRequest with untagged" in new SelectionScope {
@@ -108,35 +109,35 @@ class SelectionHelpersSpec extends ControllerSpecification with Mockito with Awa
 
     "with POST parameters" should {
       "default to all documents in the document set" in new SelectionScope {
-        test(Seq(), Right(SelectionRequest(1L)))
+        test(Vector(), Right(SelectionRequest(1L)))
       }
 
       "make a SelectionRequest with documents" in new SelectionScope {
-        test(Seq("documents" -> "1,2,3"), Right(SelectionRequest(1L, documentIds=Seq(1L, 2L, 3L))))
+        test(Vector("documents" -> "1,2,3"), Right(SelectionRequest(1L, documentIds=Vector(1L, 2L, 3L))))
       }
 
       "make a SelectionRequest with nodes" in new SelectionScope {
-        test(Seq("nodes" -> "2,3,4"), Right(SelectionRequest(1L, nodeIds=Seq(2L, 3L, 4L))))
+        test(Vector("nodes" -> "2,3,4"), Right(SelectionRequest(1L, nodeIds=Vector(2L, 3L, 4L))))
       }
 
       "make a SelectionRequest with tags" in new SelectionScope {
-        test(Seq("tags" -> "3,4,5"), Right(SelectionRequest(1L, tagIds=Seq(3L, 4L, 5L))))
+        test(Vector("tags" -> "3,4,5"), Right(SelectionRequest(1L, tagIds=Vector(3L, 4L, 5L))))
       }
 
       "make a SelectionRequest with storeObjects" in new SelectionScope {
-        test(Seq("objects" -> "5,6,7"), Right(SelectionRequest(1L, storeObjectIds=Seq(5L, 6L, 7L))))
+        test(Vector("objects" -> "5,6,7"), Right(SelectionRequest(1L, storeObjectIds=Vector(5L, 6L, 7L))))
       }
 
       "make a SelectionRequest with untagged" in new SelectionScope {
-        test(Seq("tagged" -> "false"), Right(SelectionRequest(1L, tagged=Some(false))))
+        test(Vector("tagged" -> "false"), Right(SelectionRequest(1L, tagged=Some(false))))
       }
 
       "make a SelectionRequest with q" in new SelectionScope {
-        test(Seq("q" -> "foo"), Right(SelectionRequest(1L, q=Some(PhraseQuery(Field.All, "foo")))))
+        test(Vector("q" -> "foo"), Right(SelectionRequest(1L, q=Some(PhraseQuery(Field.All, "foo")))))
       }
 
       "make a SelectionRequest with sortMetadataField" in new SelectionScope {
-        test(Seq("sortByMetadataField" -> "foo"), Right(SelectionRequest(1L, sortByMetadataField=Some("foo"))))
+        test(Vector("sortByMetadataField" -> "foo"), Right(SelectionRequest(1L, sortByMetadataField=Some("foo"))))
       }
     }
 
@@ -147,7 +148,7 @@ class SelectionHelpersSpec extends ControllerSpecification with Mockito with Awa
 
     "allow some GET parameters and other POST parameters" in new SelectionScope {
       val request = FakeRequest("GET", "/?nodes=1").withFormUrlEncodedBody("q" -> "bar")
-      controller.f(1L, request) must beEqualTo(Right(SelectionRequest(1L, nodeIds=Seq(1L), q=Some(PhraseQuery(Field.All, "bar")))))
+      controller.f(1L, request) must beEqualTo(Right(SelectionRequest(1L, nodeIds=Vector(1L), q=Some(PhraseQuery(Field.All, "bar")))))
     }
   }
 
@@ -181,7 +182,7 @@ class SelectionHelpersSpec extends ControllerSpecification with Mockito with Awa
     }
 
     "uses SelectionBackend#create() if refresh=true" in new RequestToSelectionScope {
-      val selectionRequest = SelectionRequest(documentSetId, Seq(), Seq(), Seq(), Seq(), None, Some(PhraseQuery(Field.All, "foo")))
+      val selectionRequest = SelectionRequest(documentSetId, Vector(), Vector(), Vector(), Vector(), None, Some(PhraseQuery(Field.All, "foo")))
       mockSelectionBackend.create(any, any, any) returns Future.successful(selection)
       val request = FakeRequest("POST", "").withFormUrlEncodedBody("q" -> "foo", "refresh" -> "true")
       await(controller.go(request)) must beEqualTo(Right(selection))
@@ -193,7 +194,7 @@ class SelectionHelpersSpec extends ControllerSpecification with Mockito with Awa
     }
 
     "uses SelectionBackend#findOrCreate() as a fallback" in new RequestToSelectionScope {
-      val selectionRequest = SelectionRequest(documentSetId, Seq(), Seq(), Seq(), Seq(), None, Some(PhraseQuery(Field.All, "foo")))
+      val selectionRequest = SelectionRequest(documentSetId, Vector(), Vector(), Vector(), Vector(), None, Some(PhraseQuery(Field.All, "foo")))
       mockSelectionBackend.findOrCreate(any, any, any, any) returns Future.successful(selection)
       val request = FakeRequest("POST", "").withFormUrlEncodedBody("q" -> "foo")
       await(controller.go(request)) must beEqualTo(Right(selection))

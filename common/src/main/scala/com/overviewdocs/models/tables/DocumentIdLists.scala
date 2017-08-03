@@ -7,7 +7,7 @@ class DocumentIdListsImpl(tag: Tag) extends Table[DocumentIdList](tag, "document
   def id = column[Long]("id", O.PrimaryKey)
   def documentSetId = column[Int]("document_set_id")
   def fieldName = column[String]("field_name")
-  def document32BitIds = column[Array[Int]]("document_32bit_ids")
+  def document32BitIds = column[Vector[Int]]("document_32bit_ids")
 
   def * = (
     id,

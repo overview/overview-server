@@ -39,7 +39,7 @@ class DbAkkaDocumentIdListBackendSpec extends DbBackendSpecification with InAppS
           INSERT INTO document_id_list (id, document_set_id, field_name, document_32bit_ids)
           VALUES (1, 2, 'foo', '{0,2,1}')
         """)
-        await(backend.show(2, "foo")) must beSome(DocumentIdList(1L, 2, "foo", Array(0,2,1)))
+        await(backend.show(2, "foo")) must beSome(DocumentIdList(1L, 2, "foo", Vector(0,2,1)))
       }
 
       "filter by documentSetId" in new BaseScope {
@@ -90,7 +90,7 @@ class DbAkkaDocumentIdListBackendSpec extends DbBackendSpecification with InAppS
         brokerProbe.sender.tell(Progress.Sorting(0.3), brokerProbe.ref)
         brokerProbe.sender.tell(Progress.Sorting(0.8), brokerProbe.ref)
         brokerProbe.sender.tell(Progress.SortDone, brokerProbe.ref)
-        await(future) must beEqualTo(Seq(Progress.Sorting(0.1), Progress.Sorting(0.3), Progress.Sorting(0.8)))
+        await(future) must beEqualTo(Vector(Progress.Sorting(0.1), Progress.Sorting(0.3), Progress.Sorting(0.8)))
       }
 
       "not send a message if the Array already exists" in new BaseScope {

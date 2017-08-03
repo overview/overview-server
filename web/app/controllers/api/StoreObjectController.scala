@@ -3,8 +3,8 @@ package controllers.api
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext.Implicits.global
 import play.api.libs.json.{JsObject,JsPath,JsValue,Reads}
+import scala.collection.immutable
 import scala.concurrent.Future
-import scala.reflect.classTag
 
 import controllers.backend.{StoreBackend,StoreObjectBackend}
 import controllers.auth.Authorities.{anyUser,userOwningStoreObject}
@@ -38,7 +38,7 @@ class StoreObjectController @Inject() (
           case Some(attributesArray) => {
             for {
               store <- storeBackend.showOrCreate(request.apiToken.token)
-              storeObjects <- storeObjectBackend.createMany(store.id, attributesArray.toSeq)
+              storeObjects <- storeObjectBackend.createMany(store.id, attributesArray.toIndexedSeq)
             } yield Ok(views.json.api.StoreObject.index(storeObjects))
           }
           case None => Future.successful(BadRequest(jsonError("illegal-arguments",
@@ -106,12 +106,12 @@ object StoreObjectController {
 
   private val createJsonReader = createReader(StoreObject.CreateAttributes.apply _)
   private val updateJsonReader = createReader(StoreObject.UpdateAttributes.apply _)
-  private val deleteArrayJsonReader: Reads[Array[Long]] = {
-    Reads.ArrayReads[Long]
+  private val deleteArrayJsonReader: Reads[immutable.Seq[Long]] = {
+    Reads.ArrayReads[Long].map(_.toIndexedSeq)
   }
 
-  private val createArrayJsonReader: Reads[Array[StoreObject.CreateAttributes]] = {
+  private val createArrayJsonReader: Reads[immutable.Seq[StoreObject.CreateAttributes]] = {
     implicit val x = createJsonReader
-    Reads.ArrayReads[StoreObject.CreateAttributes]
+    Reads.ArrayReads[StoreObject.CreateAttributes].map(_.toIndexedSeq)
   }
 }

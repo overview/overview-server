@@ -2,6 +2,7 @@ package controllers.backend
 
 import com.google.inject.ImplementedBy
 import javax.inject.Inject
+import scala.collection.immutable
 import scala.concurrent.Future
 
 import com.overviewdocs.database.Database
@@ -11,10 +12,10 @@ import com.overviewdocs.models.tables.Tags
 @ImplementedBy(classOf[DbTagBackend])
 trait TagBackend {
   /** Lists all Tags for the given DocumentSet. */
-  def index(documentSetId: Long): Future[Seq[Tag]]
+  def index(documentSetId: Long): Future[immutable.Seq[Tag]]
 
   /** Lists all Tags and their counts for a given DocumentSet. */
-  def indexWithCounts(documentSetId: Long): Future[Seq[(Tag,Int)]]
+  def indexWithCounts(documentSetId: Long): Future[immutable.Seq[(Tag,Int)]]
 
   /** Returns one Tag, or None if it does not exist. */
   def show(documentSetId: Long, id: Long): Future[Option[Tag]]

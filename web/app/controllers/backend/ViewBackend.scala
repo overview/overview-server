@@ -2,6 +2,7 @@ package controllers.backend
 
 import com.google.inject.ImplementedBy
 import javax.inject.Inject
+import scala.collection.immutable
 import scala.concurrent.Future
 
 import com.overviewdocs.database.Database
@@ -14,7 +15,7 @@ trait ViewBackend {
     *
     * Returns an empty list if the DocumentSet does not exist.
     */
-  def index(documentSetId: Long): Future[Seq[View]]
+  def index(documentSetId: Long): Future[immutable.Seq[View]]
 
   /** Fetches a single View.
     *

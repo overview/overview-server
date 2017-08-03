@@ -3,6 +3,7 @@ package controllers.backend
 import com.google.inject.ImplementedBy
 import javax.inject.Inject
 import play.api.libs.json.{Json,JsObject}
+import scala.collection.immutable
 import scala.concurrent.Future
 
 import com.overviewdocs.database.Database
@@ -43,7 +44,7 @@ trait DocumentStoreObjectBackend extends Backend {
     * @param storeId skip StoreObjects that aren't in this Store
     * @param entries DocumentStoreObjects to create
     */
-  def createMany(storeId: Long, entries: Seq[DocumentStoreObject]): Future[Seq[DocumentStoreObject]]
+  def createMany(storeId: Long, entries: immutable.Seq[DocumentStoreObject]): Future[immutable.Seq[DocumentStoreObject]]
 
   /** Modifies a DocumentStoreObject and returns the modified version.
     *
@@ -62,7 +63,7 @@ trait DocumentStoreObjectBackend extends Backend {
     * @param storeId skip StoreObjects that aren't in this Store
     * @param entries (document ID, object ID) pairs
     */
-  def destroyMany(storeId: Long, entries: Seq[(Long,Long)]): Future[Unit]
+  def destroyMany(storeId: Long, entries: immutable.Seq[(Long,Long)]): Future[Unit]
 }
 
 class DbDocumentStoreObjectBackend @Inject() (
@@ -95,7 +96,7 @@ class DbDocumentStoreObjectBackend @Inject() (
       .map { case (storeObjectId, group) => (storeObjectId, group.length) }
   }
 
-  private def countByObjectAndDocumentIds(storeId: Long, documentIds: Seq[Long]) = {
+  private def countByObjectAndDocumentIds(storeId: Long, documentIds: immutable.Seq[Long]) = {
     val storeObjectIds = StoreObjects
       .filter(_.storeId === storeId)
       .map(_.id)
@@ -133,7 +134,7 @@ class DbDocumentStoreObjectBackend @Inject() (
     }
   }
 
-  override def createMany(storeId: Long, entries: Seq[DocumentStoreObject]) = {
+  override def createMany(storeId: Long, entries: immutable.Seq[DocumentStoreObject]) = {
     /*
      * We run both DELETE and INSERT in one query, to save bandwidth and let
      * Postgres handle atomicity. (This doesn't avoid the race between DELETE
@@ -143,7 +144,7 @@ class DbDocumentStoreObjectBackend @Inject() (
      * actually executes the DELETE.
      */
     def jsonToSql(json: JsObject) = s"'${json.toString.replaceAll("'", "''")}'"
-    val dsosAsSqlTuples: Seq[String] = entries
+    val dsosAsSqlTuples: immutable.Seq[String] = entries
       .map((dso: DocumentStoreObject) => "(" + dso.documentId + "," + dso.storeObjectId + "," + dso.json.map(jsonToSql _).getOrElse("NULL") + ")")
 
     database.run(sql"""
@@ -186,8 +187,8 @@ class DbDocumentStoreObjectBackend @Inject() (
     database.delete(byIdsCompiled(documentId, storeObjectId))
   }
 
-  override def destroyMany(storeId: Long, entries: Seq[(Long,Long)]) = {
-    val tuplesAsSql: Seq[String] = entries
+  override def destroyMany(storeId: Long, entries: immutable.Seq[(Long,Long)]) = {
+    val tuplesAsSql: immutable.Seq[String] = entries
       .map((t: Tuple2[Long,Long]) => "(" + t._1 + "," + t._2 + ")")
 
     database.runUnit(sqlu"""

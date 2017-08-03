@@ -3,6 +3,7 @@ package controllers.backend
 import redis.RedisClient
 import java.util.UUID
 import org.specs2.mock.Mockito
+import scala.collection.immutable
 import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.Future
 
@@ -14,7 +15,7 @@ import models.pagination.{Page,PageInfo,PageRequest}
 class RedisSelectionBackendSpec extends RedisBackendSpecification with Mockito {
   trait BaseScope extends RedisScope {
     val KeyExpireS: Int = 10 // last during the test, die soon after
-    def resultIds: Array[Long] = Array.empty
+    def resultIds: immutable.Seq[Long] = Vector.empty
     def warnings: List[SelectionWarning] = Nil
     def serializedWarnings: Array[Byte] = {
       val stream = new java.io.ByteArrayOutputStream
@@ -29,7 +30,7 @@ class RedisSelectionBackendSpec extends RedisBackendSpecification with Mockito {
 
   trait CreateScopeLike extends BaseScope {
     val onProgress: Double => Unit = _ => ()
-    val request = SelectionRequest(documentSetId, Seq(), Seq(), Seq(), Seq(), None, None)
+    val request = SelectionRequest(documentSetId, Vector(), Vector(), Vector(), Vector(), None, None)
     def go: Selection
   }
 
@@ -46,7 +47,7 @@ class RedisSelectionBackendSpec extends RedisBackendSpecification with Mockito {
   }
 
   trait StoreDocumentIdsExample { self: CreateScopeLike =>
-    override def resultIds = Array(1L, 2L, 3L, 4L, 5L)
+    override def resultIds = Vector(1L, 2L, 3L, 4L, 5L)
     val bytes = Array(
       0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x1,
       0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x2,
@@ -111,7 +112,7 @@ class RedisSelectionBackendSpec extends RedisBackendSpecification with Mockito {
       "expire the warnings" in new CreateScope with ExpireWarningsExample
 
       "return the Selection" in new CreateScope {
-        override def resultIds = Array(1L, 2L, 3L)
+        override def resultIds = Vector(1L, 2L, 3L)
         val selection = create
         await(selection.getAllDocumentIds) must beEqualTo(resultIds)
       }
@@ -179,7 +180,7 @@ class RedisSelectionBackendSpec extends RedisBackendSpecification with Mockito {
           maybeSelection must beSome
           maybeSelection match {
             case Some(selection) => {
-              await(selection.getAllDocumentIds) must beEqualTo(Array(1L, 2L, 3L, 4L, 5L))
+              await(selection.getAllDocumentIds) must beEqualTo(Vector(1L, 2L, 3L, 4L, 5L))
               there was no(dsBackend).createSelection(any, any)
             }
             case _ =>
@@ -204,26 +205,26 @@ class RedisSelectionBackendSpec extends RedisBackendSpecification with Mockito {
         "expire the warnings" in new FindOrCreateScope with ExpireWarningsExample
 
         "return the Selection" in new FindOrCreateScope {
-          override def resultIds = Array(1L, 2L, 3L)
+          override def resultIds = Vector(1L, 2L, 3L)
           val selection = go
           await(selection.getAllDocumentIds) must beEqualTo(resultIds)
           there was one(dsBackend).createSelection(request, onProgress)
         }
 
         "return a slice of the Selection" in new FindOrCreateScope {
-          override def resultIds = Array(1L, 2L, 3L, 4L, 5L)
+          override def resultIds = Vector(1L, 2L, 3L, 4L, 5L)
           val selection = go
           val documentIds = await(selection.getDocumentIds(PageRequest(1, 3, false)))
           there was one(dsBackend).createSelection(request, onProgress)
-          documentIds must beEqualTo(Page(Array(2L, 3L, 4L), PageInfo(PageRequest(1, 3, false), 5)))
+          documentIds must beEqualTo(Page(Vector(2L, 3L, 4L), PageInfo(PageRequest(1, 3, false), 5)))
         }
 
         "return a reversed slice of the Selection" in new FindOrCreateScope {
-          override def resultIds = Array(1L, 2L, 3L, 4L, 5L)
+          override def resultIds = Vector(1L, 2L, 3L, 4L, 5L)
           val selection = go
           val documentIds = await(selection.getDocumentIds(PageRequest(3, 1, true)))
           there was one(dsBackend).createSelection(request, onProgress)
-          documentIds must beEqualTo(Page(Array(2L), PageInfo(PageRequest(3, 1, true), 5)))
+          documentIds must beEqualTo(Page(Vector(2L), PageInfo(PageRequest(3, 1, true), 5)))
         }
       }
 
@@ -249,7 +250,7 @@ class RedisSelectionBackendSpec extends RedisBackendSpecification with Mockito {
         "expire the warnings" in new SelectionExistsScope with ExpireWarningsExample
         "return the Selection" in new SelectionExistsScope {
           val selection = go
-          await(selection.getAllDocumentIds) must beEqualTo(Array(1L, 2L, 3L, 4L, 5L))
+          await(selection.getAllDocumentIds) must beEqualTo(Vector(1L, 2L, 3L, 4L, 5L))
           there was no(dsBackend).createSelection(any, any)
         }
       }
@@ -282,7 +283,7 @@ class RedisSelectionBackendSpec extends RedisBackendSpecification with Mockito {
 
         "return the Selection" in new SelectionExistsScope {
           val selection = go
-          await(selection.getAllDocumentIds) must beEqualTo(Array(1L, 2L, 3L, 4L, 5L))
+          await(selection.getAllDocumentIds) must beEqualTo(Vector(1L, 2L, 3L, 4L, 5L))
           there was no(dsBackend).createSelection(any, any)
         }
 
@@ -290,21 +291,21 @@ class RedisSelectionBackendSpec extends RedisBackendSpecification with Mockito {
           val selection = go
           val documentIds = await(selection.getDocumentIds(PageRequest(1, 3, false)))
           there was no(dsBackend).createSelection(any, any)
-          documentIds must beEqualTo(Page(Seq(2L, 3L, 4L), PageInfo(PageRequest(1, 3, false), 5)))
+          documentIds must beEqualTo(Page(Vector(2L, 3L, 4L), PageInfo(PageRequest(1, 3, false), 5)))
         }
 
         "return a reversed slice of the selection" in new SelectionExistsScope {
           val selection = go
           val documentIds = await(selection.getDocumentIds(PageRequest(3, 1, true)))
           there was no(dsBackend).createSelection(any, any)
-          documentIds must beEqualTo(Page(Array(2L), PageInfo(PageRequest(3, 1, true), 5)))
+          documentIds must beEqualTo(Page(Vector(2L), PageInfo(PageRequest(3, 1, true), 5)))
         }
 
         "truncate a reversed slice of the selection" in new SelectionExistsScope {
           val selection = go
           val documentIds = await(selection.getDocumentIds(PageRequest(3, 4, true)))
           there was no(dsBackend).createSelection(any, any)
-          documentIds must beEqualTo(Page(Array(2L, 1L), PageInfo(PageRequest(3, 4, true), 5)))
+          documentIds must beEqualTo(Page(Vector(2L, 1L), PageInfo(PageRequest(3, 4, true), 5)))
         }
       }
 
@@ -324,7 +325,7 @@ class RedisSelectionBackendSpec extends RedisBackendSpecification with Mockito {
         "expire the warnings" in new SelectionHashExistsScope with ExpireWarningsExample
 
         "return the Selection" in new SelectionHashExistsScope {
-          override def resultIds = Array(1L, 2L, 3L)
+          override def resultIds = Vector(1L, 2L, 3L)
           val selection = go
           await(selection.getAllDocumentIds) must beEqualTo(resultIds)
           there was one(dsBackend).createSelection(request, onProgress)

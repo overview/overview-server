@@ -2,6 +2,7 @@ package controllers.backend
 
 import com.google.inject.ImplementedBy
 import javax.inject.Inject
+import scala.collection.immutable
 import scala.concurrent.Future
 
 import com.overviewdocs.database.Database
@@ -12,7 +13,7 @@ import com.overviewdocs.models.tables.ApiTokens
 trait ApiTokenBackend {
   /** Returns all ApiTokens with the given access.
     */
-  def index(createdBy: String, documentSetId: Option[Long]): Future[Seq[ApiToken]]
+  def index(createdBy: String, documentSetId: Option[Long]): Future[immutable.Seq[ApiToken]]
 
   /** Returns one ApiToken.
     *

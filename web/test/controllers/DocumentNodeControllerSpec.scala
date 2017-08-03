@@ -31,7 +31,7 @@ class DocumentNodeControllerSpec extends ControllerSpecification with JsonMatche
       val documentSetId = 123L
       mockDocumentNodeBackend.countByNode(any, any) returns Future.successful(Map())
 
-      val requestBody: Seq[(String,String)] = Seq("countNodes" -> "1,2,3", "tags" -> "3")
+      val requestBody: Vector[(String,String)] = Vector("countNodes" -> "1,2,3", "tags" -> "3")
 
       lazy val request = fakeAuthorizedRequest("POST", "/count").withFormUrlEncodedBody(requestBody: _*)
       lazy val result = controller.countByNode(documentSetId)(request)
@@ -48,15 +48,15 @@ class DocumentNodeControllerSpec extends ControllerSpecification with JsonMatche
     }
 
     "pass Selection and nodes to documentNodeBackend" in new CountByNodeScope {
-      override val requestBody = Seq("countNodes" -> "1,2,3", "tags" -> "3")
+      override val requestBody = Vector("countNodes" -> "1,2,3", "tags" -> "3")
       h.status(result)
-      there was one(mockDocumentNodeBackend).countByNode(selection, Seq(1L, 2L, 3L))
+      there was one(mockDocumentNodeBackend).countByNode(selection, Vector(1L, 2L, 3L))
     }
 
     "succeed if countNodes are not specified" in new CountByNodeScope {
-      override val requestBody = Seq("tags" -> "3")
+      override val requestBody = Vector("tags" -> "3")
       h.status(result) must beEqualTo(h.OK)
-      there was one(mockDocumentNodeBackend).countByNode(selection, Seq())
+      there was one(mockDocumentNodeBackend).countByNode(selection, Vector())
     }
   }
 }

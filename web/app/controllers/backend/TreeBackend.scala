@@ -2,6 +2,7 @@ package controllers.backend
 
 import com.google.inject.ImplementedBy
 import javax.inject.Inject
+import scala.collection.immutable
 import scala.concurrent.Future
 
 import com.overviewdocs.database.Database
@@ -33,7 +34,7 @@ trait TreeBackend extends Backend {
     * A Tree must haave a DocumentSet by definition, but it needn't have an
     * owner. So the email address may be None.
     */
-  def indexIncompleteWithDocumentSetAndOwnerEmail: Future[Seq[(Tree,DocumentSet,Option[String])]]
+  def indexIncompleteWithDocumentSetAndOwnerEmail: Future[immutable.Seq[(Tree,DocumentSet,Option[String])]]
 }
 
 class DbTreeBackend @Inject() (

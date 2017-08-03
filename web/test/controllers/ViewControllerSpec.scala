@@ -43,15 +43,15 @@ class ViewControllerSpec extends ControllerSpecification with JsonMatchers {
     "#create" should {
       trait CreateScope extends BaseScope {
         val documentSetId = 1L
-        val formBody: Seq[(String,String)] = Seq()
+        val formBody: Vector[(String,String)] = Vector()
         def request = fakeAuthorizedRequest.withFormUrlEncodedBody(formBody: _*)
         lazy val result = controller.create(documentSetId)(request)
 
-        val validFormBody = Seq("title" -> "title", "url" -> "http://localhost:9001")
+        val validFormBody = Vector("title" -> "title", "url" -> "http://localhost:9001")
       }
 
       "return 400 Bad Request on invalid form body" in new CreateScope {
-        override val formBody = Seq("title" -> "", "url" -> "http://localhost:9001")
+        override val formBody = Vector("title" -> "", "url" -> "http://localhost:9001")
         h.status(result) must beEqualTo(h.BAD_REQUEST)
       }
 
@@ -105,8 +105,8 @@ class ViewControllerSpec extends ControllerSpecification with JsonMatchers {
         val documentSetId = 1L
         def request = fakeAuthorizedRequest
         def result = controller.indexJson(documentSetId)(request)
-        lazy val trees : Iterable[Tree] = Seq()
-        mockViewBackend.index(documentSetId) returns Future.successful(Seq[View]())
+        lazy val trees : Iterable[Tree] = Vector()
+        mockViewBackend.index(documentSetId) returns Future.successful(Vector[View]())
         mockStorage.findTrees(documentSetId) returns trees
       }
 
@@ -119,7 +119,7 @@ class ViewControllerSpec extends ControllerSpecification with JsonMatchers {
       }
 
       "show a tree" in new IndexJsonScope {
-        override lazy val trees = Seq(fakeTree(1L, 3L))
+        override lazy val trees = Vector(fakeTree(1L, 3L))
         val json = h.contentAsString(result)
 
         json must /#(0) /("type" -> "tree")
@@ -133,7 +133,7 @@ class ViewControllerSpec extends ControllerSpecification with JsonMatchers {
 
       "show a view" in new IndexJsonScope {
         val view = factory.view(id=2L)
-        mockViewBackend.index(documentSetId) returns Future.successful(Seq(view))
+        mockViewBackend.index(documentSetId) returns Future.successful(Vector(view))
 
         val json = h.contentAsString(result)
         json must /#(0) /("type" -> "view")

@@ -6,7 +6,7 @@
  */
 package com.overviewdocs.csv
 
-import scala.collection.mutable
+import scala.collection.{immutable,mutable}
 
 import com.overviewdocs.util.{Configuration,Textify}
 
@@ -18,7 +18,7 @@ import com.overviewdocs.util.{Configuration,Textify}
   *   val producer = new CsvDocumentProducer
   *   producer.addCsvRow(Array("id", "text"))
   *   producer.addCsvRow(Array("1", "foo"))
-  *   producer.getProducedDocuments   // Seq(CsvDocument("1", "foo", ...))
+  *   producer.getProducedDocuments   // immutable.Seq(CsvDocument("1", "foo", ...))
   *   producer.clearProducedDocuments // reclaim memory
   */
 class CsvDocumentProducer {
@@ -26,9 +26,9 @@ class CsvDocumentProducer {
 
   private var maybeHeader: Option[CsvHeader] = None
 
-  def getProducedDocuments: Seq[CsvDocument] = producedDocuments.toSeq
+  def getProducedDocuments: immutable.Seq[CsvDocument] = producedDocuments.toIndexedSeq
   def clearProducedDocuments: Unit = producedDocuments.clear
-  def metadataColumnNames: Seq[String] = maybeHeader.toSeq.flatMap(_.metadataColumnNames)
+  def metadataColumnNames: immutable.Seq[String] = maybeHeader.toIndexedSeq.flatMap(_.metadataColumnNames)
 
   /** Handles another CSV row. */
   def addCsvRow(csvRow: Array[String]): Unit = {
@@ -50,7 +50,7 @@ class CsvDocumentProducer {
     val titleIndex: Option[Int] = asMap.get("title")
     val tagsIndex: Option[Int] = asMap.get("tags")
 
-    private val nonMetadataIndices: Seq[Int] = Seq(textIndex, idIndex, urlIndex, titleIndex, tagsIndex).flatten
+    private val nonMetadataIndices: immutable.Seq[Int] = Vector(textIndex, idIndex, urlIndex, titleIndex, tagsIndex).flatten
 
     /** The indices of metadata columns.
       *

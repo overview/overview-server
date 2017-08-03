@@ -22,12 +22,12 @@ class DbDocumentSelectionBackendSpec extends DbBackendSpecification with InAppSp
         val doc1 = factory.document(documentSetId=1L, id=(1L << 32) | 0L, title="c", text="foo bar baz oneandtwo oneandthree")
         val doc2 = factory.document(documentSetId=1L, id=(1L << 32) | 1L, title="a", text="moo mar maz oneandtwo twoandthree")
         val doc3 = factory.document(documentSetId=1L, id=(1L << 32) | 2L, title="b", text="noo nar naz oneandthree twoandthree")
-        val documents = Seq(doc1, doc2, doc3)
+        val documents = Vector(doc1, doc2, doc3)
 
-        val documentIds: Seq[Long] = Seq()
-        val tagIds: Seq[Long] = Seq()
-        val nodeIds: Seq[Long] = Seq()
-        val storeObjectIds: Seq[Long] = Seq()
+        val documentIds: Vector[Long] = Vector()
+        val tagIds: Vector[Long] = Vector()
+        val nodeIds: Vector[Long] = Vector()
+        val storeObjectIds: Vector[Long] = Vector()
         val tagged: Option[Boolean] = None
         val tagOperation: SelectionRequest.TagOperation = SelectionRequest.TagOperation.Any
         val q: Option[Query] = None
@@ -75,37 +75,37 @@ class DbDocumentSelectionBackendSpec extends DbBackendSpecification with InAppSp
       }
 
       "sort documents by title" in new CreateSelectionScope {
-        ret.documentIds must beEqualTo(Array(doc2.id, doc3.id, doc1.id))
+        ret.documentIds must beEqualTo(Vector(doc2.id, doc3.id, doc1.id))
       }
 
       "sort by custom field" in new CreateSelectionScope {
         documentSetBackend.show(documentSet.id) returns Future.successful(Some(documentSet.copy(
-          metadataSchema=MetadataSchema(1, Seq(MetadataField("foo", MetadataFieldType.String)))
+          metadataSchema=MetadataSchema(1, Vector(MetadataField("foo", MetadataFieldType.String)))
         )))
         override val sortByMetadataField = Some("foo")
         documentIdListBackend.showOrCreate(1, "foo") returns Source(
           List(Progress.Sorting(0.3), Progress.Sorting(0.6), Progress.Sorting(0.9))
-        ).mapMaterializedValue(_ => Future.successful(Some(DocumentIdList(5, 1, "foo", Array(0, 1, 2)))))
-        ret.documentIds must beEqualTo(Array(doc1.id, doc2.id, doc3.id))
+        ).mapMaterializedValue(_ => Future.successful(Some(DocumentIdList(5, 1, "foo", Vector(0, 1, 2)))))
+        ret.documentIds must beEqualTo(Vector(doc1.id, doc2.id, doc3.id))
       }
 
       "report progress during sort" in new CreateSelectionScope {
         documentSetBackend.show(documentSet.id) returns Future.successful(Some(documentSet.copy(
-          metadataSchema=MetadataSchema(1, Seq(MetadataField("foo", MetadataFieldType.String)))
+          metadataSchema=MetadataSchema(1, Vector(MetadataField("foo", MetadataFieldType.String)))
         )))
         override val sortByMetadataField = Some("foo")
         documentIdListBackend.showOrCreate(1, "foo") returns Source(
           List(Progress.Sorting(0.3), Progress.Sorting(0.6), Progress.Sorting(0.9))
-        ).mapMaterializedValue(_ => Future.successful(Some(DocumentIdList(5, 1, "foo", Array(0, 1, 2)))))
+        ).mapMaterializedValue(_ => Future.successful(Some(DocumentIdList(5, 1, "foo", Vector(0, 1, 2)))))
         val progressReports = mutable.ArrayBuffer.empty[Double]
         override def onProgress(p: Double): Unit = { progressReports.append(p) }
         ret
-        progressReports.toList must beEqualTo(Seq(0.3, 0.6, 0.9))
+        progressReports.toList must beEqualTo(List(0.3, 0.6, 0.9))
       }
 
       "crash when sort fails" in new CreateSelectionScope {
         documentSetBackend.show(documentSet.id) returns Future.successful(Some(documentSet.copy(
-          metadataSchema=MetadataSchema(1, Seq(MetadataField("foo", MetadataFieldType.String)))
+          metadataSchema=MetadataSchema(1, Vector(MetadataField("foo", MetadataFieldType.String)))
         )))
         override val sortByMetadataField = Some("foo")
         val ex = new Exception("foo")
@@ -116,7 +116,7 @@ class DbDocumentSelectionBackendSpec extends DbBackendSpecification with InAppSp
       "crash when sort gives empty result (because of a race)" in new CreateSelectionScope {
         // TODO maybe this should be a warning? Or maybe we should retry indefinitely?
         documentSetBackend.show(documentSet.id) returns Future.successful(Some(documentSet.copy(
-          metadataSchema=MetadataSchema(1, Seq(MetadataField("foo", MetadataFieldType.String)))
+          metadataSchema=MetadataSchema(1, Vector(MetadataField("foo", MetadataFieldType.String)))
         )))
         override val sortByMetadataField = Some("foo")
         documentIdListBackend.showOrCreate(1, "foo") returns Source(
@@ -127,18 +127,18 @@ class DbDocumentSelectionBackendSpec extends DbBackendSpecification with InAppSp
 
       "refuse to sort by missing metadata field" in new CreateSelectionScope {
         documentSetBackend.show(documentSet.id) returns Future.successful(Some(documentSet.copy(
-          metadataSchema=MetadataSchema(1, Seq(MetadataField("bar", MetadataFieldType.String)))
+          metadataSchema=MetadataSchema(1, Vector(MetadataField("bar", MetadataFieldType.String)))
         )))
         override val sortByMetadataField = Some("foo")
-        ret.documentIds must beEqualTo(Array(doc2.id, doc3.id, doc1.id))
+        ret.documentIds must beEqualTo(Vector(doc2.id, doc3.id, doc1.id))
         ret.warnings must beEqualTo(List(SelectionWarning.MissingField("foo", List("bar"))))
         there was no(documentIdListBackend).showOrCreate(any, any)
       }
 
       "search by q" in new CreateSelectionScope {
         override val q = Some(PhraseQuery(Field.All, "moo"))
-        override def searchDocumentIds = DocumentIdSet(Seq(doc2.id))
-        ret.documentIds must beEqualTo(Array(doc2.id))
+        override def searchDocumentIds = DocumentIdSet(Vector(doc2.id))
+        ret.documentIds must beEqualTo(Vector(doc2.id))
         there was one(searchBackend).search(documentSet.id, q.get)
       }
 
@@ -157,14 +157,14 @@ class DbDocumentSelectionBackendSpec extends DbBackendSpecification with InAppSp
         //
         // We needn't shelter our search index from missing fields: races mean
         // we don't even have that option. This is _just_ a usability feature.
-        documentSetBackend.show(documentSet.id) returns Future.successful(Some(documentSet.copy(metadataSchema=MetadataSchema(1, Seq(
+        documentSetBackend.show(documentSet.id) returns Future.successful(Some(documentSet.copy(metadataSchema=MetadataSchema(1, Vector(
           MetadataField("bar", MetadataFieldType.String, MetadataFieldDisplay.TextInput),
           MetadataField("baz", MetadataFieldType.String, MetadataFieldDisplay.TextInput)
         )))))
         override val q = Some(AndQuery(Vector(PhraseQuery(Field.Metadata("foo"), "moo"), PhraseQuery(Field.Metadata("foo2"), "moo"))))
         ret.warnings must beEqualTo(List(
-          SelectionWarning.MissingField("foo", Seq("bar", "baz")),
-          SelectionWarning.MissingField("foo2", Seq("bar", "baz"))
+          SelectionWarning.MissingField("foo", Vector("bar", "baz")),
+          SelectionWarning.MissingField("foo2", Vector("bar", "baz"))
         ))
       }
 
@@ -185,79 +185,79 @@ class DbDocumentSelectionBackendSpec extends DbBackendSpecification with InAppSp
       }
 
       "search by tagId" in new IndexIdsWithTagsScope {
-        override val tagIds = Seq(tag1.id)
+        override val tagIds = Vector(tag1.id)
         override val tagOperation = SelectionRequest.TagOperation.Any
-        ret.documentIds must beEqualTo(Array(doc2.id, doc1.id))
+        ret.documentIds must beEqualTo(Vector(doc2.id, doc1.id))
       }
 
       "search by ANY tagIds" in new IndexIdsWithTagsScope {
-        override val tagIds = Seq(tag1.id, tag2.id)
+        override val tagIds = Vector(tag1.id, tag2.id)
         override val tagOperation = SelectionRequest.TagOperation.Any
-        ret.documentIds must beEqualTo(Array(doc2.id, doc1.id))
+        ret.documentIds must beEqualTo(Vector(doc2.id, doc1.id))
       }
 
       "search by ALL tagIds" in new IndexIdsWithTagsScope {
-        override val tagIds = Seq(tag1.id, tag2.id)
+        override val tagIds = Vector(tag1.id, tag2.id)
         override val tagOperation = SelectionRequest.TagOperation.All
-        ret.documentIds must beEqualTo(Array(doc2.id))
+        ret.documentIds must beEqualTo(Vector(doc2.id))
       }
 
       "search by NONE tagIds" in new IndexIdsWithTagsScope {
-        override val tagIds = Seq(tag1.id, tag2.id)
+        override val tagIds = Vector(tag1.id, tag2.id)
         override val tagOperation = SelectionRequest.TagOperation.None
-        ret.documentIds must beEqualTo(Array(doc3.id))
+        ret.documentIds must beEqualTo(Vector(doc3.id))
       }
 
       "search by tagged=false" in new IndexIdsWithTagsScope {
         override val tagged = Some(false)
-        ret.documentIds must beEqualTo(Array(doc3.id))
+        ret.documentIds must beEqualTo(Vector(doc3.id))
       }
 
       "search by tagged=true" in new IndexIdsWithTagsScope {
         override val tagged = Some(true)
-        ret.documentIds must beEqualTo(Array(doc2.id, doc1.id))
+        ret.documentIds must beEqualTo(Vector(doc2.id, doc1.id))
       }
 
       "search by tagged=false OR a tag" in new IndexIdsWithTagsScope {
-        override val tagIds = Seq(tag2.id)
+        override val tagIds = Vector(tag2.id)
         override val tagged = Some(false)
         override val tagOperation = SelectionRequest.TagOperation.Any
-        ret.documentIds must beEqualTo(Array(doc2.id, doc3.id))
+        ret.documentIds must beEqualTo(Vector(doc2.id, doc3.id))
       }
 
       "search by tagged=false AND a tag" in new IndexIdsWithTagsScope {
-        override val tagIds = Seq(tag2.id)
+        override val tagIds = Vector(tag2.id)
         override val tagged = Some(false)
         override val tagOperation = SelectionRequest.TagOperation.All
-        ret.documentIds must beEqualTo(Array.empty)
+        ret.documentIds must beEqualTo(Vector.empty)
       }
 
       "search by NOT tagged=false AND NOT a tag" in new IndexIdsWithTagsScope {
-        override val tagIds = Seq(tag2.id)
+        override val tagIds = Vector(tag2.id)
         override val tagged = Some(false)
         override val tagOperation = SelectionRequest.TagOperation.None
-        ret.documentIds must beEqualTo(Array(doc1.id))
+        ret.documentIds must beEqualTo(Vector(doc1.id))
       }
 
       "search by tagged=true OR a tag" in new IndexIdsWithTagsScope {
-        override val tagIds = Seq(tag2.id)
+        override val tagIds = Vector(tag2.id)
         override val tagged = Some(true)
         override val tagOperation = SelectionRequest.TagOperation.Any
-        ret.documentIds must beEqualTo(Array(doc2.id, doc1.id))
+        ret.documentIds must beEqualTo(Vector(doc2.id, doc1.id))
       }
 
       "search by tagged=true AND a tag" in new IndexIdsWithTagsScope {
-        override val tagIds = Seq(tag2.id)
+        override val tagIds = Vector(tag2.id)
         override val tagged = Some(true)
         override val tagOperation = SelectionRequest.TagOperation.All
-        ret.documentIds must beEqualTo(Array(doc2.id))
+        ret.documentIds must beEqualTo(Vector(doc2.id))
       }
 
       "search by NOT tagged=true AND NOT a tag" in new IndexIdsWithTagsScope {
-        override val tagIds = Seq(tag2.id)
+        override val tagIds = Vector(tag2.id)
         override val tagged = Some(true)
         override val tagOperation = SelectionRequest.TagOperation.None
-        ret.documentIds must beEqualTo(Array(doc3.id))
+        ret.documentIds must beEqualTo(Vector(doc3.id))
       }
 
       "intersect results from search index and database" in new CreateSelectionScope {
@@ -265,11 +265,11 @@ class DbDocumentSelectionBackendSpec extends DbBackendSpecification with InAppSp
         factory.documentTag(doc1.id, tag.id)
         factory.documentTag(doc2.id, tag.id)
 
-        override val tagIds = Seq(tag.id)
+        override val tagIds = Vector(tag.id)
         override val q = Some(PhraseQuery(Field.All, "oneandthree"))
-        override def searchDocumentIds = DocumentIdSet(Seq(doc1.id, doc3.id))
+        override def searchDocumentIds = DocumentIdSet(Vector(doc1.id, doc3.id))
 
-        ret.documentIds must beEqualTo(Array(doc1.id))
+        ret.documentIds must beEqualTo(Vector(doc1.id))
       }
 
       "search by nodeIds" in new CreateSelectionScope {
@@ -277,13 +277,13 @@ class DbDocumentSelectionBackendSpec extends DbBackendSpecification with InAppSp
         val nd1 = factory.nodeDocument(node.id, doc1.id)
         val nd2 = factory.nodeDocument(node.id, doc2.id)
 
-        override val nodeIds = Seq(node.id)
-        ret.documentIds must beEqualTo(Array(doc2.id, doc1.id))
+        override val nodeIds = Vector(node.id)
+        ret.documentIds must beEqualTo(Vector(doc2.id, doc1.id))
       }
 
       "search by documentIds" in new CreateSelectionScope {
-        override val documentIds = Seq(doc1.id)
-        ret.documentIds must beEqualTo(Array(doc1.id))
+        override val documentIds = Vector(doc1.id)
+        ret.documentIds must beEqualTo(Vector(doc1.id))
       }
 
       "intersect two Postgres filters" in new CreateSelectionScope {
@@ -295,10 +295,10 @@ class DbDocumentSelectionBackendSpec extends DbBackendSpecification with InAppSp
         factory.documentTag(doc1.id, tag.id)
         factory.documentTag(doc3.id, tag.id)
 
-        override val nodeIds = Seq(node.id)
-        override val tagIds = Seq(tag.id)
+        override val nodeIds = Vector(node.id)
+        override val tagIds = Vector(tag.id)
 
-        ret.documentIds must beEqualTo(Array(doc1.id))
+        ret.documentIds must beEqualTo(Vector(doc1.id))
       }
 
       "search by storeObjectIds" in new CreateSelectionScope {
@@ -309,9 +309,9 @@ class DbDocumentSelectionBackendSpec extends DbBackendSpecification with InAppSp
         val dvo1 = factory.documentStoreObject(doc1.id, obj.id)
         val dvo2 = factory.documentStoreObject(doc2.id, obj.id)
 
-        override val storeObjectIds = Seq(obj.id)
+        override val storeObjectIds = Vector(obj.id)
 
-        ret.documentIds must beEqualTo(Array(doc2.id, doc1.id))
+        ret.documentIds must beEqualTo(Vector(doc2.id, doc1.id))
       }
     }
   }

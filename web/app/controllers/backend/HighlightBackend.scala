@@ -4,6 +4,7 @@ import akka.actor.{ActorSelection,ActorSystem}
 import com.google.inject.ImplementedBy
 import com.typesafe.config.ConfigFactory
 import javax.inject.{Inject,Singleton}
+import scala.collection.immutable
 import scala.concurrent.Future
 
 import com.overviewdocs.messages.DocumentSetReadCommands
@@ -25,7 +26,7 @@ trait HighlightBackend extends Backend {
     * @param documentId Document ID
     * @param query Parsed search query
     */
-  def highlight(documentSetId: Long, documentId: Long, query: Query): Future[Seq[Utf16Highlight]]
+  def highlight(documentSetId: Long, documentId: Long, query: Query): Future[immutable.Seq[Utf16Highlight]]
 
   /** Lists short phrases matching the given query in each document.
     *
@@ -37,7 +38,7 @@ trait HighlightBackend extends Backend {
     * @param documentIds Document ID
     * @param query Parsed search query
     */
-  def highlights(documentSetId: Long, documentIds: Seq[Long], query: Query): Future[Map[Long, Seq[Utf16Snippet]]]
+  def highlights(documentSetId: Long, documentIds: immutable.Seq[Long], query: Query): Future[Map[Long, immutable.Seq[Utf16Snippet]]]
 }
 
 /** Akka RemoteActor-backed search backend.
@@ -54,10 +55,10 @@ extends HighlightBackend {
   private val messageBroker = remoteActorSystemModule.messageBroker
 
   override def highlight(documentSetId: Long, documentId: Long, query: Query) = {
-    messageBroker.ask(DocumentSetReadCommands.Highlight(documentSetId, documentId, query)).mapTo[Seq[Utf16Highlight]]
+    messageBroker.ask(DocumentSetReadCommands.Highlight(documentSetId, documentId, query)).mapTo[immutable.Seq[Utf16Highlight]]
   }
 
-  override def highlights(documentSetId: Long, documentIds: Seq[Long], query: Query) = {
-    messageBroker.ask(DocumentSetReadCommands.Highlights(documentSetId, documentIds, query)).mapTo[Map[Long, Seq[Utf16Snippet]]]
+  override def highlights(documentSetId: Long, documentIds: immutable.Seq[Long], query: Query) = {
+    messageBroker.ask(DocumentSetReadCommands.Highlights(documentSetId, documentIds, query)).mapTo[Map[Long, immutable.Seq[Utf16Snippet]]]
   }
 }

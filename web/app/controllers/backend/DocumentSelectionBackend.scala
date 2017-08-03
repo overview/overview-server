@@ -58,7 +58,7 @@ class DbDocumentSelectionBackend @Inject() (
   protected lazy val logger = Logger.forClass(getClass)
 
   /** Returns all a DocumentSet's Document IDs, sorted. */
-  private def getSortedIds(documentSet: DocumentSet, sortByMetadataField: Option[String], onProgress: Double => Unit): Future[(Array[Long],List[SelectionWarning])] = {
+  private def getSortedIds(documentSet: DocumentSet, sortByMetadataField: Option[String], onProgress: Double => Unit): Future[(immutable.Seq[Long],List[SelectionWarning])] = {
     logger.logExecutionTimeAsync("fetching sorted document IDs [docset {}, field {}]", documentSet.id, sortByMetadataField) {
       sortByMetadataField match {
         case None => getDefaultSortedIds(documentSet.id).map(ids => (ids, Nil))
@@ -72,17 +72,17 @@ class DbDocumentSelectionBackend @Inject() (
             .run()(materializer)
             .map(_ match {
               case None => throw new Exception("Sort failed. Look for earlier error messages.")
-              case Some(ids) => (ids.toDocumentIdArray, Nil)
+              case Some(ids) => (ids.toDocumentIds, Nil)
             })
         }
       }
     }
   }
 
-  private def getDefaultSortedIds(documentSetId: Long): Future[Array[Long]] = {
+  private def getDefaultSortedIds(documentSetId: Long): Future[immutable.Seq[Long]] = {
     // The ORM is unaware of DocumentSet.sortedDocumentIds
     val q = sql"SELECT sorted_document_ids FROM document_set WHERE id = ${documentSetId}".as[Seq[Long]]
-    database.option(q).map(_.map(_.toArray).getOrElse(Array.empty))
+    database.option(q).map(_.map(_.toVector).getOrElse(Vector.empty))
   }
 
   private def queryMetadataFieldNames(query: SearchQuery): immutable.Set[String] = {
@@ -159,7 +159,7 @@ class DbDocumentSelectionBackend @Inject() (
         } yield {
           logger.logExecutionTime("filtering sorted document IDs [docset {}]", request.documentSetId) {
             val idsFilter = byQ.intersect(byDb)
-            val sortedIds: Array[Long] = allSortedIds.filter(idsFilter.contains _)
+            val sortedIds: immutable.Seq[Long] = allSortedIds.filter(idsFilter.contains _)
             InMemorySelection(sortedIds, byQWarnings ++ sortWarnings)
           }
         }

@@ -50,7 +50,7 @@ class SorterSpec extends Specification with AwaitMethod {
         )).mapMaterializedValue(_ => Future.unit)),
         _ => ()
       ))
-      result must beEqualTo(Array(3, 0, 1, 4, 2).map(_.toByte))
+      result must beEqualTo(Vector(3, 0, 1, 4, 2))
     }
 
     "delete all temporary files during sort" in new BaseScope {

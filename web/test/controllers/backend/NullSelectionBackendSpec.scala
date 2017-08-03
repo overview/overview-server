@@ -11,7 +11,7 @@ import models.{InMemorySelection,Selection,SelectionRequest,SelectionWarning}
 
 class NullSelectionBackendSpec extends NullBackendSpecification with Mockito {
   trait BaseScope extends NullScope {
-    def resultIds: Array[Long] = Array.empty
+    def resultIds: Vector[Long] = Vector.empty
     def warnings: List[SelectionWarning] = Nil
     val dsBackend = mock[DocumentSelectionBackend]
     val backend = new NullSelectionBackend(dsBackend)
@@ -24,14 +24,14 @@ class NullSelectionBackendSpec extends NullBackendSpecification with Mockito {
   "NullSelectionBackend" should {
     "#create" should {
       trait CreateScope extends BaseScope {
-        lazy val request = SelectionRequest(documentSetId, Seq(), Seq(), Seq(), Seq(), None, None)
+        lazy val request = SelectionRequest(documentSetId, Vector(), Vector(), Vector(), Vector(), None, None)
         def create = await(backend.create(userEmail, request, _ => ()))
         lazy val result = create
       }
 
       "return a Selection with the returned document IDs" in new CreateScope {
-        override def resultIds = Array(1L, 2L, 3L)
-        await(result.getAllDocumentIds) must beEqualTo(Array(1L, 2L, 3L))
+        override def resultIds = Vector(1L, 2L, 3L)
+        await(result.getAllDocumentIds) must beEqualTo(Vector(1L, 2L, 3L))
       }
 
       "return warnings" in new CreateScope {

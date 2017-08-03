@@ -26,15 +26,15 @@ class DocumentSetUserControllerSpec extends ControllerSpecification {
 
   "#index" should {
     trait IndexScope extends BaseScope {
-      mockBackend.index(documentSetId) returns Future.successful(Seq())
+      mockBackend.index(documentSetId) returns Future.successful(Vector())
       mockDocumentSetBackend.show(documentSetId) returns Future.successful(Some(factory.documentSet()))
       lazy val result = controller.index(documentSetId)(fakeAuthorizedRequest)
     }
 
     "set data-emails" in new IndexScope {
-      mockBackend.index(documentSetId) returns Future.successful(Seq(factory.documentSetUser(1L, "user-x@example.org")))
+      mockBackend.index(documentSetId) returns Future.successful(Vector(factory.documentSetUser(1L, "user-x@example.org")))
       h.contentAsString(result)
-      there was one(controller.indexHtml).apply(any, any, Matchers.eq(Seq("user-x@example.org")), any)(any, any, any)
+      there was one(controller.indexHtml).apply(any, any, Matchers.eq(Vector("user-x@example.org")), any)(any, any, any)
     }
 
     "set data-public=true" in new IndexScope {

@@ -3,6 +3,7 @@ package controllers.backend
 import com.google.inject.ImplementedBy
 import java.util.UUID
 import javax.inject.Inject
+import scala.collection.immutable
 import scala.concurrent.Future
 
 import com.overviewdocs.database.Database
@@ -12,7 +13,7 @@ import com.overviewdocs.models.tables.Plugins
 @ImplementedBy(classOf[DbPluginBackend])
 trait PluginBackend {
   /** Lists all Plugins, in alphabetical order. */
-  def index: Future[Seq[Plugin]]
+  def index: Future[immutable.Seq[Plugin]]
 
   /** Creates a Plugin. */
   def create(attributes: Plugin.CreateAttributes): Future[Plugin]

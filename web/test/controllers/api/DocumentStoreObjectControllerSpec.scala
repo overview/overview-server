@@ -1,6 +1,7 @@
 package controllers.api
 
 import play.api.libs.json.{JsNull,JsObject,JsValue,Json}
+import scala.collection.immutable
 import scala.concurrent.Future
 
 import controllers.auth.ApiAuthorizedRequest
@@ -54,7 +55,7 @@ class DocumentStoreObjectControllerSpec extends ApiControllerSpecification {
       }
 
       "create the Store if it does not exist" in new CreateManyScope {
-        mockObjectBackend.createMany(any[Long], any[Seq[DocumentStoreObject]]) returns Future.successful(Seq())
+        mockObjectBackend.createMany(any[Long], any[immutable.Seq[DocumentStoreObject]]) returns Future.successful(Vector())
         status(result)
         there was one(mockStoreBackend).showOrCreate(_request.apiToken.token)
       }
@@ -65,9 +66,9 @@ class DocumentStoreObjectControllerSpec extends ApiControllerSpecification {
           Json.arr(3L, 4L),
           Json.arr(5L, 6L, JsNull)
         )
-        mockObjectBackend.createMany(any[Long], any[Seq[DocumentStoreObject]]) returns Future.successful(Seq())
+        mockObjectBackend.createMany(any[Long], any[immutable.Seq[DocumentStoreObject]]) returns Future.successful(Vector())
         status(result) must beEqualTo(CREATED)
-        there was one(mockObjectBackend).createMany(123L, Seq(
+        there was one(mockObjectBackend).createMany(123L, Vector(
           DocumentStoreObject(1L, 2L, Some(Json.obj("foo" -> "bar"))),
           DocumentStoreObject(3L, 4L, None),
           DocumentStoreObject(5L, 6L, None)
@@ -75,7 +76,7 @@ class DocumentStoreObjectControllerSpec extends ApiControllerSpecification {
       }
 
       "return a JSON Array of Arrays" in new CreateManyScope {
-        mockObjectBackend.createMany(any[Long], any[Seq[DocumentStoreObject]]) returns Future.successful(Seq(
+        mockObjectBackend.createMany(any[Long], any[immutable.Seq[DocumentStoreObject]]) returns Future.successful(Vector(
           DocumentStoreObject(1L, 2L, Some(Json.obj("foo" -> "bar"))),
           DocumentStoreObject(3L, 4L, None),
           DocumentStoreObject(5L, 6L, Some(Json.obj("bar" -> "baz")))
@@ -102,7 +103,7 @@ class DocumentStoreObjectControllerSpec extends ApiControllerSpecification {
         val body: JsValue = Json.arr()
         override lazy val result = controller.destroyMany(fakeJsonRequest(body))
         mockStoreBackend.showOrCreate(any) returns Future.successful(Store(123L, "foobar", Json.obj()))
-        mockObjectBackend.destroyMany(any[Long], any[Seq[(Long,Long)]]) returns Future.unit
+        mockObjectBackend.destroyMany(any[Long], any[immutable.Seq[(Long,Long)]]) returns Future.unit
       }
 
       "pass the correct body to backend.destroyMany" in new DestroyManyScope {
@@ -111,7 +112,7 @@ class DocumentStoreObjectControllerSpec extends ApiControllerSpecification {
           Json.arr(3L, 4L)
         )
         status(result) must beEqualTo(NO_CONTENT)
-        there was one(mockObjectBackend).destroyMany(123L, Seq(1L -> 2L, 3L -> 4L))
+        there was one(mockObjectBackend).destroyMany(123L, Vector(1L -> 2L, 3L -> 4L))
       }
 
       "error on invalid JSON input" in new DestroyManyScope {

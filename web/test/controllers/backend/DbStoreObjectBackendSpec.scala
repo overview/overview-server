@@ -38,7 +38,7 @@ class DbStoreObjectBackendSpec extends DbBackendSpecification {
 
         val ret = await(backend.index(store.id))
         ret.length must beEqualTo(2)
-        ret.map(_.id) must containTheSameElementsAs(Seq(so1.id, so2.id))
+        ret.map(_.id) must containTheSameElementsAs(Vector(so1.id, so2.id))
       }
 
       "filter by indexedLong" in new IndexScope {
@@ -144,17 +144,17 @@ class DbStoreObjectBackendSpec extends DbBackendSpecification {
           json=Json.obj("bar" -> "baz")
         )
 
-        val attributesSeq = Seq(attrs1, attrs2)
+        val attributesSeq = Vector(attrs1, attrs2)
 
         def createMany = await(backend.createMany(store.id, attributesSeq))
         lazy val storeObjects = createMany
       }
 
       "return StoreObjects" in new CreateManyScope {
-        storeObjects.map(_.storeId) must beEqualTo(Seq(store.id, store.id))
-        storeObjects.map(_.indexedLong) must beEqualTo(Seq(Some(1L), Some(2L)))
-        storeObjects.map(_.indexedString) must beEqualTo(Seq(Some("foo"), Some("bar")))
-        storeObjects.map(_.json) must beEqualTo(Seq(Json.obj("foo" -> "bar"), Json.obj("bar" -> "baz")))
+        storeObjects.map(_.storeId) must beEqualTo(Vector(store.id, store.id))
+        storeObjects.map(_.indexedLong) must beEqualTo(Vector(Some(1L), Some(2L)))
+        storeObjects.map(_.indexedString) must beEqualTo(Vector(Some("foo"), Some("bar")))
+        storeObjects.map(_.json) must beEqualTo(Vector(Json.obj("foo" -> "bar"), Json.obj("bar" -> "baz")))
       }
 
       "write the StoreObjects to the database" in new CreateManyScope {
@@ -172,8 +172,8 @@ class DbStoreObjectBackendSpec extends DbBackendSpecification {
       }
 
       "work with an empty list" in new CreateManyScope {
-        override val attributesSeq = Seq()
-        storeObjects must beEqualTo(Seq())
+        override val attributesSeq = Vector()
+        storeObjects must beEqualTo(Vector())
       }
     }
 
@@ -266,7 +266,7 @@ class DbStoreObjectBackendSpec extends DbBackendSpecification {
         val obj1 = factory.storeObject(storeId=store.id)
         val obj2 = factory.storeObject(storeId=store.id)
 
-        def destroyMany(ids: Long*) = await(backend.destroyMany(store.id, ids.toSeq))
+        def destroyMany(ids: Long*) = await(backend.destroyMany(store.id, ids.toIndexedSeq))
       }
 
       "delete StoreObjects from the database" in new DestroyManyScope {

@@ -46,13 +46,13 @@ class DocumentSetExportControllerSpec extends ControllerSpecification {
       val doc2 = factory.document(id=2L, suppliedId="22", title="doc2", text="text2", url=None)
 
       override def selection = InMemorySelection(Array(1L, 2L))
-      mockDocumentBackend.index(any, any) returns Future.successful(Seq(doc1, doc2))
+      mockDocumentBackend.index(any, any) returns Future.successful(Vector(doc1, doc2))
       mockDocumentTagBackend.indexMany(any) returns Future.successful(Map(
-        1L -> Seq(5L, 6L),
-        2L -> Seq(5L)
+        1L -> Vector(5L, 6L),
+        2L -> Vector(5L)
       ))
 
-      val tags = Seq(
+      val tags = Vector(
         factory.tag(id=5L, name="tag five"),
         factory.tag(id=6L, name="tag six"),
         factory.tag(id=7L, name="tag seven")

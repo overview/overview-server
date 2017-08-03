@@ -4,6 +4,7 @@ import com.google.inject.ImplementedBy
 import java.util.UUID
 import javax.inject.Inject
 import org.postgresql.PGConnection
+import scala.collection.immutable
 import scala.concurrent.Future
 
 import com.overviewdocs.database.Database
@@ -15,7 +16,7 @@ import com.overviewdocs.models.tables.GroupedFileUploads
 trait GroupedFileUploadBackend extends Backend {
   /** Lists GroupedFileUploads in a FileGroup.
     */
-  def index(fileGroupId: Long): Future[Seq[GroupedFileUpload]]
+  def index(fileGroupId: Long): Future[immutable.Seq[GroupedFileUpload]]
 
   /** Finds or creates a GroupedFileUpload.
     *

@@ -17,7 +17,7 @@ class TagControllerSpec extends ApiControllerSpecification {
   "index" should {
     trait IndexScope extends BaseScope {
       val documentSetId = 1L
-      def tags: Seq[Tag] = Seq()
+      def tags: Vector[Tag] = Vector()
       mockBackend.index(1L) returns Future(tags) // async, so we get overrides
       override lazy val action = controller.index(documentSetId)
     }
@@ -28,12 +28,12 @@ class TagControllerSpec extends ApiControllerSpecification {
     }
 
     "return an empty Array when there are no tags" in new IndexScope {
-      override def tags = Seq()
+      override def tags = Vector()
       contentAsString(result) must beEqualTo("[]")
     }
 
     "return some Tags when there are Tags" in new IndexScope {
-      override def tags = Seq(
+      override def tags = Vector(
         factory.tag(id=1L, name="foo", color="123456"),
         factory.tag(id=2L, name="bar", color="234567")
       )

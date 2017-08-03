@@ -57,7 +57,7 @@ class DocumentSetControllerSpec extends ApiControllerSpecification {
         beLike[DocumentSet.CreateAttributes] { case attributes =>
           val expect = DocumentSet.CreateAttributes(
             title="foo-title",
-            metadataSchema=MetadataSchema(1, Seq(
+            metadataSchema=MetadataSchema(1, Vector(
               MetadataField("foo", MetadataFieldType.String, MetadataFieldDisplay.TextInput),
               MetadataField("bar", MetadataFieldType.String, MetadataFieldDisplay.Div),
             ))

@@ -5,7 +5,7 @@ import models.pagination.Page
 
 class indexSpec extends views.ViewSpecification {
   trait BaseScope extends HtmlViewSpecificationScope {
-    def documentSets: Seq[(DocumentSet,Set[ImportJob],Int)] = Seq()
+    def documentSets: Vector[(DocumentSet,Set[ImportJob],Int)] = Vector()
     def documentSetsPage = Page(documentSets)
 
     val assets = mock[controllers.AssetsFinder]
@@ -21,12 +21,12 @@ class indexSpec extends views.ViewSpecification {
     }
 
     "show DocumentSets if there are some" in new BaseScope {
-      override def documentSets = Seq((factory.documentSet(), Set(), 1))
+      override def documentSets = Vector((factory.documentSet(), Set(), 1))
       $(".document-sets").length must beEqualTo(1)
     }
 
     "render DocumentSets if there are some" in new BaseScope {
-      override def documentSets = Seq(
+      override def documentSets = Vector(
         (factory.documentSet(id=1, title="title1", query=Some("query1")), Set(), 1),
         (factory.documentSet(id=2, title="title2", query=Some("query2")), Set(), 1)
       )
@@ -36,7 +36,7 @@ class indexSpec extends views.ViewSpecification {
     }
     
     "define error-list popup if there are DocumentSets" in new BaseScope {
-      override def documentSets = Seq(
+      override def documentSets = Vector(
         (factory.documentSet(id=1, title="title1", query=Some("query1")), Set(), 1),
         (factory.documentSet(id=2, title="title2", query=Some("query2")), Set(), 1)
       )

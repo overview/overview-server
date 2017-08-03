@@ -29,7 +29,7 @@ class TagDocumentControllerSpec extends ControllerSpecification with JsonMatcher
   "#count" should {
     trait CountScope extends BaseScope {
       val documentSetId = 1L
-      val formBody: Seq[(String,String)] = Seq()
+      val formBody: Vector[(String,String)] = Vector()
       lazy val request = fakeAuthorizedRequest.withFormUrlEncodedBody(formBody: _*)
       lazy val result = controller.count(documentSetId)(request)
 
@@ -49,9 +49,9 @@ class TagDocumentControllerSpec extends ControllerSpecification with JsonMatcher
     }
 
     "Use IDs from a Selection" in new CountScope {
-      override val formBody = Seq("q" -> "moo")
+      override val formBody = Vector("q" -> "moo")
       h.status(result)
-      there was one(mockTagDocumentBackend).count(documentSetId, Seq(2L, 3L, 4L))
+      there was one(mockTagDocumentBackend).count(documentSetId, Vector(2L, 3L, 4L))
     }
   }
 
@@ -59,7 +59,7 @@ class TagDocumentControllerSpec extends ControllerSpecification with JsonMatcher
     trait CreateManyScope extends BaseScope {
       val documentSetId = 1L
       val tagId = 2L
-      val formBody: Seq[(String,String)] = Seq()
+      val formBody: Vector[(String,String)] = Vector()
       lazy val request = fakeAuthorizedRequest.withFormUrlEncodedBody(formBody: _*)
       lazy val result = controller.createMany(documentSetId, tagId)(request)
 
@@ -72,7 +72,7 @@ class TagDocumentControllerSpec extends ControllerSpecification with JsonMatcher
 
     "call tagDocumentBackend.createMany" in new CreateManyScope {
       h.status(result)
-      there was one(mockTagDocumentBackend).createMany(tagId, Seq(2L, 3L, 4L))
+      there was one(mockTagDocumentBackend).createMany(tagId, Vector(2L, 3L, 4L))
     }
   }
 
@@ -80,7 +80,7 @@ class TagDocumentControllerSpec extends ControllerSpecification with JsonMatcher
     trait DestroyManyScope extends BaseScope {
       val documentSetId = 1L
       val tagId = 2L
-      val formBody: Seq[(String,String)] = Seq()
+      val formBody: Vector[(String,String)] = Vector()
       lazy val request = fakeAuthorizedRequest.withFormUrlEncodedBody(formBody: _*)
       lazy val result = controller.destroyMany(documentSetId, tagId)(request)
 
@@ -93,7 +93,7 @@ class TagDocumentControllerSpec extends ControllerSpecification with JsonMatcher
 
     "call tagDocumentBackend.destroyMany" in new DestroyManyScope {
       h.status(result)
-      there was one(mockTagDocumentBackend).destroyMany(tagId, Seq(2L, 3L, 4L))
+      there was one(mockTagDocumentBackend).destroyMany(tagId, Vector(2L, 3L, 4L))
     }
   }
 }

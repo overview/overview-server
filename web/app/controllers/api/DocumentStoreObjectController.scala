@@ -3,6 +3,7 @@ package controllers.api
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext.Implicits.global
 import play.api.libs.json.{JsArray,JsNull,JsObject,JsNumber,JsPath,JsSuccess,JsValue,Json,Reads}
+import scala.collection.immutable
 import scala.concurrent.Future
 
 import controllers.auth.Authorities.anyUser
@@ -52,7 +53,7 @@ class DocumentStoreObjectController @Inject() (
 
     def formatCounts(counts: Map[Long,Int]): JsValue = {
       def tupleToValue(tuple: Tuple2[Long,Int]): Tuple2[String,JsValue] = (tuple._1.toString -> JsNumber(tuple._2))
-      val values: Seq[(String,JsValue)] = counts.toSeq.map(tupleToValue _)
+      val values: immutable.Seq[(String,JsValue)] = counts.toIndexedSeq.map(tupleToValue _)
       JsObject(values)
     }
 
@@ -98,17 +99,17 @@ object DocumentStoreObjectController {
     (JsPath(0).read[Long] and JsPath(1).read[Long]).tupled
   }
 
-  private lazy val createArgsReader: Reads[Array[DocumentStoreObject]] = {
+  private lazy val createArgsReader: Reads[immutable.Seq[DocumentStoreObject]] = {
     implicit val x = createArgReader
-    Reads.ArrayReads[DocumentStoreObject]
+    Reads.ArrayReads[DocumentStoreObject].map(_.toVector)
   }
 
-  private lazy val destroyArgsReader: Reads[Array[Tuple2[Long,Long]]] = {
+  private lazy val destroyArgsReader: Reads[immutable.Seq[Tuple2[Long,Long]]] = {
     implicit val x = destroyArgReader
-    Reads.ArrayReads[Tuple2[Long,Long]]
+    Reads.ArrayReads[Tuple2[Long,Long]].map(_.toVector)
   }
 
-  private def writeCreateResults(results: Seq[DocumentStoreObject]) = {
+  private def writeCreateResults(results: immutable.Seq[DocumentStoreObject]) = {
     def one(dvo: DocumentStoreObject) = dvo.json match {
       case Some(json) => Json.arr(dvo.documentId, dvo.storeObjectId, json)
       case None => Json.arr(dvo.documentId, dvo.storeObjectId)

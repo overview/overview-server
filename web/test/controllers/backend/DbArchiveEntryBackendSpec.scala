@@ -20,13 +20,13 @@ class DbArchiveEntryBackendSpec extends DbBackendSpecification with Mockito {
       val documentSet1 = factory.documentSet()
       val documentSet2 = factory.documentSet()
       val document = factory.document(documentSetId=documentSet2.id)
-      await(backend.showMany(documentSet1.id, Seq(document.id))) must beEmpty
+      await(backend.showMany(documentSet1.id, Vector(document.id))) must beEmpty
     }
 
     "show a text document" in new BaseScope {
       val documentSet = factory.documentSet()
       val document = factory.document(documentSetId=documentSet.id, title="foo.txt", text="foobar")
-      await(backend.showMany(documentSet.id, Seq(document.id))) must beEqualTo(Seq(
+      await(backend.showMany(documentSet.id, Vector(document.id))) must beEqualTo(Vector(
         ArchiveEntry(document.id, "foo.txt".getBytes("utf-8"), 6)
       ))
     }
@@ -34,7 +34,7 @@ class DbArchiveEntryBackendSpec extends DbBackendSpecification with Mockito {
     "add a .txt extension to a document title" in new BaseScope {
       val documentSet = factory.documentSet()
       val document = factory.document(documentSetId=documentSet.id, title="foo.c", text="foobar")
-      await(backend.showMany(documentSet.id, Seq(document.id))) must beEqualTo(Seq(
+      await(backend.showMany(documentSet.id, Vector(document.id))) must beEqualTo(Vector(
         ArchiveEntry(document.id, "foo.txt".getBytes("utf-8"), 6)
       ))
     }
@@ -43,7 +43,7 @@ class DbArchiveEntryBackendSpec extends DbBackendSpecification with Mockito {
       val documentSet = factory.documentSet()
       val file = factory.file(viewSize=123L)
       val document = factory.document(documentSetId=documentSet.id, title="foo.c", text="foobar", fileId=Some(file.id))
-      await(backend.showMany(documentSet.id, Seq(document.id))) must beEqualTo(Seq(
+      await(backend.showMany(documentSet.id, Vector(document.id))) must beEqualTo(Vector(
         ArchiveEntry(document.id, "foo.pdf".getBytes("utf-8"), 123)
       ))
     }
@@ -53,7 +53,7 @@ class DbArchiveEntryBackendSpec extends DbBackendSpecification with Mockito {
       val file = factory.file(viewSize=123L)
       val page = factory.page(fileId=file.id, pageNumber=2, dataSize=234L)
       val document = factory.document(documentSetId=documentSet.id, title="foo.c", text="foobar", fileId=Some(file.id), pageNumber=Some(2), pageId=Some(page.id))
-      await(backend.showMany(documentSet.id, Seq(document.id))) must beEqualTo(Seq(
+      await(backend.showMany(documentSet.id, Vector(document.id))) must beEqualTo(Vector(
         ArchiveEntry(document.id, "foo-p2.pdf".getBytes("utf-8"), 234)
       ))
     }

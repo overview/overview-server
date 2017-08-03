@@ -39,8 +39,8 @@ class DocumentSetArchiveControllerSpec extends ControllerSpecification with Mock
   "DocumentSetArchiveController" should {
     "stream an archive" in new BaseScope {
       val mockArchive = smartMock[ZipArchive]
-      val entries = Seq(ArchiveEntry(2L, "foo".getBytes("ascii"), 123L))
-      mockArchiveEntryBackend.showMany(1L, Seq(2L)) returns Future.successful(entries)
+      val entries = Vector(ArchiveEntry(2L, "foo".getBytes("ascii"), 123L))
+      mockArchiveEntryBackend.showMany(1L, Vector(2L)) returns Future.successful(entries)
       mockArchiveFactory.createZip(1L, entries) returns Right(mockArchive)
       mockArchive.size returns 6L
       mockArchive.stream returns Source.single(ByteString("abcdef".getBytes("ascii")))
@@ -52,8 +52,8 @@ class DocumentSetArchiveControllerSpec extends ControllerSpecification with Mock
     }
 
     "redirect with flash if unable to create an archive" in new BaseScope {
-      val entries = Seq(ArchiveEntry(2L, "foo".getBytes("ascii"), 123L))
-      mockArchiveEntryBackend.showMany(1L, Seq(2L)) returns Future.successful(entries)
+      val entries = Vector(ArchiveEntry(2L, "foo".getBytes("ascii"), 123L))
+      mockArchiveEntryBackend.showMany(1L, Vector(2L)) returns Future.successful(entries)
       mockArchiveFactory.createZip(1L, entries) returns Left("nope")
       val result = controller.archive(1L, "filename.zip")(fakeAuthorizedRequest)
       h.status(result) must beEqualTo(h.SEE_OTHER)
@@ -63,7 +63,7 @@ class DocumentSetArchiveControllerSpec extends ControllerSpecification with Mock
     "fail fast with >65535 files" in new BaseScope {
       // Errors normally come from ArchiveFactory. But we can take a shortcut
       // to avoid an expensive query.
-      override def selection = InMemorySelection(Seq.tabulate(65536)(_.toLong).toArray)
+      override def selection = InMemorySelection(Vector.tabulate(65536)(_.toLong).toArray)
       val result = controller.archive(1L, "filename.zip")(fakeAuthorizedRequest)
       h.status(result) must beEqualTo(h.SEE_OTHER)
       h.flash(result).data must contain("warning" -> "controllers.DocumentSetArchiveController.tooManyEntries")

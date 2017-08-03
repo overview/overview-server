@@ -7,7 +7,7 @@ import play.api.libs.json.{JsArray,JsBoolean,JsNull,JsObject,JsNumber,JsString,J
 
 class MetadataSpec extends Specification {
   trait BaseScope extends Scope {
-    val schema = MetadataSchema(1, Seq(MetadataField("foo", MetadataFieldType.String)))
+    val schema = MetadataSchema(1, Vector(MetadataField("foo", MetadataFieldType.String)))
     val json: JsObject = Json.obj()
     lazy val metadata = Metadata(schema, json)
   }
@@ -41,7 +41,7 @@ class MetadataSpec extends Specification {
 
     trait CastStringScope extends Scope {
       def test(jsValue: JsValue, output: String) = {
-        val schema = MetadataSchema(1, Seq(MetadataField("foo", MetadataFieldType.String)))
+        val schema = MetadataSchema(1, Vector(MetadataField("foo", MetadataFieldType.String)))
         lazy val metadata = Metadata(schema, Json.obj("foo" -> jsValue))
         metadata.getString("foo") must beEqualTo(output)
       }

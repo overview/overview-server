@@ -47,7 +47,7 @@ class MassUploadControllerSpec extends ApiControllerSpecification {
       val upload2 = factory.groupedFileUpload(name="bar.pdf", contentType="application/bar", size=30L, uploadedSize=30L, guid=UUID.randomUUID)
 
       mockFileGroupBackend.findOrCreate(any) returns Future.successful(fileGroup)
-      mockUploadBackend.index(any) returns Future.successful(Seq(upload1, upload2))
+      mockUploadBackend.index(any) returns Future.successful(Vector(upload1, upload2))
     }
 
     "return JSON files" in new IndexScope {

@@ -19,7 +19,7 @@ class TagControllerSpec extends ControllerSpecification with JsonMatchers {
   "#create" should {
     trait CreateScope extends BaseScope {
       val documentSetId = 1L
-      val formBody: Seq[(String,String)] = Seq("name" -> "foo", "color" -> "#123abc")
+      val formBody: Vector[(String,String)] = Vector("name" -> "foo", "color" -> "#123abc")
       def request = fakeAuthorizedRequest.withFormUrlEncodedBody(formBody: _*)
       lazy val result = controller.create(documentSetId)(request)
 
@@ -29,13 +29,13 @@ class TagControllerSpec extends ControllerSpecification with JsonMatchers {
     }
 
     "return 400 Bad Request on invaild form body" in new CreateScope {
-      override val formBody = Seq("name" -> "foo", "color" -> "bar")
+      override val formBody = Vector("name" -> "foo", "color" -> "bar")
       h.status(result) must beEqualTo(h.BAD_REQUEST)
       there was no(mockTagBackend).create(any, any)
     }
 
     "create a Tag" in new CreateScope {
-      override val formBody = Seq("name" -> "foo", "color" -> "#123abc")
+      override val formBody = Vector("name" -> "foo", "color" -> "#123abc")
       h.status(result)
       there was one(mockTagBackend).create(documentSetId, Tag.CreateAttributes("foo", "123abc"))
     }
@@ -55,7 +55,7 @@ class TagControllerSpec extends ControllerSpecification with JsonMatchers {
     trait UpdateScope extends BaseScope {
       val documentSetId = 1L
       val tagId = 2L
-      val formBody: Seq[(String,String)] = Seq("name" -> "foo", "color" -> "#123abc")
+      val formBody: Vector[(String,String)] = Vector("name" -> "foo", "color" -> "#123abc")
       def request = fakeAuthorizedRequest.withFormUrlEncodedBody(formBody: _*)
       lazy val result = controller.update(documentSetId, tagId)(request)
 
@@ -63,7 +63,7 @@ class TagControllerSpec extends ControllerSpecification with JsonMatchers {
     }
 
     "return 400 Bad Request on invaild form body" in new UpdateScope {
-      override val formBody = Seq("name" -> "foo", "color" -> "bar")
+      override val formBody = Vector("name" -> "foo", "color" -> "bar")
       h.status(result) must beEqualTo(h.BAD_REQUEST)
       there was no(mockTagBackend).create(any, any)
     }
@@ -74,7 +74,7 @@ class TagControllerSpec extends ControllerSpecification with JsonMatchers {
     }
 
     "update a Tag" in new UpdateScope {
-      override val formBody = Seq("name" -> "foo", "color" -> "#123abc")
+      override val formBody = Vector("name" -> "foo", "color" -> "#123abc")
       h.status(result)
       there was one(mockTagBackend).update(documentSetId, tagId, Tag.UpdateAttributes("foo", "123abc"))
     }
@@ -112,7 +112,7 @@ class TagControllerSpec extends ControllerSpecification with JsonMatchers {
   "indexJson" should {
     class IndexJsonScope extends BaseScope {
       val documentSetId = 1L
-      def tagsWithCounts : Seq[(Tag,Int)] = Seq()
+      def tagsWithCounts : Vector[(Tag,Int)] = Vector()
       mockTagBackend.indexWithCounts(anyInt) answers { (_) => Future.successful(tagsWithCounts) }
       val result = controller.indexJson(documentSetId)(fakeAuthorizedRequest)
     }
@@ -127,7 +127,7 @@ class TagControllerSpec extends ControllerSpecification with JsonMatchers {
     }
 
     "show a full list" in new IndexJsonScope {
-      override def tagsWithCounts = Seq(
+      override def tagsWithCounts = Vector(
         (Tag(documentSetId=documentSetId, id=1, name="tag1", color="111111") -> 5),
         (Tag(documentSetId=documentSetId, id=2, name="tag2", color="222222") -> 10)
       )

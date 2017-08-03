@@ -1,6 +1,7 @@
 package controllers.api
 
 import play.api.libs.json.{Json,JsValue}
+import scala.collection.immutable
 import scala.concurrent.Future
 
 import controllers.backend.{StoreBackend,StoreObjectBackend}
@@ -26,18 +27,18 @@ class StoreObjectControllerSpec extends ApiControllerSpecification {
       }
 
       "return JSON with status code 200" in new IndexScope {
-        mockObjectBackend.index(storeId) returns Future(Seq())
+        mockObjectBackend.index(storeId) returns Future(Vector())
         status(result) must beEqualTo(OK)
         contentType(result) must beSome("application/json")
       }
 
       "return an empty Array when there are no StoreObjects" in new IndexScope {
-        mockObjectBackend.index(storeId) returns Future(Seq())
+        mockObjectBackend.index(storeId) returns Future(Vector())
         contentAsString(result) must beEqualTo("[]")
       }
 
       "return some StoreObjects when there are StoreObjects" in new IndexScope {
-        mockObjectBackend.index(storeId) returns Future(Seq(
+        mockObjectBackend.index(storeId) returns Future(Vector(
           factory.storeObject(id=1L, indexedLong=Some(13L), indexedString=Some("foo")),
           factory.storeObject(id=2L, json=Json.obj("foo" -> "bar"))
         ))
@@ -125,9 +126,9 @@ class StoreObjectControllerSpec extends ApiControllerSpecification {
       }
 
       "create an array of objects" in new CreateManyScope {
-        mockObjectBackend.createMany(any[Long], any[Seq[StoreObject.CreateAttributes]]) returns Future(Seq(factory.storeObject(), factory.storeObject()))
+        mockObjectBackend.createMany(any[Long], any[immutable.Seq[StoreObject.CreateAttributes]]) returns Future(Vector(factory.storeObject(), factory.storeObject()))
         status(result) must beEqualTo(OK)
-        there was one(mockObjectBackend).createMany(storeId, Seq(
+        there was one(mockObjectBackend).createMany(storeId, Vector(
           StoreObject.CreateAttributes(
             indexedLong=Some(1L),
             indexedString=Some("foo"),
@@ -157,7 +158,7 @@ class StoreObjectControllerSpec extends ApiControllerSpecification {
       }
 
       "return the array of JSON objects" in new CreateManyScope {
-        mockObjectBackend.createMany(any[Long], any[Seq[StoreObject.CreateAttributes]]) returns Future(Seq(
+        mockObjectBackend.createMany(any[Long], any[immutable.Seq[StoreObject.CreateAttributes]]) returns Future(Vector(
           factory.storeObject(id=1L, indexedLong=Some(1L)),
           factory.storeObject(indexedString=Some("bar"), json=Json.obj("foo" -> "bar"))
         ))
@@ -254,12 +255,12 @@ class StoreObjectControllerSpec extends ApiControllerSpecification {
 
         val body: JsValue = Json.arr(2L, 3L, 4L)
         override lazy val result = controller.destroyMany()(fakeJsonRequest(body))
-        mockObjectBackend.destroyMany(any[Long], any[Seq[Long]]) returns Future.unit
+        mockObjectBackend.destroyMany(any[Long], any[immutable.Seq[Long]]) returns Future.unit
       }
 
       "destroy the objects" in new DestroyManyScope {
         status(result) must beEqualTo(NO_CONTENT)
-        there was one(mockObjectBackend).destroyMany(storeId, Seq(2L, 3L, 4L))
+        there was one(mockObjectBackend).destroyMany(storeId, Vector(2L, 3L, 4L))
       }
 
       "error on invalid input" in new DestroyManyScope {

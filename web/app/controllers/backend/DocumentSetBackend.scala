@@ -2,6 +2,7 @@ package controllers.backend
 
 import com.google.inject.ImplementedBy
 import javax.inject.Inject
+import scala.collection.immutable
 import scala.concurrent.Future
 
 import com.overviewdocs.database.Database
@@ -50,13 +51,13 @@ trait DocumentSetBackend {
     *
     * DocumentSets for which the User is an Owner will not be returned.
     */
-  def indexByViewerEmail(email: String): Future[Seq[(DocumentSet,String)]]
+  def indexByViewerEmail(email: String): Future[immutable.Seq[(DocumentSet,String)]]
 
   /** Finds all public DocumentSets, with their owners.
     *
     * The DocumentSets will be sorted by createdAt, newest to oldest.
     */
-  def indexPublic: Future[Seq[(DocumentSet,String)]]
+  def indexPublic: Future[immutable.Seq[(DocumentSet,String)]]
 
   /** Returns a single DocumentSet. */
   def show(documentSetId: Long): Future[Option[DocumentSet]]

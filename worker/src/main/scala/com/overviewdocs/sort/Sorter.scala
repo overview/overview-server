@@ -1,6 +1,7 @@
 package com.overviewdocs.sort
 
 import akka.stream.Materializer
+import scala.collection.immutable
 import scala.concurrent.{ExecutionContext,Future}
 
 /** Sort large collections of Records, with progress reporting.
@@ -26,7 +27,7 @@ class Sorter(val config: SortConfig) {
   def sortIds(
     recordSource: RecordSource,
     onProgress: Double => Unit
-  )(implicit mat: Materializer, blockingEc: ExecutionContext): Future[Array[Int]] = {
+  )(implicit mat: Materializer, blockingEc: ExecutionContext): Future[immutable.Seq[Int]] = {
     var lastReadPassProgress: Double = 0.0
 
     def onProgressReadPass(nRead: Int, nBytesRead: Long): Unit = {
@@ -66,7 +67,7 @@ class Sorter(val config: SortConfig) {
         onProgressMergePass, 
         config.mergeNRecordsPerProgressCall
       )
-      Steps.recordSourceToIdArray(mergedRecords)
+      Steps.recordSourceToIds(mergedRecords)
     }
   }
 }

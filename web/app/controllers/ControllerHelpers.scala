@@ -3,6 +3,7 @@ package controllers
 import java.util.UUID
 import play.api.libs.json.JsValue
 import play.api.mvc.{AnyContent,Request,RequestHeader}
+import scala.collection.immutable
 import scala.util.control.Exception.catching
 
 import models.pagination.PageRequest
@@ -111,7 +112,7 @@ trait ControllerHelpers {
     /** Returns a Seq[Long] if key is set to something like "1,2,3"; returns
       * an empty Seq otherwise.
       */
-    def getLongs(key: String): Seq[Long] = {
+    def getLongs(key: String): immutable.Seq[Long] = {
       val s = data.get(key).flatMap(_.headOption).getOrElse("")
       IdList.longs(s).ids
     }

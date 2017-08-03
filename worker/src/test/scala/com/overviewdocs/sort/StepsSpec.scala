@@ -287,8 +287,8 @@ class StepsSpec extends Specification with AwaitMethod {
             Record(0, 0, Array.empty)
           )).mapMaterializedValue(_ => Future.unit)
         )
-        val ret = await(Steps.recordSourceToIdArray(recordSource))
-        ret.toSeq must beEqualTo(Seq(2, 1, 3, 0))
+        val ret = await(Steps.recordSourceToIds(recordSource))
+        ret must beEqualTo(Vector(2, 1, 3, 0))
       }
     }
 

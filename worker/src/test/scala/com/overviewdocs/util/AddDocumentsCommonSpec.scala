@@ -140,7 +140,7 @@ class AddDocumentsCommonSpec extends DbSpecification with Mockito {
     }
 
     def createDocumentIdList(documentSetId: Long, fieldName: String): Unit = {
-      val ret = DocumentIdList(1L, documentSetId.toInt, fieldName, Array(1, 2, 3))
+      val ret = DocumentIdList(1L, documentSetId.toInt, fieldName, Vector(1, 2, 3))
       blockingDatabase.run((DocumentIdLists returning DocumentIdLists).+=(ret))
     }
 

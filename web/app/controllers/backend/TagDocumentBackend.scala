@@ -2,6 +2,7 @@ package controllers.backend
 
 import com.google.inject.ImplementedBy
 import javax.inject.Inject
+import scala.collection.immutable
 import scala.concurrent.Future
 
 import com.overviewdocs.database.Database
@@ -15,7 +16,7 @@ trait TagDocumentBackend extends Backend {
     * @param documentSetId Document set ID.
     * @param documentIds Documents to check for tags.
     */
-  def count(documentSetId: Long, documentIds: Seq[Long]): Future[Map[Long,Int]]
+  def count(documentSetId: Long, documentIds: immutable.Seq[Long]): Future[Map[Long,Int]]
 
   /** Create many DocumentTag objects, one per documentId.
     *
@@ -24,14 +25,14 @@ trait TagDocumentBackend extends Backend {
     *
     * Duplicate objects will be ignored.
     */
-  def createMany(tagId: Long, documentIds: Seq[Long]): Future[Unit]
+  def createMany(tagId: Long, documentIds: immutable.Seq[Long]): Future[Unit]
 
   /** Destroy many DocumentTag objects, one per documentId.
     *
     * The caller must ensure the tagId and documentIds belong to the same
     * document set.
     */
-  def destroyMany(tagId: Long, documentIds: Seq[Long]): Future[Unit]
+  def destroyMany(tagId: Long, documentIds: immutable.Seq[Long]): Future[Unit]
 
   /** Destroy all DocumentTag objects belonging to the specified Tag.
     */
@@ -47,7 +48,7 @@ class DbTagDocumentBackend @Inject() (
   import com.overviewdocs.database.Slick.SimpleArrayJdbcType
   implicit val longSeqMapper = new SimpleArrayJdbcType[Long]("int8")
 
-  override def count(documentSetId: Long, documentIds: Seq[Long]) = {
+  override def count(documentSetId: Long, documentIds: immutable.Seq[Long]) = {
     if (documentIds.nonEmpty) {
       database.run(sql"""
         WITH
@@ -65,7 +66,7 @@ class DbTagDocumentBackend @Inject() (
     }
   }
 
-  override def createMany(tagId: Long, documentIds: Seq[Long]) = {
+  override def createMany(tagId: Long, documentIds: immutable.Seq[Long]) = {
     if (documentIds.nonEmpty) {
       val idValues = documentIds.map(long => s"($long)")
       database.runUnit(sqlu"""
@@ -92,7 +93,7 @@ class DbTagDocumentBackend @Inject() (
     }
   }
 
-  override def destroyMany(tagId: Long, documentIds: Seq[Long]) = {
+  override def destroyMany(tagId: Long, documentIds: immutable.Seq[Long]) = {
     if (documentIds.nonEmpty) {
       val idValues = documentIds.map(long => s"($long)")
       database.runUnit(sqlu"""
