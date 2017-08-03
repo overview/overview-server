@@ -3,7 +3,7 @@ package controllers.backend
 import akka.stream.scaladsl.Sink
 import akka.stream.Materializer
 import com.google.inject.ImplementedBy
-import com.google.re2j.Pattern
+import com.google.re2j.{Pattern,PatternSyntaxException}
 import javax.inject.Inject
 import play.api.libs.json.JsObject
 import scala.collection.{immutable,mutable}
@@ -12,7 +12,7 @@ import scala.concurrent.ExecutionContext.Implicits._ // TODO use another context
 
 import com.overviewdocs.database.Database
 import com.overviewdocs.models.{DocumentIdFilter,DocumentIdSet,DocumentSet,Document}
-import com.overviewdocs.query.{Field,Query=>SearchQuery} // conflicts with SQL Query
+import com.overviewdocs.query.{Field,Query=>SearchQuery,AndQuery,OrQuery,NotQuery,RegexQuery} // "Query" conflicts with SQL Query
 import com.overviewdocs.searchindex.SearchResult
 import com.overviewdocs.util.Logger
 import models.{InMemorySelection,SelectionRequest,SelectionWarning}
@@ -40,9 +40,64 @@ object DocumentSelectionBackend {
     negated: Boolean
   ) {
     def matches(document: Document): Boolean = ???
+
+    override def equals(other: Any): Boolean = other match {
+      case RegexSearchRule(otherField, otherPattern, otherNegated) => {
+        field == otherField && pattern.toString == otherPattern.toString && negated == otherNegated
+      }
+      case _ => false
+    }
   }
 
-  protected[backend] def queryToRegexSearchRules(query: SearchQuery): (immutable.Seq[RegexSearchRule], List[SelectionWarning]) = ???
+  private def parseRegex(query: RegexQuery, negated: Boolean): Either[SelectionWarning,RegexSearchRule] = {
+    try {
+      Right(RegexSearchRule(query.field, Pattern.compile(query.regex), negated))
+    } catch {
+      case ex: PatternSyntaxException => {
+        Left(SelectionWarning.RegexSyntaxError(query.regex, ex.getDescription, ex.getIndex))
+      }
+    }
+  }
+
+  private def queryToSearchRuleEithersInner(query: SearchQuery): immutable.Seq[Either[SelectionWarning,RegexSearchRule]] = {
+    // Generates a warning for every regex query (Overview doesn't handle
+    // nested regex queries)
+    query match {
+      case RegexQuery(_, regex) => List(Left(SelectionWarning.NestedRegexIgnored(regex)))
+      case NotQuery(q) => queryToSearchRuleEithersInner(q)
+      case AndQuery(children) => {
+        children.flatMap(queryToSearchRuleEithersOuter _)
+      }
+      case OrQuery(children) => {
+        children.flatMap(queryToSearchRuleEithersOuter _)
+      }
+      case _ => Nil
+    }
+  }
+
+  private def queryToSearchRuleEithersOuter(query: SearchQuery): immutable.Seq[Either[SelectionWarning,RegexSearchRule]] = {
+    query match {
+      case rq: RegexQuery => {
+        List(parseRegex(rq, false))
+      }
+      case NotQuery(rq: RegexQuery) => {
+        List(parseRegex(rq, true))
+      }
+      case AndQuery(children) => {
+        children.flatMap(queryToSearchRuleEithersOuter _)
+      }
+      case OrQuery(children) => {
+        children.flatMap(queryToSearchRuleEithersInner _)
+      }
+      case NotQuery(q) => queryToSearchRuleEithersInner(q)
+      case _ => Nil
+    }
+  }
+
+  protected[backend] def queryToRegexSearchRules(query: SearchQuery): (immutable.Seq[RegexSearchRule], List[SelectionWarning]) = {
+    val eithers = queryToSearchRuleEithersOuter(query)
+    (eithers.flatMap(_.right.toOption).toVector, eithers.flatMap(_.left.toOption).toList)
+  }
 }
 
 class DbDocumentSelectionBackend @Inject() (
