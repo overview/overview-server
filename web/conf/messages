@@ -528,6 +528,10 @@ views.Tree.show.DocumentList.warning.TooManyExpansions=This list may be incomple
 views.Tree.show.DocumentList.warning.TooMuchFuzz=This list may be incomplete. “{0}:{1}” has too great a distance to search; we limited the distance to {2}.
 views.Tree.show.DocumentList.warning.IndexDoesNotExist=We’re updating our search feature, and your document set is unavailable. Please wait five minutes and try again.
 views.Tree.show.DocumentList.warning.MissingField=There is no “{0}” field. Either create it or search the following fields, capitalized correctly:
+views.Tree.show.DocumentList.warning.RegexSyntaxError=Overview ignored your regular expression, “{0}”, because of a syntax error: {1}.
+views.Tree.show.DocumentList.warning.RegexSyntaxError.help_html=<a target="_blank" href="https://github.com/google/re2/wiki/Syntax">syntax cheat sheet</a>
+views.Tree.show.DocumentList.warning.NestedRegexIgnored=Overview assumed all documents match your regular expression, “{0}”, because the surrounding search is too complex. Rewrite your search so the regular expression is outside any OR or NOT(AND(...)) clauses.
+views.Tree.show.DocumentList.warning.RegexLimited=This list may be missing documents. Regular-expression searching is slow, so Overview only scanned {1,number,integer} documents instead of {0,number,integer}. You may be able to AND your query with plain search terms to overcome this restriction.
 
 views.Tree.show.DocumentListCursor.position_html=Document <strong>{0,number,integer}</strong> of <strong>{1,number,integer}</strong>
 views.Tree.show.DocumentListCursor.backToList=Back to list

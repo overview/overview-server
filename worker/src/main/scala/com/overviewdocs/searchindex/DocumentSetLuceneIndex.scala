@@ -164,11 +164,11 @@ class DocumentSetLuceneIndex(val documentSetId: Long, val directory: Directory, 
   private val titleField = new LuceneField("title", "", textFieldType(false))
   private val textField = new LuceneField("text", "", textFieldType(true))
 
-  private def deleteDocumentsWithIds(ids: Iterable[Long]): Unit = {
+  private def deleteDocumentsWithIds(ids: immutable.Seq[Long]): Unit = {
     indexWriter.deleteDocuments(luceneQueryDocumentsWithOverviewIds(ids))
   }
 
-  def updateDocuments(documents: Iterable[Document]): Unit = synchronized {
+  def updateDocuments(documents: immutable.Seq[Document]): Unit = synchronized {
     deleteDocumentsWithIds(documents.map(_.id))
     addDocuments(documents)
   }
@@ -219,7 +219,7 @@ class DocumentSetLuceneIndex(val documentSetId: Long, val directory: Directory, 
     })
   }
 
-  private def luceneQueryDocumentsWithOverviewIds(documentIds: Iterable[Long]): LuceneQuery = {
+  private def luceneQueryDocumentsWithOverviewIds(documentIds: immutable.Seq[Long]): LuceneQuery = {
     val ids = documentIds.toArray
     if (ids.isEmpty) {
       return new MatchNoDocsQuery("Nil documentIds query")
@@ -241,8 +241,8 @@ class DocumentSetLuceneIndex(val documentSetId: Long, val directory: Directory, 
     new ConstantScoreQuery(builder.build)
   }
 
-  private def searchForLuceneIds(documentIds: Seq[Long]): Seq[(Long,Int)] = {
-    if (documentIds.isEmpty) return Seq.empty
+  private def searchForLuceneIds(documentIds: immutable.Seq[Long]): immutable.Seq[(Long,Int)] = {
+    if (documentIds.isEmpty) return immutable.Seq.empty
 
     val query: LuceneQuery = luceneQueryDocumentsWithOverviewIds(documentIds)
 
@@ -267,7 +267,7 @@ class DocumentSetLuceneIndex(val documentSetId: Long, val directory: Directory, 
       }
     })
 
-    ret
+    ret.toIndexedSeq
   }
 
   def searchForIds(query: Query): SearchResult = synchronized {
@@ -299,19 +299,19 @@ class DocumentSetLuceneIndex(val documentSetId: Long, val directory: Directory, 
     )
   }
 
-  def highlight(documentId: Long, query: Query): Seq[Utf16Highlight] = synchronized {
-    if (!indexExists) return Seq.empty
+  def highlight(documentId: Long, query: Query): immutable.Seq[Utf16Highlight] = synchronized {
+    if (!indexExists) return immutable.Seq.empty
 
     val (luceneQuery, warnings) = queryToLuceneQuery(query)
 
     val highlighter = new LuceneSingleDocumentHighlighter(indexSearcher, analyzer)
-    searchForLuceneIds(Seq(documentId))
+    searchForLuceneIds(List(documentId))
       .flatMap({ case (_, luceneId) =>
         highlighter.highlightFieldAsHighlights("text", luceneQuery, luceneId)
       })
   }
 
-  def highlights(documentIds: Seq[Long], query: Query): Map[Long,Seq[Utf16Snippet]] = synchronized {
+  def highlights(documentIds: immutable.Seq[Long], query: Query): Map[Long,immutable.Seq[Utf16Snippet]] = synchronized {
     if (!indexExists) return Map.empty
 
     val (luceneQuery, warnings) = queryToLuceneQuery(query)
@@ -321,7 +321,7 @@ class DocumentSetLuceneIndex(val documentSetId: Long, val directory: Directory, 
     searchForLuceneIds(documentIds)
       .map({ case (overviewId, luceneId) =>
         val utf16Snippets: Array[Utf16Snippet] = highlighter.highlightFieldAsSnippets("text", luceneQuery, luceneId)
-        (overviewId, utf16Snippets.toSeq)
+        (overviewId, utf16Snippets.toIndexedSeq)
       })
       .filter(_._2.nonEmpty)
       .toMap
@@ -376,7 +376,7 @@ class DocumentSetLuceneIndex(val documentSetId: Long, val directory: Directory, 
 
   private def buildPrefixQuery(field: FieldInSearchIndex, prefix: String): (LuceneQuery, List[SearchWarning]) = {
     val fieldName = fieldToName(field)
-    val terms: Seq[String] = phraseToTermStrings(field, prefix)
+    val terms: immutable.Seq[String] = phraseToTermStrings(field, prefix)
 
     assert(terms.nonEmpty)
 
@@ -487,7 +487,7 @@ class DocumentSetLuceneIndex(val documentSetId: Long, val directory: Directory, 
     (luceneQuery, warnings)
   }
 
-  private def phraseToTermStrings(field: FieldInSearchIndex, phrase: String): Seq[String] = {
+  private def phraseToTermStrings(field: FieldInSearchIndex, phrase: String): immutable.Seq[String] = {
     val tokenStream = analyzer.tokenStream(fieldToName(field), phrase)
     val termAttribute = tokenStream.getAttribute(classOf[CharTermAttribute])
 
@@ -500,7 +500,7 @@ class DocumentSetLuceneIndex(val documentSetId: Long, val directory: Directory, 
     tokenStream.end
     tokenStream.close
 
-    terms
+    terms.toIndexedSeq
   }
 
   private def buildPhraseQuery(field: FieldInSearchIndex, phrase: String, slop: Int) = {
@@ -514,7 +514,7 @@ class DocumentSetLuceneIndex(val documentSetId: Long, val directory: Directory, 
 
     q match {
       case query.AllQuery => (new MatchAllDocsQuery, Nil)
-      case query.RegexQuery(field, regex) => (new MatchAllDocsQuery, Nil)
+      case query.RegexQuery(_, _) | query.NotQuery(query.RegexQuery(_, _)) => (new MatchAllDocsQuery, Nil)
       case query.AndQuery(nodes) => buildBooleanQuery(nodes, BooleanClause.Occur.FILTER)
       case query.OrQuery(nodes) => buildBooleanQuery(nodes, BooleanClause.Occur.SHOULD)
       case query.NotQuery(p) => {

@@ -3,13 +3,15 @@
 const asUserWithDocumentSet = require('../support/asUserWithDocumentSet')
 
 describe('Search', function() {
-  asUserWithDocumentSet('Search/documents1.csv', function() {
-    before(async function() {
-      await this.browser.sendKeys('word', '#document-list-params .search input[name=query]')
-      await this.browser.click('#document-list-params .search button')
-    })
+  async function search(browser, query) {
+    await browser.clear('#document-list-params .search input[name=query]')
+    await browser.sendKeys(query, '#document-list-params .search input[name=query]')
+    await browser.click('#document-list-params .search button')
+  }
 
+  asUserWithDocumentSet('Search/documents1.csv', function() {
     it('should highlight all instances of the search term', async function() {
+      await search(this.browser, 'word')
       await this.browser.click({ css: 'li.document h3', wait: 'pageLoad' })
 
       // The document slides over; wait for all highlights to be visible
@@ -25,6 +27,23 @@ describe('Search', function() {
       expect(text3).to.eq('word')
 
       await this.browser.click('a.back-to-list')
+    })
+
+    it('should regex search', async function() {
+      await search(this.browser, 'text:/( .çi)/ AND title:Third')
+      await this.browser.assertExists({ tag: 'h3', contains: 'Third', wait: 'fast' })
+    })
+
+    it('should warn on invalid regex', async function() {
+      await search(this.browser, 'text:/(foo/')
+      const text = await this.browser.getText({ css: '#document-list ul.warnings li', wait: 'pageLoad' })
+      expect(text).to.match(/Overview ignored your regular expression, “\(foo”, because of a syntax error: missing closing \)\./)
+    })
+
+    it('should warn when nesting a regex', async function() {
+      await search(this.browser, '"and" OR /\\bth.*/')
+      const text = await this.browser.getText({ css: '#document-list ul.warnings li', wait: 'pageLoad' })
+      expect(text).to.match(/Overview assumed all documents match your regular expression, “\\bth\.\*”, because the surrounding search is too complex\. Rewrite your search so the regular expression is outside any OR or NOT\(AND\(\.\.\.\)\) clauses\./)
     })
 
     // it 'should scroll through search terms in text mode', ->
@@ -46,8 +65,7 @@ describe('Search', function() {
 
   asUserWithDocumentSet('Search/manyTermsWithSamePrefix.csv', function() {
     it('should warn when a prefix search has a truncated term list', async function() {
-      await this.browser.sendKeys('phrase OR (phrase foo*)', '#document-list-params .search input[name=query]')
-      await this.browser.click('#document-list-params .search button')
+      await search(this.browser, 'phrase OR (phrase foo*)')
 
       const text = await this.browser.getText({ css: '#document-list ul.warnings li', wait: 'pageLoad' })
       expect(text).to.eq('This list may be incomplete. “text:foo*” matched too many words from your document set; we limited our search to 1,000 words.')

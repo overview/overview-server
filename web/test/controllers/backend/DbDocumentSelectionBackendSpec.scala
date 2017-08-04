@@ -8,7 +8,7 @@ import scala.collection.mutable
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-import com.overviewdocs.query.{AndQuery,Field,PhraseQuery,Query}
+import com.overviewdocs.query.{AndQuery,Field,NotQuery,OrQuery,PhraseQuery,PrefixQuery,Query,RegexQuery}
 import com.overviewdocs.messages.Progress
 import com.overviewdocs.metadata.{MetadataField,MetadataFieldDisplay,MetadataFieldType,MetadataSchema}
 import com.overviewdocs.models.{DocumentIdList,DocumentIdSet}
@@ -47,8 +47,8 @@ class DbDocumentSelectionBackendSpec extends DbBackendSpecification with InAppSp
           sortByMetadataField=sortByMetadataField
         )
 
-        val searchBackend = smartMock[SearchBackend]
-        val documentBackend = smartMock[DocumentBackend]
+        val searchBackend = mock[SearchBackend]
+        val documentBackend = mock[DocumentBackend]
         def searchDocumentIds: DocumentIdSet = DocumentIdSet.empty
         def searchWarnings: List[SearchWarning] = Nil
         def searchResult: SearchResult = SearchResult(searchDocumentIds, searchWarnings)
@@ -63,9 +63,9 @@ class DbDocumentSelectionBackendSpec extends DbBackendSpecification with InAppSp
           WHERE id = ${documentSet.id}
         """)
 
-        val documentSetBackend = smartMock[DocumentSetBackend]
+        val documentSetBackend = mock[DocumentSetBackend]
         documentSetBackend.show(documentSet.id) returns Future.successful(Some(documentSet))
-        val documentIdListBackend = smartMock[DocumentIdListBackend]
+        val documentIdListBackend = mock[DocumentIdListBackend]
 
         val backend = new DbDocumentSelectionBackend(
           database,
@@ -324,7 +324,7 @@ class DbDocumentSelectionBackendSpec extends DbBackendSpecification with InAppSp
         ret.documentIds must beEqualTo(Vector(doc2.id, doc1.id))
       }
 
-      "filter by regex" in new CreateSelectionScope {
+      "filter by regex (white-box)" in new CreateSelectionScope {
         val rules = Vector(DocumentSelectionBackend.RegexSearchRule(Field.Title, Pattern.compile("[ac]"), false))
         documentBackend.stream(documentSet.id, documents.map(_.id)) returns Source(documents)
         await(backend.documentIdsMatchingRegexSearchRules(documentSet.id, documents.map(_.id), rules)) must beEqualTo((
@@ -333,7 +333,7 @@ class DbDocumentSelectionBackendSpec extends DbBackendSpecification with InAppSp
         ))
       }
 
-      "AND when filtering by regex" in new CreateSelectionScope {
+      "AND when filtering by regex (white-box)" in new CreateSelectionScope {
         val rules = Vector(
           DocumentSelectionBackend.RegexSearchRule(Field.Title, Pattern.compile("[ac]"), false),
           DocumentSelectionBackend.RegexSearchRule(Field.Title, Pattern.compile("[bc]"), false),
@@ -345,7 +345,7 @@ class DbDocumentSelectionBackendSpec extends DbBackendSpecification with InAppSp
         ))
       }
 
-      "truncate when filtering by regex" in new CreateSelectionScope {
+      "truncate when filtering by regex (white-box)" in new CreateSelectionScope {
         val rules = Vector(
           DocumentSelectionBackend.RegexSearchRule(Field.Title, Pattern.compile("[ac]"), false),
           DocumentSelectionBackend.RegexSearchRule(Field.Title, Pattern.compile("[bc]"), false),
@@ -357,6 +357,34 @@ class DbDocumentSelectionBackendSpec extends DbBackendSpecification with InAppSp
           List(SelectionWarning.RegexLimited(4, 3))
         ))
         there was one(documentBackend).stream(documentSet.id, documents.map(_.id))
+      }
+
+      "nop-op when there are no regexes (white-box)" in new CreateSelectionScope {
+        val rules = Vector()
+        val ids = documents.map(_.id) ++ Vector(0L) // MaxNRegexDocumentsPerSearch would limit this if we had rules
+        await(backend.documentIdsMatchingRegexSearchRules(documentSet.id, ids, rules)) must beEqualTo((ids, Nil))
+        there was no(documentBackend).stream(any, any)
+      }
+
+      "filter by regex (black-box)" in new CreateSelectionScope {
+        // A bit of an integration-test: test that regex goes alongside other
+        // queries and that its warnings aren't ignored
+        override val q = Some(AndQuery(Vector(
+          PrefixQuery(Field.All, "oneand"),
+          RegexQuery(Field.Title, "[bc]"),
+          NotQuery(RegexQuery(Field.Title, "inva(id")),
+          OrQuery(Vector(
+            PhraseQuery(Field.All, "oneandthree"),
+            RegexQuery(Field.Title, "will-not-run"),
+          ))
+        )))
+        override def searchDocumentIds = DocumentIdSet(Vector(doc2.id, doc1.id))
+        documentBackend.stream(documentSet.id, Vector(doc2.id, doc1.id)) returns Source(Vector(doc2, doc1))
+        ret.warnings must beEqualTo(List(
+          SelectionWarning.RegexSyntaxError("inva(id", "missing closing )", -1),
+          SelectionWarning.NestedRegexIgnored("will-not-run"),
+        ))
+        ret.documentIds must beEqualTo(Vector(doc1.id))
       }
     }
   }

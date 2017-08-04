@@ -1,8 +1,8 @@
 package com.overviewdocs.util
 
 import play.api.libs.json.{Json,JsObject}
+import scala.collection.immutable
 
-import com.overviewdocs.metadata.MetadataSchema
 import com.overviewdocs.models.tables.{DocumentSets,Documents,Files,Pages}
 import com.overviewdocs.models.{Document,DocumentSet,File,Page}
 import com.overviewdocs.test.DbSpecification
@@ -18,7 +18,7 @@ class BulkDocumentWriterSpec extends DbSpecification {
 
     val documentSet = factory.documentSet()
 
-    def fetchDocuments: Seq[Document] = {
+    def fetchDocuments: immutable.Seq[Document] = {
       blockingDatabase.seq(Documents.filter(_.documentSetId === documentSet.id))
     }
 
@@ -28,7 +28,7 @@ class BulkDocumentWriterSpec extends DbSpecification {
       override val maxNDocuments = 3
       override val maxNBytes = 1000
 
-      override def flushImpl(documents: Iterable[Document]) = {
+      override def flushImpl(documents: immutable.Seq[Document]) = {
         nFlushes += 1
         flushDocumentsToDatabase(database, documents)
       }

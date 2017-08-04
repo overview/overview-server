@@ -93,7 +93,7 @@ case class DocumentIdSet(
 }
 
 object DocumentIdSet {
-  def apply(ids: Seq[Long]): DocumentIdSet = {
+  def apply(ids: immutable.Seq[Long]): DocumentIdSet = {
     ids.headOption match {
       case None => DocumentIdSet.empty
       case Some(id) => {

@@ -239,12 +239,15 @@ class DbDocumentSelectionBackend @Inject() (
           (allSortedIds, sortWarnings) <- getSortedIds(documentSet, request.sortByMetadataField, onProgress)
           (byQ, byQWarnings) <- byQFuture
           byDb <- byDbFuture
+          sortedIds <- Future.successful({
+            logger.logExecutionTime("filtering sorted document IDs [docset {}]", request.documentSetId) {
+              val idsFilter = byQ.intersect(byDb)
+              allSortedIds.filter(idsFilter.contains _)
+            }
+          })
+          (regexFilteredIds, regexWarnings) <- runRegexFilters(request.documentSetId, sortedIds, request.q)
         } yield {
-          logger.logExecutionTime("filtering sorted document IDs [docset {}]", request.documentSetId) {
-            val idsFilter = byQ.intersect(byDb)
-            val sortedIds: immutable.Seq[Long] = allSortedIds.filter(idsFilter.contains _)
-            InMemorySelection(sortedIds, byQWarnings ++ sortWarnings)
-          }
+          InMemorySelection(regexFilteredIds, byQWarnings ++ sortWarnings ++ regexWarnings)
         }
       }
     })
@@ -341,7 +344,23 @@ class DbDocumentSelectionBackend @Inject() (
     sb.toString
   }
 
+  private def runRegexFilters(documentSetId: Long, ids: immutable.Seq[Long], maybeQ: Option[SearchQuery]): Future[(immutable.Seq[Long], List[SelectionWarning])] = {
+    maybeQ match {
+      case None => Future.successful((ids, Nil))
+      case Some(q) => {
+        val (rules, parseWarnings) = DocumentSelectionBackend.queryToRegexSearchRules(q)
+        for {
+          (filteredIds, filterWarnings) <- documentIdsMatchingRegexSearchRules(documentSetId, ids, rules)
+        } yield {
+          (filteredIds, parseWarnings ++ filterWarnings)
+        }
+      }
+    }
+  }
+
   protected[backend] def documentIdsMatchingRegexSearchRules(documentSetId: Long, ids: immutable.Seq[Long], rules: immutable.Seq[DocumentSelectionBackend.RegexSearchRule]): Future[(immutable.Seq[Long], List[SelectionWarning])] = {
+    if (rules.isEmpty) return Future.successful((ids, Nil))
+
     val (limitedIds, warnings) = if (ids.size > MaxNRegexDocumentsPerSearch) {
       (ids.take(MaxNRegexDocumentsPerSearch), List(SelectionWarning.RegexLimited(ids.size, MaxNRegexDocumentsPerSearch)))
     } else {
