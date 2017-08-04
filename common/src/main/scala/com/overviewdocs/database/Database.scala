@@ -2,6 +2,7 @@ package com.overviewdocs.database
 
 import java.sql.SQLException
 import javax.sql.DataSource
+import scala.collection.immutable
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
 import scala.language.higherKinds
@@ -79,7 +80,7 @@ class Database(val slickDatabase: slick.jdbc.JdbcBackend.Database) {
     * database.seq(Documents.filter(_.documentSetId === documentSetId))
     * ```
     */
-  def seq[T](query: Rep[Seq[T]]): Future[Seq[T]] = run(query.result)
+  def seq[T](query: Rep[Seq[T]]): Future[immutable.Seq[T]] = run(query.result).map(_.toIndexedSeq)
 
   /** Return all the results from a compiled query as a Seq.
     *
@@ -93,7 +94,7 @@ class Database(val slickDatabase: slick.jdbc.JdbcBackend.Database) {
     * database.seq(compiledQuery(documentSetId))
     * ```
     */
-  def seq[T](query: RunnableCompiled[_, Seq[T]]): Future[Seq[T]] = run(query.result)
+  def seq[T](query: RunnableCompiled[_, Seq[T]]): Future[immutable.Seq[T]] = run(query.result).map(_.toIndexedSeq)
 
   /** Returns an Option with the first row from the query, if there is one.
     *

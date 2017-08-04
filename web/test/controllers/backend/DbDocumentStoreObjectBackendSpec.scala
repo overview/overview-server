@@ -149,18 +149,18 @@ class DbDocumentStoreObjectBackendSpec extends DbBackendSpecification {
         val obj1 = factory.storeObject(storeId=store.id)
         val obj2 = factory.storeObject(storeId=store.id)
 
-        val args: Seq[DocumentStoreObject] = Seq(
+        val args: Vector[DocumentStoreObject] = Vector(
           DocumentStoreObject(doc1.id, obj1.id, Some(Json.obj("foo" -> "bar"))),
           DocumentStoreObject(doc2.id, obj1.id, Some(Json.obj("bar" -> "baz"))),
           DocumentStoreObject(doc1.id, obj2.id, None)
         )
 
         def createMany = await(backend.createMany(storeId, args))
-        lazy val result: Seq[DocumentStoreObject] = createMany
+        lazy val result: Vector[DocumentStoreObject] = createMany
       }
 
       "return DocumentStoreObjects" in new CreateManyScope {
-        result must containTheSameElementsAs(Seq(
+        result must containTheSameElementsAs(Vector(
           DocumentStoreObject(doc1.id, obj1.id, Some(Json.obj("foo" -> "bar"))),
           DocumentStoreObject(doc2.id, obj1.id, Some(Json.obj("bar" -> "baz"))),
           DocumentStoreObject(doc1.id, obj2.id, None)
@@ -169,7 +169,7 @@ class DbDocumentStoreObjectBackendSpec extends DbBackendSpecification {
 
       "write the DocumentStoreObjects to the database" in new CreateManyScope {
         result // resolve
-        val dbResults = Seq(
+        val dbResults = Vector(
           findDocumentStoreObject(doc1.id, obj1.id),
           findDocumentStoreObject(doc2.id, obj1.id),
           findDocumentStoreObject(doc1.id, obj2.id),
@@ -180,15 +180,15 @@ class DbDocumentStoreObjectBackendSpec extends DbBackendSpecification {
 
       "update on conflict" in new CreateManyScope {
         await(backend.create(doc1.id, obj1.id, None))
-        override val args = Seq(
+        override val args = Vector(
           DocumentStoreObject(doc1.id, obj1.id, Some(Json.obj("foo" -> "bar"))),
           DocumentStoreObject(doc2.id, obj2.id, None)
         )
-        result must containTheSameElementsAs(Seq(
+        result must containTheSameElementsAs(Vector(
           DocumentStoreObject(doc1.id, obj1.id, Some(Json.obj("foo" -> "bar"))),
           DocumentStoreObject(doc2.id, obj2.id, None)
         ))
-        Seq(
+        Vector(
           findDocumentStoreObject(doc1.id, obj1.id),
           findDocumentStoreObject(doc2.id, obj1.id),
           findDocumentStoreObject(doc1.id, obj2.id),
@@ -199,11 +199,11 @@ class DbDocumentStoreObjectBackendSpec extends DbBackendSpecification {
       "filter by DocumentSet ID" in new CreateManyScope {
         val documentSet2 = factory.documentSet()
         val doc3 = factory.document(documentSetId=documentSet2.id)
-        override val args = Seq(
+        override val args = Vector(
           DocumentStoreObject(doc1.id, obj1.id, None),
           DocumentStoreObject(doc3.id, obj1.id, None)
         )
-        result must beEqualTo(Seq(DocumentStoreObject(doc1.id, obj1.id, None)))
+        result must beEqualTo(Vector(DocumentStoreObject(doc1.id, obj1.id, None)))
         findDocumentStoreObject(doc1.id, obj1.id) must beSome
         findDocumentStoreObject(doc3.id, obj1.id) must beNone
       }
@@ -212,11 +212,11 @@ class DbDocumentStoreObjectBackendSpec extends DbBackendSpecification {
         val apiToken2 = factory.apiToken(documentSetId=Some(documentSet.id), token="token2")
         val store2 = factory.store(apiToken=apiToken2.token)
         val obj3 = factory.storeObject(storeId=store2.id)
-        override val args = Seq(
+        override val args = Vector(
           DocumentStoreObject(doc1.id, obj1.id, None),
           DocumentStoreObject(doc1.id, obj3.id, None)
         )
-        result must beEqualTo(Seq(DocumentStoreObject(doc1.id, obj1.id, None)))
+        result must beEqualTo(Vector(DocumentStoreObject(doc1.id, obj1.id, None)))
         findDocumentStoreObject(doc1.id, obj1.id) must beSome
         findDocumentStoreObject(doc1.id, obj3.id) must beNone
       }
@@ -316,7 +316,7 @@ class DbDocumentStoreObjectBackendSpec extends DbBackendSpecification {
         val dvo2 = factory.documentStoreObject(documentId=doc2.id, storeObjectId=obj1.id)
         val dvo3 = factory.documentStoreObject(documentId=doc1.id, storeObjectId=obj2.id)
 
-        val arg: Seq[(Long,Long)] = Seq(doc1.id -> obj1.id, doc2.id -> obj1.id)
+        val arg: Vector[(Long,Long)] = Vector(doc1.id -> obj1.id, doc2.id -> obj1.id)
 
         lazy val result = await(backend.destroyMany(store.id, arg))
       }
@@ -337,7 +337,7 @@ class DbDocumentStoreObjectBackendSpec extends DbBackendSpecification {
         val obj3 = factory.storeObject(storeId=store2.id)
         val dvo4 = factory.documentStoreObject(documentId=doc3.id, storeObjectId=obj3.id)
 
-        override val arg = Seq(doc1.id -> obj1.id, doc2.id -> obj1.id, doc3.id -> obj3.id)
+        override val arg = Vector(doc1.id -> obj1.id, doc2.id -> obj1.id, doc3.id -> obj3.id)
         result must beEqualTo(())
 
         findDocumentStoreObject(doc1.id, obj1.id) must beNone
@@ -346,7 +346,7 @@ class DbDocumentStoreObjectBackendSpec extends DbBackendSpecification {
       }
 
       "skip missing rows" in new DestroyManyScope {
-        override val arg = Seq(doc1.id -> obj1.id, doc2.id -> obj2.id)
+        override val arg = Vector(doc1.id -> obj1.id, doc2.id -> obj2.id)
         result must beEqualTo(())
 
         findDocumentStoreObject(doc1.id, obj1.id) must beNone
@@ -359,7 +359,7 @@ class DbDocumentStoreObjectBackendSpec extends DbBackendSpecification {
         val obj3 = factory.storeObject(storeId=store2.id)
         val dvo4 = factory.documentStoreObject(documentId=doc1.id, storeObjectId=obj3.id)
 
-        override val arg = Seq(doc1.id -> obj1.id, doc1.id -> obj3.id)
+        override val arg = Vector(doc1.id -> obj1.id, doc1.id -> obj3.id)
         result must beEqualTo(())
 
         findDocumentStoreObject(doc1.id, obj1.id) must beNone

@@ -93,8 +93,12 @@ class QueryParserSpec extends Specification {
   testGood("text:/foo/ bar", "text:[/foo/ bar]", "parse a supposed regex and space and text as one big text")
   testGood("text:/foo/ AND bar", "AND(text:REGEX([foo]),[bar])", "allow AND after a regex")
   testGood("text:/foo/ NOT bar", "text:[/foo/ NOT bar]", "not allow NOT after a regex")
-  testGood("text:/foo\\/bar/", "text:REGEX([foo/bar])", "allow backslash-escaping slashes")
-  testGood("text:/foo\\\\bar/", "text:REGEX([foo\\bar])", "allow backslash-escaping backslashes")
+  // We pass-through backslashes: the only escape sequence we care about is "\/"
+  // and re2 will parse that just fine. The passed-through backslashes help us
+  // craft more accurate warnings.
+  testGood("text:/foo\\/bar/", "text:REGEX([foo\\/bar])", "allow backslash-escaping slashes")
+  testGood("text:/foo\\\\bar/", "text:REGEX([foo\\\\bar])", "allow backslash-escaping backslashes")
+  testGood("text:/\\w\\d\\b/", "text:REGEX([\\w\\d\\b])", "allow backslash-escaping typical escape sequences")
   testGood("text:/foo/bar/", "text:[/foo/bar/]", "not allow inner slashes in regexes")
   testGood("text:/foo\\\\/bar/", "text:[/foo\\\\/bar/]", "not escape backslashes when not in a regex")
 

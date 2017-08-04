@@ -1,5 +1,7 @@
 package controllers.backend
 
+import scala.collection.immutable
+
 import models.InMemorySelection
 
 class DbDocumentNodeBackendSpec extends DbBackendSpecification {
@@ -21,12 +23,12 @@ class DbDocumentNodeBackendSpec extends DbBackendSpecification {
         factory.nodeDocument(nodeId=node1.id, documentId=doc2.id)
         factory.nodeDocument(nodeId=node2.id, documentId=doc1.id)
 
-        lazy val result: Map[Long,Seq[Long]] = await(backend.indexMany(Seq(doc1.id, doc2.id, doc3.id)))
+        lazy val result: Map[Long,immutable.Seq[Long]] = await(backend.indexMany(Vector(doc1.id, doc2.id, doc3.id)))
       }
 
       "return Node IDs for Documents that have them" in new IndexManyScope {
-        result(doc1.id) must containTheSameElementsAs(Seq(node1.id, node2.id))
-        result(doc2.id) must beEqualTo(Seq(node1.id))
+        result(doc1.id) must containTheSameElementsAs(Vector(node1.id, node2.id))
+        result(doc2.id) must beEqualTo(Vector(node1.id))
       }
 
       "return nothing for Documents that have no Nodes" in new IndexManyScope {
@@ -40,7 +42,7 @@ class DbDocumentNodeBackendSpec extends DbBackendSpecification {
       }
 
       "work with an empty set of documents" in new IndexManyScope {
-        await(backend.indexMany(Seq())) must beEqualTo(Map())
+        await(backend.indexMany(Vector())) must beEqualTo(Map())
       }
     }
 
@@ -59,7 +61,7 @@ class DbDocumentNodeBackendSpec extends DbBackendSpecification {
         factory.nodeDocument(nodeId=node2.id, documentId=doc1.id)
 
         val selection: InMemorySelection = InMemorySelection(Array(doc1.id, doc2.id, doc3.id))
-        val requestedNodeIds: Seq[Long] = Seq(node1.id, node2.id, node3.id)
+        val requestedNodeIds: Vector[Long] = Vector(node1.id, node2.id, node3.id)
 
         lazy val result: Map[Long,Int] = await(backend.countByNode(selection, requestedNodeIds))
       }
@@ -74,13 +76,13 @@ class DbDocumentNodeBackendSpec extends DbBackendSpecification {
       }
 
       "only include Nodes we request" in new CountByNodeScope {
-        override val requestedNodeIds = Seq(node1.id)
+        override val requestedNodeIds = Vector(node1.id)
         result.isDefinedAt(node1.id) must beTrue
         result.isDefinedAt(node2.id) must beFalse
       }
 
       "work even when we request bogus node IDs" in new CountByNodeScope {
-        override val requestedNodeIds = Seq(-1L)
+        override val requestedNodeIds = Vector(-1L)
         result.isEmpty must beTrue
       }
 
@@ -92,12 +94,12 @@ class DbDocumentNodeBackendSpec extends DbBackendSpecification {
       }
 
       "work when documentIds is empty" in new CountByNodeScope {
-        override val selection = InMemorySelection(Array.empty)
+        override val selection = InMemorySelection(Vector.empty)
         result.isEmpty must beTrue
       }
 
       "work when nodeIds is empty" in new CountByNodeScope {
-        override val requestedNodeIds = Seq()
+        override val requestedNodeIds = Vector()
         result.isEmpty must beTrue
       }
 

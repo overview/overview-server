@@ -1,7 +1,7 @@
 package com.overviewdocs.metadata
 
-import com.fasterxml.jackson.core.JsonProcessingException
 import play.api.libs.json.{JsArray,JsNumber,JsObject,JsString,JsValue,Json}
+import scala.collection.immutable
 import scala.util.{Failure,Success,Try}
 
 /** Schema that describes a Document's metadata.
@@ -10,8 +10,8 @@ import scala.util.{Failure,Success,Try}
   *
   * The `version` must always be 1: anything else is an error.
   */
-case class MetadataSchema(version: Int, fields: Seq[MetadataField]) {
-  def toJson: JsValue = JsObject(Seq(
+case class MetadataSchema(version: Int, fields: immutable.Seq[MetadataField]) {
+  def toJson: JsValue = JsObject(Vector(
     "version" -> JsNumber(1),
     "fields" -> JsArray(fields.map { field =>
       Json.obj(
@@ -42,10 +42,10 @@ object MetadataSchema {
     */
   def inferFromMetadataJson(jsObject: JsObject): MetadataSchema = {
     val fields = jsObject.keys.map(key => MetadataField(key, MetadataFieldType.String))
-    MetadataSchema(1, fields.toSeq)
+    MetadataSchema(1, fields.toVector)
   }
 
-  def empty: MetadataSchema = MetadataSchema(1, Seq())
+  def empty: MetadataSchema = MetadataSchema(1, Vector())
 
   object Json {
     import play.api.libs.json.{Reads,JsPath,JsResultException,JsonValidationError}
@@ -73,7 +73,7 @@ object MetadataSchema {
 
     implicit val reads: Reads[MetadataSchema] = (
       (JsPath \ "version").read[Int](min(1) keepAnd max(1)) and
-      (JsPath \ "fields").read[Seq[MetadataField]]
+      (JsPath \ "fields").read[Vector[MetadataField]]
     )(MetadataSchema.apply _)
 
     def parse(json: JsValue): MetadataSchema = try {

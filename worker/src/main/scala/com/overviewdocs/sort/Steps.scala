@@ -252,9 +252,9 @@ private[sort] object Steps {
     )
   }
 
-  /** Converts a RecordSource to an Array of record IDs.
+  /** Converts a RecordSource to an Vector of record IDs.
     */
-  def recordSourceToIdArray(recordSource: RecordSource)(implicit mat: Materializer, ec: ExecutionContext): Future[Array[Int]] = {
+  def recordSourceToIds(recordSource: RecordSource)(implicit mat: Materializer, ec: ExecutionContext): Future[immutable.Seq[Int]] = {
     val ret = new Array[Int](recordSource.nRecords)
     val sink = Sink.foreach { t: Tuple2[Int,Long] =>
       val id = t._1
@@ -266,6 +266,6 @@ private[sort] object Steps {
       .zipWithIndex
       .toMat(sink)(waitForUnits)
       .run
-      .map(_ => ret)
+      .map(_ => ret.toIndexedSeq)
   }
 }

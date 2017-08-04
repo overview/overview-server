@@ -13,9 +13,9 @@ import test.helpers.InAppSpecification // for materializer
 class DocumentsWithColumnTagsSpec extends InAppSpecification with FutureAwaits with DefaultAwaitTimeout {
   trait BaseScope extends Scope {
     val factory = com.overviewdocs.test.factories.PodoFactory
-    def documents: Source[(Document,Seq[Long]), akka.NotUsed]
+    def documents: Source[(Document,Vector[Long]), akka.NotUsed]
     val metadataSchema: MetadataSchema = MetadataSchema.empty
-    val tags: Seq[Tag] = Seq()
+    val tags: Vector[Tag] = Vector()
     lazy val rows: Rows = DocumentsWithColumnTags(metadataSchema, documents, tags)
     lazy val rowList: immutable.Seq[Array[String]] = await(rows.rows.runWith(Sink.seq))
     def outHeaders = rows.headers
@@ -30,7 +30,7 @@ class DocumentsWithColumnTagsSpec extends InAppSpecification with FutureAwaits w
       url=Some("url"),
       metadataJson=Json.obj()
     )
-    val document: (Document,Seq[Long]) = (sampleDocument, Seq())
+    val document: (Document,Vector[Long]) = (sampleDocument, Vector())
     override def documents = Source.single(document)
   }
 
@@ -40,7 +40,7 @@ class DocumentsWithColumnTagsSpec extends InAppSpecification with FutureAwaits w
     }
 
     "export all tag names" in new OneDocumentScope {
-      override val tags = Seq(
+      override val tags = Vector(
         factory.tag(id=2L, name="aaa"), // IDs out of order so we test ordering
         factory.tag(id=3L, name="bbb"),
         factory.tag(id=1L, name="ccc")
@@ -49,51 +49,51 @@ class DocumentsWithColumnTagsSpec extends InAppSpecification with FutureAwaits w
     }
 
     "export when the document has no tags" in new OneDocumentScope {
-      override val tags = Seq(factory.tag(), factory.tag())
+      override val tags = Vector(factory.tag(), factory.tag())
       outRow1.drop(4) must beEqualTo(Array("", ""))
     }
 
     "export document tags" in new OneDocumentScope {
-      override val tags = Seq(
+      override val tags = Vector(
         factory.tag(id=2L, name="aaa"), // IDs out of order so we test ordering
         factory.tag(id=3L, name="bbb"),
         factory.tag(id=1L, name="ccc")
       )
-      override val document = (sampleDocument, Seq(1L, 3L))
+      override val document = (sampleDocument, Vector(1L, 3L))
       outRow1.drop(4) must beEqualTo(Array("", "1", "1"))
     }
 
     "export suppliedId" in new OneDocumentScope {
-      override val document = (sampleDocument.copy(suppliedId="supplied-id"), Seq())
+      override val document = (sampleDocument.copy(suppliedId="supplied-id"), Vector())
       outRow1(0).toString must beEqualTo("supplied-id")
     }
 
     "export title" in new OneDocumentScope {
-      override val document = (sampleDocument.copy(title="title"), Seq())
+      override val document = (sampleDocument.copy(title="title"), Vector())
       outRow1(1).toString must beEqualTo("title")
     }
 
     "export text" in new OneDocumentScope {
-      override val document = (sampleDocument.copy(text="text"), Seq())
+      override val document = (sampleDocument.copy(text="text"), Vector())
       outRow1(2).toString must beEqualTo("text")
     }
 
     "export url" in new OneDocumentScope {
-      override val document = (sampleDocument.copy(url=Some("http://example.org")), Seq())
+      override val document = (sampleDocument.copy(url=Some("http://example.org")), Vector())
       outRow1(3).toString must beEqualTo("http://example.org")
     }
 
     "handle None as url" in new OneDocumentScope {
-      override val document = (sampleDocument.copy(url=None), Seq())
+      override val document = (sampleDocument.copy(url=None), Vector())
       outRow1(3).toString must beEqualTo("")
     }
 
     "export metadata" in new OneDocumentScope {
-      override val metadataSchema = MetadataSchema(1, Seq(
+      override val metadataSchema = MetadataSchema(1, Vector(
         MetadataField("fooField", MetadataFieldType.String),
         MetadataField("barField", MetadataFieldType.String)
       ))
-      override val document = (sampleDocument.copy(metadataJson=Json.obj("fooField" -> "foo1", "barField" -> "bar1")), Seq())
+      override val document = (sampleDocument.copy(metadataJson=Json.obj("fooField" -> "foo1", "barField" -> "bar1")), Vector())
       outHeaders.drop(4).take(2) must beEqualTo(Array("fooField", "barField")) // metadata before tags
       outRow1.drop(4).take(2) must beEqualTo(Array("foo1", "bar1"))
     }

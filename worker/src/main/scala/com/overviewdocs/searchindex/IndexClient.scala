@@ -1,5 +1,6 @@
 package com.overviewdocs.searchindex
 
+import scala.collection.immutable
 import scala.concurrent.Future
 
 import com.overviewdocs.query.Query
@@ -49,14 +50,14 @@ trait IndexClient {
     *
     * After this method succeeds, the documents are searchable right away.
     */
-  def addDocuments(documentSetId: Long, documents: Iterable[Document]): Future[Unit]
+  def addDocuments(documentSetId: Long, documents: immutable.Seq[Document]): Future[Unit]
 
   /** Deletes and then re-adds Documents.
     *
     * After this method succeeds, the documents are searchable right away.
     * However, term vectors will be slightly inaccurate.
     */
-  def updateDocuments(documentSetId: Long, documents: Iterable[Document]): Future[Unit]
+  def updateDocuments(documentSetId: Long, documents: immutable.Seq[Document]): Future[Unit]
 
   /** Returns IDs for matching documents.
     *
@@ -71,9 +72,9 @@ trait IndexClient {
     * @param documentId Document ID
     * @param q Search string
     */
-  def highlight(documentSetId: Long, documentId: Long, q: Query): Future[Seq[Utf16Highlight]]
+  def highlight(documentSetId: Long, documentId: Long, q: Query): Future[immutable.Seq[Utf16Highlight]]
 
-  def highlights(documentSetId: Long, documentIds: Seq[Long], q: Query): Future[Map[Long, Seq[Utf16Snippet]]]
+  def highlights(documentSetId: Long, documentIds: immutable.Seq[Long], q: Query): Future[Map[Long, immutable.Seq[Utf16Snippet]]]
 
   /** Guarantees all past added documents are searchable. */
   def refresh(documentSetId: Long): Future[Unit]

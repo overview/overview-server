@@ -47,13 +47,13 @@ class ApiTokenControllerSpec extends ControllerSpecification with JsonMatchers {
     }
 
     "call getTokens()" in new IndexJsonScope {
-      mockBackend.index(any, any) returns Future.successful(Seq())
+      mockBackend.index(any, any) returns Future.successful(Vector())
       result
       there was one(mockBackend).index(request.user.email, Some(documentSetId))
     }
 
     "respond with JSON" in new IndexJsonScope {
-      mockBackend.index(any, any) returns Future.successful(Seq())
+      mockBackend.index(any, any) returns Future.successful(Vector())
       h.status(result) must beEqualTo(h.OK)
       h.contentType(result) must beSome("application/json")
     }
@@ -66,7 +66,7 @@ class ApiTokenControllerSpec extends ControllerSpecification with JsonMatchers {
         documentSetId=Some(documentSetId),
         description="description"
       )
-      mockBackend.index(any, any) returns Future.successful(Seq(token))
+      mockBackend.index(any, any) returns Future.successful(Vector(token))
 
       val j = h.contentAsString(result)
       j must /#(0) /("token" -> "12345")
@@ -76,7 +76,7 @@ class ApiTokenControllerSpec extends ControllerSpecification with JsonMatchers {
 
     "work with documentSetId=None" in new IndexJsonScope {
       override lazy val result = controller.index(request)
-      mockBackend.index(any, any) returns Future.successful(Seq())
+      mockBackend.index(any, any) returns Future.successful(Vector())
       h.status(result) must beEqualTo(h.OK)
       h.contentType(result) must beSome("application/json")
       there was one(mockBackend).index(request.user.email, None)

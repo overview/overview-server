@@ -6,6 +6,7 @@ import redis.RedisClient
 import java.nio.ByteBuffer
 import java.util.UUID
 import javax.inject.Inject
+import scala.collection.immutable
 import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.Future
 import scala.util.{Try,Success,Failure}
@@ -124,7 +125,7 @@ class RedisSelectionBackend @Inject() (
         .map((n: Long) => (n / SizeOfLong).toInt)
     }
 
-    private def getDocumentIdsArray(offset: Int, limit: Int): Future[Array[Long]] = {
+    private def getDocumentIdsVector(offset: Int, limit: Int): Future[Vector[Long]] = {
       redis
         .getrange[Array[Byte]](key, offset * SizeOfLong, (offset + limit) * SizeOfLong - 1)
         .map(_.getOrElse(throwMissingError))
@@ -132,20 +133,20 @@ class RedisSelectionBackend @Inject() (
           val buf = ByteBuffer.wrap(bytes).asLongBuffer
           val longs = Array.fill(buf.capacity)(0L)
           buf.get(longs)
-          longs
+          longs.toVector
         }
     }
 
-    private def pageRequestToDocumentIds(pageRequest: PageRequest, total: Int): Future[Array[Long]] = {
+    private def pageRequestToDocumentIds(pageRequest: PageRequest, total: Int): Future[Vector[Long]] = {
       if (pageRequest.reverse) {
         val (offset, limit) = if (pageRequest.offset + pageRequest.limit > total) {
           (0, total - pageRequest.offset)
         } else {
           (total - pageRequest.offset - pageRequest.limit, pageRequest.limit)
         }
-        getDocumentIdsArray(offset, limit).map(_.reverse)
+        getDocumentIdsVector(offset, limit).map(_.reverse)
       } else {
-        getDocumentIdsArray(pageRequest.offset, pageRequest.limit)
+        getDocumentIdsVector(pageRequest.offset, pageRequest.limit)
       }
     }
 
@@ -156,8 +157,8 @@ class RedisSelectionBackend @Inject() (
       } yield Page(longs, PageInfo(page, total.toInt))
     }
 
-    override def getAllDocumentIds: Future[Array[Long]] = {
-      getDocumentIdsArray(0, Int.MaxValue / SizeOfLong)
+    override def getAllDocumentIds: Future[Vector[Long]] = {
+      getDocumentIdsVector(0, Int.MaxValue / SizeOfLong)
     }
   }
 
@@ -170,7 +171,7 @@ class RedisSelectionBackend @Inject() (
   // This isn't a legitimate exception; expanding timeout to 60s.
   private implicit val timeout: Timeout = Timeout(60, java.util.concurrent.TimeUnit.SECONDS)
 
-  private def encodeDocumentIds(documentIds: Array[Long]): Array[Byte] = {
+  private def encodeDocumentIds(documentIds: immutable.Seq[Long]): Array[Byte] = {
     val buffer = ByteBuffer.allocate(documentIds.length * SizeOfLong)
     documentIds.foreach(buffer.putLong)
     buffer.array

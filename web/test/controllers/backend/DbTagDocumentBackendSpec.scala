@@ -35,19 +35,19 @@ class DbTagDocumentBackendSpec extends DbBackendSpecification {
     }
 
     "return no counts when given no documents" in new CountScope {
-      await(backend.count(documentSet.id, Seq())) must beEqualTo(Map())
+      await(backend.count(documentSet.id, Vector())) must beEqualTo(Map())
     }
 
     "return no counts when documents have no tags" in new CountScope {
-      await(backend.count(documentSet.id, Seq(doc3.id))) must beEqualTo(Map())
+      await(backend.count(documentSet.id, Vector(doc3.id))) must beEqualTo(Map())
     }
 
     "filter out unselected Documents" in new CountScope {
-      await(backend.count(documentSet.id, Seq(doc1.id, doc3.id))) must beEqualTo(Map(tag1.id -> 1, tag2.id -> 1))
+      await(backend.count(documentSet.id, Vector(doc1.id, doc3.id))) must beEqualTo(Map(tag1.id -> 1, tag2.id -> 1))
     }
 
     "return proper counts" in new CountScope {
-      await(backend.count(documentSet.id, Seq(doc1.id, doc2.id, doc3.id))) must beEqualTo(Map(tag1.id -> 1, tag2.id -> 2))
+      await(backend.count(documentSet.id, Vector(doc1.id, doc2.id, doc3.id))) must beEqualTo(Map(tag1.id -> 1, tag2.id -> 2))
     }
   }
 
@@ -61,22 +61,22 @@ class DbTagDocumentBackendSpec extends DbBackendSpecification {
     }
 
     "tag the requested documents" in new CreateManyScope {
-      await(backend.createMany(tag.id, Seq(doc1.id, doc2.id)))
+      await(backend.createMany(tag.id, Vector(doc1.id, doc2.id)))
       findDocumentTag(doc1.id, tag.id) must beSome(DocumentTag(doc1.id, tag.id))
       findDocumentTag(doc2.id, tag.id) must beSome(DocumentTag(doc2.id, tag.id))
       findDocumentTag(doc3.id, tag.id) must beNone
     }
 
     "work when double-tagging" in new CreateManyScope {
-      await(backend.createMany(tag.id, Seq(doc1.id)))
-      await(backend.createMany(tag.id, Seq(doc1.id, doc2.id)))
+      await(backend.createMany(tag.id, Vector(doc1.id)))
+      await(backend.createMany(tag.id, Vector(doc1.id, doc2.id)))
       findDocumentTag(doc1.id, tag.id) must beSome(DocumentTag(doc1.id, tag.id))
       findDocumentTag(doc2.id, tag.id) must beSome(DocumentTag(doc2.id, tag.id))
       findDocumentTag(doc3.id, tag.id) must beNone
     }
 
     "tag nothing" in new CreateManyScope {
-      await(backend.createMany(tag.id, Seq()))
+      await(backend.createMany(tag.id, Vector()))
       findDocumentTag(doc1.id, tag.id) must beNone
       findDocumentTag(doc2.id, tag.id) must beNone
       findDocumentTag(doc3.id, tag.id) must beNone
@@ -96,14 +96,14 @@ class DbTagDocumentBackendSpec extends DbBackendSpecification {
 
     "untag the requested documents" in new DestroyManyScope {
       factory.documentTag(doc3.id, tag.id)
-      await(backend.destroyMany(tag.id, Seq(doc1.id, doc2.id)))
+      await(backend.destroyMany(tag.id, Vector(doc1.id, doc2.id)))
       findDocumentTag(doc1.id, tag.id) must beNone
       findDocumentTag(doc2.id, tag.id) must beNone
       findDocumentTag(doc3.id, tag.id) must beSome(DocumentTag(doc3.id, tag.id))
     }
 
     "ignore already-untagged documents" in new DestroyManyScope {
-      await(backend.destroyMany(tag.id, Seq(doc1.id, doc3.id)))
+      await(backend.destroyMany(tag.id, Vector(doc1.id, doc3.id)))
       findDocumentTag(doc1.id, tag.id) must beNone
       findDocumentTag(doc2.id, tag.id) must beSome(DocumentTag(doc2.id, tag.id))
       findDocumentTag(doc3.id, tag.id) must beNone
@@ -112,12 +112,12 @@ class DbTagDocumentBackendSpec extends DbBackendSpecification {
     "ignore DocumentTags from other tags" in new DestroyManyScope {
       val tag2 = factory.tag(documentSetId=documentSet.id)
       factory.documentTag(doc1.id, tag2.id)
-      await(backend.destroyMany(tag.id, Seq(doc1.id)))
+      await(backend.destroyMany(tag.id, Vector(doc1.id)))
       findDocumentTag(doc1.id, tag2.id) must beSome(DocumentTag(doc1.id, tag2.id))
     }
 
     "untag zero documents" in new DestroyManyScope {
-      await(backend.destroyMany(tag.id, Seq()))
+      await(backend.destroyMany(tag.id, Vector()))
       findDocumentTag(doc1.id, tag.id) must beSome(DocumentTag(doc1.id, tag.id))
       findDocumentTag(doc2.id, tag.id) must beSome(DocumentTag(doc2.id, tag.id))
       findDocumentTag(doc3.id, tag.id) must beNone

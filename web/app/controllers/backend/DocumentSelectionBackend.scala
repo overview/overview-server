@@ -3,15 +3,17 @@ package controllers.backend
 import akka.stream.scaladsl.Sink
 import akka.stream.Materializer
 import com.google.inject.ImplementedBy
+import com.google.re2j.{Matcher,Pattern,PatternSyntaxException}
 import javax.inject.Inject
 import play.api.libs.json.JsObject
+import play.api.Configuration
 import scala.collection.{immutable,mutable}
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits._ // TODO use another context
 
 import com.overviewdocs.database.Database
-import com.overviewdocs.models.{DocumentIdFilter,DocumentIdSet,DocumentSet}
-import com.overviewdocs.query.{Field,Query=>SearchQuery} // conflicts with SQL Query
+import com.overviewdocs.models.{DocumentIdFilter,DocumentIdSet,DocumentSet,Document}
+import com.overviewdocs.query.{Field,Query=>SearchQuery,AndQuery,OrQuery,NotQuery,RegexQuery} // "Query" conflicts with SQL Query
 import com.overviewdocs.searchindex.SearchResult
 import com.overviewdocs.util.Logger
 import models.{InMemorySelection,SelectionRequest,SelectionWarning}
@@ -32,19 +34,114 @@ trait DocumentSelectionBackend {
   def createSelection(selectionRequest: SelectionRequest, onProgress: Double => Unit): Future[InMemorySelection]
 }
 
+object DocumentSelectionBackend {
+  protected[backend] case class RegexSearchRule(
+    field: Field,
+    pattern: Pattern,
+    negated: Boolean
+  ) {
+    private val matcher = pattern.matcher("") // Not thread-safe ... but we won't use this where that matters
+
+    private def test(input: String) = {
+      matcher.reset(input)
+      matcher.find()
+    }
+
+    def matches(document: Document): Boolean = {
+      val textMatches = field match {
+        case Field.Title => test(document.title)
+        case Field.Text => test(document.text)
+        case Field.Notes => document.pdfNotes.pdfNotes.map(_.text).exists(test _)
+        case Field.All => test(document.title) || test(document.text)
+        case Field.Metadata(fieldName) => {
+          // Undefined behavior if fieldName is not in the document schema. (We
+          // assume it is -- otherwise there should be a warning.)
+          document.metadataJson.value.get(fieldName) // Option[JsValue]
+            .flatMap(_.asOpt[String]) // Option[String]
+            .map(test _) // Option[Boolean]
+            .getOrElse(false)
+        }
+      }
+
+      textMatches != negated
+    }
+
+    override def equals(other: Any): Boolean = other match {
+      case RegexSearchRule(otherField, otherPattern, otherNegated) => {
+        field == otherField && pattern.toString == otherPattern.toString && negated == otherNegated
+      }
+      case _ => false
+    }
+  }
+
+  private def parseRegex(query: RegexQuery, negated: Boolean): Either[SelectionWarning,RegexSearchRule] = {
+    try {
+      Right(RegexSearchRule(query.field, Pattern.compile(query.regex), negated))
+    } catch {
+      case ex: PatternSyntaxException => {
+        Left(SelectionWarning.RegexSyntaxError(query.regex, ex.getDescription, ex.getIndex))
+      }
+    }
+  }
+
+  private def queryToSearchRuleEithersInner(query: SearchQuery): immutable.Seq[Either[SelectionWarning,RegexSearchRule]] = {
+    // Generates a warning for every regex query (Overview doesn't handle
+    // nested regex queries)
+    query match {
+      case RegexQuery(_, regex) => List(Left(SelectionWarning.NestedRegexIgnored(regex)))
+      case NotQuery(q) => queryToSearchRuleEithersInner(q)
+      case AndQuery(children) => {
+        children.flatMap(queryToSearchRuleEithersOuter _)
+      }
+      case OrQuery(children) => {
+        children.flatMap(queryToSearchRuleEithersOuter _)
+      }
+      case _ => Nil
+    }
+  }
+
+  private def queryToSearchRuleEithersOuter(query: SearchQuery): immutable.Seq[Either[SelectionWarning,RegexSearchRule]] = {
+    query match {
+      case rq: RegexQuery => {
+        List(parseRegex(rq, false))
+      }
+      case NotQuery(rq: RegexQuery) => {
+        List(parseRegex(rq, true))
+      }
+      case AndQuery(children) => {
+        children.flatMap(queryToSearchRuleEithersOuter _)
+      }
+      case OrQuery(children) => {
+        children.flatMap(queryToSearchRuleEithersInner _)
+      }
+      case NotQuery(q) => queryToSearchRuleEithersInner(q)
+      case _ => Nil
+    }
+  }
+
+  protected[backend] def queryToRegexSearchRules(query: SearchQuery): (immutable.Seq[RegexSearchRule], List[SelectionWarning]) = {
+    val eithers = queryToSearchRuleEithersOuter(query)
+    (eithers.flatMap(_.right.toOption).toVector, eithers.flatMap(_.left.toOption).toList)
+  }
+}
+
 class DbDocumentSelectionBackend @Inject() (
   val database: Database,
+  val documentBackend: DocumentBackend,
   val searchBackend: SearchBackend,
   val documentSetBackend: DocumentSetBackend,
   val documentIdListBackend: DocumentIdListBackend,
+  val configuration: Configuration,
   val materializer: Materializer
 ) extends DocumentSelectionBackend with DbBackend {
   import database.api._
 
+  private val MaxNRegexDocumentsPerSearch = configuration.get[Int]("overview.max_n_regex_documents_per_search")
+
   protected lazy val logger = Logger.forClass(getClass)
 
   /** Returns all a DocumentSet's Document IDs, sorted. */
-  private def getSortedIds(documentSet: DocumentSet, sortByMetadataField: Option[String], onProgress: Double => Unit): Future[(Array[Long],List[SelectionWarning])] = {
+  private def getSortedIds(documentSet: DocumentSet, sortByMetadataField: Option[String], onProgress: Double => Unit): Future[(immutable.Seq[Long],List[SelectionWarning])] = {
     logger.logExecutionTimeAsync("fetching sorted document IDs [docset {}, field {}]", documentSet.id, sortByMetadataField) {
       sortByMetadataField match {
         case None => getDefaultSortedIds(documentSet.id).map(ids => (ids, Nil))
@@ -58,17 +155,17 @@ class DbDocumentSelectionBackend @Inject() (
             .run()(materializer)
             .map(_ match {
               case None => throw new Exception("Sort failed. Look for earlier error messages.")
-              case Some(ids) => (ids.toDocumentIdArray, Nil)
+              case Some(ids) => (ids.toDocumentIds, Nil)
             })
         }
       }
     }
   }
 
-  private def getDefaultSortedIds(documentSetId: Long): Future[Array[Long]] = {
+  private def getDefaultSortedIds(documentSetId: Long): Future[immutable.Seq[Long]] = {
     // The ORM is unaware of DocumentSet.sortedDocumentIds
     val q = sql"SELECT sorted_document_ids FROM document_set WHERE id = ${documentSetId}".as[Seq[Long]]
-    database.option(q).map(_.map(_.toArray).getOrElse(Array.empty))
+    database.option(q).map(_.map(_.toVector).getOrElse(Vector.empty))
   }
 
   private def queryMetadataFieldNames(query: SearchQuery): immutable.Set[String] = {
@@ -142,12 +239,15 @@ class DbDocumentSelectionBackend @Inject() (
           (allSortedIds, sortWarnings) <- getSortedIds(documentSet, request.sortByMetadataField, onProgress)
           (byQ, byQWarnings) <- byQFuture
           byDb <- byDbFuture
+          sortedIds <- Future.successful({
+            logger.logExecutionTime("filtering sorted document IDs [docset {}]", request.documentSetId) {
+              val idsFilter = byQ.intersect(byDb)
+              allSortedIds.filter(idsFilter.contains _)
+            }
+          })
+          (regexFilteredIds, regexWarnings) <- runRegexFilters(request.documentSetId, sortedIds, request.q)
         } yield {
-          logger.logExecutionTime("filtering sorted document IDs [docset {}]", request.documentSetId) {
-            val idsFilter = byQ.intersect(byDb)
-            val sortedIds: Array[Long] = allSortedIds.filter(idsFilter.contains _)
-            InMemorySelection(sortedIds, byQWarnings ++ sortWarnings)
-          }
+          InMemorySelection(regexFilteredIds, byQWarnings ++ sortWarnings ++ regexWarnings)
         }
       }
     })
@@ -242,5 +342,36 @@ class DbDocumentSelectionBackend @Inject() (
     }
 
     sb.toString
+  }
+
+  private def runRegexFilters(documentSetId: Long, ids: immutable.Seq[Long], maybeQ: Option[SearchQuery]): Future[(immutable.Seq[Long], List[SelectionWarning])] = {
+    maybeQ match {
+      case None => Future.successful((ids, Nil))
+      case Some(q) => {
+        val (rules, parseWarnings) = DocumentSelectionBackend.queryToRegexSearchRules(q)
+        for {
+          (filteredIds, filterWarnings) <- documentIdsMatchingRegexSearchRules(documentSetId, ids, rules)
+        } yield {
+          (filteredIds, parseWarnings ++ filterWarnings)
+        }
+      }
+    }
+  }
+
+  protected[backend] def documentIdsMatchingRegexSearchRules(documentSetId: Long, ids: immutable.Seq[Long], rules: immutable.Seq[DocumentSelectionBackend.RegexSearchRule]): Future[(immutable.Seq[Long], List[SelectionWarning])] = {
+    if (rules.isEmpty) return Future.successful((ids, Nil))
+
+    val (limitedIds, warnings) = if (ids.size > MaxNRegexDocumentsPerSearch) {
+      (ids.take(MaxNRegexDocumentsPerSearch), List(SelectionWarning.RegexLimited(ids.size, MaxNRegexDocumentsPerSearch)))
+    } else {
+      (ids, Nil)
+    }
+
+    val source = documentBackend.stream(documentSetId, limitedIds)
+      .filter(document => !rules.exists(r => !r.matches(document)))
+      .map(_.id)
+
+    source.runWith(Sink.seq)(materializer)
+      .map(result => (result, warnings))
   }
 }

@@ -2,6 +2,7 @@ package controllers.backend
 
 import com.google.inject.ImplementedBy
 import javax.inject.Inject
+import scala.collection.immutable
 import scala.concurrent.Future
 
 import com.overviewdocs.database.Database
@@ -11,13 +12,13 @@ import com.overviewdocs.models.tables.{CloneJobs,CsvImports,DocumentCloudImports
 @ImplementedBy(classOf[DbImportJobBackend])
 trait ImportJobBackend extends Backend {
   /** All ImportJobs for the user. */
-  def indexByUser(userEmail: String): Future[Seq[ImportJob]]
+  def indexByUser(userEmail: String): Future[immutable.Seq[ImportJob]]
 
   /** All ImportJobs. */
-  def indexWithDocumentSetsAndOwners: Future[Seq[(ImportJob,DocumentSet,Option[String])]]
+  def indexWithDocumentSetsAndOwners: Future[immutable.Seq[(ImportJob,DocumentSet,Option[String])]]
 
   /** All ImportJobs for the given DocumentSet. */
-  def indexByDocumentSet(documentSetId: Long): Future[Seq[ImportJob]]
+  def indexByDocumentSet(documentSetId: Long): Future[immutable.Seq[ImportJob]]
 }
 
 class DbImportJobBackend @Inject() (

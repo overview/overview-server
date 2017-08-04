@@ -8,7 +8,7 @@ import java.nio.ByteBuffer
 import javax.inject.Inject
 import play.api.libs.iteratee.Enumerator
 import org.postgresql.PGConnection
-import scala.collection.mutable
+import scala.collection.{immutable,mutable}
 import scala.concurrent.Future
 import slick.dbio.{DBIOAction,Effect,NoStream,SynchronousDatabaseAction}
 import slick.jdbc.JdbcBackend
@@ -21,7 +21,7 @@ import models.ArchiveEntry
 @ImplementedBy(classOf[DbArchiveEntryBackend])
 trait ArchiveEntryBackend extends Backend {
   /** A list of ArchiveEntries, in arbitrary order. */
-  def showMany(documentSetId: Long, documentIds: Seq[Long]): Future[Seq[ArchiveEntry]]
+  def showMany(documentSetId: Long, documentIds: immutable.Seq[Long]): Future[immutable.Seq[ArchiveEntry]]
 
   /** File contents.
     *
@@ -38,8 +38,8 @@ class DbArchiveEntryBackend @Inject() (
   val database: Database,
   val blobStorage: BlobStorage
 ) extends ArchiveEntryBackend with DbBackend {
-  private class ShowManyAction(documentSetId: Long, documentIds: Seq[Long])
-  extends SynchronousDatabaseAction[Seq[ArchiveEntry], NoStream, JdbcBackend, Effect.Read]
+  private class ShowManyAction(documentSetId: Long, documentIds: immutable.Seq[Long])
+  extends SynchronousDatabaseAction[immutable.Seq[ArchiveEntry], NoStream, JdbcBackend, Effect.Read]
   {
     override def getDumpInfo = DumpInfo(s"DbDocumentFileInfoBackend.SelectAction(${documentSetId}, ...)")
 
@@ -81,7 +81,7 @@ class DbArchiveEntryBackend @Inject() (
       pgConnection.getCopyAPI
     }
 
-    override def run(context: JdbcBackend#Context): Seq[ArchiveEntry] = {
+    override def run(context: JdbcBackend#Context): immutable.Seq[ArchiveEntry] = {
       val out = new ByteArrayOutputStream()
       copyManager(context).copyOut(documentsSql, out)
       val buf = ByteBuffer.wrap(out.toByteArray)
@@ -130,11 +130,11 @@ class DbArchiveEntryBackend @Inject() (
         ret.append(ArchiveEntry(id, titleBytes, nBytes))
       }
 
-      ret.toSeq
+      ret.toVector
     }
   }
 
-  override def showMany(documentSetId: Long, documentIds: Seq[Long]) = {
+  override def showMany(documentSetId: Long, documentIds: immutable.Seq[Long]) = {
     database.run(new ShowManyAction(documentSetId, documentIds))
   }
 

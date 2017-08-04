@@ -1,5 +1,7 @@
 package com.overviewdocs.messages
 
+import scala.collection.immutable
+
 import com.overviewdocs.query.Query
 
 /** Tasks that read information from a document set.
@@ -25,5 +27,5 @@ object DocumentSetReadCommands {
 
   /** Find a few phrases from each document matching the query.
     */
-  case class Highlights(documentSetId: Long, documentIds: Seq[Long], query: Query) extends ReadCommand
+  case class Highlights(documentSetId: Long, documentIds: immutable.Seq[Long], query: Query) extends ReadCommand
 }

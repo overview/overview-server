@@ -103,7 +103,6 @@ lazy val worker = (project in file("worker"))
   //.enablePlugins(Revolver)
   .settings(
     libraryDependencies ++= Dependencies.workerDependencies,
-    javaOptions in Test += "-Dconfig.resource=test.conf",
     mainClass in Compile := Some("com.overviewdocs.Worker"),
     sources in doc in Compile := List(), // docs take time; skip 'em
     javaOptions in reStart ++= devJavaOpts

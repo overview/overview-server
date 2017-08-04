@@ -1,5 +1,6 @@
 package controllers.backend
 
+import scala.collection.immutable
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import slick.lifted.RunnableCompiled
@@ -22,7 +23,7 @@ trait DbBackend {
     val action = for {
       items <- itemsQ.result
       count <- countQ.result
-    } yield Page(items, PageInfo(pageRequest, count))
+    } yield Page(items.toIndexedSeq, PageInfo(pageRequest, count))
 
     database.run(action)
   }
@@ -38,10 +39,10 @@ trait DbBackend {
     val action = for {
       items <- itemsQ.result
       count <- countQ.result
-    } yield Page(items, PageInfo(pageRequest, count))
+    } yield Page(items.toIndexedSeq, PageInfo(pageRequest, count))
 
     database.run(action)
   }
 
-  def emptyPage[T](pageRequest: PageRequest) = Future.successful(Page(Seq[T](), PageInfo(pageRequest, 0)))
+  def emptyPage[T](pageRequest: PageRequest) = Future.successful(Page(Vector[T](), PageInfo(pageRequest, 0)))
 }

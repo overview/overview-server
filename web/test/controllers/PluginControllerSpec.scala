@@ -22,7 +22,7 @@ class PluginControllerSpec extends ControllerSpecification with JsonMatchers {
 
     "return some JSON" in new IndexScope {
       val plugin = factory.plugin(name="n", description="d", url="http://u.org")
-      mockBackend.index returns Future.successful(Seq(plugin))
+      mockBackend.index returns Future.successful(Vector(plugin))
       val result = controller.index(fakeAuthorizedRequest)
       factory.plugin(name="foo")
 

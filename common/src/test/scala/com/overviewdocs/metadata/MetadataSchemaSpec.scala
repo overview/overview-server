@@ -11,7 +11,7 @@ class MetadataSchemaSpec extends Specification with JsonMatchers {
   "#toJson" should {
     trait ToJsonScope extends BaseScope {
       val version: Int = 1
-      val fields: Seq[MetadataField] = Seq()
+      val fields: Vector[MetadataField] = Vector()
       def json: String = MetadataSchema(version, fields).toJson.toString
     }
 
@@ -20,7 +20,7 @@ class MetadataSchemaSpec extends Specification with JsonMatchers {
     }
 
     "include a String field" in new ToJsonScope {
-      override val fields = Seq(MetadataField("foo", MetadataFieldType.String, MetadataFieldDisplay.TextInput))
+      override val fields = Vector(MetadataField("foo", MetadataFieldType.String, MetadataFieldDisplay.TextInput))
       json must /("fields") /#(0) /("name" -> "foo")
       json must /("fields") /#(0) /("type" -> "String")
       json must /("fields") /#(0) /("display" -> "TextInput")
@@ -45,19 +45,19 @@ class MetadataSchemaSpec extends Specification with JsonMatchers {
     }
 
     "parse a String field" in new FromJsonScope {
-      from("""{"version":1,"fields":[{"name":"foo","type":"String","display":"TextInput"}]}""").fields must beEqualTo(Seq(
+      from("""{"version":1,"fields":[{"name":"foo","type":"String","display":"TextInput"}]}""").fields must beEqualTo(Vector(
         MetadataField("foo", MetadataFieldType.String, MetadataFieldDisplay.TextInput)
       ))
     }
 
     "parse a Div field" in new FromJsonScope {
-      from("""{"version":1,"fields":[{"name":"foo","type":"String","display":"Div"}]}""").fields must beEqualTo(Seq(
+      from("""{"version":1,"fields":[{"name":"foo","type":"String","display":"Div"}]}""").fields must beEqualTo(Vector(
         MetadataField("foo", MetadataFieldType.String, MetadataFieldDisplay.Div)
       ))
     }
 
     "parse a Pre field" in new FromJsonScope {
-      from("""{"version":1,"fields":[{"name":"foo","type":"String","display":"Pre"}]}""").fields must beEqualTo(Seq(
+      from("""{"version":1,"fields":[{"name":"foo","type":"String","display":"Pre"}]}""").fields must beEqualTo(Vector(
         MetadataField("foo", MetadataFieldType.String, MetadataFieldDisplay.Pre)
       ))
     }
@@ -69,7 +69,7 @@ class MetadataSchemaSpec extends Specification with JsonMatchers {
     }
 
     "parse fields in order" in new FromJsonScope {
-      from("""{"version":1,"fields":[{"name":"foo","type":"String","display":"TextInput"},{"name":"bar","type":"String","display":"TextInput"}]}""").fields must beEqualTo(Seq(
+      from("""{"version":1,"fields":[{"name":"foo","type":"String","display":"TextInput"},{"name":"bar","type":"String","display":"TextInput"}]}""").fields must beEqualTo(Vector(
         MetadataField("foo", MetadataFieldType.String, MetadataFieldDisplay.TextInput),
         MetadataField("bar", MetadataFieldType.String, MetadataFieldDisplay.TextInput)
       ))
@@ -86,7 +86,7 @@ class MetadataSchemaSpec extends Specification with JsonMatchers {
     "provide an implicit Reads for parsing" in {
       import MetadataSchema.Json.reads
       val result = Json.parse("""{"version":1,"fields":[{"name":"foo","type":"String","display":"TextInput"}]}""").as[MetadataSchema]
-      result must beEqualTo(MetadataSchema(1, Seq(MetadataField("foo", MetadataFieldType.String, MetadataFieldDisplay.TextInput))))
+      result must beEqualTo(MetadataSchema(1, Vector(MetadataField("foo", MetadataFieldType.String, MetadataFieldDisplay.TextInput))))
     }
   }
 
@@ -101,7 +101,7 @@ class MetadataSchemaSpec extends Specification with JsonMatchers {
 
     "parse String fields" in new InferScope {
       val result = from("""{"foo":"bar","moo":"mar"}""")
-      result.fields must containTheSameElementsAs(Seq(
+      result.fields must containTheSameElementsAs(Vector(
         MetadataField("foo", MetadataFieldType.String, MetadataFieldDisplay.TextInput),
         MetadataField("moo", MetadataFieldType.String, MetadataFieldDisplay.TextInput)
       ))
@@ -122,7 +122,7 @@ class MetadataSchemaSpec extends Specification with JsonMatchers {
     }
 
     "not have any fields" in new EmptyScope {
-      subject.fields must beEqualTo(Seq())
+      subject.fields must beEqualTo(Vector())
     }
   }
 }

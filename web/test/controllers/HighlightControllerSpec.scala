@@ -15,7 +15,7 @@ class HighlightControllerSpec extends ControllerSpecification {
 
     val controller = new HighlightController(mockDocumentBackend, mockHighlightBackend, fakeControllerComponents)
 
-    def foundHighlights: Seq[Utf16Highlight] = Seq()
+    def foundHighlights: Vector[Utf16Highlight] = Vector()
     def foundText: String = "This is the document text"
 
     mockHighlightBackend.highlight(any[Long], any[Long], any[Query]) returns Future { foundHighlights }
@@ -30,20 +30,20 @@ class HighlightControllerSpec extends ControllerSpecification {
     }
 
     "return a JSON response with Highlights" in new IndexScope {
-      override def foundHighlights = Seq(Utf16Highlight(2, 4), Utf16Highlight(6, 8))
+      override def foundHighlights = Vector(Utf16Highlight(2, 4), Utf16Highlight(6, 8))
       h.status(result) must beEqualTo(h.OK)
       h.contentAsString(result) must beEqualTo("[[2,4],[6,8]]")
     }
 
     "return UTF-16 offsets" in new IndexScope {
       override def foundText = "café latte"
-      override def foundHighlights = Seq(Utf16Highlight(0, 4), Utf16Highlight(5, 10))
+      override def foundHighlights = Vector(Utf16Highlight(0, 4), Utf16Highlight(5, 10))
       h.status(result) must beEqualTo(h.OK)
       h.contentAsString(result) must beEqualTo("[[0,4],[5,10]]")
     }
 
     "return an empty response" in new IndexScope {
-      override def foundHighlights = Seq()
+      override def foundHighlights = Vector()
       h.status(result) must beEqualTo(h.OK)
       h.contentAsString(result) must beEqualTo("[]")
     }

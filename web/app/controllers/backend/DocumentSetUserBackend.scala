@@ -2,6 +2,7 @@ package controllers.backend
 
 import com.google.inject.ImplementedBy
 import javax.inject.Inject
+import scala.collection.immutable
 import scala.concurrent.Future
 
 import com.overviewdocs.database.Database
@@ -13,7 +14,7 @@ import com.overviewdocs.models.tables.DocumentSetUsers
 @ImplementedBy(classOf[DbDocumentSetUserBackend])
 trait DocumentSetUserBackend {
   /** Returns non-owner DocumentSetUsers for a given DocumentSet. */
-  def index(documentSetId: Long): Future[Seq[DocumentSetUser]]
+  def index(documentSetId: Long): Future[immutable.Seq[DocumentSetUser]]
 
   /** Adds an owner DocumentSetUser.
     *

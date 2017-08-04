@@ -18,11 +18,11 @@ class showSpec extends Specification with JsonMatchers {
     def doc1 = factory.document()
     def doc2 = factory.document()
     def warnings: List[SelectionWarning] = List()
-    def selection = InMemorySelection(selectionId, Array(doc1.id, doc2.id), warnings)
+    def selection = InMemorySelection(selectionId, Vector(doc1.id, doc2.id), warnings)
 
-    def doc1AndIds = (doc1, None.asInstanceOf[Option[String]], Seq[Long](), Seq[Long](), Seq[Utf16Snippet]())
-    def doc2AndIds = (doc2, None.asInstanceOf[Option[String]], Seq[Long](), Seq[Long](), Seq[Utf16Snippet]())
-    def docsAndIds = Seq(doc1AndIds, doc2AndIds)
+    def doc1AndIds = (doc1, None.asInstanceOf[Option[String]], Vector[Long](), Vector[Long](), Vector[Utf16Snippet]())
+    def doc2AndIds = (doc2, None.asInstanceOf[Option[String]], Vector[Long](), Vector[Long](), Vector[Utf16Snippet]())
+    def docsAndIds = Vector(doc1AndIds, doc2AndIds)
 
     def resultPage = Page(docsAndIds)
 
@@ -75,12 +75,12 @@ class showSpec extends Specification with JsonMatchers {
     }
 
     "set node IDs" in new BaseScope {
-      override def doc1AndIds = (doc1, None, Seq[Long](5L, 6L, 7L), Seq[Long](), Seq[Utf16Snippet]())
+      override def doc1AndIds = (doc1, None, Vector[Long](5L, 6L, 7L), Vector[Long](), Vector[Utf16Snippet]())
       result must /("documents") /#(0) /("nodeids") /#(1) /(6)
     }
 
     "set tag IDs" in new BaseScope {
-      override def doc1AndIds = (doc1, None, Seq[Long](), Seq[Long](5L, 6L, 7L), Seq[Utf16Snippet]())
+      override def doc1AndIds = (doc1, None, Vector[Long](), Vector[Long](5L, 6L, 7L), Vector[Utf16Snippet]())
       result must /("documents") /#(0) /("tagids") /#(1) /(6)
     }
 
@@ -90,25 +90,25 @@ class showSpec extends Specification with JsonMatchers {
     }
 
     "show a thumbnail" in new BaseScope {
-      override def doc1AndIds = (doc1, Some("https://thumbnail-url"), Seq(), Seq(), Seq())
+      override def doc1AndIds = (doc1, Some("https://thumbnail-url"), Vector(), Vector(), Vector())
 
       result must /("documents") /#(0) /("thumbnailUrl" -> "https://thumbnail-url")
     }
 
     "show a start snippet" in new BaseScope {
-      override def doc1AndIds = (doc1.copy(text="This is a start snippet"), None, Seq(), Seq(), Seq(Utf16Snippet(0, 9, Vector(Utf16Highlight(5, 7)))))
+      override def doc1AndIds = (doc1.copy(text="This is a start snippet"), None, Vector(), Vector(), Vector(Utf16Snippet(0, 9, Vector(Utf16Highlight(5, 7)))))
 
       result must /("documents") /#(0) /("snippet" -> "This <em>is</em> a…")
     }
 
     "show an end snippet" in new BaseScope {
-      override def doc1AndIds = (doc1.copy(text="This is an end snippet"), None, Seq(), Seq(), Seq(Utf16Snippet(8, 22, Vector(Utf16Highlight(11, 14)))))
+      override def doc1AndIds = (doc1.copy(text="This is an end snippet"), None, Vector(), Vector(), Vector(Utf16Snippet(8, 22, Vector(Utf16Highlight(11, 14)))))
 
       result must /("documents") /#(0) /("snippet" -> "…an <em>end</em> snippet")
     }
 
     "HTML-escape snippets" in new BaseScope {
-      override def doc1AndIds = (doc1.copy(text="1 < <2"), None, Seq(), Seq(), Seq(Utf16Snippet(0, 6, Vector(Utf16Highlight(4, 6)))))
+      override def doc1AndIds = (doc1.copy(text="1 < <2"), None, Vector(), Vector(), Vector(Utf16Snippet(0, 6, Vector(Utf16Highlight(4, 6)))))
 
       result must /("documents") /#(0) /("snippet" -> "1 &lt; <em>&lt;2</em>")
     }

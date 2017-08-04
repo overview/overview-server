@@ -1,6 +1,7 @@
 package com.overviewdocs.searchindex
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder
+import scala.collection.immutable
 import scala.concurrent.{ExecutionContext,Future}
 
 import com.overviewdocs.query.Query
@@ -54,11 +55,11 @@ trait LuceneIndexClient extends IndexClient {
     getIndex(id).map(_.delete)
   }
 
-  override def addDocuments(id: Long, documents: Iterable[Document]): Future[Unit] = {
+  override def addDocuments(id: Long, documents: immutable.Seq[Document]): Future[Unit] = {
     getIndex(id).map(_.addDocuments(documents))
   }
 
-  override def updateDocuments(id: Long, documents: Iterable[Document]): Future[Unit] = {
+  override def updateDocuments(id: Long, documents: immutable.Seq[Document]): Future[Unit] = {
     getIndex(id).map(_.updateDocuments(documents))
   }
 
@@ -70,7 +71,7 @@ trait LuceneIndexClient extends IndexClient {
     getIndex(documentSetId).map(_.highlight(documentId, q))
   }
 
-  override def highlights(documentSetId: Long, documentIds: Seq[Long], q: Query) = {
+  override def highlights(documentSetId: Long, documentIds: immutable.Seq[Long], q: Query) = {
     getIndex(documentSetId).map(_.highlights(documentIds, q))
   }
 

@@ -1,8 +1,11 @@
 package controllers.backend
 
+import akka.stream.scaladsl.Source
 import com.google.inject.ImplementedBy
 import play.api.libs.json.JsObject
+import play.api.Configuration
 import javax.inject.Inject
+import scala.collection.immutable
 import scala.collection.mutable.Buffer
 import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.Future
@@ -26,7 +29,10 @@ trait DocumentBackend {
   ): Future[Page[DocumentHeader]]
 
   /** Lists all requested Documents, in the requested order. */
-  def index(documentSetId: Long, documentIds: Seq[Long]): Future[Seq[Document]]
+  def index(documentSetId: Long, documentIds: immutable.Seq[Long]): Future[immutable.Seq[Document]]
+
+  /** Streams all requested Documents, in the requested order. */
+  def stream(documentSetId: Long, documentIds: immutable.Seq[Long]): Source[Document, akka.NotUsed]
 
   /** Returns a single Document.
     *
@@ -65,8 +71,10 @@ trait DocumentBackend {
 
 class DbDocumentBackend @Inject() (
   val database: Database,
-  val searchBackend: SearchBackend // TODO make writes go through worker, then NIX THIS! WHEE!
+  val searchBackend: SearchBackend, // TODO make writes go through worker, then NIX THIS! WHEE!
+  val configuration: Configuration
 ) extends DocumentBackend with DbBackend {
+  val nDocumentsPerStreamPacket = configuration.get[Int]("overview.n_documents_per_stream_packet")
 
   import database.api._
 
@@ -92,12 +100,12 @@ class DbDocumentBackend @Inject() (
         if (page.pageInfo.total == 0) {
           emptyPage[DocumentHeader](pageRequest)
         } else {
-          val documentsFuture: Future[Seq[DocumentHeader]] = includeText match {
+          val documentsFuture: Future[immutable.Seq[DocumentHeader]] = includeText match {
             case false => database.seq(InfosByIds.page(page.items))
             case true => database.seq(DocumentsByIds.page(page.items))
           }
 
-          documentsFuture.map { documents: Seq[DocumentHeader] =>
+          documentsFuture.map { documents: immutable.Seq[DocumentHeader] =>
             val documentsById: Map[Long,DocumentHeader] = documents
               .map(document => (document.id -> document))
               .toMap
@@ -108,11 +116,18 @@ class DbDocumentBackend @Inject() (
       }
   }
 
-  override def index(documentSetId: Long, documentIds: Seq[Long]) = {
+  override def index(documentSetId: Long, documentIds: immutable.Seq[Long]) = {
     database.seq(byDocumentSetIdAndIds(documentSetId, documentIds)).map { documents =>
       val map: Map[Long,Document] = documents.map((d) => (d.id -> d)).toMap
       documentIds.collect(map)
     }
+  }
+
+  override def stream(documentSetId: Long, documentIds: immutable.Seq[Long]) = {
+    Source(documentIds)
+      .grouped(nDocumentsPerStreamPacket)
+      .mapAsync(1) { someIds: immutable.Seq[Long] => index(documentSetId, someIds) }
+      .mapConcat(identity)
   }
 
   override def show(documentSetId: Long, documentId: Long) = {
@@ -147,20 +162,20 @@ class DbDocumentBackend @Inject() (
   }
 
   protected object InfosByIds {
-    private def q(ids: Seq[Long]) = DocumentInfos.filter(_.id inSet ids)
+    private def q(ids: immutable.Seq[Long]) = DocumentInfos.filter(_.id inSet ids)
 
-    def ids(ids: Seq[Long]) = q(ids).map(_.id)
+    def ids(ids: immutable.Seq[Long]) = q(ids).map(_.id)
 
-    def page(ids: Seq[Long]) = {
+    def page(ids: immutable.Seq[Long]) = {
       // We call this one when we're paginating.
       DocumentInfos.filter(_.id inSet ids) // we know we don't have 10M IDs here
     }
   }
 
   protected object DocumentsByIds {
-    private def q(ids: Seq[Long]) = Documents.filter(_.id inSet ids)
+    private def q(ids: immutable.Seq[Long]) = Documents.filter(_.id inSet ids)
 
-    def page(ids: Seq[Long]) = {
+    def page(ids: immutable.Seq[Long]) = {
       // We call this one when we're paginating.
       Documents
         .filter(_.id inSet ids) // bind: we know we don't have 10M IDs here
@@ -173,7 +188,7 @@ class DbDocumentBackend @Inject() (
       .filter(_.id === documentId)
   }
 
-  private def byDocumentSetIdAndIds(documentSetId: Long, documentIds: Seq[Long]) = {
+  private def byDocumentSetIdAndIds(documentSetId: Long, documentIds: immutable.Seq[Long]) = {
     Documents
       .filter(_.documentSetId === documentSetId)
       .filter(_.id inSet documentIds)

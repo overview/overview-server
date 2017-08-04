@@ -10,17 +10,17 @@ import com.overviewdocs.test.factories.{PodoFactory=>factory}
 
 class showSpec extends views.ViewSpecification {
   trait BaseScope extends JsonViewSpecificationScope {
-    val metadataSchema = MetadataSchema(1, Seq(MetadataField("foo", MetadataFieldType.String)))
+    val metadataSchema = MetadataSchema(1, Vector(MetadataField("foo", MetadataFieldType.String)))
     val documentSet: DocumentSet = factory.documentSet(metadataSchema=metadataSchema)
-    val trees: Iterable[Tree] = Seq()
-    val views: Iterable[View] = Seq()
-    val tags: Iterable[Tag] = Seq()
+    val trees: Iterable[Tree] = Vector()
+    val views: Iterable[View] = Vector()
+    val tags: Iterable[Tag] = Vector()
     override def result = show(documentSet, trees, views, tags)
   }
 
   "Tree view generated Json" should {
     "contain tags" in new BaseScope {
-      override val tags = Seq(
+      override val tags = Vector(
         factory.tag(id=5L, name="tag1"),
         factory.tag(id=15L, name="tag2")
       )
@@ -36,7 +36,7 @@ class showSpec extends views.ViewSpecification {
     }
 
     "contain trees" in new BaseScope {
-      override val trees = Seq(factory.tree(
+      override val trees = Vector(factory.tree(
         documentSetId=10L,
         id=2L,
         rootNodeId=Some(3L),
@@ -56,7 +56,7 @@ class showSpec extends views.ViewSpecification {
     }
 
     "contain views" in new BaseScope {
-      override val views = Seq(factory.view(
+      override val views = Vector(factory.view(
         id=1L,
         title="foo",
         createdAt=new java.sql.Timestamp(1000),

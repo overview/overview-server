@@ -15,8 +15,8 @@ import com.overviewdocs.searchindex.SearchWarning
 
 class DocumentControllerSpec extends ApiControllerSpecification {
   trait BaseScope extends ApiControllerScope {
-    lazy val selection = InMemorySelection(Array.empty) // override for a different Selection
-    val documentSet = factory.documentSet(metadataSchema = MetadataSchema(1, Seq(
+    lazy val selection = InMemorySelection(Vector.empty) // override for a different Selection
+    val documentSet = factory.documentSet(metadataSchema = MetadataSchema(1, Vector(
       MetadataField("foo")
     )))
     val mockDocumentSetBackend = smartMock[DocumentSetBackend]
@@ -41,7 +41,7 @@ class DocumentControllerSpec extends ApiControllerSpecification {
         val q = ""
         val fields = ""
         val pageRequest = PageRequest(0, 1000, false)
-        def emptyPage[T] = Page(Seq[T](), PageInfo(pageRequest, 0))
+        def emptyPage[T] = Page(Vector[T](), PageInfo(pageRequest, 0))
 
         override lazy val request = fakeRequest("GET", "?q=" + q)
         override def action = controller.index(documentSetId, fields)

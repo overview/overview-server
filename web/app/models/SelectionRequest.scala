@@ -1,5 +1,7 @@
 package models
 
+import scala.collection.immutable
+
 import com.overviewdocs.query.Query
 
 /** Identifies a few documents out of an entire document set.
@@ -9,10 +11,10 @@ import com.overviewdocs.query.Query
   */
 case class SelectionRequest(
   val documentSetId: Long,
-  val nodeIds: Seq[Long] = Seq(),
-  val tagIds: Seq[Long] = Seq(),
-  val documentIds: Seq[Long] = Seq(),
-  val storeObjectIds: Seq[Long] = Seq(),
+  val nodeIds: immutable.Seq[Long] = Vector(),
+  val tagIds: immutable.Seq[Long] = Vector(),
+  val documentIds: immutable.Seq[Long] = Vector(),
+  val storeObjectIds: immutable.Seq[Long] = Vector(),
   val tagged: Option[Boolean] = None,
   val q: Option[Query] = None,
   val tagOperation: SelectionRequest.TagOperation = SelectionRequest.TagOperation.Any,

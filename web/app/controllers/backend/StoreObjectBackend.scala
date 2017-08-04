@@ -2,6 +2,7 @@ package controllers.backend
 
 import com.google.inject.ImplementedBy
 import javax.inject.Inject
+import scala.collection.immutable
 import scala.concurrent.Future
 
 import com.overviewdocs.database.Database
@@ -14,7 +15,7 @@ trait StoreObjectBackend {
     *
     * When indexedLong or indexedString is Some, it will filter the results.
     */
-  def index(storeId: Long, indexedLong: Option[Long]=None, indexedString: Option[String]=None): Future[Seq[StoreObject]]
+  def index(storeId: Long, indexedLong: Option[Long]=None, indexedString: Option[String]=None): Future[immutable.Seq[StoreObject]]
 
   /** Returns an individual StoreObject.
     *
@@ -35,7 +36,7 @@ trait StoreObjectBackend {
     * The creation is atomic: if creation number 4 fails, it will be as if
     * creations 1, 2 and 3 never happened.
     */
-  def createMany(storeId: Long, attributesSeq: Seq[StoreObject.CreateAttributes]): Future[Seq[StoreObject]]
+  def createMany(storeId: Long, attributesSeq: immutable.Seq[StoreObject.CreateAttributes]): Future[immutable.Seq[StoreObject]]
 
   /** Modifies a StoreObject, and returns the modified version.
     *
@@ -61,7 +62,7 @@ trait StoreObjectBackend {
     * The deletion is atomic: if it fails partway, it will be as if the request
     * never happened.
     */
-  def destroyMany(storeId: Long, ids: Seq[Long]): Future[Unit]
+  def destroyMany(storeId: Long, ids: immutable.Seq[Long]): Future[Unit]
 }
 
 class DbStoreObjectBackend @Inject() (
@@ -125,12 +126,13 @@ class DbStoreObjectBackend @Inject() (
     database.run(inserter.+=(storeId, attributes.indexedLong, attributes.indexedString, attributes.json))
   }
 
-  override def createMany(storeId: Long, attributesSeq: Seq[StoreObject.CreateAttributes]) = {
+  override def createMany(storeId: Long, attributesSeq: immutable.Seq[StoreObject.CreateAttributes]) = {
     val tuples = for {
       a <- attributesSeq
     } yield (storeId, a.indexedLong, a.indexedString, a.json)
 
     database.run(inserter.++=(tuples))
+      .map(_.toIndexedSeq)(database.executionContext)
   }
 
   private lazy val updateQuery = Compiled { (id: Rep[Long]) =>
@@ -158,7 +160,7 @@ class DbStoreObjectBackend @Inject() (
     """)
   }
 
-  override def destroyMany(storeId: Long, ids: Seq[Long]) = {
+  override def destroyMany(storeId: Long, ids: immutable.Seq[Long]) = {
     /*
      * We run two DELETEs in a single query, to simulate a transaction and
      * avoid a round trip.

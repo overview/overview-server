@@ -3,6 +3,7 @@ package com.overviewdocs.util
 import java.io.{ByteArrayInputStream,ByteArrayOutputStream,DataOutputStream}
 import java.nio.charset.Charset
 import org.postgresql.PGConnection
+import scala.collection.immutable
 import scala.collection.mutable.Buffer
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -43,7 +44,7 @@ trait BulkDocumentWriter {
   private val Millennium = 946684800000L // 2000-01-01 since the epoch, in ms
 
   /** Actual flush operation. */
-  protected def flushImpl(documents: Iterable[Document]): Future[Unit]
+  protected def flushImpl(documents: immutable.Seq[Document]): Future[Unit]
 
   def needsFlush: Boolean = {
     currentBuffer.length >= maxNDocuments || currentNBytes >= maxNBytes
@@ -80,14 +81,14 @@ trait BulkDocumentWriter {
     if (currentBuffer.isEmpty) {
       Future.unit
     } else {
-      val documents = currentBuffer
+      val documents = currentBuffer.toIndexedSeq
       currentBuffer = Buffer()
       currentNBytes = 0
       flushImpl(documents)
     }
   }
 
-  protected def flushDocumentsToDatabase(database: Database, documents: Iterable[Document]): Future[Unit] = {
+  protected def flushDocumentsToDatabase(database: Database, documents: immutable.Seq[Document]): Future[Unit] = {
     import com.overviewdocs.database.Slick.api._
     import slick.dbio.SynchronousDatabaseAction
     import slick.jdbc.JdbcBackend
@@ -196,7 +197,7 @@ object BulkDocumentWriter extends HasDatabase {
   import database.api._
 
   def forDatabaseAndSearchIndex: BulkDocumentWriter = new BulkDocumentWriter {
-    override def flushImpl(documents: Iterable[Document]) = {
+    override def flushImpl(documents: immutable.Seq[Document]) = {
       val dbFuture = flushDocumentsToDatabase(database, documents)
       val siFuture = flushDocumentsToSearchIndex(documents)
 
@@ -208,20 +209,20 @@ object BulkDocumentWriter extends HasDatabase {
   }
 
   def forSearchIndex: BulkDocumentWriter = new BulkDocumentWriter {
-    override def flushImpl(documents: Iterable[Document]) = flushDocumentsToSearchIndex(documents)
+    override def flushImpl(documents: immutable.Seq[Document]) = flushDocumentsToSearchIndex(documents)
   }
 
   def forDatabase: BulkDocumentWriter = new BulkDocumentWriter {
-    override def flushImpl(documents: Iterable[Document]) = flushDocumentsToDatabase(database, documents)
+    override def flushImpl(documents: immutable.Seq[Document]) = flushDocumentsToDatabase(database, documents)
   }
 
   private lazy val indexClient = LuceneIndexClient.onDiskSingleton // TODO use actor
 
-  private def flushDocumentsToSearchIndex(documents: Iterable[Document]): Future[Unit] = {
-    val byDocumentSetId: Map[Long, Iterable[Document]] = documents.groupBy(_.documentSetId)
+  private def flushDocumentsToSearchIndex(documents: immutable.Seq[Document]): Future[Unit] = {
+    val byDocumentSetId: Map[Long, immutable.Iterable[Document]] = documents.groupBy(_.documentSetId)
     // Run all the commits at once. Probably not ideal.
-    val futures: Iterable[Future[Unit]] = byDocumentSetId.map { case (dsId, docs) =>
-      indexClient.addDocuments(dsId, docs)
+    val futures: immutable.Iterable[Future[Unit]] = byDocumentSetId.map { case (dsId, docs) =>
+      indexClient.addDocuments(dsId, docs.toIndexedSeq)
     }
     Future.sequence(futures).map(_ => ())
   }

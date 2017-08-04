@@ -4,6 +4,7 @@ import com.github.t3hnar.bcrypt._
 import org.specs2.specification.Scope
 import org.specs2.matcher.JsonMatchers
 import play.api.mvc.Result
+import scala.collection.immutable
 import scala.concurrent.Future
 
 import controllers.backend.UserBackend
@@ -41,13 +42,13 @@ class UserControllerSpec extends controllers.ControllerSpecification with JsonMa
       // XXX This is mostly a test of the view...
       trait IndexJsonScope extends BaseScope {
         val page = 1
-        def users : Seq[User]
+        def users : immutable.Seq[User]
         mockBackend.indexPage(any[PageRequest]) answers((_) => Future(Page(users, PageInfo(PageRequest(0, 50, false), 100))))
         override def result = controller.indexJson(page)(fakeAuthorizedRequest)
       }
 
       "render JSON users" in new IndexJsonScope {
-        override def users = Seq(
+        override def users = Vector(
           User(id=2, email="user@example.org"),
           User(id=3, email="user2@example.org")
         )
@@ -56,7 +57,7 @@ class UserControllerSpec extends controllers.ControllerSpecification with JsonMa
       }
 
       "render is_admin" in new IndexJsonScope {
-        override def users = Seq(
+        override def users = Vector(
           User(role=UserRole.NormalUser),
           User(role=UserRole.Administrator)
         )
@@ -70,7 +71,7 @@ class UserControllerSpec extends controllers.ControllerSpecification with JsonMa
       "render timestamps as UTC ISO8601" in new IndexJsonScope {
         val date = new java.sql.Timestamp(1392730766123L)
         val dateString = "2014-02-18T13:39:26.123Z"
-        override def users = Seq(User(
+        override def users = Vector(User(
           confirmationSentAt=Some(date),
           confirmedAt=Some(date),
           lastActivityAt=Some(date)
@@ -84,7 +85,7 @@ class UserControllerSpec extends controllers.ControllerSpecification with JsonMa
       }
 
       "render timestamps as null" in new IndexJsonScope {
-        override def users = Seq(User(
+        override def users = Vector(User(
           confirmationSentAt=None,
           confirmedAt=None,
           lastActivityAt=None
@@ -112,7 +113,7 @@ class UserControllerSpec extends controllers.ControllerSpecification with JsonMa
     "update" should {
       trait UpdateScope extends BaseScope {
         val email = "user2@example.org"
-        def data: Seq[(String,String)] = Seq()
+        def data: Vector[(String,String)] = Vector()
         def request = fakeAuthorizedRequest.withFormUrlEncodedBody(data: _*)
         override def result = controller.update(email)(request)
       }
@@ -124,7 +125,7 @@ class UserControllerSpec extends controllers.ControllerSpecification with JsonMa
 
       "not change role when is_admin is neither 'true' nor 'false'" in new UpdateScope {
         mockBackend.showByEmail(email) returns Future.successful(Some(User(email=email)))
-        override def data = Seq("is_admin" -> "not true or false")
+        override def data = Vector("is_admin" -> "not true or false")
         h.status(result) must beEqualTo(h.NO_CONTENT)
         there was no(mockBackend).updateIsAdmin(any, any)
       }
@@ -132,7 +133,7 @@ class UserControllerSpec extends controllers.ControllerSpecification with JsonMa
       "promote a user" in new UpdateScope {
         val user = User(id=123L, email=email, role=UserRole.NormalUser)
         mockBackend.showByEmail(email) returns Future.successful(Some(user))
-        override def data = Seq("is_admin" -> "true")
+        override def data = Vector("is_admin" -> "true")
         h.status(result) must beEqualTo(h.NO_CONTENT) // finish request
         there was one(mockBackend).updateIsAdmin(123L, true)
       }
@@ -140,7 +141,7 @@ class UserControllerSpec extends controllers.ControllerSpecification with JsonMa
       "demote a user" in new UpdateScope {
         val user = User(id=123L, email=email, role=UserRole.Administrator)
         mockBackend.showByEmail(email) returns Future.successful(Some(user))
-        override def data = Seq("is_admin" -> "false")
+        override def data = Vector("is_admin" -> "false")
         h.status(result) must beEqualTo(h.NO_CONTENT) // finish request
         there was one(mockBackend).updateIsAdmin(123L, false)
       }
@@ -148,7 +149,7 @@ class UserControllerSpec extends controllers.ControllerSpecification with JsonMa
       "not change password when not given" in new UpdateScope {
         val user = User(id=123L, email=email, passwordHash="hash")
         mockBackend.showByEmail(email) returns Future.successful(Some(user))
-        override def data = Seq("is_admin" -> "false")
+        override def data = Vector("is_admin" -> "false")
         h.status(result) must beEqualTo(h.NO_CONTENT) // finish request
         there was no(mockBackend).updatePasswordHash(any, any)
       }
@@ -156,7 +157,7 @@ class UserControllerSpec extends controllers.ControllerSpecification with JsonMa
       "change password when one is given" in new UpdateScope {
         val user = User(id=123L, email=email, passwordHash="hash")
         mockBackend.showByEmail(email) returns Future.successful(Some(user))
-        override def data = Seq("password" -> "as;dj#$xfF")
+        override def data = Vector("password" -> "as;dj#$xfF")
         h.status(result) must beEqualTo(h.NO_CONTENT) // finish request
         there was one(mockBackend).updatePasswordHash(any, beLike[String] { case (s: String) =>
           "as;dj#$xfF".isBcrypted(s) must beTrue
@@ -165,7 +166,7 @@ class UserControllerSpec extends controllers.ControllerSpecification with JsonMa
 
       "return BadRequest for the current user" in new UpdateScope {
         override val email = request.user.email
-        override def data = Seq("is_admin" -> "false")
+        override def data = Vector("is_admin" -> "false")
         h.status(result) must beEqualTo(h.BAD_REQUEST)
         there was no(mockBackend).updatePasswordHash(any, any)
         there was no(mockBackend).updateIsAdmin(any, any)
@@ -199,7 +200,7 @@ class UserControllerSpec extends controllers.ControllerSpecification with JsonMa
 
     "create" should {
       trait CreateScope extends BaseScope {
-        def data : Seq[(String,String)] = Seq(
+        def data : Vector[(String,String)] = Vector(
           "email" -> "user2@example.org",
           "password" -> ";lasd#@sdf3F"
         )
@@ -213,7 +214,7 @@ class UserControllerSpec extends controllers.ControllerSpecification with JsonMa
       }
 
       "return BadRequest when the form is not entered properly" in new CreateScope {
-        override def data = Seq("email" -> "")
+        override def data = Vector("email" -> "")
         h.status(result) must beEqualTo(h.BAD_REQUEST)
       }
 

@@ -1,6 +1,7 @@
 package models
 
 import java.util.UUID
+import scala.collection.immutable
 import scala.concurrent.Future
 
 import models.pagination.{Page,PageInfo,PageRequest}
@@ -19,7 +20,7 @@ trait Selection {
   val warnings: List[SelectionWarning]
 
   def getDocumentIds(page: PageRequest): Future[Page[Long]]
-  def getAllDocumentIds: Future[Array[Long]]
+  def getAllDocumentIds: Future[immutable.Seq[Long]]
   def getDocumentCount: Future[Int]
 }
 
@@ -31,7 +32,7 @@ trait Selection {
   */
 case class InMemorySelection(
   override val id: UUID,
-  val documentIds: Array[Long],
+  val documentIds: immutable.Seq[Long],
   override val warnings: List[SelectionWarning]
 ) extends Selection {
   override def getDocumentIds(page: PageRequest) = {
@@ -42,7 +43,7 @@ case class InMemorySelection(
     }
 
     Future.successful(Page(
-      iterator.drop(page.offset).take(page.limit).toArray,
+      iterator.drop(page.offset).take(page.limit).toVector,
       PageInfo(page, documentIds.length)
     ))
   }
@@ -52,10 +53,18 @@ case class InMemorySelection(
 
 object InMemorySelection {
   def apply(documentIds: Array[Long]): InMemorySelection = {
-    InMemorySelection(documentIds, Nil)
+    InMemorySelection(UUID.randomUUID, documentIds.toIndexedSeq, Nil)
   }
 
   def apply(documentIds: Array[Long], warnings: List[SelectionWarning]): InMemorySelection = {
-    InMemorySelection(UUID.randomUUID(), documentIds, warnings)
+    InMemorySelection(UUID.randomUUID, documentIds.toIndexedSeq, warnings)
+  }
+
+  def apply(documentIds: immutable.Seq[Long]): InMemorySelection = {
+    InMemorySelection(UUID.randomUUID, documentIds, Nil)
+  }
+
+  def apply(documentIds: immutable.Seq[Long], warnings: List[SelectionWarning]): InMemorySelection = {
+    InMemorySelection(UUID.randomUUID, documentIds, warnings)
   }
 }

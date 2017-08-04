@@ -2,6 +2,7 @@ package controllers.backend
 
 import com.google.inject.ImplementedBy
 import javax.inject.Inject
+import scala.collection.immutable
 import scala.concurrent.Future
 
 import com.overviewdocs.database.Database
@@ -15,7 +16,7 @@ trait DocumentNodeBackend extends Backend {
     *
     * The returned lists are not ordered.
     */
-  def indexMany(documentIds: Seq[Long]): Future[Map[Long,Seq[Long]]]
+  def indexMany(documentIds: immutable.Seq[Long]): Future[Map[Long,immutable.Seq[Long]]]
 
   /** Counts how many NodeDocuments exist, counted by Node.
     *
@@ -27,7 +28,7 @@ trait DocumentNodeBackend extends Backend {
     * @param selection The documents we care about
     * @param nodeIds The nodes we care about
     */
-  def countByNode(selection: Selection, nodeIds: Seq[Long]): Future[Map[Long,Int]]
+  def countByNode(selection: Selection, nodeIds: immutable.Seq[Long]): Future[Map[Long,Int]]
 }
 
 class DbDocumentNodeBackend @Inject() (
@@ -36,7 +37,7 @@ class DbDocumentNodeBackend @Inject() (
   import database.api._
   import database.executionContext
 
-  private def countByDocumentsAndNodes(documentIds: Seq[Long], nodeIds: Seq[Long]): Future[Map[Long,Int]] = {
+  private def countByDocumentsAndNodes(documentIds: immutable.Seq[Long], nodeIds: immutable.Seq[Long]): Future[Map[Long,Int]] = {
     if (documentIds.isEmpty) {
       Future.successful(Map())
     } else if (nodeIds.isEmpty) {
@@ -54,23 +55,23 @@ class DbDocumentNodeBackend @Inject() (
     }
   }
 
-  override def indexMany(documentIds: Seq[Long]) = {
+  override def indexMany(documentIds: immutable.Seq[Long]) = {
     if (documentIds.isEmpty) {
       Future.successful(Map())
     } else {
       import slick.jdbc.GetResult
-      implicit val rconv = GetResult(r => (r.nextLong() -> r.nextArray[Long]()))
+      implicit val rconv = GetResult(r => (r.nextLong() -> r.nextArray[Long]().toVector))
       database.run(sql"""
         SELECT document_id, ARRAY_AGG(node_id)
         FROM node_document
         WHERE document_id IN (#${documentIds.mkString(",")})
         GROUP BY document_id
-      """.as[(Long,Seq[Long])])
+      """.as[(Long,immutable.Seq[Long])])
         .map(_.toMap)
     }
   }
 
-  override def countByNode(selection: Selection, nodeIds: Seq[Long]) = {
+  override def countByNode(selection: Selection, nodeIds: immutable.Seq[Long]) = {
     for {
       documentIds <- selection.getAllDocumentIds
       result <- countByDocumentsAndNodes(documentIds, nodeIds)

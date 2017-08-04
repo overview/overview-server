@@ -123,7 +123,7 @@ class CsvImporterSpec extends DbSpecification with Mockito {
 
   "add the metadata columns to the DocumentSet" in new BaseScope {
     await(csvImporter(csvImport("text,foo,bar\n1,2,3".getBytes("utf-8"))).run)
-    blockingDatabase.option(DocumentSets).map(_.metadataSchema) must beSome(MetadataSchema(1, Seq(
+    blockingDatabase.option(DocumentSets).map(_.metadataSchema) must beSome(MetadataSchema(1, Vector(
       MetadataField("foo", MetadataFieldType.String),
       MetadataField("bar", MetadataFieldType.String)
     )))

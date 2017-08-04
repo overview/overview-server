@@ -76,7 +76,7 @@ object QueryParser {
     }
 
     case class RegexString(rawValue: String) extends StringToken {
-      override def toQuery(field: Field) = RegexQuery(field, dequote(rawValue))
+      override def toQuery(field: Field) = RegexQuery(field, rawValue.slice(1, rawValue.length - 1))
     }
 
     case class QuotedString(rawValue: String) extends StringToken {

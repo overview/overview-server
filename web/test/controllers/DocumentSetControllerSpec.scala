@@ -5,6 +5,7 @@ import org.specs2.matcher.{Expectable,JsonMatchers,Matcher}
 import org.specs2.specification.Scope
 import play.api.libs.json.{JsValue,Json}
 import play.api.mvc.AnyContent
+import scala.collection.immutable
 import scala.concurrent.Future
 
 import com.overviewdocs.metadata.{MetadataField,MetadataFieldDisplay,MetadataFieldType,MetadataSchema}
@@ -43,7 +44,7 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
     "update" should {
       trait UpdateScope extends BaseScope {
         val documentSetId = 1L
-        def formBody: Seq[(String, String)] = Seq("public" -> "false", "title" -> "foo")
+        def formBody: Vector[(String, String)] = Vector("public" -> "false", "title" -> "foo")
         def request = fakeAuthorizedRequest.withFormUrlEncodedBody(formBody: _*)
         def result = controller.update(documentSetId)(request)
 
@@ -66,7 +67,7 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
       }
 
       "return BadRequest if form input is bad" in new UpdateScope {
-        override def formBody = Seq("public" -> "maybe", "title" -> "bar")
+        override def formBody = Vector("public" -> "maybe", "title" -> "bar")
         h.status(result) must beEqualTo(h.BAD_REQUEST)
       }
     }
@@ -91,7 +92,7 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
             )
           )
         )
-        val expectSchema = MetadataSchema(1, Seq(
+        val expectSchema = MetadataSchema(1, Vector(
           MetadataField("foo", MetadataFieldType.String, MetadataFieldDisplay.TextInput),
           MetadataField("bar", MetadataFieldType.String, MetadataFieldDisplay.Div)
         ))
@@ -129,7 +130,7 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
         val documentSetId = 1L
         def result = controller.showHtmlInJson(documentSetId)(fakeAuthorizedRequest)
         mockBackend.show(documentSetId) returns Future.successful(Some(factory.documentSet(id=documentSetId)))
-        mockStorage.findNViewsByDocumentSets(Seq(documentSetId)) returns Map(documentSetId -> 2)
+        mockStorage.findNViewsByDocumentSets(Vector(documentSetId)) returns Map(documentSetId -> 2)
       }
 
       "return NotFound if DocumentSet is not present" in new ShowHtmlInJsonScope {
@@ -138,13 +139,13 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
       }
 
       "return Ok if the DocumentSet exists but no trees do" in new ShowHtmlInJsonScope {
-        mockStorage.findNViewsByDocumentSets(Seq(documentSetId)) returns Map()
-        mockImportJobBackend.indexByDocumentSet(documentSetId) returns Future.successful(Seq())
+        mockStorage.findNViewsByDocumentSets(Vector(documentSetId)) returns Map()
+        mockImportJobBackend.indexByDocumentSet(documentSetId) returns Future.successful(Vector())
         h.status(result) must beEqualTo(h.OK)
       }
 
       "return Ok if the DocumentSet exists with trees" in new ShowHtmlInJsonScope {
-        mockImportJobBackend.indexByDocumentSet(documentSetId) returns Future.successful(Seq())
+        mockImportJobBackend.indexByDocumentSet(documentSetId) returns Future.successful(Vector())
         h.status(result) must beEqualTo(h.OK)
       }
     }
@@ -170,9 +171,9 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
         val sampleTag = factory.tag(id=1L, documentSetId=1L, name="a tag", color="ffffff")
 
         mockBackend.show(documentSetId) returns Future.successful(Some(factory.documentSet(documentCount=10)))
-        mockStorage.findTrees(documentSetId) returns Seq(sampleTree)
-        mockViewBackend.index(documentSetId) returns Future.successful(Seq(sampleView))
-        mockStorage.findTags(documentSetId) returns Seq(sampleTag)
+        mockStorage.findTrees(documentSetId) returns Vector(sampleTree)
+        mockViewBackend.index(documentSetId) returns Future.successful(Vector(sampleView))
+        mockStorage.findTags(documentSetId) returns Vector(sampleTag)
       }
 
       "encode the count, views, tags, and search results into the json result" in new ShowJsonScope {
@@ -193,7 +194,7 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
         def request = fakeAuthorizedRequest
         lazy val result = controller.show(documentSetId)(request)
         mockBackend.show(documentSetId) returns Future.successful(Some(factory.documentSet(id=documentSetId)))
-        mockImportJobBackend.indexByDocumentSet(documentSetId) returns Future.successful(Seq())
+        mockImportJobBackend.indexByDocumentSet(documentSetId) returns Future.successful(Vector())
       }
 
       "return NotFound when the DocumentSet is not present" in new ValidShowScope {
@@ -209,13 +210,13 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
       "show a progressbar if there is an ImportJob" in new ValidShowScope {
         val job = smartMock[CsvImportJob]
         job.progress returns Some(0.123)
-        job.description returns Some(("a-description", Seq()))
+        job.description returns Some(("a-description", Vector()))
         job.estimatedCompletionTime returns Some(java.time.Instant.now)
         // Then the "cancel" button... icky test :(
         job.csvImport returns factory.csvImport(documentSetId=1L, id=2L)
-        mockImportJobBackend.indexByDocumentSet(documentSetId) returns Future.successful(Seq(job))
+        mockImportJobBackend.indexByDocumentSet(documentSetId) returns Future.successful(Vector(job))
         h.status(result)
-        there was one(controller.showProgressHtml).apply(any, any, Matchers.eq(Seq(job)))(any, any, any)
+        there was one(controller.showProgressHtml).apply(any, any, Matchers.eq(Vector(job)))(any, any, any)
       }
     }
 
@@ -223,11 +224,11 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
       trait IndexScope extends BaseScope {
         def pageNumber = 1
 
-        def fakeDocumentSets: Seq[DocumentSet] = Seq(factory.documentSet(id=1L))
+        def fakeDocumentSets: immutable.Seq[DocumentSet] = Vector(factory.documentSet(id=1L))
         mockBackend.indexPageByOwner(any, any) answers { _ => Future.successful(Page(fakeDocumentSets)) }
         def fakeNViews: Map[Long,Int] = Map(1L -> 2)
-        mockStorage.findNViewsByDocumentSets(any[Seq[Long]]) answers { (_) => fakeNViews }
-        def fakeJobs: Seq[ImportJob] = Seq()
+        mockStorage.findNViewsByDocumentSets(any[immutable.Seq[Long]]) answers { (_) => fakeNViews }
+        def fakeJobs: immutable.Seq[ImportJob] = Vector()
         mockImportJobBackend.indexByUser(any[String]) answers { _ => Future.successful(fakeJobs) }
 
         def request = fakeAuthorizedRequest
@@ -240,13 +241,13 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
       }
 
       "redirect to examples if there are no document sets" in new IndexScope {
-        override def fakeDocumentSets = Seq()
+        override def fakeDocumentSets = Vector()
 
         h.status(result) must beEqualTo(h.SEE_OTHER)
       }
 
       "flash when redirecting" in new IndexScope {
-        override def fakeDocumentSets = Seq()
+        override def fakeDocumentSets = Vector()
 
         override def request = super.request.withFlash("foo" -> "bar")
         h.flash(result).data must beEqualTo(Map("foo" -> "bar"))
@@ -259,11 +260,11 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
       }
 
       "bind nViews to their document sets" in new IndexScope {
-        override def fakeDocumentSets = Seq(factory.documentSet(id=1L), factory.documentSet(id=2L))
+        override def fakeDocumentSets = Vector(factory.documentSet(id=1L), factory.documentSet(id=2L))
         override def fakeNViews = Map(1L -> 4, 2L -> 5)
         h.status(result) // load page
 
-        case class haveIdPairs(idPairs: Seq[Tuple2[Long,Int]]) extends Matcher[Page[(DocumentSet,Iterable[ImportJob],Int)]] {
+        case class haveIdPairs(idPairs: Vector[Tuple2[Long,Int]]) extends Matcher[Page[(DocumentSet,Iterable[ImportJob],Int)]] {
           def apply[P <: Page[(DocumentSet,Iterable[ImportJob],Int)]](p: Expectable[P]) = {
             result(
               p.value.items.map {
@@ -278,7 +279,7 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
 
         there was one(controller.indexHtml).apply(
           any,
-          haveIdPairs(Seq((1, 4), (2, 5)))
+          haveIdPairs(Vector((1, 4), (2, 5)))
         )(any, any, any)
       }
     }

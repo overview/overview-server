@@ -124,7 +124,7 @@ class MassUploadControllerSpec extends ControllerSpecification {
 
   "#startClustering" should {
     trait StartClusteringScope extends BaseScope {
-      def formData = Seq(
+      def formData = Vector(
         "name" -> "DocumentSet name",
         "lang" -> "sv",
         "split_documents" -> "false",
@@ -158,7 +158,7 @@ class MassUploadControllerSpec extends ControllerSpecification {
         beLike[DocumentSet.CreateAttributes] { case attributes =>
           attributes.title must beEqualTo("DocumentSet name")
           attributes.metadataSchema must beEqualTo(
-            MetadataSchema(1, Seq(MetadataField("foo", MetadataFieldType.String, MetadataFieldDisplay.TextInput)))
+            MetadataSchema(1, Vector(MetadataField("foo", MetadataFieldType.String, MetadataFieldDisplay.TextInput)))
           )
         },
         beLike[String] { case s => s must beEqualTo(user.email) }
@@ -198,7 +198,7 @@ class MassUploadControllerSpec extends ControllerSpecification {
     // TODO make adding files and clustering two different things, so we can do
     // everything with half the tests.
     trait StartClusteringExistingDocumentSetScope extends BaseScope {
-      def formData = Seq(
+      def formData = Vector(
         "name" -> "DocumentSet name",
         "lang" -> "sv",
         "split_documents" -> "false",

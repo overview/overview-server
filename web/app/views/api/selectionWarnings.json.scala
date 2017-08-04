@@ -37,6 +37,21 @@ object selectionWarnings {
           "type" -> JsString("IndexDoesNotExist")
         ))
       }
+      case SelectionWarning.RegexSyntaxError(regex, errorEnglish, index) => JsObject(Seq(
+        "type" -> JsString("RegexSyntaxError"),
+        "regex" -> JsString(regex),
+        "message" -> JsString(errorEnglish),
+        "index" -> JsNumber(index)
+      ))
+      case SelectionWarning.NestedRegexIgnored(regex) => JsObject(Seq(
+        "type" -> JsString("NestedRegexIgnored"),
+        "regex" -> JsString(regex)
+      ))
+      case SelectionWarning.RegexLimited(nTotal, nTested) => JsObject(Seq(
+        "type" -> JsString("RegexLimited"),
+        "nTotal" -> JsNumber(nTotal),
+        "nTested" -> JsNumber(nTested)
+      ))
       case SelectionWarning.MissingField(fieldName, validFieldNames) => JsObject(Seq(
         "type" -> JsString("MissingField"),
         "field" -> JsString(fieldName),

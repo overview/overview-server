@@ -1,6 +1,7 @@
 package com.overviewdocs.searchindex
 
 import akka.actor.{Actor,ActorRef,Props}
+import scala.collection.immutable
 import scala.concurrent.Future
 import scala.util.{Success,Failure}
 
@@ -43,7 +44,7 @@ class Indexer(
     }
     case Indexer.DoWorkThenAck(ReindexDocument(documentSetId, documentId), sender, ack) => {
       documentFinder.findDocument(documentSetId, documentId)
-        .flatMap(maybeDocument => indexClient.updateDocuments(documentSetId, maybeDocument.toSeq))
+        .flatMap(maybeDocument => indexClient.updateDocuments(documentSetId, maybeDocument.toIndexedSeq))
         .flatMap(_ => documentIdListDeleter.deleteByDocumentSet(documentSetId.toInt))
         .onComplete {
           case Success(()) => sender ! ack
