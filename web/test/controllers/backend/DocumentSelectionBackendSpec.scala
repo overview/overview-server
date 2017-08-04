@@ -2,8 +2,11 @@ package controllers.backend
 
 import com.google.re2j.Pattern
 import org.specs2.mutable.Specification
+import play.api.libs.json.Json
 
+import com.overviewdocs.models.{PdfNote,PdfNoteCollection}
 import com.overviewdocs.query.{Field,Query,AndQuery,OrQuery,NotQuery,RegexQuery,PhraseQuery}
+import com.overviewdocs.test.factories.{PodoFactory=>factory}
 import models.SelectionWarning
 
 // See also: DbDocumentSelectionBackendSpec for stuff that interacts with the DB
@@ -14,7 +17,7 @@ class DocumentSelectionBackendSpec extends Specification {
   private def PHRASE(field: Field, s: String): Query = PhraseQuery(field, s)
   private def REGEX(field: Field, s: String): Query = RegexQuery(field, s)
 
-  private def rule(field: Field, patternString: String, negated: Boolean) = {
+  private def rule(field: Field, patternString: String, negated: Boolean = false) = {
     DocumentSelectionBackend.RegexSearchRule(field, Pattern.compile(patternString), negated)
   }
 
@@ -73,6 +76,74 @@ class DocumentSelectionBackendSpec extends Specification {
           Vector(rule(Field.Title, "title", false)),
           List(SelectionWarning.NestedRegexIgnored("err1"), SelectionWarning.NestedRegexIgnored("err2"))
         ))
+      }
+    }
+
+    "RegexSearchRule" should {
+      "matches" should {
+        "hit on title" in {
+          rule(Field.Title, "match me").matches(factory.document(title="foo match me mar")) must beEqualTo(true)
+        }
+
+        "miss on title" in {
+          rule(Field.Title, "match me").matches(factory.document(title="foo matchXme mar")) must beEqualTo(false)
+        }
+
+        "negate match" in {
+          rule(Field.Title, "match me", true).matches(factory.document(title="foo match me mar")) must beEqualTo(false)
+        }
+
+        "hit on text" in {
+          rule(Field.Text, "match me").matches(factory.document(text="foo match me mar")) must beEqualTo(true)
+        }
+
+        "miss on text" in {
+          rule(Field.Text, "match me").matches(factory.document(text="foo matchXme mar")) must beEqualTo(false)
+        }
+
+        "hit Field.All on title" in {
+          rule(Field.All, "match me").matches(factory.document(title="foo match me mar")) must beEqualTo(true)
+        }
+
+        "miss Field.All on title" in {
+          rule(Field.All, "match me").matches(factory.document(title="foo matchXme mar")) must beEqualTo(false)
+        }
+
+        "hit Field.All on text" in {
+          rule(Field.All, "match me").matches(factory.document(text="foo match me mar")) must beEqualTo(true)
+        }
+
+        "miss Field.All on text" in {
+          rule(Field.All, "match me").matches(factory.document(text="foo matchXme mar")) must beEqualTo(false)
+        }
+
+        "hit a metadata field" in {
+          rule(Field.Metadata("foo"), "match me").matches(factory.document(metadataJson=Json.obj("foo" -> "match me"))) must beEqualTo(true)
+        }
+
+        "miss a metadata field" in {
+          rule(Field.Metadata("foo"), "match me").matches(factory.document(metadataJson=Json.obj("foo" -> "matchXme"))) must beEqualTo(false)
+        }
+
+        "not hit when a different metadata field matches" in {
+          rule(Field.Metadata("foo"), "match me").matches(factory.document(metadataJson=Json.obj("foo1" -> "match me"))) must beEqualTo(false)
+        }
+
+        "not hit Field.All on metadata" in {
+          rule(Field.All, "match me") matches(factory.document(metadataJson=Json.obj("foo" -> "match me"))) must beEqualTo(false)
+        }
+
+        "hit a note" in {
+          val note = PdfNote(2, 3, 4, 5, 6, "match me")
+          val pdfNotes = PdfNoteCollection(Array(note))
+          rule(Field.Notes, "match me") matches(factory.document(pdfNotes=pdfNotes)) must beEqualTo(true)
+        }
+
+        "miss a note" in {
+          val note = PdfNote(2, 3, 4, 5, 6, "matchXme")
+          val pdfNotes = PdfNoteCollection(Array(note))
+          rule(Field.Notes, "match me") matches(factory.document(pdfNotes=pdfNotes)) must beEqualTo(false)
+        }
       }
     }
   }

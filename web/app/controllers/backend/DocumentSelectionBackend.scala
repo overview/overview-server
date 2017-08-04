@@ -3,7 +3,7 @@ package controllers.backend
 import akka.stream.scaladsl.Sink
 import akka.stream.Materializer
 import com.google.inject.ImplementedBy
-import com.google.re2j.{Pattern,PatternSyntaxException}
+import com.google.re2j.{Matcher,Pattern,PatternSyntaxException}
 import javax.inject.Inject
 import play.api.libs.json.JsObject
 import scala.collection.{immutable,mutable}
@@ -39,7 +39,31 @@ object DocumentSelectionBackend {
     pattern: Pattern,
     negated: Boolean
   ) {
-    def matches(document: Document): Boolean = ???
+    private val matcher = pattern.matcher("") // Not thread-safe ... but we won't use this where that matters
+
+    private def test(input: String) = {
+      matcher.reset(input)
+      matcher.find()
+    }
+
+    def matches(document: Document): Boolean = {
+      val textMatches = field match {
+        case Field.Title => test(document.title)
+        case Field.Text => test(document.text)
+        case Field.Notes => document.pdfNotes.pdfNotes.map(_.text).exists(test _)
+        case Field.All => test(document.title) || test(document.text)
+        case Field.Metadata(fieldName) => {
+          // Undefined behavior if fieldName is not in the document schema. (We
+          // assume it is -- otherwise there should be a warning.)
+          document.metadataJson.value.get(fieldName) // Option[JsValue]
+            .flatMap(_.asOpt[String]) // Option[String]
+            .map(test _) // Option[Boolean]
+            .getOrElse(false)
+        }
+      }
+
+      textMatches != negated
+    }
 
     override def equals(other: Any): Boolean = other match {
       case RegexSearchRule(otherField, otherPattern, otherNegated) => {
