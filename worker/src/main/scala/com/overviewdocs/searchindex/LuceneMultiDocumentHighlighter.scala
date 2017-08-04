@@ -11,8 +11,10 @@ extends UnifiedHighlighter(indexSearcher, analyzer)
 {
   private val MaxPassages = 2
   private val MaxPassageSize = 80
+  private val MaxLength = Integer.MAX_VALUE - 1 // https://github.com/overview/overview-server/issues/679
 
   setFormatter(LuceneMultiDocumentHighlighter.passageFormatter)
+  setMaxLength(MaxLength)
 
   override protected def getBreakIterator(field: String) = {
     val original = super.getBreakIterator(field)

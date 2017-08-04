@@ -9,8 +9,10 @@ class LuceneSingleDocumentHighlighter(indexSearcher: IndexSearcher, analyzer: An
 extends UnifiedHighlighter(indexSearcher, analyzer)
 {
   private val MaxPassages = 1000
+  private val MaxLength = Integer.MAX_VALUE - 1 // https://github.com/overview/overview-server/issues/679
 
   setFormatter(LuceneSingleDocumentHighlighter.passageFormatter)
+  setMaxLength(MaxLength)
 
   def highlightFieldAsHighlights(field: String, query: Query, docId: Int): Array[Utf16Highlight] = {
     val map = highlightFieldsAsObjects(Array(field), query, Array(docId), Array(MaxPassages))
