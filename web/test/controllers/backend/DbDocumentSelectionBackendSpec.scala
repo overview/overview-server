@@ -1,7 +1,9 @@
 package controllers.backend
 
 import akka.stream.scaladsl.Source
+import com.google.re2j.Pattern
 import org.specs2.mock.Mockito
+import play.api.Configuration
 import scala.collection.mutable
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -65,7 +67,15 @@ class DbDocumentSelectionBackendSpec extends DbBackendSpecification with InAppSp
         documentSetBackend.show(documentSet.id) returns Future.successful(Some(documentSet))
         val documentIdListBackend = smartMock[DocumentIdListBackend]
 
-        val backend = new DbDocumentSelectionBackend(database, documentBackend, searchBackend, documentSetBackend, documentIdListBackend, app.materializer)
+        val backend = new DbDocumentSelectionBackend(
+          database,
+          documentBackend,
+          searchBackend,
+          documentSetBackend,
+          documentIdListBackend,
+          Configuration("overview.max_n_regex_documents_per_search" -> 3),
+          app.materializer
+        )
         def onProgress(p: Double): Unit = {}
         lazy val ret: InMemorySelection = await(backend.createSelection(request, onProgress))
       }
@@ -312,6 +322,41 @@ class DbDocumentSelectionBackendSpec extends DbBackendSpecification with InAppSp
         override val storeObjectIds = Vector(obj.id)
 
         ret.documentIds must beEqualTo(Vector(doc2.id, doc1.id))
+      }
+
+      "filter by regex" in new CreateSelectionScope {
+        val rules = Vector(DocumentSelectionBackend.RegexSearchRule(Field.Title, Pattern.compile("[ac]"), false))
+        documentBackend.stream(documentSet.id, documents.map(_.id)) returns Source(documents)
+        await(backend.documentIdsMatchingRegexSearchRules(documentSet.id, documents.map(_.id), rules)) must beEqualTo((
+          Vector(doc1.id, doc2.id),
+          Nil
+        ))
+      }
+
+      "AND when filtering by regex" in new CreateSelectionScope {
+        val rules = Vector(
+          DocumentSelectionBackend.RegexSearchRule(Field.Title, Pattern.compile("[ac]"), false),
+          DocumentSelectionBackend.RegexSearchRule(Field.Title, Pattern.compile("[bc]"), false),
+        )
+        documentBackend.stream(documentSet.id, documents.map(_.id)) returns Source(documents)
+        await(backend.documentIdsMatchingRegexSearchRules(documentSet.id, documents.map(_.id), rules)) must beEqualTo((
+          Vector(doc1.id),
+          Nil
+        ))
+      }
+
+      "truncate when filtering by regex" in new CreateSelectionScope {
+        val rules = Vector(
+          DocumentSelectionBackend.RegexSearchRule(Field.Title, Pattern.compile("[ac]"), false),
+          DocumentSelectionBackend.RegexSearchRule(Field.Title, Pattern.compile("[bc]"), false),
+        )
+        // max_n_regex_documents_per_search = 3
+        documentBackend.stream(documentSet.id, documents.map(_.id)) returns Source(documents)
+        await(backend.documentIdsMatchingRegexSearchRules(documentSet.id, documents.map(_.id) ++ Vector(0L), rules)) must beEqualTo((
+          Vector(doc1.id),
+          List(SelectionWarning.RegexLimited(4, 3))
+        ))
+        there was one(documentBackend).stream(documentSet.id, documents.map(_.id))
       }
     }
   }

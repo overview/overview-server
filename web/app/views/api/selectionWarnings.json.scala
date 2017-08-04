@@ -47,6 +47,11 @@ object selectionWarnings {
         "type" -> JsString("NestedRegexIgnored"),
         "regex" -> JsString(regex)
       ))
+      case SelectionWarning.RegexLimited(nTotal, nTested) => JsObject(Seq(
+        "type" -> JsString("RegexLimited"),
+        "nTotal" -> JsNumber(nTotal),
+        "nTested" -> JsNumber(nTested)
+      ))
       case SelectionWarning.MissingField(fieldName, validFieldNames) => JsObject(Seq(
         "type" -> JsString("MissingField"),
         "field" -> JsString(fieldName),

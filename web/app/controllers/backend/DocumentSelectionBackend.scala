@@ -6,6 +6,7 @@ import com.google.inject.ImplementedBy
 import com.google.re2j.{Matcher,Pattern,PatternSyntaxException}
 import javax.inject.Inject
 import play.api.libs.json.JsObject
+import play.api.Configuration
 import scala.collection.{immutable,mutable}
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits._ // TODO use another context
@@ -130,9 +131,12 @@ class DbDocumentSelectionBackend @Inject() (
   val searchBackend: SearchBackend,
   val documentSetBackend: DocumentSetBackend,
   val documentIdListBackend: DocumentIdListBackend,
+  val configuration: Configuration,
   val materializer: Materializer
 ) extends DocumentSelectionBackend with DbBackend {
   import database.api._
+
+  private val MaxNRegexDocumentsPerSearch = configuration.get[Int]("overview.max_n_regex_documents_per_search")
 
   protected lazy val logger = Logger.forClass(getClass)
 
@@ -335,5 +339,20 @@ class DbDocumentSelectionBackend @Inject() (
     }
 
     sb.toString
+  }
+
+  protected[backend] def documentIdsMatchingRegexSearchRules(documentSetId: Long, ids: immutable.Seq[Long], rules: immutable.Seq[DocumentSelectionBackend.RegexSearchRule]): Future[(immutable.Seq[Long], List[SelectionWarning])] = {
+    val (limitedIds, warnings) = if (ids.size > MaxNRegexDocumentsPerSearch) {
+      (ids.take(MaxNRegexDocumentsPerSearch), List(SelectionWarning.RegexLimited(ids.size, MaxNRegexDocumentsPerSearch)))
+    } else {
+      (ids, Nil)
+    }
+
+    val source = documentBackend.stream(documentSetId, limitedIds)
+      .filter(document => !rules.exists(r => !r.matches(document)))
+      .map(_.id)
+
+    source.runWith(Sink.seq)(materializer)
+      .map(result => (result, warnings))
   }
 }

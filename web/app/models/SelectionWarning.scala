@@ -15,6 +15,9 @@ object SelectionWarning {
   /** Overview doesn't support nested regexes. */
   case class NestedRegexIgnored(pattern: String) extends SelectionWarning
 
+  /** There were too many documents to regex; we only did some. */
+  case class RegexLimited(nTotal: Int, nTested: Int) extends SelectionWarning
+
   /** The query specified a metadata field that does not exist. */
   case class MissingField(fieldName: String, validFieldNames: Seq[String]) extends SelectionWarning
 }
