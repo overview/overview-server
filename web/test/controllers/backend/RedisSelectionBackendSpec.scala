@@ -24,7 +24,7 @@ class RedisSelectionBackendSpec extends RedisBackendSpecification with Mockito {
     }
     val dsBackend = mock[DocumentSelectionBackend]
     dsBackend.createSelection(any[SelectionRequest], any) returns Future.successful(InMemorySelection(resultIds, warnings))
-    val backend = new RedisSelectionBackend(dsBackend, redisModule)
+    val backend = new RedisSelectionBackend(dsBackend, app.actorSystem, redisModule)
     val documentSetId = 123L
   }
 
@@ -63,7 +63,7 @@ class RedisSelectionBackendSpec extends RedisBackendSpecification with Mockito {
   trait StoreWarningsExample { self: CreateScopeLike =>
     override def warnings = List(
       SelectionWarning.SearchIndexWarning(SearchWarning.TooManyExpansions(Field.Text, "foo", 10)),
-      SelectionWarning.SearchIndexWarning(SearchWarning.TooManyExpansions(Field.Title, "bar", 20))
+      SelectionWarning.RegexLimited(10, 20)
     )
 
     val selection = go

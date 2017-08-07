@@ -1,5 +1,7 @@
 package controllers.backend
 
+import akka.actor.ActorSystem
+import akka.serialization.SerializationExtension
 import akka.util.{ByteString,Timeout}
 import com.google.inject.ImplementedBy
 import redis.RedisClient
@@ -93,6 +95,7 @@ class NullSelectionBackend @Inject() (
   */
 class RedisSelectionBackend @Inject() (
   override val documentSelectionBackend: DocumentSelectionBackend,
+  val actorSystem: ActorSystem,
   val redisModule: RedisModule
 ) extends SelectionBackend {
   protected val redis: RedisClient = redisModule.client
@@ -101,6 +104,8 @@ class RedisSelectionBackend @Inject() (
 
   private[backend] val ExpiresInSeconds: Int = 60 * 60 // Used in unit tests, too
   private val SizeOfLong = 8
+
+  private val serialization = SerializationExtension(actorSystem)
 
   private def requestHashKey(userEmail: String, request: SelectionRequest) = {
     s"selection:${request.documentSetId}:by-user-hash:${userEmail}:${request.hash}"
@@ -206,32 +211,12 @@ class RedisSelectionBackend @Inject() (
   }
 
   private def parseWarnings(byteString: ByteString): Try[List[SelectionWarning]] = {
-    // TODO protobufs? Anything but java serializers.
-    val stream = new java.io.ByteArrayInputStream(byteString.toArray)
-    try {
-      Success(new java.io.ObjectInputStream(stream).readObject().asInstanceOf[List[SelectionWarning]])
-    } catch {
-      case e: Exception => {
-        // Normally, catch-all exceptions are bad. But we want the exact same
-        // behavior for all potential exceptions:
-        // * ClassNotFoundException
-        // * InvalidClassException
-        // * StreamCorruptedException
-        // * OptionalDataException
-        // * IOException
-        // * ClassCastException
-        //
-        // ... which is to pretend Redis is corrupted
-        logger.warn("Error parsing selection warnings from Redis: {}", e)
-        Failure(e)
-      }
-    }
+    serialization.deserialize(byteString.toArray, classOf[List[SelectionWarning]])
   }
 
   private def encodeWarnings(warnings: List[SelectionWarning]): ByteString = {
-    val stream = new java.io.ByteArrayOutputStream
-    new java.io.ObjectOutputStream(stream).writeObject(warnings)
-    ByteString(stream.toByteArray)
+    val byteArray = serialization.serialize(warnings).get
+    ByteString(byteArray)
   }
 
   private def writeSelection(userEmail: String, request: SelectionRequest, selection: InMemorySelection): Future[Unit] = {
