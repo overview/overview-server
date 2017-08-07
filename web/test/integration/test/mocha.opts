@@ -1,3 +1,2 @@
---timeout 90s
 --slow 3s
 --reporter spec
