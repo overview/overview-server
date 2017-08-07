@@ -2,10 +2,11 @@
 
 const os = require('os')
 
+const ExtractTextPlugin = require('extract-text-webpack-plugin')
 const WebpackCleanupPlugin = require('webpack-cleanup-plugin')
 const webpack = require('webpack')
 
-const entryPoints = [
+const jsEntryPoints = [
   'admin/Job/index',
   'admin/Plugin/index',
   'admin/User/index',
@@ -23,6 +24,10 @@ const entryPoints = [
   'Welcome/show',
 ]
 
+const cssEntryPoints= [
+  'main',
+]
+
 // We compile web/js/ => web/public/javascript-bundles/, staying as far away
 // from sbt-web as we can.
 //
@@ -31,7 +36,6 @@ const entryPoints = [
 // of web/target/*.
 //
 // TODO:
-// * Less (or SCSS) compilation in Webpack -- and nix sbt-less
 // * Digests: add `.md5` files and hashes to `/public/**/*.(css|js|png|jpg)`
 //   in Webpack or sbt -- and nix sbt-digest
 // * Change `web/public/` to `web/target/public/` and add that to
@@ -67,7 +71,7 @@ RedirectPlayFrameworkUsingDummyMd5Files.prototype.apply = function(compiler) {
       const pathParts = filename.split('/')
       const basename = pathParts[pathParts.length - 1]
       let m
-      if (m = /^([a-f0-9]+)-(.*\.js)$/.exec(basename)) {
+      if (m = /^([a-f0-9]+)-(.*\.(js|css))$/.exec(basename)) {
         const dirname = pathParts.slice(0, pathParts.length - 1).join('/')
         const hashThatIsntReallyMd5 = m[1]
         const basenameWithoutHash = m[2]
@@ -90,8 +94,11 @@ RedirectPlayFrameworkUsingDummyMd5Files.prototype.apply = function(compiler) {
 }
 
 const entryPointsMap = {}
-for (const entryPoint of entryPoints) {
+for (const entryPoint of jsEntryPoints) {
   entryPointsMap[entryPoint.replace(/\//g, '-')] = `bundle/${entryPoint}`
+}
+for (const entryPoint of cssEntryPoints) {
+  entryPointsMap[entryPoint] = `./css/${entryPoint}.less`
 }
 
 const UglifyESOptions = {
@@ -100,8 +107,12 @@ const UglifyESOptions = {
   mangle: true,    // costs 1.5s, but saves 25% or so in file sizes
 }
 
+const extractLess = new ExtractTextPlugin({
+  filename: '[chunkhash]-[name].css',
+})
+
 module.exports = {
-  context: `${__dirname}/js`,
+  context: `${__dirname}`,
   entry: entryPointsMap,
   devtool: 'source-map', // slow, important
   output: {
@@ -122,7 +133,7 @@ module.exports = {
         test: /\.coffee$/,
         use: [
           {
-            loader: '../node/uglify-es-loader',
+            loader: './node/uglify-es-loader',
             options: UglifyESOptions,
           },
           {
@@ -135,14 +146,36 @@ module.exports = {
         test: /\.js$/,
         use: [
           {
-            loader: '../node/uglify-es-loader',
+            loader: './node/uglify-es-loader',
             options: UglifyESOptions,
           },
+        ],
+      },
+      {
+        test: /\.less$/,
+        use: extractLess.extract({use: [
+          {
+            loader: 'css-loader',
+            options: { sourceMap: true },
+          },
+          {
+            loader: 'less-loader',
+            options: { sourceMap: true },
+          },
+        ]}),
+      },
+      {
+        test: /\.(woff|svg|png|jpg)$/,
+        use: [
+          {
+            loader: 'file-loader',
+          }
         ],
       },
     ],
   },
   plugins: [
+    extractLess,
     new WebpackCleanupPlugin(),
     new webpack.ProvidePlugin({
         $: "jquery",
@@ -154,7 +187,7 @@ module.exports = {
   ],
   resolve: {
     extensions: [ '.js', '.coffee' ],
-    modules: [ '.', 'node_modules' ],
+    modules: [ '.', 'js', 'node_modules' ],
     alias: {
       // for our code:
       backbone: 'vendor/backbone',

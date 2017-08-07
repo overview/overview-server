@@ -23,7 +23,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
     <title>@title</title>
     <link rel="shortcut icon" type="image/x-icon" href="@assets.path("images/favicon.ico")" />
-    <link rel="stylesheet" type="text/css" href="@assets.path("stylesheets/main.css")" />
+    <link rel="stylesheet" type="text/css" href="@assets.path("javascript-bundles/main.css")" />
     @defining(play.filters.csrf.CSRF.getToken(request).get) { token =>
       <script>
         window.csrfTokenName = "@{token.name}";

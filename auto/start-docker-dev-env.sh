@@ -26,7 +26,13 @@ start_logging_if_not_started() {
   if [ -z "$logs_pid" ]; then
     docker-compose logs -f --tail=0 &
     logs_pid=$!
-    trap "kill -9 $logs_pid" EXIT
+    trap stop_logging_if_started EXIT
+  fi
+}
+
+stop_logging_if_started() {
+  if [ -z "$logs_pid" ]; then
+    kill -9 $logs_pid
   fi
 }
 
