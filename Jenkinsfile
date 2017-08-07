@@ -52,10 +52,8 @@ node('test-slave') {
 
     stage('Integration tests') {
       withEnv(env) {
-        sh 'auto/start-docker-dev-env.sh'
         sh 'unzip -o -q archive.zip'
-        sh 'archive/db-evolution-applier/db-evolution-applier'
-        sh '(trap \'kill $(jobs -p)\' EXIT; archive/worker/worker & archive/web/web -Dpidfile.path=/dev/null & curl --retry-connrefused --retry 99999 --output /dev/null --silent http://localhost:9000 && sleep 5 && (cd web/test/integration && npm run test-with-jenkins || true))'
+        sh 'auto/run-integration-tests-in-dev-env.sh'
         junit 'web/test/integration/test-results.xml'
       }
     }
