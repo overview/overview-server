@@ -1,10 +1,10 @@
-define [ 'jquery', 'i18n', 'dcimport/CredentialStore', 'dcimport/templates/login' ], ($, i18n, CredentialStore, login_template) ->
+define [ 'jquery', 'i18n', 'base64', 'dcimport/CredentialStore', 'dcimport/templates/login' ], ($, i18n, Base64, CredentialStore, login_template) ->
   Deferred = $.Deferred
 
   loading_html = '<p>Loading...</p>' # FIXME translate
 
   credentials_to_authorization_header = (credentials) ->
-    "Basic #{new Buffer("#{credentials.email}:#{credentials.password}", 'utf-8').toString('base64')}"
+    "Basic #{Base64.encode64("#{credentials.email}:#{credentials.password}")}"
 
   prompt_for_credentials = (div, is_error) ->
     deferred = new Deferred()
