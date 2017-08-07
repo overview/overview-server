@@ -24,8 +24,8 @@ node('test-slave') {
     def env = [
       'DATABASE_PORT=9010',
       'OVERVIEW_MULTI_USER=true',
-      "BLOB_STORAGE_FILE_BASE_DIRECTORY='${pwd()}/blob-storage'",
-      "OV_SEARCH_DIRECTORY='${pwd()}/search'"
+      "BLOB_STORAGE_FILE_BASE_DIRECTORY=${pwd()}/blob-storage",
+      "OV_SEARCH_DIRECTORY=${pwd()}/search"
     ]
 
     stage('Download dependencies') {
