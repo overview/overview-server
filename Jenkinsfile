@@ -11,6 +11,7 @@ node {
   ]
 
   stage('Download dependencies') {
+    sh 'docker-compose pull'
     sh 'auto/setup-coffee-tests.sh'
     sh 'auto/setup-integration-tests.sh'
     sh '(cd "${pwd()}/web" && npm install)'
