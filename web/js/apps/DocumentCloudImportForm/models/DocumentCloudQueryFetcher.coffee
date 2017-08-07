@@ -60,5 +60,5 @@ define [ 'backbone' ], (Backbone) ->
       else
         {}
 
-      newOptions = _.extend(alwaysOptions, authOptions, options || {})
+      newOptions = Object.assign({}, alwaysOptions, authOptions, options || {})
       @lastFetch = query.fetch(newOptions)

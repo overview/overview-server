@@ -236,7 +236,6 @@ views.DocumentCloudImportJob.new.title.value={0} (from DocumentCloud)
 views.DocumentCloudImportJob.new.submit.preamble=Your DocumentCloud email and password will be sent (securely) to Overview’s servers when you import. Overview’s servers will purge them when the import is done.
 views.DocumentCloudImportJob.new.submit.label=Import into Overview
 views.DocumentCloudImportJob.new.submit_credentials.preamble.cors=This will send your DocumentCloud email and password to DocumentCloud’s servers, not Overview’s servers.
-views.DocumentCloudImportJob.new.submit_credentials.preamble.no_cors=This will send your DocumentCloud email and password to Overview’s servers, which will immediately forget them.
 views.DocumentCloudImportJob.new.submit_credentials.label=Verify DocumentCloud email and password
 
 views.DocumentCloudProject.index.title=DocumentCloud projects

@@ -1,6 +1,6 @@
 define [
   'underscore'
-  'sha1'
+  'jssha/src/sha1'
 ], (_, sha1) ->
   DEFAULTS =
     blockSize: 10 * 1024 * 1024
@@ -59,17 +59,16 @@ define [
         callback = options
         options = {}
 
-      hasher = sha1()
+      hasher = new sha1('SHA-1', 'ARRAYBUFFER')
 
       options = _.extend({
-        progress: (arrayBuffer) ->
-          uint8Array = new Uint8Array(arrayBuffer)
-          hasher.update(uint8Array)
+        progress: (arrayBuffer) -> hasher.update(arrayBuffer)
       }, DEFAULTS, options)
 
       @_step blob, options, (err) ->
         return callback(err) if err?
-        hashHex = hasher.digest()
+        # Horrid hash API
+        hashHex = hasher.getHash('HEX')
         hashBuffer = hexToArrayBuffer(hashHex)
         parsedHash = (x.toString(16) for x in new Uint8Array(hashBuffer)).join('')
         callback(null, hashBuffer)

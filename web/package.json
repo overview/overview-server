@@ -7,7 +7,8 @@
   },
   "scripts": {
     "dist": "webpack --display-error-details",
-    "dev": "webpack --watch --no-color --display-error-details"
+    "dev": "webpack --watch --no-color --display-error-details",
+    "test": "node_modules/.bin/karma start test/js/karma.conf.js --no-colors --single-run"
   },
   "repository": {
     "type": "git",
@@ -26,6 +27,7 @@
     "escape-html": "^1.0.3",
     "extract-text-webpack-plugin": "^3.0.0",
     "file-loader": "^0.11.2",
+    "jssha": "^2.3.1",
     "less": "^2.7.2",
     "less-loader": "^4.0.5",
     "loader-utils": "^1.1.0",
@@ -33,5 +35,18 @@
     "uglify-es": "^3.0.26",
     "webpack": "^3.4.1",
     "webpack-cleanup-plugin": "^0.5.1"
+  },
+  "devDependencies": {
+    "chai-jquery": "^2.0.0",
+    "electron": "^1.6.11",
+    "jquery": "^3.2.1",
+    "karma": "^1.7.0",
+    "karma-chai-plugins": "^0.9.0",
+    "karma-electron-launcher": "^0.2.0",
+    "karma-jquery": "^0.2.2",
+    "karma-junit-reporter": "^1.2.0",
+    "karma-mocha": "^1.3.0",
+    "karma-webpack": "^2.0.4",
+    "mocha": "^3.5.0"
   }
 }

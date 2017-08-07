@@ -1,6 +1,6 @@
 #!/bin/sh
 
-DIR="$(dirname "$0")/../web/test/assets/javascripts/autotest"
+DIR="$(dirname "$0")/../web"
 
 # Before running this script, run ./setup-coffee-tests.sh
 if command -v xvfb-run >/dev/null 2>&1; then

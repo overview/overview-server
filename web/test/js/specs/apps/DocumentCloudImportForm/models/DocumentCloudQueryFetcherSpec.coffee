@@ -1,6 +1,4 @@
-PATH = 'apps/DocumentCloudImportForm/models/DocumentCloudQueryFetcher'
-
-define [ 'jquery', 'backbone', PATH ], ($, Backbone, Fetcher) ->
+define [ 'jquery', 'backbone', 'apps/DocumentCloudImportForm/models/DocumentCloudQueryFetcher' ], ($, Backbone, Fetcher) ->
   withFakeCorsSupport = (cors, callback) ->
     realCors = $.support.cors
     $.support.cors = cors
@@ -13,7 +11,7 @@ define [ 'jquery', 'backbone', PATH ], ($, Backbone, Fetcher) ->
     isComplete: -> true
   }, options || {})
 
-  describe PATH, ->
+  describe 'apps/DocumentCloudImportForm/models/DocumentCloudQueryFetcher', ->
     query = undefined
     model = undefined
     ajaxDeferred = undefined

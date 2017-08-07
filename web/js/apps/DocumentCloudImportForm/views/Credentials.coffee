@@ -28,7 +28,7 @@ define [ 'underscore', 'backbone', 'i18n' ], (_, Backbone, i18n) ->
               />
           </div>
           <button type="submit" class="btn btn-primary"><%- t("submit_credentials.label") %></button>
-          <p class="help-block"><%- t("submit_credentials.preamble." + ($.support.cors ? "cors" : "no_cors")) %></p>
+          <p class="help-block"><%- t("submit_credentials.preamble.cors") %></p>
         </div>
       </div>
     """)

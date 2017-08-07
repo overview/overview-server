@@ -18,10 +18,10 @@ define [
         expect(id_tree.root).to.eq(null)
 
       it 'should have no @children', ->
-        expect(_.keys(id_tree.children)).to.deep.eq([])
+        expect(Object.keys(id_tree.children)).to.deep.eq([])
 
       it 'should have no @parent', ->
-        expect(_.keys(id_tree.parent)).to.deep.eq([])
+        expect(Object.keys(id_tree.parent)).to.deep.eq([])
 
       it 'should make the first-added node the root', ->
         do_add(null, 1)

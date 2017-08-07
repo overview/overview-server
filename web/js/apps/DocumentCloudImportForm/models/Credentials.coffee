@@ -9,7 +9,7 @@ define [ 'backbone', 'base64' ], (Backbone, Base64) ->
       password = @get('password')
 
       if email && password
-        { Authorization: "Basic #{Base64.encode64("#{email}:#{password}")}" }
+        { Authorization: "Basic #{Base64.Base64.encode64("#{email}:#{password}")}" }
       else
         undefined
 

@@ -41,7 +41,7 @@ node('test-slave') {
         sh 'auto/start-docker-dev-env.sh'
         sh 'auto/test-coffee-once.sh || true'
         sh './sbt -Dsbt.log.noformat=true "; test-db-evolution-applier/run; all/test" || true'
-        junit 'web/test/assets/javascripts/autotest/results/**/test-results.xml'
+        junit 'web/test/js/**/test-results.xml'
         junit '*/target/test-reports/*.xml'
       }
     }
