@@ -14,7 +14,7 @@ node('test-slave') {
     sh 'docker-compose pull'
     sh 'auto/setup-coffee-tests.sh'
     sh 'auto/setup-integration-tests.sh'
-    sh '(cd "${pwd()}/web" && npm install)'
+    sh "(cd '${pwd()}/web' && npm install)"
     sh './sbt "; set every logLevel := Level.Warn; common/update; worker/update; web/update; db-evolution-applier/update"'
   }
 
