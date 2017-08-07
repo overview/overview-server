@@ -15,14 +15,14 @@ node('test-slave') {
     sh 'auto/setup-coffee-tests.sh'
     sh 'auto/setup-integration-tests.sh'
     sh 'cd web && npm install'
-    sh './sbt "; set every logLevel := Level.Warn; common/update; worker/update; web/update; db-evolution-applier/update"'
+    sh './sbt -Dsbt.log.noformat=true "; set every logLevel := Level.Warn; common/update; worker/update; web/update; db-evolution-applier/update"'
   }
 
   stage('Unit tests') {
     withEnv(env) {
       sh 'auto/start-docker-dev-env.sh'
       sh 'auto/test-coffee-once.sh || true'
-      sh './sbt "; test-db-evolution-applier/run; all/test" || true'
+      sh './sbt -Dsbt.log.noformat=true "; test-db-evolution-applier/run; all/test" || true'
       junit 'web/test/assets/javascripts/autotest/results/**/test-results.xml'
       junit '*/target/test-reports/*.xml'
     }
