@@ -1,6 +1,6 @@
 #!groovy
 
-node {
+node('slave') {
   checkout scm
 
   env = [
