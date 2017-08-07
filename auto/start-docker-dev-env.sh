@@ -3,7 +3,7 @@
 set -e
 
 services_are_online() {
-  docker run -it \
+  docker run -i \
     --network overviewserver_default \
     --link overview-dev-database \
     --link overview-dev-redis \
@@ -15,7 +15,7 @@ services_are_online() {
 wait_for_database() {
   # Gotta use "sh", not "/bin/sh", or Windows 10 gives error:
   # stat: C:/Program Files/Git/usr/bin/sh: no such file or directory
-  docker run -i -t \
+  docker run -i \
     --network overviewserver_default \
     --link overview-dev-database \
     --rm busybox \
