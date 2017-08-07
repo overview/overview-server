@@ -29,3 +29,5 @@ npm-debug.log
 overview-server*.zip
 /overview-server/
 *.iml
+/archive/
+/archive.zip
