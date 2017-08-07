@@ -14,7 +14,7 @@ start_logging_if_not_started
 archive/db-evolution-applier/db-evolution-applier
 
 archive/worker/worker &
-archive/web/web -Dpidfile.path=/dev/null
+archive/web/web -Dpidfile.path=/dev/null &
 
 curl --retry-connrefused --retry 99999 --output /dev/null --silent http://localhost:9000
 
