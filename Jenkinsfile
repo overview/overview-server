@@ -60,7 +60,7 @@ node('test-slave') {
 
     stage('Publish') {
       if (currentBuild.result == null || currentBuild.result == 'SUCCESS') {
-        sh 'aws s3 cp archive.zip s3://overview-builds.overviewdocs.com/$(git rev-parse HEAD).zip'
+        sh 'auto/publish-from-jenkins-test-slave.sh'
       }
     }
   } catch (any) {
