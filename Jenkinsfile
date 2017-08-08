@@ -67,9 +67,7 @@ node('test-slave') {
     currentBuild.result = 'FAILURE'
     throw any // rethrow to prevent future steps from happening
   } finally {
-    always {
-      step([$class: 'Mailer', notifyEveryUnstableBuild: true, recipients: "adam@adamhooper.com", sendToIndividuals: true])
-      notifySlack(currentBuild.result)
-    }
+    step([$class: 'Mailer', notifyEveryUnstableBuild: true, recipients: "adam@adamhooper.com", sendToIndividuals: true])
+    notifySlack(currentBuild.result)
   }
 }
