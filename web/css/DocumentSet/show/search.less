@@ -1,92 +1,72 @@
 #document-list-params>.search {
   // We want the whole thing to "feel" like an input: a single border, which
-  // highlights. And we don't want to manage the border ourselves: Bootstrap
-  // can do that.
-  //
-  // So we set a fixed height, stretch the <input> to 100%, and give everything
-  // else position: absolute;
+  // highlights.
   height: @input-height-small;
   position: relative;
   margin: .5em auto;
   max-width: 25em;
+  display: flex;
 
   form {
-    display: block;
+    flex: 1 1 auto;
+    display: flex;
+    font-size: @font-size-small;
+    line-height: @line-height-small;
+
+    // Bootstrap's forms.less ".form-control"
+    height: @input-height-small;
+    padding: 0;
+    margin: 0;
+    background-color: @input-bg;
+    color: @input-color;
+    .caret { border-top-color: @input-color; }
+    border: 1px solid @input-border;
+    border-radius: @input-border-radius;
+    .box-shadow(inset 0 1px 1px rgba(0,0,0,.075));
+    .transition(~"border-color ease-in-out .15s, box-shadow ease-in-out .15s");
+
+    &.focus {
+      // Copy-pasted from Bootstrap's mixins/forms.less
+      @color: @input-border-focus;
+      @color-rgba: rgba(red(@color), green(@color), blue(@color), .6);
+      border-color: @color;
+      outline: 0;
+      .box-shadow(~"inset 0 1px 1px rgba(0,0,0,.075), 0 0 8px @{color-rgba}");
+    }
   }
 
-  .input-group {
-    display: block;
-
-    &>* {
-      display: block; // Not table-cell
-    }
-
-    &>:not(input) {
-      position: absolute;
-      border: 0;
-    }
+  i.icon {
+    flex: 0 0 auto;
+    padding: 5px 0 5px 13px;
+    font-size: inherit;
+    line-height: inherit;
   }
 
-  .input-group-addon {
-    padding-left: 0;
-    padding-right: 0;
-    background: transparent;
-    width: 2em;
-    text-align: right;
-    z-index: 3;
+  span.caret {
+    // Smaller font size -> gotta move caret up a bit
+    display: inline-block;
+    position: relative;
+    top: -1px;
   }
 
   input {
-    padding-left: 2.5em; // For icon
+    flex: 1 1 auto;
+    border: none;
+    box-shadow: none;
+    outline: none;
+    color: inherit;
+    text-shadow: inherit;
+    font: inherit;
+    background: transparent;
     border-radius: @border-radius-small;
-  }
-
-  .input-group-btn {
-    position: absolute;
-    right: 0;
-    width: 0;
-  }
-
-  .btn {
-    display: none;
-  }
-
-  &.changing {
-    input {
-      padding-right: 6em;
-    }
-
-    .icon {
-      color: @brand-primary;
-    }
-
-    .btn {
-      display: block;
-      position: absolute;
-      right: 0;
-      width: 6em;
-    }
-  }
-
-  &:not(.changing):not(.empty) {
-    input {
-      color: white;
-      text-shadow: 0 0 .1em @gray-dark;
-      background-color: @complete-color;
-    }
-
-    .input-group-addon {
-      color: white;
-    }
-
-    padding-right: 1.75em;
-    .nix { display: block; }
+    padding: @padding-small-vertical 0 @padding-small-vertical 6px;
+    height: calc(@input-height-small - 2px); // no border
+    .placeholder();
   }
 
   .nix {
+    flex: 0 0 auto;
     display: none;
-    position: absolute;
-    right: 0;
     font-size: 1.5em;
     font-weight: bold;
     width: 1em;
@@ -95,24 +75,41 @@
     line-height: @input-height-small;
   }
 
-  .help {
-    display: block;
-    position: absolute;
-    left: 100%;
-    top: 0;
+  button {
+    display: none;
+    border-top: 0;
+    border-right: 0;
+    border-bottom: 0;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+  }
 
-    &>.dropdown-menu {
+  a.dropdown-toggle {
+    border: 0;
+    background: transparent;
+    box-shadow: 0;
+  }
+
+  &.changing {
+    button { display: block; }
+    .icon { color: @brand-primary; }
+  }
+
+  &:not(.changing):not(.empty) {
+    form {
+      color: white;
+      .caret { border-top-color: white; }
+      text-shadow: 0 0 .1em @gray-dark;
+      background-color: @complete-color;
+    }
+
+    .nix {
       display: block;
-      transition: width 1ms linear, opacity 1ms linear, height 1ms linear;
-      width: 0;
-      opacity: 0;
-      height: 0;
+      flex: 0 0 auto;
     }
   }
 
-  input:focus + .help>.dropdown-menu {
-    width: auto;
-    opacity: 1;
-    height: auto;
+  .dropdown-menu {
+    text-shadow: none;
   }
 }

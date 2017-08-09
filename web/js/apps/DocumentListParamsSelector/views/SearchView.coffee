@@ -32,36 +32,28 @@ define [
   class SearchView extends Backbone.View
     template: _.template("""
       <form method="post" action="#">
-        <div class="input-group input-group-sm">
-          <span class="input-group-addon">
-            <i class="icon icon-search"></i>
-          </span>
-          <input
-            class="form-control"
-            type="text"
-            name="query"
-            placeholder="<%- t('query_placeholder') %>"
-            />
-          <div class="help">
-            <ul class="dropdown-menu filter-options">
-              <li class="dropdown-header"><%- t('filter') %></li>
-              <li><a class="dropdown-item" href="#" data-field="text"><%- t('field.text') %></a></li>
-              <li><a class="dropdown-item" href="#" data-field="title"><%- t('field.title') %></a></li>
-              <li><a class="dropdown-item" href="#" data-field="notes"><%- t('field.notes') %></a></li>
-              <li class="dropdown-header metadata-fields"><%- t('field.metadataHeader') %></li>
-              <li class="open-metadata-schema-editor"><a class="open-metadata-schema-editor" href="#"><%- t('openMetadataSchemaEditor') %></a></li>
-            </ul>
-          </div>
-          <span class="input-group-btn">
-            <button class="btn btn-primary"><%- t('button') %></button>
-          </span>
+        <i class="icon icon-search"></i>
+        <input type="text" name="query" placeholder="<%- t('query_placeholder') %>" />
+        <div class="help">
+          <a href="#" class="btn btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span class="caret"></span></a>
+          <ul class="dropdown-menu dropdown-menu-right filter-options">
+            <li class="dropdown-header"><%- t('filter') %></li>
+            <li><a class="dropdown-item" href="#" data-field="text"><%- t('field.text') %></a></li>
+            <li><a class="dropdown-item" href="#" data-field="title"><%- t('field.title') %></a></li>
+            <li><a class="dropdown-item" href="#" data-field="notes"><%- t('field.notes') %></a></li>
+            <li class="dropdown-header metadata-fields"><%- t('field.metadataHeader') %></li>
+            <li class="open-metadata-schema-editor"><a class="open-metadata-schema-editor" href="#"><%- t('openMetadataSchemaEditor') %></a></li>
+          </ul>
         </div>
+        <button class="btn btn-sm btn-primary"><%- t('button') %></button>
       </form>
       <a href="#" class="nix" title="<%- t('nix') %>">&times;</a>
     """)
 
     events:
       'input input[type=text]': '_onInput'
+      'focus input': '_onFocus'
+      'blur input': '_onBlur'
       'click a.nix': '_onClickNix'
       'click a[data-field]': '_onClickRefineBy'
       'click a.open-metadata-schema-editor': '_onClickOpenMetadataSchemaEditor'
@@ -151,6 +143,12 @@ define [
     _onClickOpenMetadataSchemaEditor: (e) ->
       e.preventDefault()
       @globalActions.openMetadataSchemaEditor()
+
+    _onFocus: (e) ->
+      e.target.form.classList.add('focus')
+
+    _onBlur: (e) ->
+      e.target.form.classList.remove('focus')
 
     initialRender: ->
       html = @template(t: t)
