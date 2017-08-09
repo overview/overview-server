@@ -6,13 +6,14 @@ webpackConfig.module.loaders = webpackConfig.module.loaders
       Array.isArray(loader.use) ? loader.use.filter(u => !/uglify-es-loader/.test(u.loader)) : loader.use
     )})
   })
+webpackConfig.devtool = 'inline-source-map'
 delete webpackConfig.entry
 
 module.exports = function(config) {
   config.set({
     files: [ 'test_index.js' ],
     preprocessors: {
-      'test_index.js': [ 'webpack' ],
+      'test_index.js': [ 'webpack', 'sourcemap' ],
     },
     frameworks: [ 'mocha' ],
     reporters: [ 'dots', 'junit' ],
