@@ -64,32 +64,32 @@ const cssEntryPoints= [
  */
 function RedirectPlayFrameworkUsingDummyMd5Files() {}
 RedirectPlayFrameworkUsingDummyMd5Files.prototype.apply = function(compiler) {
-  compiler.plugin('emit', (compilation, callback) => {
-    const fakeMd5Assets = []
+  const emitted = {} // filename => contents
 
-    for (const filename in compilation.assets) {
+  compiler.plugin('compilation', (compilation) => {
+    console.log(emitted)
+    compilation.plugin('chunk-asset', (chunk, filename) => {
       const pathParts = filename.split('/')
       const basename = pathParts[pathParts.length - 1]
-      let m
-      if (m = /^([a-f0-9]+)-(.*\.(js|css))$/.exec(basename)) {
+      const m = /^([a-f0-9]+)-(.*\.(js|css))$/.exec(basename)
+      if (m) {
         const dirname = pathParts.slice(0, pathParts.length - 1).join('/')
         const hashThatIsntReallyMd5 = m[1]
         const basenameWithoutHash = m[2]
-        fakeMd5Assets.push({
-          filename: `${basenameWithoutHash}.md5`,
-          contents: hashThatIsntReallyMd5
-        })
-      }
-    }
+        const newFilename = `${basenameWithoutHash}.md5`
+        const newContents = hashThatIsntReallyMd5
 
-    fakeMd5Assets.forEach(newAsset => {
-      compilation.assets[newAsset.filename] = {
-        source: () => newAsset.contents,
-        size: () => newAsset.contents.length,
+        console.log(`Want to write ${newFilename}`)
+        if (emitted[newFilename] !== newContents) {
+          console.log(`Writing ${newFilename}`)
+          compilation.assets[newFilename] = {
+            source: () => newContents,
+            size: () => newContents.length,
+          }
+          emitted[newFilename] = newContents
+        }
       }
     })
-
-    callback()
   })
 }
 
@@ -176,7 +176,10 @@ module.exports = {
   },
   plugins: [
     extractLess,
-    new WebpackCleanupPlugin(),
+    new WebpackCleanupPlugin({
+      // buggy plugin -- deletes Woff files on recompile
+      exclude: [ "**/*.{woff,svg,png,jpg}", "*.md5" ],
+    }),
     new webpack.ProvidePlugin({
         $: "jquery",
         jQuery: "jquery",
