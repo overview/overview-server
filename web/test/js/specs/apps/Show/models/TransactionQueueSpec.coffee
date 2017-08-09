@@ -139,7 +139,8 @@ define [
         @onStart1 = sinon.spy()
         @onItem1 = sinon.spy()
         @onSuccess1 = sinon.spy()
-        @promise1 = @tq.streamJsonArray(url: '/foo', onStart: @onStart1, onItem: @onItem1, onSuccess: @onSuccess1)
+        @onStartError1 = sinon.spy()
+        @promise1 = @tq.streamJsonArray(url: '/foo', onStart: @onStart1, onItem: @onItem1, onSuccess: @onSuccess1, onStartError: @onStartError1)
 
         @onStart2 = sinon.spy()
         @onItem2 = sinon.spy()
@@ -190,15 +191,38 @@ define [
           @sandbox.server.requests[0].respond(404, { 'Content-Type': 'application/json' }, '{ "key": "not-found" }')
           @nextTick(done)
 
-        it 'should reject the promise', ->
-          expect(@promise1).to.eventually.be.rejected
+        it 'should call onStartError', ->
+          expect(@onStartError1).to.have.been.calledWith({
+            statusCode: 404,
+            body: '{ "key": "not-found" }',
+            jsonBody: { key: 'not-found' },
+            thrown: undefined,
+          })
 
-        it 'should trigger an error event', ->
-          expect(@allSpy).to.have.been.calledWith('error')
-          expect(@allSpy.args[0][1]).to.deep.eq({})
-          expect(@allSpy.args[0][2]).to.eq(404)
-          expect(@promise2).not.to.be.fulfilled
-          undefined
+        it 'should resolve the promise if onStartError is set', ->
+          expect(@promise1).to.eventually.be.fulfilled
+
+        it 'should not trigger an error event if onStartError is set', ->
+          expect(@allSpy).not.to.have.been.calledWith('error')
+
+        it 'should not call onItem or onSuccess', ->
+          expect(@onItem1).not.to.have.been.called
+          expect(@onSuccess1).not.to.have.been.called
+
+        describe 'when onStartError is not set', ->
+          beforeEach (done) ->
+            @sandbox.server.requests[1].respond(404, { 'Content-Type': 'application/json' }, '{ "key": "not-found" }')
+            @nextTick(done)
+
+          it 'should reject the promise', ->
+            expect(@promise2).to.eventually.be.rejected
+
+          it 'should trigger an error event', ->
+            expect(@allSpy).to.have.been.calledWith('error')
+            expect(@allSpy.args[0][1]).to.deep.eq({})
+            expect(@allSpy.args[0][2]).to.eq(404)
+            expect(@promise2).not.to.be.fulfilled
+            undefined
 
       describe 'on incomplete result (network error)', ->
         beforeEach (done) ->

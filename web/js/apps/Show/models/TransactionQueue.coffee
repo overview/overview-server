@@ -97,6 +97,7 @@ define [
     #     onStart: console.log,
     #     onItem: console.log,
     #     onSuccess: console.log,
+    #     onStartError: console.warn,
     #   })
     #
     # The server is expected to stream a valid HTTP response with Content-Type
@@ -114,6 +115,11 @@ define [
     #     onSuccess() # the request is complete
     #
     # Error handling:
+    #
+    # Lots can go wrong. To handle the server sending a non-200-range status
+    # code, pass an `onStartError` Function. It will be called with
+    # `{ statusCode: XXX, jsonBody: '"response from server"' }`. (The server
+    # must respond with JSON.)
     #
     # The TransactionQueue may emit an 'error' event when the initial server
     # response fails. It may emit a 'network-error' event at any time before
@@ -133,27 +139,55 @@ define [
       onStart = options.onStart || () ->
       onItem = options.onItem || () ->
       onSuccess = options.onSuccess || () ->
+      onStartError = options.onStartError || null
 
       @_last = @_last.then =>
         new Promise (resolve, reject) =>
           doIt = =>
-            oboe(url)
-              .on 'start', ->
-                onStart()
-              .on 'node', '![*]', (item) ->
+            hasStartError = false
+
+            stream = oboe(url)
+
+            streamServerResponse = ->
+              # Call this when the server responds with 200. It'll call
+              # onStart(), onItem() a few times and then onSuccess() (unless
+              # there's a 'fail').
+              onStart()
+
+              stream.on 'node', '![*]', (item) ->
                 onItem(item)
                 oboe.drop
-              .on 'done', ->
+
+              stream.on 'done', ->
                 onSuccess()
                 resolve()
-              .on 'fail', (report) =>
-                # HACK: make logged-out-modal pick up on this error.
-                if report.statusCode == 400 && report.jsonBody
-                  $(document).trigger('ajaxError', [ { status: report.statusCode, responseText: report.body }, {}, report ])
 
-                # There's no mechanism to handle the error without triggering
-                # 'error', like we have with .ajax(). But if there were one, it
-                # would go here.
+            streamServerError = (statusCode) =>
+              # Call this when the server responds non-200. It'll call
+              # onStartError() (unless the server response is invalid JSON, in
+              # which case there will be a 'fail').
+              stream.on 'fail', (report) =>
+                if onStartError
+                  onStartError(report)
+                  resolve()
+                else
+                  $(document).trigger('ajaxError', [
+                    { status: report.statusCode, responseText: report.body },
+                    {},
+                    report,
+                  ])
+                  reject(report)
+                  @trigger('error', {}, report.statusCode, report.thrown)
+
+            stream.on 'start', (statusCode) ->
+              if String(statusCode)[0] == '2'
+                streamServerResponse()
+              else
+                streamServerError(statusCode)
+
+            stream.on 'fail', (report) =>
+              if !report.statusCode || String(report.statusCode)[0] == '2'
+                # This should never happen -- it means the server made a mistake
                 if report.statusCode
                   reject(report)
                   @trigger('error', {}, report.statusCode, report.thrown)

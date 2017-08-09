@@ -121,12 +121,8 @@ define [
 
       describe 'on error', ->
         beforeEach ->
-          @originalErrorHandler = sinon.spy()
-          @ajaxReject1({
-            thrown: new Error('error message')
-            statusCode: 400
-          })
-          @promise1.catch((e) =>)
+          @transactionQueue.streamJsonArray.args[0][0].onStartError({ statusCode: 400, jsonBody: { message: 'error message' } })
+          @ajaxResolve1()
 
         it 'should set loading=false', -> expect(@list.get('loading')).to.be.false
         it 'should set progress=null', -> expect(@list.get('progress')).to.be.null

@@ -11,8 +11,6 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
   # Listens to State's `change:document-list`. Doesn't call anything or emit
   # any events.
   class DocumentListTitleView extends Backbone.View
-    tagName: 'h3'
-
     events:
       'click a[data-sort-by-metadata-field]': 'onClickSortByMetadataField'
       'change input[name=reverse]': 'onChangeReverse'

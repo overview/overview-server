@@ -322,7 +322,7 @@ define [
         loading: false
         progress: null
         statusCode: errorReport.statusCode
-        error: errorReport.thrown?.message
+        error: errorReport.jsonBody.message
 
     _doFetch: ->
       query = if @get('length') == null
@@ -343,10 +343,9 @@ define [
             @_receiveProgress(item)
           else
             @_receivePage(item)
-      })
-        .catch (errorReport) =>
+        onStartError: (errorReport) =>
           @_receiveError(errorReport)
-          Promise.reject(errorReport)
+      })
 
     _onDocumentTagged: (document, tag, options) ->
       return if options?.fromList
