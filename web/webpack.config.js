@@ -64,24 +64,19 @@ const cssEntryPoints= [
  */
 function RedirectPlayFrameworkUsingDummyMd5Files() {}
 RedirectPlayFrameworkUsingDummyMd5Files.prototype.apply = function(compiler) {
-  const emitted = {} // filename => contents
+  const emitted = {} // cache of filename => contents
 
-  compiler.plugin('compilation', (compilation) => {
-    console.log(emitted)
-    compilation.plugin('chunk-asset', (chunk, filename) => {
+  compiler.plugin('emit', (compilation, callback) => {
+    Object.keys(compilation.assets).forEach(filename => {
       const pathParts = filename.split('/')
       const basename = pathParts[pathParts.length - 1]
       const m = /^([a-f0-9]+)-(.*\.(js|css))$/.exec(basename)
       if (m) {
-        const dirname = pathParts.slice(0, pathParts.length - 1).join('/')
         const hashThatIsntReallyMd5 = m[1]
         const basenameWithoutHash = m[2]
         const newFilename = `${basenameWithoutHash}.md5`
         const newContents = hashThatIsntReallyMd5
-
-        console.log(`Want to write ${newFilename}`)
         if (emitted[newFilename] !== newContents) {
-          console.log(`Writing ${newFilename}`)
           compilation.assets[newFilename] = {
             source: () => newContents,
             size: () => newContents.length,
@@ -90,6 +85,8 @@ RedirectPlayFrameworkUsingDummyMd5Files.prototype.apply = function(compiler) {
         }
       }
     })
+
+    callback()
   })
 }
 
