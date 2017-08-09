@@ -13,14 +13,14 @@ define [
     ''')
 
     initialize: (options) ->
-      if 'documentSet' not of options
-        throw new Error('Must set options.documentSet, a DocumentSet')
-      if 'state' not of options
-        throw new Error('Must set options.state, a Backbone.Model with a `refineDocumentListParams()` method and a `documentList` _attribute_ that has a `params` _property_ (which, in turn, has a `toJSON()` method) and a `length` _attribute_ which is null when loading')
+      throw new Error('Must set options.documentSet, a DocumentSet') if !options.documentSet
+      throw new Error('Must pass options.state, a Backbone.Model with a `refineDocumentListParams()` method and a `documentList` attribute that has a `params` property and a `length` attribute which is null when loading') if !options.state
+      throw new Error('Must pass options.globalActions, an Object with functions') if !options.globalActions
 
       @documentSet = options.documentSet
       @tags = @documentSet.tags
       @state = options.state
+      @globalActions = options.globalActions
 
       @model = new Backbone.Model(@state.documentList?.params || {})
 
@@ -42,5 +42,5 @@ define [
         tags: @$('.tags')
 
       new ObjectsOrDocumentSetView(model: @model, state: @state, el: @ui.objectsOrDocumentSet)
-      new SearchView(model: @model, state: @state, el: @ui.search)
+      new SearchView(model: @model, state: @state, el: @ui.search, globalActions: @globalActions)
       new SelectTagsView(model: @model, state: @state, tags: @tags, el: @ui.tags)

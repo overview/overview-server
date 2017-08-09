@@ -427,6 +427,12 @@ views.DocumentSet.show.MetadataSchemaEditor.views.MetadataSchema.confirmRemove=A
 views.DocumentSet.show.SearchView.query_placeholder=Search
 views.DocumentSet.show.SearchView.button=Search
 views.DocumentSet.show.SearchView.nix=Clear text search
+views.DocumentSet.show.SearchView.filter=Refine search by…
+views.DocumentSet.show.SearchView.field.text=Document text
+views.DocumentSet.show.SearchView.field.title=Document title/filename
+views.DocumentSet.show.SearchView.field.notes=Notes you added
+views.DocumentSet.show.SearchView.field.metadataHeader=Fields…
+views.DocumentSet.show.SearchView.openMetadataSchemaEditor=Edit Fields…
 
 views.DocumentSet.show.TagCountList.prompt=Applied tags
 views.DocumentSet.show.TagCountList.empty=These documents are all untagged

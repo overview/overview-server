@@ -94,4 +94,25 @@
     height: @input-height-small;
     line-height: @input-height-small;
   }
+
+  .help {
+    display: block;
+    position: absolute;
+    left: 100%;
+    top: 0;
+
+    &>.dropdown-menu {
+      display: block;
+      transition: width 1ms linear, opacity 1ms linear, height 1ms linear;
+      width: 0;
+      opacity: 0;
+      height: 0;
+    }
+  }
+
+  input:focus + .help>.dropdown-menu {
+    width: auto;
+    opacity: 1;
+    height: auto;
+  }
 }
