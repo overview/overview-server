@@ -31,3 +31,4 @@ overview-server*.zip
 *.iml
 /archive/
 /archive.zip
+test-results.xml
