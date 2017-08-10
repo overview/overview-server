@@ -40,7 +40,7 @@ case class ContentDisposition(contentDisposition: String) {
 
       // a String value like "blah.txt", from "blah.txt" or "\"blah.txt\""
       def value : Parser[String]
-        = brokenMoreAcceptingToken | quotedString | brokenEmptiness
+        = playBug7719Value | brokenMoreAcceptingToken | quotedString | brokenEmptiness
 
       // spec deviation. Sometimes web browsers will encode filenames
       // with '"' in strings or "\" as an escape char (which doesn't work).
@@ -52,6 +52,13 @@ case class ContentDisposition(contentDisposition: String) {
 
       // spec deviation. Sometimes filenames will be the empty string. It's illegal, but we pass it through.
       def brokenEmptiness = literal("")
+
+      // `filename="UTF-8''blah.txt"` means the filename is exactly
+      // `UTF-8''blah.txt`, but a Play bug means we're getting it when the
+      // user uploads blah.txt.
+      // https://github.com/playframework/playframework/issues/7719
+      def playBug7719Value : Parser[String]
+        = '"' ~> extValue <~ '"'
 
       // a String value like "blah.txt", from "UTF-8''blah.txt"
       def extValue : Parser[String]

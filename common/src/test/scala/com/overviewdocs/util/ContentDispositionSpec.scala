@@ -147,6 +147,20 @@ class ContentDispositionSpec extends Specification {
       ContentDisposition(contentDisposition).filename must beSome(name)
     }
 
+    // https://github.com/overview/overview-server/issues/678
+    // which is really https://github.com/playframework/playframework/issues/7719
+    //
+    // This input should only occur when the user uploads a filename that looks
+    // like `"UTF-8''..."`. But akka-http incorrectly sends us these values: the
+    // common case is that a filename starting with "UTF-8''" is because of the
+    // Akka bug, and the rarer case is that it isn't. So we deviate from the
+    // RFC to work around the Akka bug.
+    "An incorrectly-quoted UTF-8 filename" in new ContentDispositionContext with DispositionParameter {
+      override val name = "Roget's Thesaurus.pdf"
+      override lazy val dispParams: String = """attachment; filename="UTF-8''Roget%27s%20Thesaurus.pdf""""
+      ContentDisposition(contentDisposition).filename must beSome(name)
+    }
+
     "Decode mixed-case filenames" in new ContentDispositionContext with DispositionParameter {
       override val name = "FILE,name.pdf"
       override lazy val dispParams: String = """attachment; filename*=UTF-8''FILE%2Cname.pdf"""
