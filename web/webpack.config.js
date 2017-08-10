@@ -105,7 +105,7 @@ const UglifyESOptions = {
 }
 
 const extractLess = new ExtractTextPlugin({
-  filename: '[chunkhash]-[name].css',
+  filename: '[contenthash]-[name].css',
 })
 
 module.exports = {
