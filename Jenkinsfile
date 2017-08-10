@@ -61,6 +61,7 @@ node('test-slave') {
     stage('Publish') {
       if (currentBuild.result == null || currentBuild.result == 'SUCCESS') {
         sh 'auto/publish-from-jenkins-test-slave.sh'
+        currentBuild.result = 'SUCCESS'
       }
     }
   } catch (any) {
