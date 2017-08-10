@@ -67,9 +67,12 @@
 
 // Set this on a ul.tags to make 2d-looking tags
 .tag-list-2d() {
+  // Negative margins so we can get the space between tags even
   margin: 0 -.5em -.3em 0;
   padding: 0;
   list-style: none;
+
+  &:empty { margin: 0; }
 
   li {
     display: inline-block;

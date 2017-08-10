@@ -22,15 +22,9 @@ define [
           <% if (attrs.snippet) { %>
             <p class="snippets"><%= attrs.snippet %></p>
           <% }%>
-          <ul class="tags">
-            <% _.each(tags, function(tag) { %>
-              <li class="tag" data-cid="<%- tag.cid %>">
-                <div class="<%= tag.getClass() %>" style="<%= tag.getStyle() %>">
-                  <span class="name"><%- tag.get('name') %></span>
-                </div>
-              </li>
-            <% }); %>
-          </ul>
+          <ul class="tags"><% _.each(tags, function(tag) {
+            %><li class="tag" data-cid="<%- tag.cid %>"><div class="<%= tag.getClass() %>" style="<%= tag.getStyle() %>"><span class="name"><%- tag.get('name') %></span></div></li><%
+          }); %></ul>
         </div>
       </li
     >""")
