@@ -3,18 +3,19 @@ package controllers.api
 import javax.inject.Inject
 import play.api.data.{Form,Forms}
 import scala.concurrent.ExecutionContext.Implicits.global
-import play.api.libs.json.{JsObject,Json}
+import play.api.libs.json.{JsArray,JsObject,JsNumber,JsString,Json}
 import scala.concurrent.Future
 import scala.util.{Try,Success,Failure}
 
-import controllers.auth.Authorities.apiDocumentSetCreator
-import controllers.backend.{ApiTokenBackend,DocumentSetBackend}
+import controllers.auth.Authorities.{apiDocumentSetCreator,userViewingDocumentSet}
+import controllers.backend.{ApiTokenBackend,DocumentSetBackend,SearchBackend}
 import com.overviewdocs.metadata.MetadataSchema
 import com.overviewdocs.models.{ApiToken,DocumentSet}
 
 class DocumentSetController @Inject() (
   apiTokenBackend: ApiTokenBackend,
   backend: DocumentSetBackend,
+  searchBackend: SearchBackend,
   val controllerComponents: ApiControllerComponents
 ) extends ApiBaseController {
 
@@ -61,5 +62,13 @@ class DocumentSetController @Inject() (
         }
       }
     )
+  }
+
+  def showTopTermsByTermFrequency(id: Long) = apiAuthorizedAction(userViewingDocumentSet(id)).async {
+    searchBackend.topTermsByTermFrequency(id, 500).map(terms => {
+      Ok(Json.arr(
+        terms.map(term => Json.obj("term" -> term.term, "frequency" -> term.frequency, "nDocuments" -> term.nDocuments))
+      ))
+    })
   }
 }

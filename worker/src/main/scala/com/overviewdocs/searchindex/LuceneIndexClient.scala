@@ -67,6 +67,14 @@ trait LuceneIndexClient extends IndexClient {
     getIndex(id).map(_.searchForIds(q))
   }
 
+  override def topTermsByTermFrequency(id: Long, limit: Int) = {
+    getIndex(id).map(_.topTermsByDocumentFrequency(limit))
+  }
+
+  override def topTermsByDocumentFrequency(id: Long, limit: Int) = {
+    getIndex(id).map(_.topTermsByDocumentFrequency(limit))
+  }
+
   override def highlight(documentSetId: Long, documentId: Long, q: Query) = {
     getIndex(documentSetId).map(_.highlight(documentId, q))
   }

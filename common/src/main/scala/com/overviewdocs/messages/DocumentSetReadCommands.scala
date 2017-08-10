@@ -28,4 +28,12 @@ object DocumentSetReadCommands {
   /** Find a few phrases from each document matching the query.
     */
   case class Highlights(documentSetId: Long, documentIds: immutable.Seq[Long], query: Query) extends ReadCommand
+
+  /** Find the top terms in the document set, looking at all document text.
+    */
+  case class TopTermsByTermFrequency(documentSetId: Long, limit: Int) extends ReadCommand
+
+  /** Find the top terms in the document set, looking at all document text.
+    */
+  case class TopTermsByDocumentFrequency(documentSetId: Long, limit: Int) extends ReadCommand
 }

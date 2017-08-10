@@ -66,6 +66,20 @@ trait IndexClient {
     */
   def searchForIds(documentSetId: Long, q: Query): Future[SearchResult]
 
+  /** Returns top terms, looking at the "text" field.
+    *
+    * @param documentSetId Document set ID
+    * @param limit Maximum number of terms to return
+    */
+  def topTermsByTermFrequency(documentSetId: Long, limit: Int): Future[immutable.Seq[TopTerm]]
+
+  /** Returns top terms, looking at the "text" field.
+    *
+    * @param documentSetId Document set ID
+    * @param limit Maximum number of terms to return
+    */
+  def topTermsByDocumentFrequency(documentSetId: Long, limit: Int): Future[immutable.Seq[TopTerm]]
+
   /** Finds all highlights of a given query in a document.
     *
     * @param documentSetId Document set ID (says which alias to search under)

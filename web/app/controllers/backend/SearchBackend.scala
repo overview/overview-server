@@ -3,6 +3,7 @@ package controllers.backend
 import com.google.inject.ImplementedBy
 import java.time.Instant
 import javax.inject.{Inject,Singleton}
+import scala.collection.immutable
 import scala.concurrent.Future
 
 import com.overviewdocs.database.Database
@@ -10,7 +11,7 @@ import com.overviewdocs.messages.{DocumentSetCommands,DocumentSetReadCommands}
 import com.overviewdocs.models.DocumentSetReindexJob
 import com.overviewdocs.models.tables.DocumentSetReindexJobs
 import com.overviewdocs.query.{Query=>IndexQuery}
-import com.overviewdocs.searchindex.{SearchResult,SearchWarning}
+import com.overviewdocs.searchindex.{SearchResult,SearchWarning,TopTerm}
 import com.overviewdocs.util.Logger
 import modules.RemoteActorSystemModule
 
@@ -34,6 +35,20 @@ trait SearchBackend extends Backend {
     * @param query Parsed search query.
     */
   def search(documentSetId: Long, query: IndexQuery): Future[SearchResult]
+
+  /** Returns the top terms in the document set's documents' text.
+    *
+    * @param documentSetId DocumentSet ID.
+    * @param limit Maximum number of results.
+    */
+  def topTermsByTermFrequency(documentSetId: Long, limit: Int): Future[immutable.Seq[TopTerm]]
+
+  /** Returns the top terms in the document set's documents' text.
+    *
+    * @param documentSetId DocumentSet ID.
+    * @param limit Maximum number of results.
+    */
+  def topTermsByDocumentFrequency(documentSetId: Long, limit: Int): Future[immutable.Seq[TopTerm]]
 }
 
 /** Akka RemoteActor-backed search backend.
@@ -95,6 +110,16 @@ class RemoteActorSearchBackend @Inject() (
         }
         case _ => Future.successful(result)
       })
+  }
+
+  override def topTermsByTermFrequency(documentSetId: Long, limit: Int) = {
+    messageBroker.ask(DocumentSetReadCommands.TopTermsByTermFrequency(documentSetId, limit))
+      .mapTo[immutable.Seq[TopTerm]]
+  }
+
+  override def topTermsByDocumentFrequency(documentSetId: Long, limit: Int) = {
+    messageBroker.ask(DocumentSetReadCommands.TopTermsByDocumentFrequency(documentSetId, limit))
+      .mapTo[immutable.Seq[TopTerm]]
   }
 
   override def refreshDocument(documentSetId: Long, documentId: Long) = {

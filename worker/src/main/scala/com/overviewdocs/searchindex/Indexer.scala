@@ -24,7 +24,7 @@ class Indexer(
   documentIdListDeleter: DocumentIdListDeleter
 ) extends Actor {
   import DocumentSetCommands.ReindexDocument
-  import DocumentSetReadCommands.{Search,Highlight,Highlights}
+  import DocumentSetReadCommands.{Search,Highlight,Highlights,TopTermsByTermFrequency,TopTermsByDocumentFrequency}
 
   import context.dispatcher
 
@@ -41,6 +41,12 @@ class Indexer(
     }
     case Highlights(documentSetId, documentIds, query) => {
       respond(sender, indexClient.highlights(documentSetId, documentIds, query))
+    }
+    case TopTermsByDocumentFrequency(documentSetId, limit) => {
+      respond(sender, indexClient.topTermsByDocumentFrequency(documentSetId, limit))
+    }
+    case TopTermsByTermFrequency(documentSetId, limit) => {
+      respond(sender, indexClient.topTermsByDocumentFrequency(documentSetId, limit))
     }
     case Indexer.DoWorkThenAck(ReindexDocument(documentSetId, documentId), sender, ack) => {
       documentFinder.findDocument(documentSetId, documentId)

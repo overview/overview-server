@@ -219,6 +219,63 @@ class DocumentSetLuceneIndexSpec extends Specification {
       }
     }
 
+    "#topTermsByTermFrequency" should {
+      "return empty result when there are no documents" in new BaseScope {
+        index.topTermsByTermFrequency(500) must beEqualTo(Vector())
+      }
+
+      "return a sorted result" in new BaseScope {
+        index.addDocuments(Vector(buildDocument(1L).copy(text="cow cow cow hears moo moo")))
+        index.addDocuments(Vector(buildDocument(2L).copy(text="moo moo yay yay yay yay yay")))
+        index.topTermsByTermFrequency(500) must beEqualTo(Vector(
+          TopTerm("yay", 5, 1),
+          TopTerm("moo", 4, 2),
+          TopTerm("cow", 3, 1),
+          TopTerm("hears", 1, 1),
+        ))
+      }
+
+      "truncate the result" in new BaseScope {
+        index.addDocuments(Vector(buildDocument(1L).copy(text="cow cow cow hears moo moo")))
+        index.addDocuments(Vector(buildDocument(2L).copy(text="moo moo yay yay yay yay yay")))
+        index.topTermsByTermFrequency(2) must beEqualTo(Vector(
+          TopTerm("yay", 5, 1),
+          TopTerm("moo", 4, 2),
+        ))
+      }
+    }
+
+    "#topTermsByDocumentFrequency" should {
+      "return empty result when there are no documents" in new BaseScope {
+        index.topTermsByDocumentFrequency(500) must beEqualTo(Vector())
+      }
+
+      "return a sorted result" in new BaseScope {
+        index.addDocuments(Vector(buildDocument(1L).copy(text="cow cow cow hears moo moo")))
+        index.addDocuments(Vector(buildDocument(2L).copy(text="moo moo yay yay yay yay yay")))
+        index.topTermsByDocumentFrequency(500) must beEqualTo(Vector(
+          TopTerm("moo", 4, 2),
+          TopTerm("yay", 5, 1),
+          TopTerm("cow", 3, 1),
+          TopTerm("hears", 1, 1),
+        ))
+      }
+
+      "truncate the result" in new BaseScope {
+        index.addDocuments(Vector(buildDocument(1L).copy(text="cow cow cow hears moo moo")))
+        index.addDocuments(Vector(buildDocument(2L).copy(text="moo moo yay yay yay yay yay")))
+        index.topTermsByDocumentFrequency(2) must beEqualTo(Vector(
+          TopTerm("moo", 4, 2),
+          TopTerm("yay", 5, 1),
+        ))
+      }
+
+      "work with multi-byte Unicode characters" in new BaseScope {
+        index.addDocuments(Vector(buildDocument(1L).copy(text="café")))
+        index.topTermsByDocumentFrequency(1) must beEqualTo(Vector(TopTerm("café", 1, 1)))
+      }
+    }
+
     "#highlight" should {
       "return empty result on document it cannot match" in new BaseScope {
         index.addDocuments(Vector(buildDocument(1L).copy(text="i am cow hear me moo")))

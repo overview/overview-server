@@ -9,7 +9,8 @@ import org.apache.lucene.analysis.{Analyzer,TokenStream}
 import org.apache.lucene.analysis.standard.StandardTokenizer
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute
 import org.apache.lucene.document.{Document=>LuceneDocument,Field=>LuceneField,FieldType,NumericDocValuesField,StringField,TextField}
-import org.apache.lucene.index.{DirectoryReader,FieldInfo,IndexOptions,IndexReader,IndexWriter,IndexWriterConfig,LeafReaderContext,NumericDocValues,Term}
+import org.apache.lucene.index.{DirectoryReader,FieldInfo,IndexOptions,IndexReader,IndexWriter,IndexWriterConfig,LeafReaderContext,MultiFields,NumericDocValues,Term}
+import org.apache.lucene.misc.{HighFreqTerms,TermStats}
 import org.apache.lucene.search.{BooleanClause,BooleanQuery,ConstantScoreQuery,FuzzyQuery,IndexSearcher,MatchAllDocsQuery,MatchNoDocsQuery,MultiPhraseQuery,MultiTermQuery,PhraseQuery,PrefixQuery,SimpleCollector,Query=>LuceneQuery}
 import org.apache.lucene.store.{Directory,FSDirectory}
 import org.apache.lucene.util.{BytesRef,QueryBuilder}
@@ -297,6 +298,32 @@ class DocumentSetLuceneIndex(val documentSetId: Long, val directory: Directory, 
       DocumentIdSet(documentSetId.toInt, immutable.BitSet.fromBitMaskNoCopy(lowerIds.toBitMask)),
       warnings
     )
+  }
+
+  private def topTerms(limit: Int, comparator: java.util.Comparator[TermStats]): immutable.Seq[TopTerm] = {
+    if (!indexExists) return immutable.Seq.empty
+    if (MultiFields.getTerms(indexReader, "text") == null) return immutable.Seq.empty
+
+    val termArray = HighFreqTerms.getHighFreqTerms(indexReader, limit, "text", comparator)
+    termArray.toIndexedSeq
+      .map(termStats => TopTerm(termStats.termtext.utf8ToString, termStats.totalTermFreq, termStats.docFreq))
+  }
+
+  def topTermsByTermFrequency(limit: Int): immutable.Seq[TopTerm] = synchronized {
+    topTerms(limit, new HighFreqTerms.TotalTermFreqComparator)
+  }
+
+  def topTermsByDocumentFrequency(limit: Int): immutable.Seq[TopTerm] = synchronized {
+    topTerms(limit, new java.util.Comparator[TermStats] {
+      override def compare(a: TermStats, b: TermStats): Int = {
+        val byDoc = a.docFreq - b.docFreq
+        if (byDoc != 0) return byDoc
+        val byFreq = a.totalTermFreq - b.totalTermFreq
+        if (byFreq < 0) return -1
+        if (byFreq > 0) return 1
+        return a.termtext.compareTo(b.termtext)
+      }
+    })
   }
 
   def highlight(documentId: Long, query: Query): immutable.Seq[Utf16Highlight] = synchronized {
