@@ -112,6 +112,12 @@ class DocumentControllerSpec extends ControllerSpecification with JsonMatchers {
         result.value.get.get.body.contentLength must beSome(9)
         h.contentAsString(result) must beEqualTo("page data")
       }
+
+      "encode ContentDisposition correctly" in new ShowPdfScope {
+        override def foundDocument = Some(factory.document(fileId=Some(fileId), pageId=None, title="café.pdf"))
+        override def foundBlob = Source.single(ByteString("page data".getBytes("utf-8")))
+        h.header("Content-Disposition", result) must beSome("inline; filename*=UTF-8''caf%C3%A9.pdf")
+      }
     }
 
     "showPdfNotes()" should {

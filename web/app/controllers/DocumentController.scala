@@ -16,11 +16,12 @@ import play.api.mvc.Result
 import play.api.{Play,Logger}
 import scala.concurrent.{Future,blocking}
 
+import com.overviewdocs.blobstorage.BlobStorage
+import com.overviewdocs.models.{Document,File,Page,PdfNote,PdfNoteCollection}
+import com.overviewdocs.util.ContentDisposition
 import controllers.auth.Authorities.{anyUser,userOwningDocument,userOwningDocumentSet,userViewingDocumentSet}
 import controllers.auth.AuthorizedAction
 import controllers.backend.{DocumentBackend,FileBackend,PageBackend}
-import com.overviewdocs.blobstorage.BlobStorage
-import com.overviewdocs.models.{Document,File,Page,PdfNote,PdfNoteCollection}
 
 class DocumentController @Inject() (
   documentBackend: DocumentBackend,
@@ -62,8 +63,13 @@ class DocumentController @Inject() (
           val body = FileIO.fromPath(f.toPath)
 
           Future.successful(
+            // Play's sendEntity() ought to allow setting a content-disposition.
+            // Alas, 2.6.2 doesn't.
+            //
+            // Luckily, we've written our own content-disposition
+            // encoder/decoder to address this.
             Ok.sendEntity(HttpEntity.Streamed(body, Some(length), Some("application/pdf")))
-              .withHeaders(CONTENT_DISPOSITION -> s"""inline ; filename="$filename"""")
+              .withHeaders(CONTENT_DISPOSITION -> ContentDisposition.fromFilename(filename).contentDisposition.replaceFirst("attachment", "inline"))
           )
 
         } catch {
@@ -81,10 +87,13 @@ class DocumentController @Inject() (
       case Some(document) => {
         val filename = document.title
         documentToBodyAndLength(document).map({ (body: Source[ByteString, _], length: Long) =>
+          // Play's sendEntity() ought to allow setting a content-disposition.
+          // Alas, 2.6.2 doesn't.
+          //
+          // Luckily, we've written our own content-disposition
+          // encoder/decoder to address this.
           Ok.sendEntity(HttpEntity.Streamed(body, Some(length), Some("application/pdf")))
-            .withHeaders(
-              CONTENT_DISPOSITION -> s"""inline ; filename="$filename""""
-            )
+            .withHeaders(CONTENT_DISPOSITION -> ContentDisposition.fromFilename(filename).contentDisposition.replaceFirst("attachment", "inline"))
         }.tupled)
       }
     })
