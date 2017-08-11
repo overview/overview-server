@@ -22,6 +22,7 @@ const jsEntryPoints = [
   'PublicDocumentSet/index',
   'SharedDocumentSet/index',
   'Welcome/show',
+  // "tracking" is a special case
 ]
 
 const cssEntryPoints= [
@@ -97,6 +98,7 @@ for (const entryPoint of jsEntryPoints) {
 for (const entryPoint of cssEntryPoints) {
   entryPointsMap[entryPoint] = `./css/${entryPoint}.less`
 }
+entryPointsMap['tracking'] = 'tracking'
 
 const UglifyESOptions = {
   sourceMap: true, // slow, but necessary
