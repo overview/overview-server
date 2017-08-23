@@ -51,7 +51,7 @@ object PodoFactory extends Factory {
     */
   private def get32BitId(idOr0: Long): Long = {
     if (idOr0 == 0L) {
-      math.abs(random.nextInt)
+      math.abs(random.nextInt).toLong
     } else {
       idOr0
     }
@@ -195,6 +195,18 @@ object PodoFactory extends Factory {
     idsString,
     nDocuments,
     nPages
+  )
+
+  override def documentIdList(
+    id: Long,
+    documentSetId: Int,
+    fieldName: String,
+    document32BitIds: Vector[Int]
+  ) = DocumentIdList(
+    getId(id),
+    getId(documentSetId),
+    fieldName,
+    document32BitIds
   )
 
   override def documentSet(

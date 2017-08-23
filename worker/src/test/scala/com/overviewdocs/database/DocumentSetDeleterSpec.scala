@@ -56,6 +56,15 @@ class DocumentSetDeleterSpec extends DbSpecification with Mockito {
       blockingDatabase.option(Trees.filter(_.id === tree.id)) must beNone
     }
 
+    "delete document_id_list" in new BaseScope {
+      val documentIdList = factory.documentIdList(documentSetId=documentSet.id.toInt)
+
+      deleteDocumentSet
+
+      import database.api._
+      blockingDatabase.option(DocumentIdLists.filter(_.id === documentIdList.id)) must beNone
+    }
+
     "delete trees that have no nodes" in new BaseScope {
       val tree = factory.tree(documentSetId=documentSet.id)
 

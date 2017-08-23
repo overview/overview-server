@@ -79,6 +79,14 @@ trait Factory {
     pdfNotes: PdfNoteCollection = PdfNoteCollection(Array()),
     text: String = ""): Document
 
+  /** Creates a new DocumentIdList with the given parameters. */
+  def documentIdList(
+    id: Long = 0L,
+    documentSetId: Int = 0,
+    fieldName: String = "fieldName",
+    document32BitIds: Vector[Int] = Vector(0, 1, 2)
+  ): DocumentIdList
+
   /** Creates a new DocumentSet with the given parameters. */
   def documentSet(
     id: Long = 0L,

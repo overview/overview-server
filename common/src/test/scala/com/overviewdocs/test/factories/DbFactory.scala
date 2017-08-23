@@ -164,6 +164,18 @@ object DbFactory extends Factory with HasBlockingDatabase {
     nPages
   ))
 
+  override def documentIdList(
+    id: Long,
+    documentSetId: Int,
+    fieldName: String,
+    document32BitIds: Vector[Int]
+  ) = run(q.insertDocumentIdList += podoFactory.documentIdList(
+    id,
+    documentSetId,
+    fieldName,
+    document32BitIds
+  ))
+
   override def documentSet(
     id: Long,
     title: String,
@@ -467,6 +479,7 @@ object DbFactory extends Factory with HasBlockingDatabase {
     val insertDocument = (Documents returning Documents)
     val insertDocumentCloudImport = (DocumentCloudImports returning DocumentCloudImports)
     val insertDocumentCloudImportIdList = (DocumentCloudImportIdLists returning DocumentCloudImportIdLists)
+    val insertDocumentIdList = (DocumentIdLists returning DocumentIdLists)
     val insertDocumentSet = (DocumentSets returning DocumentSets)
     val insertDocumentSetReindexJob = (DocumentSetReindexJobs returning DocumentSetReindexJobs)
     val insertDocumentTag = (DocumentTags returning DocumentTags)

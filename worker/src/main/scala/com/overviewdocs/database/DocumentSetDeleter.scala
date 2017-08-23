@@ -21,6 +21,7 @@ trait DocumentSetDeleter extends HasDatabase {
       _ <- deleteCloneJobs(documentSetId)
       _ <- deleteCsvImports(documentSetId)
       _ <- deleteDocumentCloudImports(documentSetId)
+      _ <- deleteDocumentIdLists(documentSetId)
       _ <- DBIO.from(indexFuture) // Ensure it's out of ElasticSearch before deleting DocumentSet, so restart resumes the index-delete
       _ <- deleteCore(documentSetId)
     } yield ())
@@ -53,6 +54,10 @@ trait DocumentSetDeleter extends HasDatabase {
       DELETE FROM document_cloud_import
       WHERE id IN (SELECT id FROM imports)
     """
+  }
+
+  private def deleteDocumentIdLists(documentSetId: Long): DBIO[Unit] = {
+    DocumentIdLists.filter(_.documentSetId === documentSetId.toInt).delete.map(_ => ())
   }
 
   // The minimal set of components, common to all document sets
