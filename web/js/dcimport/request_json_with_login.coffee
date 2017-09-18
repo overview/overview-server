@@ -4,7 +4,7 @@ define [ 'jquery', 'i18n', 'base64', 'dcimport/CredentialStore', 'dcimport/templ
   loading_html = '<p>Loading...</p>' # FIXME translate
 
   credentials_to_authorization_header = (credentials) ->
-    "Basic #{Base64.encode64("#{credentials.email}:#{credentials.password}")}"
+    "Basic #{Base64.Base64.encode64("#{credentials.email}:#{credentials.password}")}"
 
   prompt_for_credentials = (div, is_error) ->
     deferred = new Deferred()
