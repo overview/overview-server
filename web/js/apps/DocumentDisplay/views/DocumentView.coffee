@@ -108,20 +108,21 @@ define [
         iWindow = iframe.contentWindow
         iDocument = iframe.contentDocument
         $(iWindow).on 'load', =>
-          # Execute the search by firing a 'find' event.
-          event = iDocument.createEvent('CustomEvent')
-          event.initCustomEvent('find', true, true, {
+          # pdfjs's find bar doesn't listen to the controller when we send
+          # the controller a search phrase. Manually open the find bar and
+          # set values
+          findBar = iWindow.PDFViewerApplication.findBar
+          findBar.open()
+          findBar.caseSensitive.checked = false
+          findBar.highlightAll.checked = true
+          findBar.findField.value = @highlightSearch
+
+          # Now -- and this is the only important part, really -- search!
+          findController = iWindow.PDFViewerApplication.findController
+          findController.executeCommand('find', {
             query: @highlightSearch
+            phraseSearch: false # AND and OR queries break with phrase search
             caseSensitive: false
             highlightAll: true
             findPrevious: false
           })
-          iWindow.dispatchEvent(event)
-
-          # Now update and display the Find bar, so users understand what's
-          # highlighted.
-          findBar = iWindow.PDFViewerApplication.findBar
-          findBar.caseSensitive.checked = false
-          findBar.highlightAll.checked = true
-          findBar.findField.value = @highlightSearch
-          findBar.open()
