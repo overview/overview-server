@@ -48,7 +48,7 @@ object QueryParser {
         ("text:" ^^^ Field.Text) |
         ((quotedFieldName | unquotedFieldName) <~ ":" ^^ { s => Field.Metadata(s) }) |
         ("" ^^^ Field.All)
-      )
+      ) <~ opt(whiteSpace)
 
     // String Token: a ton of text: everything until an operator or EOF
     //
