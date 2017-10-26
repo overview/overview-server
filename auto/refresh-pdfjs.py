@@ -73,7 +73,7 @@ def copy_document_show_scala(source, destination):
 
     # Set up PDFJS paths
     data = data.replace(b'<script', b'<script>window.PDFJS = { workerSrc: "@assets.path("pdfjs/build/pdf.worker.js")" };</script><script', 1)
-    data = data.replace(b'"../build/pdf.js"', b'"@assets.path("pdfjs/build/pdf.js")"', 1)
+    data = data.replace(b'"../build/generic/build/pdf.js"', b'"@assets.path("pdfjs/build/pdf.js")"', 1)
     data = data.replace(b'"viewer.js"', b'"@assets.path("pdfjs/web/viewer.js")"', 1)
 
     # Add onload
