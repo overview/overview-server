@@ -127,8 +127,8 @@ define [
         fields: [
           { name: 'name', label: t('new.name'), control: 'input', placeholder: 'Tree', required: true }
           { name: 'description', label: t('new.description'), control: 'input', placeholder: 'Organizes documents into folders', required: true }
-          { name: 'url', label: t('new.url'), control: 'input', type: 'url', placeholder: 'https://overview-tree.s3.amazon.com', required: true }
-          { name: 'serverUrlFromPlugin', label: t('new.serverUrlFromPlugin'), control: 'input', type: 'url', placeholder: "(if blank, uses #{window.location.protocol}//#{window.location.host})" }
+          { name: 'url', label: t('new.url'), control: 'input', type: 'url', placeholder: 'https://overview-tree.s3.amazon.com', required: true, helpMessage: 'The plugin is a website at this URL. Overview will display it in an iframe.' }
+          { name: 'serverUrlFromPlugin', label: t('new.serverUrlFromPlugin'), control: 'input', type: 'url', placeholder: "(if blank, uses #{window.location.protocol}//#{window.location.host})", helpMessage: 'The plugin is a website in an iframe. If it needs to access Overview, what URL should it use? We pass this as the "server" parameter when create the iframe that contains the plugin.' }
           { control: 'button', value: t('new.submit') }
         ]
       form.render()
