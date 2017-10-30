@@ -17,6 +17,7 @@ object show {
       "id" -> view.id,
       "title" -> view.title,
       "url" -> view.url,
+      "serverUrlFromPlugin" -> view.serverUrlFromPlugin,
       "apiToken" -> view.apiToken,
       "createdAt" -> dateToISO8601(view.createdAt),
       "creationData" -> Json.obj()

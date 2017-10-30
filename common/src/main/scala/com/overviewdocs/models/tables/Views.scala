@@ -15,6 +15,7 @@ class ViewsImpl(tag: Tag) extends Table[View](tag, "view") {
   def id = column[Long]("id", O.PrimaryKey)
   def documentSetId = column[Long]("document_set_id")
   def url = column[String]("url") // simpler than java.net.URI
+  def serverUrlFromPlugin = column[Option[String]]("server_url_from_plugin")
   def apiToken = column[String]("api_token") // a password, not a foreign key
   def title = column[String]("title")
   def createdAt = column[Timestamp]("created_at")
@@ -23,6 +24,7 @@ class ViewsImpl(tag: Tag) extends Table[View](tag, "view") {
     id,
     documentSetId,
     url,
+    serverUrlFromPlugin,
     apiToken,
     title,
     createdAt
@@ -30,6 +32,7 @@ class ViewsImpl(tag: Tag) extends Table[View](tag, "view") {
 
   def createAttributes = (
     url,
+    serverUrlFromPlugin,
     apiToken,
     title,
     createdAt

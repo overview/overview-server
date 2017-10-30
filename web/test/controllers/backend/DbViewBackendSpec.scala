@@ -61,6 +61,7 @@ class DbViewBackendSpec extends DbBackendSpecification {
 
         val attributes = View.CreateAttributes(
           url="http://example.org",
+          serverUrlFromPlugin=Some("http://overview-web"),
           apiToken="api-token",
           title="title"
         )
@@ -71,6 +72,7 @@ class DbViewBackendSpec extends DbBackendSpecification {
 
       "return a View" in new CreateScope {
         view.url must beEqualTo(attributes.url)
+        view.serverUrlFromPlugin must beEqualTo(attributes.serverUrlFromPlugin)
         view.apiToken must beEqualTo(attributes.apiToken)
         view.title must beEqualTo(attributes.title)
       }
@@ -78,6 +80,7 @@ class DbViewBackendSpec extends DbBackendSpecification {
       "write the View to the database" in new CreateScope {
         val dbView = findView(view.id)
         dbView.map(_.url) must beSome(attributes.url)
+        dbView.map(_.serverUrlFromPlugin) must beSome(attributes.serverUrlFromPlugin)
         dbView.map(_.apiToken) must beSome(attributes.apiToken)
         dbView.map(_.title) must beSome(attributes.title)
       }

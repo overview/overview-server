@@ -45,6 +45,7 @@ class DbPluginBackend @Inject() (val database: Database) extends PluginBackend w
       attributes.name,
       attributes.description,
       attributes.url,
+      attributes.serverUrlFromPlugin,
       attributes.autocreate,
       attributes.autocreateOrder
     )
@@ -69,6 +70,6 @@ class DbPluginBackend @Inject() (val database: Database) extends PluginBackend w
   protected lazy val inserter = (Plugins returning Plugins)
 
   private lazy val updatePluginAttributes = Compiled { (id: Rep[UUID]) =>
-    for (p <- Plugins if p.id === id) yield (p.name, p.description, p.url, p.autocreate, p.autocreateOrder)
+    for (p <- Plugins if p.id === id) yield (p.name, p.description, p.url, p.serverUrlFromPlugin, p.autocreate, p.autocreateOrder)
   }
 }

@@ -13,7 +13,8 @@ import java.util.Date
 case class View(
   id: Long,
   documentSetId: Long,
-  url: String,
+  url: String,                         /// URL browser uses to see plugin (in iframe)
+  serverUrlFromPlugin: Option[String], /// URL plugin server uses to query Overview API
   apiToken: String,
   title: String,
   createdAt: Timestamp
@@ -27,6 +28,7 @@ object View {
   /** The parts of a View the user may set when creating it */
   case class CreateAttributes(
     url: String,
+    serverUrlFromPlugin: Option[String],
     apiToken: String,
     title: String,
     createdAt: Timestamp = new Timestamp(scala.compat.Platform.currentTime)

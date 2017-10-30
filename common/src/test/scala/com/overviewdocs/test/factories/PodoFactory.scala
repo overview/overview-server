@@ -352,9 +352,10 @@ object PodoFactory extends Factory {
     name: String,
     description: String,
     url: String,
+    serverUrlFromPlugin: Option[String],
     autocreate: Boolean,
     autocreateOrder: Int
-  ) = Plugin(getId(id), name, description, url, autocreate, autocreateOrder)
+  ) = Plugin(getId(id), name, description, url, serverUrlFromPlugin, autocreate, autocreateOrder)
 
   override def store(
     id: Long = 0L,
@@ -381,10 +382,10 @@ object PodoFactory extends Factory {
   )
 
   override def tag(
-    id: Long = 0L,
-    documentSetId: Long = 0L,
-    name: String = "a tag",
-    color: String = "abcdef"
+    id: Long,
+    documentSetId: Long,
+    name: String,
+    color: String
   ) = Tag(
     id=getId(id),
     documentSetId=getId(documentSetId),
@@ -393,7 +394,7 @@ object PodoFactory extends Factory {
   )
 
   override def tree(
-    id: Long = 0L,
+    id: Long,
     documentSetId: Long,
     rootNodeId: Option[Long],
     title: String,
@@ -423,16 +424,18 @@ object PodoFactory extends Factory {
   )
 
   override def view(
-    id: Long = 0L,
-    documentSetId: Long = 0L,
-    url: String = "http://example.org",
-    apiToken: String = "api-token",
-    title: String = "title",
-    createdAt: Timestamp = new Timestamp(0L)
+    id: Long,
+    documentSetId: Long,
+    url: String,
+    serverUrlFromPlugin: Option[String],
+    apiToken: String,
+    title: String,
+    createdAt: Timestamp
   ) = View(
     getId(id),
     getId(documentSetId),
     url,
+    serverUrlFromPlugin,
     apiToken,
     title,
     createdAt

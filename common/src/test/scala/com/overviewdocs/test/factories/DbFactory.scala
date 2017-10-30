@@ -225,9 +225,9 @@ object DbFactory extends Factory with HasBlockingDatabase {
   }
 
   override def documentStoreObject(
-    documentId: Long = 0L,
-    storeObjectId: Long = 0L,
-    json: Option[JsObject] = None
+    documentId: Long,
+    storeObjectId: Long,
+    json: Option[JsObject]
   ) = run(q.insertDocumentStoreObject += podoFactory.documentStoreObject(
     documentId,
     storeObjectId,
@@ -313,9 +313,10 @@ object DbFactory extends Factory with HasBlockingDatabase {
     name: String,
     description: String,
     url: String,
+    serverUrlFromPlugin: Option[String],
     autocreate: Boolean,
     autocreateOrder: Int
-  ) = run(q.insertPlugin += podoFactory.plugin(id, name, description, url, autocreate, autocreateOrder))
+  ) = run(q.insertPlugin += podoFactory.plugin(id, name, description, url, serverUrlFromPlugin, autocreate, autocreateOrder))
 
   override def tree(
     id: Long,
@@ -368,23 +369,25 @@ object DbFactory extends Factory with HasBlockingDatabase {
   ))
 
   override def tag(
-    id: Long = 0L,
-    documentSetId: Long = 0L,
-    name: String = "a tag",
-    color: String = "abcdef"
+    id: Long,
+    documentSetId: Long,
+    name: String,
+    color: String
   ) = run(q.insertTag += podoFactory.tag(id, documentSetId, name, color))
 
   override def view(
-    id: Long = 0L,
-    documentSetId: Long = 0L,
-    url: String = "http://example.org",
-    apiToken: String = "api-token",
-    title: String = "title",
-    createdAt: Timestamp = new Timestamp(scala.compat.Platform.currentTime)
+    id: Long,
+    documentSetId: Long,
+    url: String,
+    serverUrlFromPlugin: Option[String],
+    apiToken: String,
+    title: String,
+    createdAt: Timestamp
   ) = run(q.insertView += podoFactory.view(
     id,
     documentSetId,
     url,
+    serverUrlFromPlugin,
     apiToken,
     title,
     createdAt

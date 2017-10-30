@@ -34,6 +34,7 @@ class DbPluginBackendSpec extends DbBackendSpecification {
           name="name",
           description="description",
           url="https://example.org",
+          serverUrlFromPlugin=Some("http://overview-web"),
           autocreate=false,
           autocreateOrder=0
         )
@@ -46,6 +47,7 @@ class DbPluginBackendSpec extends DbBackendSpecification {
         plugin.name must beEqualTo(attributes.name)
         plugin.description must beEqualTo(attributes.description)
         plugin.url must beEqualTo(attributes.url)
+        plugin.serverUrlFromPlugin must beEqualTo(attributes.serverUrlFromPlugin)
         plugin.autocreate must beEqualTo(attributes.autocreate)
         plugin.autocreateOrder must beEqualTo(attributes.autocreateOrder)
       }
@@ -55,6 +57,7 @@ class DbPluginBackendSpec extends DbBackendSpecification {
         dbPlugin.map(_.name) must beSome(attributes.name)
         dbPlugin.map(_.description) must beSome(attributes.description)
         dbPlugin.map(_.url) must beSome(attributes.url)
+        dbPlugin.flatMap(_.serverUrlFromPlugin) must beEqualTo(attributes.serverUrlFromPlugin)
         dbPlugin.map(_.autocreate) must beSome(attributes.autocreate)
         dbPlugin.map(_.autocreateOrder) must beSome(attributes.autocreateOrder)
       }
@@ -70,6 +73,7 @@ class DbPluginBackendSpec extends DbBackendSpecification {
           name="name",
           description="description",
           url="https://example.org",
+          serverUrlFromPlugin=Some("http://overview-web"),
           autocreate=true,
           autocreateOrder=1
         )
@@ -85,6 +89,7 @@ class DbPluginBackendSpec extends DbBackendSpecification {
         plugin.map(_.name) must beSome(attributes.name)
         plugin.map(_.description) must beSome(attributes.description)
         plugin.map(_.url) must beSome(attributes.url)
+        plugin.map(_.serverUrlFromPlugin) must beSome(attributes.serverUrlFromPlugin)
         plugin.map(_.autocreate) must beSome(attributes.autocreate)
         plugin.map(_.autocreateOrder) must beSome(attributes.autocreateOrder)
       }
@@ -95,6 +100,7 @@ class DbPluginBackendSpec extends DbBackendSpecification {
         dbPlugin.map(_.name) must beSome(attributes.name)
         dbPlugin.map(_.description) must beSome(attributes.description)
         dbPlugin.map(_.url) must beSome(attributes.url)
+        dbPlugin.map(_.serverUrlFromPlugin) must beSome(attributes.serverUrlFromPlugin)
         dbPlugin.map(_.autocreate) must beSome(attributes.autocreate)
         dbPlugin.map(_.autocreateOrder) must beSome(attributes.autocreateOrder)
       }

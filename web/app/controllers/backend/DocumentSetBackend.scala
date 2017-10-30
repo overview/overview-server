@@ -86,7 +86,7 @@ class DbDocumentSetBackend @Inject() (
         })
 
         _ <- viewInserter.++=(plugins.zip(apiTokens).map { case (plugin, apiToken) =>
-          (documentSet.id, View.CreateAttributes(plugin.url, apiToken.token, plugin.name))
+          (documentSet.id, View.CreateAttributes(plugin.url, plugin.serverUrlFromPlugin, apiToken.token, plugin.name))
         })
       } yield documentSet
 

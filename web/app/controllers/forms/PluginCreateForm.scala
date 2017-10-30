@@ -11,6 +11,7 @@ object PluginCreateForm {
         "name" -> Forms.nonEmptyText,
         "description" -> Forms.nonEmptyText,
         "url" -> Forms.nonEmptyText,
+        "serverUrlFromPlugin" -> Forms.optional(Forms.nonEmptyText),
         "autocreate" -> Forms.default(Forms.boolean, false),
         "autocreateOrder" -> Forms.default(Forms.number, 0)
       )(Plugin.CreateAttributes.apply)(Plugin.CreateAttributes.unapply)

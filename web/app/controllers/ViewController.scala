@@ -36,8 +36,16 @@ class ViewController @Inject() (
       case None => Future.successful(BadRequest("You must POST a 'title' and 'url'."))
       case Some(attributes) => {
         val result: Future[Result] = for {
-          apiToken <- apiTokenBackend.create(Some(documentSetId), ApiToken.CreateAttributes(request.user.email, attributes.title))
-          view <- viewBackend.create(documentSetId, View.CreateAttributes(attributes.url, apiToken.token, attributes.title))
+          apiToken <- apiTokenBackend.create(
+            Some(documentSetId),
+            ApiToken.CreateAttributes(request.user.email, attributes.title)
+          )
+          view <- viewBackend.create(documentSetId, View.CreateAttributes(
+            attributes.url,
+            attributes.serverUrlFromPlugin,
+            apiToken.token,
+            attributes.title
+          ))
         } yield Created(views.json.api.View.show(view))
         result.recover { case t: Throwable => BadRequest(t.getMessage) }
       }

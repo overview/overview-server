@@ -195,6 +195,7 @@ trait Factory {
     name: String = "name",
     description: String = "description",
     url: String = "http://example.org",
+    serverUrlFromPlugin: Option[String] = None,
     autocreate: Boolean = false,
     autocreateOrder: Int = 0
   ): Plugin
@@ -225,6 +226,7 @@ trait Factory {
     id: Long = 0L,
     documentSetId: Long = 0L,
     url: String = "http://example.org",
+    serverUrlFromPlugin: Option[String] = None,
     apiToken: String = "api-token",
     title: String = "title",
     createdAt: Timestamp = now

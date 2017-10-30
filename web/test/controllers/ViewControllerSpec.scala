@@ -47,7 +47,11 @@ class ViewControllerSpec extends ControllerSpecification with JsonMatchers {
         def request = fakeAuthorizedRequest.withFormUrlEncodedBody(formBody: _*)
         lazy val result = controller.create(documentSetId)(request)
 
-        val validFormBody = Vector("title" -> "title", "url" -> "http://localhost:9001")
+        val validFormBody = Vector(
+          "title" -> "title",
+          "url" -> "http://localhost:9001",
+          "server_url_from_plugin" -> ""
+        )
       }
 
       "return 400 Bad Request on invalid form body" in new CreateScope {
@@ -74,6 +78,27 @@ class ViewControllerSpec extends ControllerSpecification with JsonMatchers {
           beLike[Long] { case x => x must beEqualTo(documentSetId) },
           beLike[View.CreateAttributes] { case attributes =>
             attributes.url must beEqualTo("http://localhost:9001")
+            attributes.serverUrlFromPlugin must beNone
+            attributes.apiToken must beEqualTo("api-token")
+            attributes.title must beEqualTo("title")
+          }
+        )
+      }
+
+      "create a View with a serverUrlFromPlugin" in new CreateScope {
+        override val formBody = Vector(
+          "title" -> "title",
+          "url" -> "http://localhost:9001",
+          "serverUrlFromPlugin" -> "http://overview-web:9000"
+        )
+        mockApiTokenBackend.create(any[Option[Long]], any[ApiToken.CreateAttributes]) returns Future.successful(factory.apiToken(token="api-token"))
+        mockViewBackend.create(any[Long], any[View.CreateAttributes]) returns Future.failed(new Throwable("goto end"))
+        h.status(result)
+        there was one(mockViewBackend).create(
+          beLike[Long] { case x => x must beEqualTo(documentSetId) },
+          beLike[View.CreateAttributes] { case attributes =>
+            attributes.url must beEqualTo("http://localhost:9001")
+            attributes.serverUrlFromPlugin must beSome("http://overview-web:9000")
             attributes.apiToken must beEqualTo("api-token")
             attributes.title must beEqualTo("title")
           }
@@ -86,6 +111,7 @@ class ViewControllerSpec extends ControllerSpecification with JsonMatchers {
         mockViewBackend.create(any[Long], any[View.CreateAttributes]) returns Future.successful(factory.view(
           id=123L,
           url="http://localhost:9001",
+          serverUrlFromPlugin=None,
           apiToken="api-token",
           title="title",
           createdAt=new java.sql.Timestamp(1234L)
@@ -94,6 +120,7 @@ class ViewControllerSpec extends ControllerSpecification with JsonMatchers {
         val json = h.contentAsString(result)
         json must /("id" -> 123)
         json must /("url" -> "http://localhost:9001")
+        json must beMatching(""".*"serverUrlFromPlugin":null.*""".r)
         json must /("apiToken" -> "api-token")
         json must /("title" -> "title")
         json must /("createdAt" -> "1970-01-01T00:00:01.234Z")

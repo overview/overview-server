@@ -10,6 +10,7 @@ object show {
     "name" -> plugin.name,
     "description" -> plugin.description,
     "url" -> plugin.url,
+    "serverUrlFromPlugin" -> plugin.serverUrlFromPlugin,
     "autocreate" -> plugin.autocreate,
     "autocreateOrder" -> plugin.autocreateOrder
   )

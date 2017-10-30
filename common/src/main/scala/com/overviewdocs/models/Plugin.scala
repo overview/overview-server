@@ -12,7 +12,8 @@ case class Plugin(
   id: UUID,
   name: String,
   description: String,
-  url: String,
+  url: String,                         /// URL browser uses to see plugin (in iframe)
+  serverUrlFromPlugin: Option[String], /// URL plugin server uses to query Overview API
   autocreate: Boolean,
   autocreateOrder: Int
 )
@@ -22,6 +23,7 @@ object Plugin {
     name: String,
     description: String,
     url: String,
+    serverUrlFromPlugin: Option[String],
     autocreate: Boolean,
     autocreateOrder: Int
   )
@@ -30,6 +32,7 @@ object Plugin {
     name: String,
     description: String,
     url: String,
+    serverUrlFromPlugin: Option[String],
     autocreate: Boolean,
     autocreateOrder: Int
   )
@@ -39,6 +42,7 @@ object Plugin {
     name=attributes.name,
     description=attributes.description,
     url=attributes.url,
+    serverUrlFromPlugin=attributes.serverUrlFromPlugin,
     autocreate=attributes.autocreate,
     autocreateOrder=attributes.autocreateOrder
   )

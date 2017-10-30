@@ -42,11 +42,12 @@ class PluginControllerSpec extends ControllerSpecification with JsonMatchers {
       val request = fakeAuthorizedRequest.withFormUrlEncodedBody(
         "name" -> "foo",
         "description" -> "bar",
-        "url" -> "http://baz.org"
+        "url" -> "http://baz.org",
+        "serverUrlFromPlugin" -> "http://overview-web"
       )
       lazy val result = controller.create(request)
 
-      val plugin = factory.plugin(name="n", description="d", url="http://u.org")
+      val plugin = factory.plugin(name="n", description="d", url="http://u.org", serverUrlFromPlugin=Some("http://overview-web"))
       mockBackend.create(any) returns Future.successful(plugin)
     }
 
@@ -57,6 +58,7 @@ class PluginControllerSpec extends ControllerSpecification with JsonMatchers {
         name="foo",
         description="bar",
         url="http://baz.org",
+        serverUrlFromPlugin=Some("http://overview-web"),
         autocreate=false,
         autocreateOrder=0
       ))
@@ -69,6 +71,7 @@ class PluginControllerSpec extends ControllerSpecification with JsonMatchers {
       json must /("name" -> "n")
       json must /("description" -> "d")
       json must /("url" -> "http://u.org")
+      json must /("serverUrlFromPlugin" -> "http://overview-web")
     }
 
     "return BadRequest for an invalid request" in new CreateScope {
@@ -80,13 +83,14 @@ class PluginControllerSpec extends ControllerSpecification with JsonMatchers {
   "#update" should {
     trait UpdateScope extends BaseScope {
       val plugin = factory.plugin(name="n", description="d", url="http://u.org")
-      val plugin2 = factory.plugin(name="n2", description="d2", url="http://u2.org")
+      val plugin2 = factory.plugin(name="n2", description="d2", url="http://u2.org", serverUrlFromPlugin=Some("http://overview-web"))
 
       val pluginId = plugin.id
       val request = fakeAuthorizedRequest.withFormUrlEncodedBody(
         "name" -> "foo",
         "description" -> "bar",
-        "url" -> "http://baz.org"
+        "url" -> "http://baz.org",
+        "serverUrlFromPlugin" -> "http://overview-web"
       )
       lazy val result = controller.update(pluginId)(request)
     }
@@ -98,12 +102,13 @@ class PluginControllerSpec extends ControllerSpecification with JsonMatchers {
         name="foo",
         description="bar",
         url="http://baz.org",
+        serverUrlFromPlugin=Some("http://overview-web"),
         autocreate=false,
         autocreateOrder=0
       ))
     }
 
-    "returns the updated Plugin" in new UpdateScope {
+    "return the updated Plugin" in new UpdateScope {
       mockBackend.update(any, any) returns Future.successful(Some(plugin2))
 
       val json = h.contentAsString(result)
@@ -112,6 +117,7 @@ class PluginControllerSpec extends ControllerSpecification with JsonMatchers {
       json must /("name" -> "n2")
       json must /("description" -> "d2")
       json must /("url" -> "http://u2.org")
+      json must /("serverUrlFromPlugin" -> "http://overview-web")
     }
 
     "returns 404 Not Found on wrong ID" in new UpdateScope {

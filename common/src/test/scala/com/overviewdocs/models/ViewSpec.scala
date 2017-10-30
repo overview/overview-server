@@ -12,6 +12,7 @@ class ViewSpec extends Specification {
           1L,
           2L,
           "http://example.org",
+          None,
           "api-token",
           "title",
           new Timestamp(1234L)
@@ -22,6 +23,7 @@ class ViewSpec extends Specification {
           1L,
           2L,
           "http://example.org",
+          None,
           "api-token",
           "new title",
           new Timestamp(1234L)
