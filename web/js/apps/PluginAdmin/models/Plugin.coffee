@@ -6,5 +6,6 @@ define [
       name: ''
       description: ''
       url: ''
+      serverUrlFromPlugin: ''
       autocreate: false
       autocreateOrder: 0

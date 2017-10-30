@@ -98,6 +98,12 @@ define [
             sortable: false
           }
           {
+            name: 'serverUrlFromPlugin'
+            label: t('th.serverUrlFromPlugin')
+            cell: 'string'
+            sortable: false
+          }
+          {
             name: 'autocreate'
             label: t('th.autocreate')
             cell: AutocreateCell
@@ -122,6 +128,7 @@ define [
           { name: 'name', label: t('new.name'), control: 'input', placeholder: 'Tree', required: true }
           { name: 'description', label: t('new.description'), control: 'input', placeholder: 'Organizes documents into folders', required: true }
           { name: 'url', label: t('new.url'), control: 'input', type: 'url', placeholder: 'https://overview-tree.s3.amazon.com', required: true }
+          { name: 'serverUrlFromPlugin', label: t('new.serverUrlFromPlugin'), control: 'input', type: 'url', placeholder: "(if blank, uses #{window.location.protocol}//#{window.location.host})" }
           { control: 'button', value: t('new.submit') }
         ]
       form.render()

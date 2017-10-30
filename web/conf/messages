@@ -99,13 +99,15 @@ views.admin.Plugin.index.label.order=Order
 views.admin.Plugin.index.new.heading=Register a Plugin
 views.admin.Plugin.index.new.name=Name
 views.admin.Plugin.index.new.description=Description
-views.admin.Plugin.index.new.url=Url
+views.admin.Plugin.index.new.url=URL
+views.admin.Plugin.index.new.serverUrlFromPlugin=Overview URL, according to plugin (optional)
 views.admin.Plugin.index.new.autocreate=Autocreate
 views.admin.Plugin.index.new.autocreateOrder=Autocreate order
 views.admin.Plugin.index.new.submit=Register
 views.admin.Plugin.index.th.name=Name
 views.admin.Plugin.index.th.description=Description
 views.admin.Plugin.index.th.url=Url
+views.admin.Plugin.index.th.serverUrlFromPlugin=Overview API URL
 views.admin.Plugin.index.th.autocreate=Autocreate
 
 views.admin.User.index.title=Users
