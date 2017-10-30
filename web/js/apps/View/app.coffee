@@ -19,10 +19,16 @@ define [
 
       @render()
 
+    getServerUrl: ->
+      serverUrl = @view.get('serverUrlFromPlugin')
+      if !serverUrl?
+        loc = window.location
+        serverUrl = "#{loc.protocol}//#{loc.host}"
+      serverUrl
+
     render: ->
-      loc = window.location
       params = $.param([
-        { name: 'server', value: "#{loc.protocol}//#{loc.host}" }
+        { name: 'server', value: @getServerUrl() }
         { name: 'documentSetId', value: @documentSetId }
         { name: 'apiToken', value: @view.get('apiToken') }
       ])
