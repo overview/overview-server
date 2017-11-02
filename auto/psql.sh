@@ -6,4 +6,4 @@
 #
 #   auto/psql.sh overview-dev
 
-psql -h localhost -p 9010 -U overview "$@"
+docker exec -it overview-dev-database psql -U overview "$@"
