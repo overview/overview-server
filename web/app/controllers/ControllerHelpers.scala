@@ -1,13 +1,14 @@
 package controllers
 
+import java.nio.ByteBuffer
 import java.util.UUID
 import play.api.libs.json.JsValue
-import play.api.mvc.{AnyContent,Request,RequestHeader}
+import play.api.mvc.{Request,RequestHeader}
 import scala.collection.immutable
 import scala.util.control.Exception.catching
 
 import models.pagination.PageRequest
-import models.{IdList,SelectionRequest}
+import models.IdList
 
 /** Utilities that don't depend on the environment. */
 trait ControllerHelpers {
@@ -80,24 +81,21 @@ trait ControllerHelpers {
       * to anything else; returns None otherwise.
       */
     def getBoolean(key: String): Option[Boolean] = {
-      data.get(key)
-        .flatMap(_.headOption)
+      getString(key)
         .map(_ == "true")
     }
 
     /** Returns a UUID if query param key=[valid UUID]; returns None otherwise.
       */
     def getUUID(key: String): Option[UUID] = {
-      data.get(key)
-        .flatMap(_.headOption)
+      getString(key)
         .flatMap((s) => catching(classOf[IllegalArgumentException]).opt(UUID.fromString(s)))
     }
 
     /** Returns an Int if it exists and is valid; None otherwise.
       */
     def getInt(key: String): Option[Int] = {
-      data.get(key)
-        .flatMap(_.headOption)
+      getString(key)
         .flatMap((s) => catching(classOf[IllegalArgumentException]).opt(s.toInt))
     }
 
@@ -113,8 +111,42 @@ trait ControllerHelpers {
       * an empty Seq otherwise.
       */
     def getLongs(key: String): immutable.Seq[Long] = {
-      val s = data.get(key).flatMap(_.headOption).getOrElse("")
+      val s = getString(key).getOrElse("")
       IdList.longs(s).ids
+    }
+
+    /** Decodes a BitSet from an encoded input; returns None if decoding
+      * fails or the key is not specified.
+      */
+    def getBase64BitSet(key: String): Option[immutable.BitSet] = {
+      getString(key) match {
+        case None => None
+        case Some(s) => {
+          val normalized = s
+            .replace('-', '+')
+            .replace('_', '/')
+          val bytes = try {
+            java.util.Base64.getDecoder.decode(normalized)
+          } catch {
+            case e: IllegalArgumentException => return None
+          }
+
+          val byteBuffer = ByteBuffer
+            .allocate((7 + bytes.length) / 8 * 8) // Pad it so .asLongBuffer works
+          val longBuffer = byteBuffer.asLongBuffer
+          byteBuffer.put(bytes)
+          val longs = Array.ofDim[Long](longBuffer.capacity)
+          longBuffer.get(longs)
+
+          // Scala's BitSet stores the least-significant integer at the last
+          // bit. For instance, if BitSet's internal Long is 0b0000...00011,
+          // that stores the numbers 1 and 2. But over the wire, "1 and 2" is
+          // sent as 0b11000000. So we need to reverse each Long -- but not
+          // the order of the Longs themselves.
+          val reversedLongs = longs.map(i => java.lang.Long.reverse(i))
+          Some(immutable.BitSet.fromBitMaskNoCopy(reversedLongs))
+        }
+      }
     }
   }
 

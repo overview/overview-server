@@ -96,4 +96,66 @@ class ControllerHelpersSpec extends Specification with JsonMatchers {
       controller.f(FakeRequest("GET", "/?offset=20&limit=30"), 1000) must beEqualTo(PageRequest(20, 30, false))
     }
   }
+
+  "RequestData" should {
+    trait RequestDataScope extends Scope {
+      import play.api.mvc.Request
+      class MyController extends ControllerHelpers {
+        def f(request: Request[_]) = RequestData(request)
+      }
+      def qs(s: String) = {
+        val controller = new MyController
+        controller.f(FakeRequest("GET", "/?" + s))
+      }
+    }
+
+    "get an immutable.Seq[Long]" in new RequestDataScope {
+      qs("ids=1,2,3,4").getLongs("ids") must beEqualTo(Vector(1L, 2L, 3L, 4L))
+    }
+
+    "#getBase64BitSet" should {
+      "get a BitSet" in new RequestDataScope {
+        // 1, 3, 5, 11:
+        // 0b0101010000010... in a bitset
+        // 0b010101: V (0x15)       first base64 character
+        //       0b000001: B (0x1)  second base64 character
+        qs("x=VBA").getBase64BitSet("x").map(_.toVector) must beSome(Vector(1, 3, 5, 11))
+      }
+
+      "read numbers >63 (that is, multi-word bitsets)" in new RequestDataScope {
+        // 2, 66, 67:
+        // 0b001000...110000
+        // 0b001000: I (that's bytes 0-5)
+        // bytes 6-11, 12-17, ..., 60-65 will all be empty
+        // 0b110000: w
+        qs("x=IAAAAAAAAAAwAAA").getBase64BitSet("x").map(_.toVector) must beSome(Vector(2, 66, 67))
+      }
+
+      "fail on invalid Base64" in new RequestDataScope {
+        qs("x=ab,c").getBase64BitSet("x") must beNone
+      }
+
+      "allow missing equals signs at the end of the input" in new RequestDataScope {
+        qs("x=QA").getBase64BitSet("x").map(_.toVector) must beSome(Vector(1))
+      }
+
+      "allow equals signs at the end of the input" in new RequestDataScope {
+        qs("x=QA%3D%3D").getBase64BitSet("x").map(_.toVector) must beSome(Vector(1))
+      }
+
+      "allow + and /" in new RequestDataScope {
+        // + is 62, / is 63
+        // 0b111110111111
+        qs("x=%2B%2FAA").getBase64BitSet("x").map(_.toVector) must beSome(Vector(0, 1, 2, 3, 4, 6, 7, 8, 9, 10, 11))
+      }
+
+      "allow URL-safe - and _ as replacements for + and /" in new RequestDataScope {
+        qs("x=-_AA").getBase64BitSet("x").map(_.toVector) must beSome(Vector(0, 1, 2, 3, 4, 6, 7, 8, 9, 10, 11))
+      }
+
+      "allow empty string as empty bitset" in new RequestDataScope {
+        qs("x=").getBase64BitSet("x").map(_.toVector) must beSome(Vector.empty[Int])
+      }
+    }
+  }
 }
