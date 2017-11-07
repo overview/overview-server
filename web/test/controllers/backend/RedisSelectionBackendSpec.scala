@@ -30,7 +30,7 @@ class RedisSelectionBackendSpec extends RedisBackendSpecification with Mockito {
 
   trait CreateScopeLike extends BaseScope {
     val onProgress: Double => Unit = _ => ()
-    val request = SelectionRequest(documentSetId, Vector(), Vector(), Vector(), Vector(), None, None)
+    val request = SelectionRequest(documentSetId)
     def go: Selection
   }
 

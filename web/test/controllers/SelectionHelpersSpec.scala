@@ -75,6 +75,10 @@ class SelectionHelpersSpec extends ControllerSpecification with Mockito with Awa
         test("/?q=foo", Right(SelectionRequest(1L, q=Some(PhraseQuery(Field.All, "foo")))))
       }
 
+      "make a SelectionRequest with a documentIdBitSet" in new SelectionScope {
+        test("/?idBitSetBase64=VBA%3D", Right(SelectionRequest(1L, documentIdBitSet=Some(immutable.BitSet(1, 3, 5, 11)))))
+      }
+
       "make a SelectionRequest with sortMetadataField" in new SelectionScope {
         test("/?sortByMetadataField=foo", Right(SelectionRequest(1L, sortByMetadataField=Some("foo"))))
       }
@@ -182,7 +186,7 @@ class SelectionHelpersSpec extends ControllerSpecification with Mockito with Awa
     }
 
     "uses SelectionBackend#create() if refresh=true" in new RequestToSelectionScope {
-      val selectionRequest = SelectionRequest(documentSetId, Vector(), Vector(), Vector(), Vector(), None, Some(PhraseQuery(Field.All, "foo")))
+      val selectionRequest = SelectionRequest(documentSetId, q=Some(PhraseQuery(Field.All, "foo")))
       mockSelectionBackend.create(any, any, any) returns Future.successful(selection)
       val request = FakeRequest("POST", "").withFormUrlEncodedBody("q" -> "foo", "refresh" -> "true")
       await(controller.go(request)) must beEqualTo(Right(selection))
@@ -194,7 +198,7 @@ class SelectionHelpersSpec extends ControllerSpecification with Mockito with Awa
     }
 
     "uses SelectionBackend#findOrCreate() as a fallback" in new RequestToSelectionScope {
-      val selectionRequest = SelectionRequest(documentSetId, Vector(), Vector(), Vector(), Vector(), None, Some(PhraseQuery(Field.All, "foo")))
+      val selectionRequest = SelectionRequest(documentSetId, q=Some(PhraseQuery(Field.All, "foo")))
       mockSelectionBackend.findOrCreate(any, any, any, any) returns Future.successful(selection)
       val request = FakeRequest("POST", "").withFormUrlEncodedBody("q" -> "foo")
       await(controller.go(request)) must beEqualTo(Right(selection))

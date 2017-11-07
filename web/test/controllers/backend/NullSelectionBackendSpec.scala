@@ -24,7 +24,7 @@ class NullSelectionBackendSpec extends NullBackendSpecification with Mockito {
   "NullSelectionBackend" should {
     "#create" should {
       trait CreateScope extends BaseScope {
-        lazy val request = SelectionRequest(documentSetId, Vector(), Vector(), Vector(), Vector(), None, None)
+        lazy val request = SelectionRequest(documentSetId)
         def create = await(backend.create(userEmail, request, _ => ()))
         lazy val result = create
       }
