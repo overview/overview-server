@@ -25,7 +25,7 @@ object Dependencies {
     val luceneHighlighter = "org.apache.lucene" % "lucene-highlighter" % "6.5.1"
     val mimeTypes = "org.overviewproject" % "mime-types" % "0.0.2"
     val mockito = "org.mockito" % "mockito-all" % "1.9.5"
-    val owaspEncoder = "org.owasp.encoder" % "encoder" % "1.1"
+    val owaspEncoder = "org.owasp.encoder" % "encoder" % "1.2.1"
     val parserCombinators = "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.6" // QueryParser
     val pdfocr = "org.overviewproject" %% "pdfocr" % "0.0.5"
     val pgSlick = "com.github.tminglei" %% "slick-pg" % "0.15.1"
