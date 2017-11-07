@@ -39,7 +39,7 @@ trait SelectionHelpers extends HeaderNames with Results { self: ControllerHelper
       case _ => SelectionRequest.TagOperation.Any
     }
     val documentIds = reqData.getLongs("documents")
-    val maybeDocumentIdBitSet = reqData.getBase64BitSet("idBitSetBase64")
+    val maybeDocumentIdsBitSet = reqData.getBase64BitSet("idsBitSetBase64")
     val storeObjectIds = reqData.getLongs("objects")
     val maybeQOrError: Either[Result,Option[Query]] = reqData.getString("q").getOrElse("") match {
       case "" => Right(None)
@@ -63,7 +63,7 @@ trait SelectionHelpers extends HeaderNames with Results { self: ControllerHelper
         nodeIds,
         tagIds,
         documentIds,
-        maybeDocumentIdBitSet,
+        maybeDocumentIdsBitSet,
         storeObjectIds,
         tagged,
         _,

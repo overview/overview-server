@@ -4,7 +4,7 @@ import akka.stream.scaladsl.Source
 import com.google.re2j.Pattern
 import org.specs2.mock.Mockito
 import play.api.Configuration
-import scala.collection.mutable
+import scala.collection.{immutable,mutable}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
@@ -27,6 +27,7 @@ class DbDocumentSelectionBackendSpec extends DbBackendSpecification with InAppSp
         val documents = Vector(doc1, doc2, doc3)
 
         val documentIds: Vector[Long] = Vector()
+        val documentIdsBitSet: Option[immutable.BitSet] = None
         val tagIds: Vector[Long] = Vector()
         val nodeIds: Vector[Long] = Vector()
         val storeObjectIds: Vector[Long] = Vector()
@@ -38,6 +39,7 @@ class DbDocumentSelectionBackendSpec extends DbBackendSpecification with InAppSp
         def request = SelectionRequest(
           documentSetId=documentSet.id,
           documentIds=documentIds,
+          documentIdsBitSet=documentIdsBitSet,
           tagIds=tagIds,
           nodeIds=nodeIds,
           storeObjectIds=storeObjectIds,
@@ -293,6 +295,11 @@ class DbDocumentSelectionBackendSpec extends DbBackendSpecification with InAppSp
 
       "search by documentIds" in new CreateSelectionScope {
         override val documentIds = Vector(doc1.id)
+        ret.documentIds must beEqualTo(Vector(doc1.id))
+      }
+
+      "search by documentIdsBitSet" in new CreateSelectionScope {
+        override val documentIdsBitSet = Some(immutable.BitSet(doc1.id.toInt))
         ret.documentIds must beEqualTo(Vector(doc1.id))
       }
 

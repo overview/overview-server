@@ -235,13 +235,18 @@ class DbDocumentSelectionBackend @Inject() (
           indexByDB(request)
         }
 
+        val byBitSet = request.documentIdsBitSet match {
+          case Some(bitSet) => DocumentIdSet(request.documentSetId.toInt, bitSet)
+          case None => DocumentIdFilter.All(request.documentSetId.toInt)
+        }
+
         for {
           (allSortedIds, sortWarnings) <- getSortedIds(documentSet, request.sortByMetadataField, onProgress)
           (byQ, byQWarnings) <- byQFuture
           byDb <- byDbFuture
           sortedIds <- Future.successful({
             logger.logExecutionTime("filtering sorted document IDs [docset {}]", request.documentSetId) {
-              val idsFilter = byQ.intersect(byDb)
+              val idsFilter = byQ.intersect(byDb).intersect(byBitSet)
               allSortedIds.filter(idsFilter.contains _)
             }
           })

@@ -14,7 +14,7 @@ case class SelectionRequest(
   val nodeIds: immutable.Seq[Long] = Vector(),
   val tagIds: immutable.Seq[Long] = Vector(),
   val documentIds: immutable.Seq[Long] = Vector(),
-  val documentIdBitSet: Option[immutable.BitSet] = None,
+  val documentIdsBitSet: Option[immutable.BitSet] = None,
   val storeObjectIds: immutable.Seq[Long] = Vector(),
   val tagged: Option[Boolean] = None,
   val q: Option[Query] = None,
@@ -31,7 +31,7 @@ case class SelectionRequest(
       nodeIds.isEmpty
       && tagIds.isEmpty
       && documentIds.isEmpty
-      && documentIdBitSet.isEmpty
+      && documentIdsBitSet.isEmpty
       && storeObjectIds.isEmpty
       && tagged.isEmpty
       && q.isEmpty
