@@ -13,13 +13,8 @@ services_are_online() {
 }
 
 wait_for_database() {
-  # Gotta use "sh", not "/bin/sh", or Windows 10 gives error:
-  # stat: C:/Program Files/Git/usr/bin/sh: no such file or directory
-  docker run -i \
-    --network overviewserver_default \
-    --link overview-dev-database \
-    --rm busybox \
-    sh -c 'until $(echo | nc overview-dev-database 5432 2>/dev/null); do sleep 1; done'
+  docker exec -it overview-dev-database \
+    sh -c 'until psql -U overview -c "SELECT 1" overview >/dev/null 2>&1; do sleep 1; done'
 }
 
 start_logging_if_not_started() {
@@ -52,7 +47,7 @@ start_services() {
   # 2. When we run ./dev for the millionth time, we may have adjusted some server
   #    settings.
   echo "Configuring database and waiting for it to restart..."
-  cat "$(dirname "$0")"/../dev-config/pg-setup.sql | \
+  cat dev-config/pg-setup.sql | \
     docker exec -i overview-dev-database \
       psql -U postgres postgres
 
