@@ -91,6 +91,38 @@ Let's say Overview is holding 234 (`total`) documents. You've requested a maximu
 Overview is picturing all 234 documents, sorted according to some criteria, but it is only giving you documents 150 (`offset`) to 200 (`offset + limit`).
 If you want to read more documents, you'll have to make another request -- for instance, one with `?offset=200&limit=50` in the query string.
 
+## Base64 BitSet
+
+One parameter of Overview's `/api/v1/document-sets/:id/documents` needs a bit of explaining: `documentIdsBitSetBase64`.
+It's useful when you already _know_ the IDs of the documents you want to search.
+
+This compression format lets you specify any combination of documents using exactly the same amount of
+space. The amount of space only depends on the size of your document set. Specifying `documentIdsBitSetBase64` in a
+6,000-document document set will cost 1kb -- whether you're selecting 12 or 4,000 documents.
+
+Document IDs in Overview are 64-bit numbers. (They're small enough that JavaScript's `Number` class stores
+them safely, too.) The most-significant 32 bits are always the same: they're the Document Set ID. The
+least-significant 32 bits are sequential integers: the first document you upload has id `0`, the second has id `1`,
+and so on.
+
+You can store a selection of document IDs in a [BitSet](https://en.wikipedia.org/wiki/Bit_array).
+Conceptually, a bitset is a long string of memory in which the first bit corresponds to document 0, the second bit corresponds to
+document 1, and so on. Each bit can either be `1` ("on", meaning, "include this document in the selection") or `0` ("off").
+Encode your bitset as [Base64](https://en.wikipedia.org/wiki/Base64) and pass it as `documentIdsBitSetBase64`.
+
+There are probably thousands of bitset libraries in your programming language. Use whichever
+you like, or build your bitset from scratch. Most bitset libraries do the same things, so you'll have one of two options
+for converting your bitset to Base64:
+
+* If your bitset library has a method that converts to bytes, like Rust's [BitVec::to_bytes](http://contain-rs.github.io/bit-vec/bit_vec/struct.BitVec.html), use that. Then convert those bytes to Base64 using any Base64-encoding library.
+* Many bitset libraries don't output simple bytes. More confusingly, most bitset libraries actually store bitsets as "words" with bits placed _backwards_ within the word. One example is [Java's BitSet](https://docs.oracle.com/javase/9/docs/api/java/util/BitSet.html#toByteArray--). With those libraries, you'll need to copy the bitset's array (for instance, use Java's [BitSet.toLongArray()](https://docs.oracle.com/javase/9/docs/api/java/util/BitSet.html#toLongArray--), _reverse_ the bits each element (in Java, [Long.reverse](https://docs.oracle.com/javase/9/docs/api/java/lang/Long.html#reverse-long-)), convert to bytes, and Base64-encode the bytes.
+
+In short, the first bit of the bytes you pass Overview must refer to document 0.
+
+Test your encoding approach: To select just document 0, `documentIdsBitSetBase64` should be either `oA` or `oA==`. (That's encoded from the byte, `0x80`)
+
+One last space-saving measure: where standard Base64 uses `+` and `/`, you may use `-` and `_`. That saves you from needing to URL-encode your `documentIdsBitSetBase64`, which makes a smaller GET request.
+
 # Group Document Sets
 A **Document Set** is a collection of documents.
 
@@ -332,8 +364,10 @@ Use a streaming-JSON client library such as [Oboe.js](http://oboejs.com/), [Yajl
     + documentSetId (required, number, `1`) ... The document set ID.
     + q (optional, string, `bar`) ... An [ElasticSearch query string](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-dsl-query-string-query.html#query-string-syntax) to filter documents.
     + tags (optional, string, `123,234,345`) ... A comma-separated list of Tag IDs. Return documents matching any tag in the list.
+    + tagOperation (optional, string, `any`) ... Only makes sense with `tags`. If `all`, return documents matching _all_ tags. If `none`, return documents matching _none_ of the tags. The default is `any`.
     + tagged (optional, boolean, `true`) ... If set, return all documents that have at least one tag (`true`) or that have zero tags (`false`).
     + objects (optional, string, `456,567,678`) ... A comma-separated list of StoreObject IDs. Return documents matching any StoreObject in the list.
+    + documentIdsBitSetBase64 (optional, string, `oA==`) ... For mass-selecting documents. See [Base64 BitSet](#base64-bit-set) for a description.
     + selectionId (optional, string, `f121bfdf-2afa-4a54-9e83-ed94047cf093`) ... A UUID returned from a previous request. This is key for pagination. On first request, the server compiles a long list of documents and only returns the first few. `selectionId` ensures you're using the same server-side list.
     + refresh (optional, boolean, `false`) ... Tell the server to skip its cache. Normally, when you request a page of documents, the server computes a long list of all matching documents, even if it only returns a few. For subsequent requests with the same parameters (but different page numbers), the server normally reuses the cached list. If your query relies on tags that have recently been added to and removed from documents, the cached list might not be the list you expect; set `refresh=true` to make sure it's current. If `selectionId` is set, `refresh` is ignored.
     + fields (optional, string, `id`) ... Defaults to `id,pageNumber,suppliedId,title,url`. You may include `text`, `tokens` and/or `metadata`; those fields cost bandwidth, and if you aren't streaming they'll reduce the maximum page size. If you specify `id` on its own, the return value will be an Array of Document IDs (without pagination) instead of an Array of Document JSON objects.
