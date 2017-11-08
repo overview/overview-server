@@ -48,7 +48,7 @@ define [
     notifyDocumentListParams: (params) ->
       @_postMessage
         event: 'notify:documentListParams'
-        args: [ params.toQueryString() ]
+        args: [ params ]
 
     notifyDocumentSet: (documentSet) ->
       @_postMessage

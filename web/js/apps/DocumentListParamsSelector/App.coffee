@@ -31,7 +31,11 @@ define [
 
     # Updates the model with whatever's in the state.
     _refreshModel: ->
-      @model.set(@state.get('documentList')?.params || {})
+      params = @state.get('documentList')?.params || {}
+      @model.set
+        tags: params.tags
+        tagOperation: params.tagOperation
+        tagged: params.tagged
 
     _initialRender: ->
       @$el.html(@template())

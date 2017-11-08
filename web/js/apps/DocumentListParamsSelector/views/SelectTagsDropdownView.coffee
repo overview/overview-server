@@ -14,9 +14,9 @@ define [
   # Displays a form with the current tag selection, and lets the user modify it.
   #
   # Calls:
-  # * state.refineDocumentListParams(tags: { ids: [ tag.id ] })
-  # * state.refineDocumentListParams(tags: { tagged: false })
-  # * state.refineDocumentListParams(tags: { ids: [ tag.id ], tagged: false, operation: 'any' })
+  # * state.refineDocumentListParams(tags: [ tag.id ])
+  # * state.refineDocumentListParams(tagged: false)
+  # * state.refineDocumentListParams(tags: [ tag.id ], tagged: false, operation: 'any')
   # * state.refineDocumentListParams(tags: null)
   #
   # Triggers:
@@ -75,7 +75,7 @@ define [
       @tags = @_buildTags(options.tags, options.model)
       @render()
 
-      @_initialRender(options.model.get('tags')?.operation || 'any')
+      @_initialRender(options.model.get('tagOperation') || 'any')
       @_renderOperations()
 
       $(document).on 'click.select-tags-dropdown', =>
@@ -88,7 +88,7 @@ define [
 
     _buildTags: (collection, model) ->
       selectedIds = {}
-      (selectedIds[id] = null) for id in (model.get('tags')?.ids || [])
+      (selectedIds[id] = null) for id in (model.get('tags') || [])
 
       tags = []
       collection.forEach (tag) ->
@@ -204,8 +204,8 @@ define [
 
     _setStateSelection: ->
       selection =
-        ids: []
-        operation: 'any'
+        tags: []
+        tagOperation: undefined
         tagged: undefined
 
       for o in @$el.serializeArray()
@@ -214,14 +214,15 @@ define [
             if o.value == 'untagged'
               selection.tagged = false
             else
-              selection.ids.push(parseInt(o.value, 10))
+              selection.tags.push(parseInt(o.value, 10))
           when 'operation'
-            @operation = selection.operation = o.value
+            if o.value != 'any' # 'any' is the default
+              selection.tagOperation = o.value
 
-      if selection.ids.length == 0 && !selection.tagged?
-        selection = null
+      if selection.tags.length == 0
+        selection.tags = null
 
-      @state.refineDocumentListParams(tags: selection)
+      @state.refineDocumentListParams(selection)
 
     _highlight: (newIndex) ->
       $divs = @$('div.radio:not(.disabled), div.checkbox:not(.disabled)')

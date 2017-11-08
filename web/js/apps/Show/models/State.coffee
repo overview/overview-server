@@ -92,7 +92,7 @@ define [
     #     state.refineDocumentListParams(reverse: true)
     refineDocumentListParams: (options, reverse) ->
       oldParams = @get('documentList')?.params || {}
-      newParams = Object.assign({}, oldParams, options)
+      newParams = DocumentListParams.extend(oldParams, options)
 
       if !reverse? && newParams.sortByMetadataField == oldParams.sortByMetadataField
         # Leaving sort field unchanged, and reverse is unset? Then

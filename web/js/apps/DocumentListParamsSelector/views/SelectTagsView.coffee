@@ -44,7 +44,7 @@ define [
       @tags = options.tags
 
       @listenTo(@tags, 'change', @render) # handle tag name change
-      @listenTo(@model, 'change:tags', @render)
+      @listenTo(@model, 'change', @render)
       @_initialRender()
 
     _initialRender: ->
@@ -58,13 +58,13 @@ define [
 
     _renderDescription: ->
       selection =
-        ids: @model.get('tags')?.ids || []
-        operation: @model.get('tags')?.operation || 'any'
-        tagged: @model.get('tags')?.tagged
+        tags: @model.get('tags') || []
+        tagOperation: @model.get('tagOperation') || 'any'
+        tagged: @model.get('tagged')
 
       tags = []
 
-      for tagId in selection.ids
+      for tagId in selection.tags
         if (tag = @tags.get(tagId))?
           tags.push
             id: tag.id
@@ -81,7 +81,7 @@ define [
           className: 'tag tag-light'
           style: 'background-color: #dddddd'
 
-      selection.operation = 'any' if tags.length == 1 && selection.operation == 'all'
+      selection.tagOperation = 'any' if tags.length == 1 && selection.tagOperation == 'all'
 
       if tags.length == 0
         @ui.description
@@ -89,7 +89,7 @@ define [
           .text(t('placeholder'))
           .prepend('<i class="icon icon-tag"></i>')
       else
-        key = "description.#{tags.length == 1 && 'single' || 'multiple'}.#{selection.operation}_html"
+        key = "description.#{tags.length == 1 && 'single' || 'multiple'}.#{selection.tagOperation}_html"
         htmls = (@templates.tag(tag: tag) for tag in tags)
         @ui.description
           .removeClass('placeholder')
@@ -101,7 +101,7 @@ define [
 
     _renderEmpty: ->
       selection = @model.get('tags') || {}
-      nOptions = (selection.tagged? && 1 || 0) + (selection.ids || []).length
+      nOptions = (selection.tagged? && 1 || 0) + (selection.tags || []).length
       @$el.toggleClass('empty', nOptions == 0)
 
     _onClickDescription: (e) ->
@@ -265,7 +265,7 @@ define [
 #      else if $a.hasAttr('data-cid')
 #        cid = $a.attr('data-cid')
 #        tag = @tags.get(cid)
-#        tag? && { ids: [ tag.id ] } || null
+#        tag? && { tags: [ tag.id ] } || null
 #
-#      @state.refineDocumentListParams(tags: tags)
+#      @state.refineDocumentListParams(tags)
 #      @close() # Gotta do this manually on Firefox

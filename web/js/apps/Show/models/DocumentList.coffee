@@ -222,10 +222,10 @@ define [
       return @_tagCounts[tag.cid] if tag.cid of @_tagCounts
 
       # When the DocumentListParams is just the tag, it's a full count
-      if _.isEqual(@params, tags: { ids: [ tag.id ] })
+      if _.isEqual(@params, tags: [ tag.id ])
         n = @get('length')
         howSure = 'exact'
-      else if _.isEqual(@params, tags: { ids: [ tag.id ], tagOperation: 'none' })
+      else if _.isEqual(@params, tags: [ tag.id ], tagOperation: 'none')
         n = 0
         howSure = 'exact'
       else

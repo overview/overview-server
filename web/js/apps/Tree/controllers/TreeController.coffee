@@ -71,7 +71,7 @@ define [
       @tree.demandNode(node.id)
 
     _refineStateDocumentListParams: (node) ->
-      @state.refineDocumentListParams(objects: { nodeIds: [ node.id ], title: t('node', node.description) })
+      @state.refineDocumentListParams(nodes: [ node.id ], title: t('node', node.description))
 
     _findNodeRelativeToSelectedNode: (finder) ->
       nodeId = @state.get('documentList')?.params?.params?.nodes?[0] || null

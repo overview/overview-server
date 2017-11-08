@@ -7,53 +7,44 @@ define [
     describe 'normalize', ->
       n = DocumentListParams.normalize
 
-      it 'should parse q', -> expect(n(q: 'foo')).to.have.property('q', 'foo')
-      it 'should not parse empty q', -> expect(n(q: ' ')).not.to.have.property('q')
-      it 'should parse tag IDs', -> expect(n(tags: [ 1, 2 ]).tags).to.deep.eq(ids: [ 1, 2 ])
-      it 'should parse tag IDs long-form', -> expect(n(tags: { ids: [ 1, 2 ] }).tags).to.deep.eq(ids: [ 1, 2 ])
-      it 'should parse untagged', -> expect(n(tags: { tagged: false }).tags).to.deep.eq(tagged: false)
-      it 'should set q=undefined by default', -> expect(n({}).q).not.to.be.defined
-      it 'should set tags=undefined by default', -> expect(n({}).tags).not.to.be.defined
-      it 'should set objects=undefined by default', -> expect(n({}).objects).not.to.be.defined
-      it 'should set sortByMetadataField=undefined by default', -> expect(n({}).sortByMetadataField).not.to.be.defined
+      it 'should parse q', -> expect(n(q: 'foo')).to.deep.eq(q: 'foo')
+      it 'should not parse empty q', -> expect(n(q: ' ')).to.deep.eq({})
+      it 'should parse tag IDs', -> expect(n(tags: [ 1, 2 ])).to.deep.eq(tags: [ 1, 2 ])
+      it 'should parse tag IDs long-form', -> expect(n(tags: [ 1, 2 ])).to.deep.eq(tags: [ 1, 2 ])
+      it 'should parse untagged', -> expect(n(tagged: false)).to.deep.eq(tagged: false)
 
       it 'should parse tag NONE op', ->
-        expect(n(tags: { ids: [1], tagged: false, operation: 'none' }).tags)
-          .to.deep.eq(ids: [1], tagged: false, operation: 'none')
+        expect(n(tags: [1], tagOperation: 'none')).to.deep.eq(tags: [1], tagOperation: 'none')
 
       it 'should parse tag ALL op', ->
-        expect(n(tags: { ids: [ 1, 2 ], operation: 'all' }).tags)
-          .to.deep.eq(ids: [ 1, 2 ], operation: 'all')
+        expect(n(tags: [1], tagOperation: 'all')).to.deep.eq(tags: [1], tagOperation: 'all')
 
       it 'should parse tag ANY op and omit it, because any is the default', ->
-        expect(n(tags: { ids: [ 1, 2 ], operation: 'any' }).tags).to.deep.eq(ids: [ 1, 2 ])
+        expect(n(tags: [1], tagOperation: 'any')).to.deep.eq(tags: [1])
 
       it 'should error when given a bad tag op', ->
-        expect(-> n(tags: { ids: [ 1, 2 ], operation: 'foo' }))
-          .to.throw('Invalid option tags.operation="foo"')
+        expect(-> n(tags: [1], tagOperation: 'foo'))
+          .to.throw('Invalid option tagOperation="foo"')
 
       it 'should error when given a bad tagged value', ->
-        expect(-> n(tags: { tagged: 3 })).to.throw('Invalid option tags.tagged=3')
-
-      it 'should error when given a bad tag key', ->
-        expect(-> n(tags: { foo: 'bar' })).to.throw('Invalid option tags.foo')
+        expect(-> n(tagged: 3)).to.throw('Invalid option options.tagged=3')
 
       it 'should parse an object spec with ids', ->
-        expect(n(objects: { ids: [ 1, 2 ], title: '%s in foo' }).objects)
-          .to.deep.eq(ids: [ 1, 2 ], title: '%s in foo')
+        expect(n(objects: [ 1, 2 ], title: '%s in foo'))
+          .to.deep.eq(objects: [ 1, 2 ], title: '%s in foo')
 
-      it 'should parse an object spec with nodeIds', ->
-        expect(n(objects: { nodeIds: [ 1, 2 ], title: '%s in foo' }).objects)
-          .to.deep.eq(nodeIds: [ 1, 2 ], title: '%s in foo')
+      it 'should parse an object spec with nodes', ->
+        expect(n(nodes: [ 1, 2 ], title: '%s in foo'))
+          .to.deep.eq(nodes: [ 1, 2 ], title: '%s in foo')
 
       it 'should parse an object spec with sortByMetadataField', ->
-        expect(n(sortByMetadataField: 'foo').sortByMetadataField).to.eq('foo')
+        expect(n(sortByMetadataField: 'foo')).to.deep.eq(sortByMetadataField: 'foo')
 
       it 'should error when given neither Object IDs nor Node IDs', ->
-        expect(-> n(objects: { title: '%s in foo' })).to.throw('Missing option objects.ids or objects.nodeIds')
+        expect(-> n(title: '%s in foo')).to.throw('Missing options.ids or options.nodes or options.documentIdsBitSetBase64')
 
       it 'should error when given no object title', ->
-        expect(-> n(objects: { ids: [ 1, 2 ] })).to.throw('Missing option objects.title')
+        expect(-> n(objects: [ 1, 2 ])).to.throw('Missing options.title')
 
     describe 'buildQueryJson()', ->
       j = DocumentListParams.buildQueryJson
@@ -61,34 +52,50 @@ define [
       it 'should give q', -> expect(j(q: 'foo')).to.deep.eq(q: 'foo')
 
       it 'should give objects', ->
-        expect(j(objects: { ids: [ 1, 2 ], title: '%s in foo' })).to.deep.eq(objects: [ 1, 2 ])
+        expect(j(objects: [ 1, 2 ], title: '%s in foo')).to.deep.eq(objects: [ 1, 2 ])
 
       it 'should give documentIdsBitSetBase64', ->
-        expect(j(objects: { documentIdsBitSetBase64: 'QA' }, title: '%s in foo'))
-          .to.deep.eq(documentIdsBitSetBase64: 'QA')
+        expect(j(documentIdsBitSetBase64: 'QA')).to.deep.eq(documentIdsBitSetBase64: 'QA')
 
       it 'should give nodes', -> # DEPRECATED
-        expect(j(objects: { nodeIds: [ 1, 2 ], title: '%s in foo' })).to.deep.eq(nodes: [ 1, 2 ])
+        expect(j(nodes: [ 1, 2 ], title: '%s in foo')).to.deep.eq(nodes: [ 1, 2 ])
 
       it 'should give tags', ->
-        expect(j(tags: { ids: [ 1, 2 ] })).to.deep.eq(tags: [ 1, 2 ])
+        expect(j(tags: [ 1, 2 ])).to.deep.eq(tags: [ 1, 2 ])
 
       it 'should give tagged=true', ->
-        expect(j(tags: { tagged: true })).to.deep.eq(tagged: true)
+        expect(j(tagged: true)).to.deep.eq(tagged: true)
 
       it 'should give tagged=false', ->
-        expect(j(tags: { tagged: false })).to.deep.eq(tagged: false)
+        expect(j(tagged: false)).to.deep.eq(tagged: false)
 
-      it 'should give tagOperation=all', ->
-        expect(j(tags: { ids: [ 1, 2 ], operation: 'all' }))
+      it 'should give tagOperation', ->
+        expect(j(tags: [ 1, 2 ], tagOperation: 'all'))
           .to.deep.eq(tags: [ 1, 2 ], tagOperation: 'all')
-
-      it 'should give tagOperation=none', ->
-        expect(j(tags: { ids: [ 1, 2 ], operation: 'none' }))
-          .to.deep.eq(tags: [ 1, 2 ], tagOperation: 'none')
 
       it 'should give sortByMetadataField', ->
         expect(j(sortByMetadataField: 'foo')).to.deep.eq(sortByMetadataField: 'foo')
+
+    describe 'extend', ->
+      e = DocumentListParams.extend
+
+      it 'should add different parts', ->
+        expect(e({ q: 'foo' }, { tagged: true })).to.deep.eq({ tagged: true, q: 'foo' })
+
+      it 'should replace the same part', ->
+        expect(e({ q: 'foo', tagged: true }, { tags: [ 1 ] })).to.deep.eq({ q: 'foo', tags: [ 1 ] })
+
+      it 'should empty q when given null', ->
+        expect(e({ q: 'foo' }, { q: null })).to.deep.eq({})
+
+      it 'should empty tags when given null', ->
+        expect(e({ tagged: true }, { tags: null })).to.deep.eq({})
+
+      it 'should empty tags when given empty Array', ->
+        expect(e({ tagged: true }, { tags: [] })).to.deep.eq({})
+
+      it 'should empty objects when given null objects', ->
+        expect(e({ title: 'foo', objects: [ 1 ] }, { objects: null })).to.deep.eq({})
 
     describe 'buildQueryString()', ->
       q = DocumentListParams.buildQueryString
@@ -97,22 +104,22 @@ define [
         expect(q(q: 'foo=bar')).to.eq('q=foo%3Dbar')
 
       it 'should comma-separate object IDs', ->
-        expect(q(objects: { ids: [ 1, 2 ] })).to.eq('objects=1,2')
+        expect(q(objects: [ 1, 2 ])).to.eq('objects=1,2')
 
       it 'should comma-separate node IDs', ->
-        expect(q(objects: { nodeIds: [ 1, 2 ] })).to.eq('nodes=1,2')
+        expect(q(nodes: [ 1, 2 ])).to.eq('nodes=1,2')
 
       it 'should comma-separate tag IDs', ->
-        expect(q(tags: { ids: [ 1, 2 ] })).to.eq('tags=1,2')
+        expect(q(tags: [ 1, 2 ])).to.eq('tags=1,2')
 
       it 'should encode tagOperation', ->
-        expect(q(tags: { ids: [ 1, 2 ], operation: 'all' })).to.match(/(^|&)tagOperation=all($|&)/)
+        expect(q(tags: [ 1, 2 ], tagOperation: 'all')).to.match(/(^|&)tagOperation=all($|&)/)
 
       it 'should encode tagged=true', ->
-        expect(q(tags: { tagged: true })).to.eq('tagged=true')
+        expect(q(tagged: true)).to.eq('tagged=true')
 
       it 'should encode tagged=false', ->
-        expect(q(tags: { tagged: false })).to.eq('tagged=false')
+        expect(q(tagged: false)).to.eq('tagged=false')
 
       it 'should encode sortByMetadataField', ->
         expect(q(sortByMetadataField: 'foo')).to.eq('sortByMetadataField=foo')

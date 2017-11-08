@@ -122,7 +122,7 @@ define [
           @tree.getRoot.returns(id: 1)
           @subject.goDown()
 
-        it 'should select the root node', -> expect(@state.refineDocumentListParams).to.have.been.calledWith(objects: { nodeIds: [1], title: 'node,undefined' })
+        it 'should select the root node', -> expect(@state.refineDocumentListParams).to.have.been.calledWith(nodes: [1], title: 'node,undefined')
         it 'should expand the root node', -> expect(@tree.demandNode).to.have.been.calledWith(1)
 
       describe 'when navigating Down from a node', ->
@@ -134,7 +134,7 @@ define [
           @state.set(documentList: { params: { params: { nodes: [1] }}})
           @subject.goDown()
 
-        it 'should select the node', -> expect(@state.refineDocumentListParams).to.have.been.calledWith(objects: { nodeIds: [ 2 ], title: 'node,undefined' })
+        it 'should select the node', -> expect(@state.refineDocumentListParams).to.have.been.calledWith(nodes: [ 2 ], title: 'node,undefined')
         it 'should expand the node', -> expect(@tree.demandNode).to.have.been.calledWith(2)
 
       describe 'when navigating Up from a node', ->
@@ -146,7 +146,7 @@ define [
           @state.set(documentList: { params: { params: { nodes: [2] }}})
           @subject.goUp()
 
-        it 'should select the parent node', -> expect(@state.refineDocumentListParams).to.have.been.calledWith(objects: { nodeIds: [ 1 ], title: 'node,undefined' })
+        it 'should select the parent node', -> expect(@state.refineDocumentListParams).to.have.been.calledWith(nodes: [ 1 ], title: 'node,undefined')
 
       describe 'when navigating left and right', ->
         beforeEach ->
@@ -163,12 +163,12 @@ define [
 
         it 'should go Right', ->
           @subject.goRight()
-          expect(@state.refineDocumentListParams).to.have.been.calledWith(objects: { nodeIds: [ 4 ], title: 'node,undefined' })
+          expect(@state.refineDocumentListParams).to.have.been.calledWith(nodes: [ 4 ], title: 'node,undefined')
           expect(@tree.demandNode).to.have.been.calledWith(4)
 
         it 'should go Left', ->
           @subject.goLeft()
-          expect(@state.refineDocumentListParams).to.have.been.calledWith(objects: { nodeIds: [2], title: 'node,undefined' })
+          expect(@state.refineDocumentListParams).to.have.been.calledWith(nodes: [2], title: 'node,undefined')
           expect(@tree.demandNode).to.have.been.calledWith(2)
 
         it 'should not go too far Right', ->
@@ -208,7 +208,7 @@ define [
           @view.trigger('collapse', @node)
 
           expect(@tree.id_tree.is_id_ancestor_of_id).to.have.been.calledWith(3, 6)
-          expect(@state.refineDocumentListParams).to.have.been.calledWith(objects: { nodeIds: [3], title: 'node,description' })
+          expect(@state.refineDocumentListParams).to.have.been.calledWith(nodes: [3], title: 'node,description')
 
       describe 'when clicking a node', ->
         beforeEach ->
@@ -234,4 +234,4 @@ define [
             document: 'foo'
             documentList: { params: { params: { nodes: [ 1 ] }}}
           @view.trigger('click', @node)
-          expect(@state.refineDocumentListParams).to.have.been.calledWith(objects: { nodeIds: [ @node.id ], title: 'node,description' })
+          expect(@state.refineDocumentListParams).to.have.been.calledWith(nodes: [ @node.id ], title: 'node,description')

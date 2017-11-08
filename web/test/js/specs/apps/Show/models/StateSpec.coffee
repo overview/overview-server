@@ -85,24 +85,24 @@ define [
         @buildState()
 
       it 'should change document to null when changing documentList', ->
-        @state.setDocumentListParams(tags: { ids: [ 1 ] })
+        @state.setDocumentListParams(tags: [ 1 ])
         @state.set(document: 'foo')
         @state.refineDocumentListParams(q: 'foo')
         expect(@state.get('document')).to.be.null
 
       it 'should not change document to null when not changing documentList', ->
-        @state.setDocumentListParams(tags: { ids: [ 1 ] })
+        @state.setDocumentListParams(tags: [ 1 ])
         @state.set(document: 'foo')
-        @state.refineDocumentListParams(tags: { ids: [ 1 ] })
+        @state.refineDocumentListParams(tags: [ 1 ])
         expect(@state.get('document')).to.eq('foo')
 
       it 'should set reverse=true', ->
-        @state.setDocumentListParams(tags: { ids: [ 1 ] })
-        @state.refineDocumentListParams({ tags: { ids: [ 1 ] } }, true)
+        @state.setDocumentListParams(tags: [ 1 ])
+        @state.refineDocumentListParams({}, true)
         expect(@state.get('documentList').reverse).to.be.true
 
       it 'should set reverse=false', ->
-        @state.setDocumentListParams({ tags: { ids: [ 1 ] } }, true)
+        @state.setDocumentListParams({ tags: [ 1 ] }, true)
         @state.refineDocumentListParams({}, false)
         expect(@state.get('documentList').reverse).to.be.false
 
@@ -113,5 +113,5 @@ define [
 
       it 'should leave reverse=true if leaving sort field unchanged', ->
         @state.setDocumentListParams({ sortByMetadataField: 'foo' }, true)
-        @state.refineDocumentListParams({ tags: { ids: [ 1 ] } })
+        @state.refineDocumentListParams({ tags: [ 1 ] })
         expect(@state.get('documentList').reverse).to.be.true

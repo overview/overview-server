@@ -7,23 +7,44 @@
 // `window.postMessage()`, which doesn't pass Object prototypes. That's why
 // this file does not define a class.
 //
-// A valid Object is the intersection of the lists of documents found from each
-// of the following searches:
+// A valid Object has only the following properties, never null or undefined:
 //
-//     objects: {
-//       title: <String>,
-//       ids: <Array of Object IDs>,
-//       nodeIds: <Array of Node IDs>,
-//       documentIds: <Array of Document IDs>,
-//       documentIdsBitSetBase64: <String -- empty means no documents>,
-//     },
-//     tags: {
-//       ids: <Array of Tag IDs>,
-//       tagged: <Boolean>,
-//       operation: '<all|any|none, default any>'
-//     }, // (alternatively: `tags`: <Array of tag IDs>)
-//     q: <String -- empty string for no search>,
-//     sortByMetadataField: <String -- empty for default sort, which is by title>
+// * **Filters set by plugins**:
+//   * `title`: a String containing "%s": for instance, '%s found by plugin'.
+//              Overview will replace "%s" with e.g. "3 documents" when
+//              displaying search results. You _must_ set `title` if `objects`,
+//              `nodes` or `documentIdsBitSetBase64` are set.
+//   * `objects`: Array of Object IDs.
+//   * `nodes`: [deprecated] Array of Node IDs.
+//   * `documentIdsBitSetBase64`: Truncate all document IDs to 32 bits. Now add
+//                                to a bitset all the IDs you want to filter
+//                                for. (A Bitset is a contiguous sequence of
+//                                bits in memory. Think of it as an enormous
+//                                integer.) For instance: set the most-
+//                                significant bit to 1 to include document 0;
+//                                set the second-most significant bit to 1 to
+//                                include document 1; and so on. Finally,
+//                                Base64-encode the bitset. Beware: real-world
+//                                bitset implementations usually arrange bits in
+//                                "words" of 32 or 64 bits, and they often store
+//                                each word's bits _backwards_, with the
+//                                _least_-significant bit representing document
+//                                0. Be sure to give Overview a "true" bitset:
+//                                the most-significant bit must refer to
+//                                document 0.
+// * **Filters related to tags**:
+//   * tags: Array of Tag IDs
+//   * tagOperation: 'all' or 'none' (if unset, 'any'). If 'all', accept
+//                    documents that have _all_ the tags in the `tags` Array; if
+//                    'none', only accept documents that have _none_ of them.
+//                    The default is to accept documents that have _at least one_
+//                    of the tags.
+//   * tagged: Boolean: if true, accept documents that have any tag at all; if
+//             false, reject documents that have any tag at all.
+// * **Filters related to text**:
+//   * q: String search query.
+// * **Parameters related to sorting**:
+//   * sortByMetadataField: String. Empty for default sort, which is by title.
 //
 // (Notably absent is `reverse`. [adam, 2017-11-08] I coded it this way, and
 // I don't know why. `sortByMetadataField` and `reverse` should clearly be
@@ -32,9 +53,12 @@
 // Example usage:
 //
 //     params = DocumentListParams.normalize({
-//       objects: { title: '%s in folder "foo"', ids: [ 234 ] }
-//       q: 'bar'
+//       objects: [ 234 ], title: '%s in folder "foo"', q: 'bar'
 //     }) // => already normalized: will return a copy
+//
+//     DocumentListParams.extend(params, {
+//       tagged: false
+//     }) // => { objects: [ 234 ], title: '%s in folder "foo"', q: 'bar', tagged: false }
 //
 //     DocumentListParams.buildQueryJson(params)   // => { objects: [ 234 ], q: 'bar' }
 //     DocumentListParams.buildQueryString(params) // => objects=234&q=bar
@@ -46,122 +70,154 @@ const _ = require('underscore')
 // This method is designed to be backwards-compatible: if a plugin is using
 // a parameter, we should make an effort to keep it operational.
 function normalize(options) {
-  const objects = parseObjects(options.objects)
-  const tags = parseTags(options.tags)
-  const q = parseQ(options.q)
-  const sortByMetadataField = parseSortByMetadataField(options.sortByMetadataField)
+  return Object.assign(
+    parseObjects(options) || {},
+    parseTags(options) || {},
+    parseQ(options) || {},
+    parseSortByMetadataField(options) || {}
+  )
+}
 
-  const ret = {}
-  if (objects) ret.objects = objects
-  if (tags) ret.tags = tags
-  if (q) ret.q = q
-  if (sortByMetadataField) ret.sortByMetadataField = sortByMetadataField
-
+// Replaces elements of the first Object with elements from the second.
+//
+// The elements are replaced in groups. For instance:
+//
+//     // You can overwrite empty parts of the Object
+//     extend({ tagged: true }, { q: 'foo' }) // => { tagged: true, q: 'foo' }
+//
+//     // Any new info in the "tags", "plugins", "text" or "sort" part
+//     // overwrites all old info in that part. Here, "tags" and "tagged"
+//     // are both in the same part, so the new info overwrites the old.
+//     extend({ tagged: true }, { tags: [ 1 ] }) // => { tags: [ 1 ] }
+function extend(lhs, rhs) {
+  const ret = Object.assign(
+    parseObjects(rhs) || parseObjects(lhs) || {},
+    parseTags(rhs) || parseTags(lhs) || {},
+    parseQ(rhs) || parseQ(lhs) || {},
+    parseSortByMetadataField(rhs) || parseSortByMetadataField(lhs) || {}
+  )
   return ret
 }
 
-// Finds the query string from the constructor option `q`.
+// Returns { q: 'foo' }
 //
-// The argument is trimmed; if it is empty, we use `null` instead.
-function parseQ(q) {
-  return (q || '').trim() || null
+// Returns a partial selection Object if any data was given, or `null` if none
+// was given.
+function parseQ(options) {
+  if (options.q !== undefined) {
+    const trimmed = (options.q || '').trim()
+    if (options.q === null || trimmed === '') {
+      return {}
+    } else {
+      return { q: trimmed }
+    }
+  } else {
+    return null
+  }
 }
 
 // Finds the tags from the constructor option `tags`.
 //
 // If the argument is an Array of IDs, we use those. Otherwise, we parse an
 // Object that contains any of `ids`, `tagged` and/or `operation`.
-const ValidTagsKeys = { ids: null, tagged: null, operation: null }
+//
+// Returns a partial selection Object if any data was given, or `null` if none
+// was given.
 const ValidTagsOperations = { all: null, any: null, none: null }
-function parseTags(tags) {
-  if (!tags) return null
-  if (_.isArray(tags)) return { ids: tags }
+function parseTags(options) {
+  if (options.tagged === undefined && options.tags === undefined && options.tagOperation === undefined) {
+    return null
+  } else {
+    if (options.tagged === null || options.tags === null || options.tagOperation === null) {
+      return {}
+    } else {
+      const ret = {}
 
-  for (const key in tags) {
-    if (!ValidTagsKeys.hasOwnProperty(key)) {
-      throw new Error('Invalid option tags.' + key)
+      if (options.tagged !== undefined) {
+        if (!_.isBoolean(options.tagged)) {
+          throw new Error('Invalid option options.tagged=' + JSON.stringify(options.tagged))
+        }
+        ret.tagged = options.tagged
+      }
+
+      if (options.tags !== undefined) {
+        if (!_.isArray(options.tags)) {
+          throw new Error('options.tags must be an Array of Numbers; got ' + JSON.stringify(options.tags))
+        }
+        if (!_.isEmpty(options.tags)) {
+          ret.tags = options.tags
+
+          if (options.tagOperation !== undefined) {
+            if (!ValidTagsOperations.hasOwnProperty(options.tagOperation)) {
+              throw new Error('Invalid option tagOperation=' + JSON.stringify(options.tagOperation))
+            }
+
+            if (options.tagOperation !== 'any') {
+              ret.tagOperation = options.tagOperation
+            }
+          }
+        }
+      }
+
+      return ret
     }
   }
-
-  if (tags.hasOwnProperty('tagged') && !_.isBoolean(tags.tagged)) {
-    throw new Error('Invalid option tags.tagged=' + JSON.stringify(tags.tagged))
-  }
-
-  if (tags.hasOwnProperty('operation') && !ValidTagsOperations.hasOwnProperty(tags.operation)) {
-    throw new Error('Invalid option tags.operation=' + JSON.stringify(tags.operation))
-  }
-
-  if (!tags.ids && !tags.hasOwnProperty('tagged')) return null
-
-  const ret = {}
-  if (tags.ids) ret.ids = tags.ids
-  if (tags.hasOwnProperty('tagged')) ret.tagged = !!tags.tagged
-  if (tags.operation && tags.operation !== 'any') ret.operation = tags.operation
-  return ret
 }
 
-// Finds the objects from the constructor option `objects`.
+// Finds the objects from the constructor options `objects`, `title`,
+// `nodes` and `documentIdsBitSetBase64
 //
-// We parse an Object that contains `title` and one of `ids` or `nodeIds`.
-function parseObjects(objects) {
-  if (!objects) return null
+// Returns a partial selection Object if any data was given, or `null` if none
+// was given.
+function parseObjects(options) {
+  if (options.objects === null || options.nodes === null || options.documentIdsBitSet64 === null || options.title === null) {
+    return {}
+  } else {
+    const hasTitle = (options.title !== undefined)
+    const hasObjects = options.objects !== undefined || options.nodes !== undefined || options.documentIdsBitSetBase64 !== undefined
 
-  if (_.isEmpty(objects.ids) && _.isEmpty(objects.nodeIds) && _.isEmpty(objects.documentIdsBitSetBase64)) {
-    throw new Error('Missing option objects.ids or objects.nodeIds or objects.documentIdsBitSetBase64')
-  }
-  if (!objects.title) {
-    throw new Error('Missing option objects.title')
-  }
+    if (!hasTitle && hasObjects) {
+      throw new Error('Missing options.title')
+    } else if (hasTitle && !hasObjects) {
+      throw new Error('Missing options.ids or options.nodes or options.documentIdsBitSetBase64')
+    }
 
-  const ret = { title: objects.title }
-  if (!_.isEmpty(objects.ids)) ret.ids = objects.ids
-  if (!_.isEmpty(objects.nodeIds)) ret.nodeIds = objects.nodeIds
-  if (objects.hasOwnProperty('documentIdsBitSetBase64')) ret.documentIdsBitSetBase64 = objects.documentIdsBitSetBase64
-  return ret
+    if (!hasTitle && !hasObjects) {
+      return null
+    } else {
+      const ret = { title: options.title }
+      if (!_.isEmpty(options.objects)) ret.objects = options.objects
+      if (!_.isEmpty(options.nodes)) ret.nodes = options.nodes
+      if (options.documentIdsBitSetBase64 !== undefined) ret.documentIdsBitSetBase64 = options.documentIdsBitSetBase64
+
+      return ret
+    }
+  }
 }
 
 // Finds the sortByMetadataField from the constructor option `sortByMetadataField`.
-function parseSortByMetadataField(sortByMetadataField) {
-  if (!sortByMetadataField) return null
-
-  if (!_.isString(sortByMetadataField)) {
-    throw new Error('sortByMetadataField must be a String')
+//
+// Returns a partial selection Object if any data was given, or `null` if none
+// was given.
+function parseSortByMetadataField(options) {
+  if (options.sortByMetadataField !== undefined) {
+    if (options.sortByMetadataField === null) {
+      return {}
+    } else {
+      if (!_.isString(options.sortByMetadataField)) {
+        throw new Error('sortByMetadataField must be a String')
+      }
+      return { sortByMetadataField: options.sortByMetadataField }
+    }
+  } else {
+    return null
   }
-
-  return sortByMetadataField
 }
 
-// Returns a flattened representation, for querying the server.
-//
-// The query strings (or JSON) may include some (or none) of these parameters:
-//
-// * documentIdsBitSetBase64: a String describing any number of document IDs
-// * objects: an Array of StoreObject IDs
-// * nodes: Tree node IDs (deprecated)
-// * q: a full-text search query string (toQueryString() url-encodes it)
-// * tags: an Array of Tag IDs
-// * tagged: a boolean
-// * tagOperation: 'all', 'none' or undefined (default, 'any')
-// * sortByMetadataField: a String or null (default null)
+// Returns a flattened representation, for querying the server via JSON POST.
 function buildQueryJson(params) {
-  const ret = {}
-
-  if (params.objects) {
-    if (params.objects.ids) ret.objects = params.objects.ids
-    if (params.objects.nodeIds) ret.nodes = params.objects.nodeIds // deprecated
-    if (params.objects.documentIdsBitSetBase64) ret.documentIdsBitSetBase64 = params.objects.documentIdsBitSetBase64
-  }
-
-  if (params.tags) {
-    if (params.tags.ids) ret.tags = params.tags.ids
-    if (params.tags.tagged !== undefined) ret.tagged = params.tags.tagged
-    if (params.tags.operation) ret.tagOperation = params.tags.operation
-  }
-
-  if (params.q) ret.q = params.q
-
-  if (params.sortByMetadataField) ret.sortByMetadataField = params.sortByMetadataField
-
+  const ret = Object.assign({}, params)
+  if (ret.title) delete ret.title
   return ret
 }
 
@@ -185,6 +241,7 @@ function buildQueryString(params) {
 
 module.exports = {
   normalize: normalize,
+  extend: extend,
   buildQueryJson: buildQueryJson,
   buildQueryString: buildQueryString,
 }

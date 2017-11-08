@@ -26,9 +26,3 @@ define [
 
     url: ->
       "#{@collection.url.replace(/views$/, @attributes.type + 's')}/#{@attributes.id}"
-
-    addScopeToQueryParams: (params) ->
-      if (rootNodeId = @get('rootNodeId'))?
-        _.extend({ nodes: String(rootNodeId) }, params)
-      else
-        params

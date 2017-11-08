@@ -23,15 +23,15 @@
   },
   "homepage": "https://github.com/overview/overview-server",
   "dependencies": {
-    "chai": "^4.1.0",
+    "chai": "^4.1.2",
     "chai-as-promised": "^7.1.1",
-    "chromedriver": "^2.31.0",
-    "debug": "^2.2.0",
+    "chromedriver": "^2.33.2",
+    "debug": "^3.1.0",
     "faker": "^4.1.0",
-    "mocha": "^3.5.0",
-    "mocha-jenkins-reporter": "^0.3.8",
-    "request": "^2.81.0",
-    "request-promise-native": "^1.0.4",
-    "selenium-webdriver": "^3.5.0"
+    "mocha": "^4.0.1",
+    "mocha-jenkins-reporter": "^0.3.10",
+    "request": "^2.83.0",
+    "request-promise-native": "^1.0.5",
+    "selenium-webdriver": "^3.6.0"
   }
 }

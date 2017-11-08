@@ -14,7 +14,7 @@ define [
 
       @transactionQueue = {}
 
-      @list = new DocumentList({}, documentSet: @documentSet, transactionQueue: @transactionQueue, params: { tags: { ids: [ 20 ] } })
+      @list = new DocumentList({}, documentSet: @documentSet, transactionQueue: @transactionQueue, params: { tags: [ 20 ] })
 
       @tagCountsChangedSpy = sinon.spy()
       @list.on('tag-counts-changed', @tagCountsChangedSpy)
@@ -28,7 +28,7 @@ define [
       @sandbox.restore()
 
     it 'should set documentSet', -> expect(@list.documentSet).to.eq(@documentSet)
-    it 'should set params', -> expect(@list.params).to.deep.eq(tags: { ids: [ 20 ] })
+    it 'should set params', -> expect(@list.params).to.deep.eq(tags: [ 20 ])
     it 'should be empty', -> expect(@docs.length).to.eq(0)
     it 'should start with length=null', -> expect(@list.get('length')).to.be.null
     it 'should start with loading=false', -> expect(@list.get('loading')).to.be.false
@@ -42,12 +42,12 @@ define [
       tag = new Tag(name: 'a tag')
       # Violate API and modify params: there's no way in these unit tests
       # to create a new DocumentList.
-      @list.params = { tags: { ids: [ tag.id ], tagOperation: 'none' } }
+      @list.params = { tags: [ tag.id ], tagOperation: 'none' }
       expect(@list.getTagCount(tag)).to.deep.eq(n: 0, howSure: 'exact')
 
     it 'should add &reverse=true to URL when given to constructor', ->
       # Note: reverse isn't an attribute, since it's only set on the constructor.
-      @list = new DocumentList({}, documentSet: @documentSet, transactionQueue: @transactionQueue, params: { tags: { ids: [ 20 ] } }, reverse: true)
+      @list = new DocumentList({}, documentSet: @documentSet, transactionQueue: @transactionQueue, params: { tags: [ 20 ] }, reverse: true)
       @transactionQueue.streamJsonArray = sinon.stub().returns(Promise.resolve(null))
       @list.fetchNextPage()
 
