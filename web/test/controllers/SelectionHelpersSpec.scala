@@ -76,7 +76,7 @@ class SelectionHelpersSpec extends ControllerSpecification with Mockito with Awa
       }
 
       "make a SelectionRequest with a documentIdsBitSet" in new SelectionScope {
-        test("/?idsBitSetBase64=VBA%3D", Right(SelectionRequest(1L, documentIdsBitSet=Some(immutable.BitSet(1, 3, 5, 11)))))
+        test("/?documentIdsBitSetBase64=VBA%3D", Right(SelectionRequest(1L, documentIdsBitSet=Some(immutable.BitSet(1, 3, 5, 11)))))
       }
 
       "make a SelectionRequest with sortMetadataField" in new SelectionScope {
