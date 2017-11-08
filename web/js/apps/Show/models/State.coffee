@@ -56,7 +56,7 @@ define [
         documentList: new DocumentList {},
           documentSet: @documentSet
           transactionQueue: @transactionQueue
-          params: new DocumentListParams()
+          params: {}
 
     # Sets new documentList params and unsets document.
     #
@@ -71,12 +71,8 @@ define [
       oldParams = @get('documentList')?.params
       oldReverse = @get('documentList')?.reverse || false
 
-      params = if options instanceof DocumentListParams
-        options
-      else
-        new DocumentListParams(options)
-
-      return if oldParams?.equals(params) && oldReverse == reverse
+      params = DocumentListParams.normalize(options)
+      return if _.isEqual(oldParams, params) && oldReverse == reverse
 
       @set
         document: null
@@ -94,15 +90,16 @@ define [
     #     state.refineDocumentListParams(q: 'foo')
     #     state.refineDocumentListParams(q: null)
     #     state.refineDocumentListParams(reverse: true)
-    refineDocumentListParams: (options) ->
-      oldParams = @get('documentList')?.params || new DocumentListParams()
-      oldReverse = @get('documentList')?.reverse || false
+    refineDocumentListParams: (options, reverse) ->
+      oldParams = @get('documentList')?.params || {}
+      newParams = Object.assign({}, oldParams, options)
 
-      @setDocumentListParams({
-        q: if _.isUndefined(options.q) then oldParams.q else options.q
-        tags: if _.isUndefined(options.tags) then oldParams.tags else options.tags
-        objects: if _.isUndefined(options.objects) then oldParams.objects else options.objects
-      }, if _.isUndefined(options.reverse) then oldReverse else options.reverse)
+      if !reverse? && newParams.sortByMetadataField == oldParams.sortByMetadataField
+        # Leaving sort field unchanged, and reverse is unset? Then
+        # don't modify reverse.
+        reverse = @get('documentList')?.reverse || false
+
+      @setDocumentListParams(newParams, reverse)
 
     # Switches to a new View.
     #

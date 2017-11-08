@@ -3,7 +3,8 @@ define [
   'backbone'
   '../collections/Documents'
   '../models/Document'
-], (_, Backbone, Documents, Document) ->
+  '../models/DocumentListParams'
+], (_, Backbone, Documents, Document, DocumentListParams) ->
   # A sorted list of Document objects on the server.
   #
   # A DocumentList is composed of:
@@ -94,7 +95,7 @@ define [
     # change. This method adds a ?refresh=true to the query string to ensure
     # the server ignores its cache.
     _getQueryStringNoCache: ->
-      ret = @params.toQueryString()
+      ret = DocumentListParams.buildQueryString(@params)
       ret && "#{ret}&refresh=true" || 'refresh=true'
 
     # Returns the query string when we want to use the server's cached values.
@@ -102,24 +103,21 @@ define [
     # When we fetch the first page of results, the server will return a
     # selection ID, which we can use to paginate results.
     #
-    # If we haven't fetched the first page of results yet, this method will
-    # return `null`.
+    # If we haven't fetched the first page of results yet, throw an error
     _getQueryStringCached: ->
-      if @get('selectionId')
-        q = if @params.q then "q=#{@params.q}&" else ""
-        q = "#{q}selectionId=#{@get('selectionId')}"
-        # XXX ugly bug: the server doesn't cache sortByMetadataField, but it
-        # uses it when outputting results. Tell it which field we're sorting by,
-        # so it will include the field in its output.
-        #
-        # This isn't a proper solution, and it isn't tested. But it's really
-        # easy to implement, and [adam, 2017-06-30] I'm not sure what a proper
-        # solution would look like yet.
-        if @params.sortByMetadataField
-          q = "#{q}&sortByMetadataField=#{encodeURIComponent(@params.sortByMetadataField)}"
-        q
-      else
-        null
+      throw new Error("Programmer error: selectionId must be set") if !@get('selectionId')
+
+      q = "selectionId=#{@get('selectionId')}"
+      # XXX ugly bug: the server doesn't cache sortByMetadataField, but it
+      # uses it when outputting results. Tell it which field we're sorting by,
+      # so it will include the field in its output.
+      #
+      # This isn't a proper solution, and it isn't tested. But it's really
+      # easy to implement, and [adam, 2017-06-30] I'm not sure what a proper
+      # solution would look like yet.
+      if @params.sortByMetadataField
+        q = "#{q}&sortByMetadataField=#{encodeURIComponent(@params.sortByMetadataField)}"
+      q
 
     # Tags all documents, without sending a server request.
     #
@@ -224,10 +222,10 @@ define [
       return @_tagCounts[tag.cid] if tag.cid of @_tagCounts
 
       # When the DocumentListParams is just the tag, it's a full count
-      if _.isEqual(@params.toJSON(), tags: [ tag.id ])
+      if _.isEqual(@params, tags: { ids: [ tag.id ] })
         n = @get('length')
         howSure = 'exact'
-      else if _.isEqual(@params.toJSON(), tags: [ tag.id ], tagOperation: 'none')
+      else if _.isEqual(@params, tags: { ids: [ tag.id ], tagOperation: 'none' })
         n = 0
         howSure = 'exact'
       else

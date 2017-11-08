@@ -23,7 +23,7 @@ define [
     it 'should set documentList to all', ->
       @buildState()
       expect(@state.get('documentList')).to.exist
-      expect(@state.get('documentList').params.toJSON()).to.deep.eq({})
+      expect(@state.get('documentList').params).to.deep.eq({})
 
     it 'should pick a view by default, if there is one', ->
       @documentSet.views.add([ { id: 456, type: 'view' } ])
@@ -40,13 +40,7 @@ define [
         ])
 
         @params =
-          documentSet: @documentSet
-          view: @view1
-          params: {}
-          withView: (view) =>
-            documentSet: @documentSet
-            view: view
-            params: {}
+          q: 'foo'
 
         @state = new State({
           view: @view1
@@ -61,8 +55,7 @@ define [
 
       it 'should set documentList', ->
         params = @state.get('documentList')?.params
-        expect(params.documentSet).to.eq(@documentSet)
-        expect(params.view).to.eq(@view2)
+        expect(params).to.deep.eq(@params)
 
     describe 'setDocumentListParams', ->
       beforeEach ->
@@ -105,10 +98,20 @@ define [
 
       it 'should set reverse=true', ->
         @state.setDocumentListParams(tags: { ids: [ 1 ] })
-        @state.refineDocumentListParams(tags: { ids: [ 1 ] }, reverse: true)
+        @state.refineDocumentListParams({ tags: { ids: [ 1 ] } }, true)
         expect(@state.get('documentList').reverse).to.be.true
 
       it 'should set reverse=false', ->
         @state.setDocumentListParams({ tags: { ids: [ 1 ] } }, true)
-        @state.refineDocumentListParams(reverse: false)
+        @state.refineDocumentListParams({}, false)
         expect(@state.get('documentList').reverse).to.be.false
+
+      it 'should set reverse=false if changing sort field and reverse is undefined', ->
+        @state.setDocumentListParams({ sortByMetadataField: 'foo' }, true)
+        @state.refineDocumentListParams({ sortByMetadataField: 'bar' })
+        expect(@state.get('documentList').reverse).to.be.false
+
+      it 'should leave reverse=true if leaving sort field unchanged', ->
+        @state.setDocumentListParams({ sortByMetadataField: 'foo' }, true)
+        @state.refineDocumentListParams({ tags: { ids: [ 1 ] } })
+        expect(@state.get('documentList').reverse).to.be.true

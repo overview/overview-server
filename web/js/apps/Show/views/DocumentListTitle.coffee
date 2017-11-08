@@ -89,11 +89,12 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
 
       oldParams = @documentList?.params
       return if !oldParams
-      @state.setDocumentListParams(oldParams.sortedByMetadataField(ev.target.getAttribute('data-sort-by-metadata-field')))
+      @state.refineDocumentListParams
+        sortByMetadataField: ev.target.getAttribute('data-sort-by-metadata-field')
 
     onChangeReverse: ->
       oldParams = @documentList?.params
       return if !oldParams
 
       reverse = @$('input[name=reverse]').prop('checked')
-      @state.setDocumentListParams(oldParams, reverse)
+      @state.refineDocumentListParams({}, reverse)

@@ -3,17 +3,10 @@ define [
   'apps/Show/views/DocumentListTitle'
   'i18n'
 ], (Backbone, DocumentListTitle, i18n) ->
-  class DocumentListParams extends Backbone.Model
-    constructor: (obj) ->
-      Object.assign(this, obj)
-
-    sortedByMetadataField: (s) ->
-      new DocumentListParams(sortByMetadataField: s)
-
   class DocumentList extends Backbone.Model
     constructor: (attrs) ->
       super(attrs)
-      @params = new DocumentListParams()
+      @params = {}
 
     defaults:
       length: null
@@ -75,17 +68,17 @@ define [
 
     it 'should reverse sort order', ->
       @state.set(documentList: new DocumentList(length: 10))
-      @state.setDocumentListParams = sinon.stub()
+      @state.refineDocumentListParams = sinon.stub()
       @view.$('input[name=reverse]').prop('checked', true)
       @view.onChangeReverse()
-      expect(@state.setDocumentListParams).to.have.been.calledWith(new DocumentListParams(), true)
+      expect(@state.refineDocumentListParams).to.have.been.calledWith({}, true)
 
     it 'should un-reverse sort order', ->
       @state.set(documentList: new DocumentList(length: 10))
-      @state.setDocumentListParams = sinon.stub()
+      @state.refineDocumentListParams = sinon.stub()
       @view.$('input[name=reverse]').prop('checked', false)
       @view.onChangeReverse()
-      expect(@state.setDocumentListParams).to.have.been.calledWith(new DocumentListParams(), false)
+      expect(@state.refineDocumentListParams).to.have.been.calledWith({}, false)
 
     it 'should show a dropdown when there are metadata fields', ->
       @state.set(documentList: new DocumentList(length: 10))
@@ -95,10 +88,10 @@ define [
     it 'should sort by the clicked field', ->
       @state.set(documentList: new DocumentList(length: 10))
       @state.documentSet.set('metadataFields', [ 'foo' ])
-      @state.setDocumentListParams = sinon.stub()
+      @state.refineDocumentListParams = sinon.stub()
       @view.$('a[data-sort-by-metadata-field=foo]').click()
       # The params should change
-      expect(@state.setDocumentListParams).to.have.been.calledWith(new DocumentListParams(sortByMetadataField: 'foo'))
+      expect(@state.refineDocumentListParams).to.have.been.calledWith({ sortByMetadataField: 'foo' })
 
     it 'should render the sorted field name', ->
       list = new DocumentList(length: 10)
