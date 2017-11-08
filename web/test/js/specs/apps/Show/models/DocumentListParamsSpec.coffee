@@ -67,10 +67,6 @@ define [
         expect(tags2).to.deep.eq({ ids: [ 2 ] })
         expect(params1.tags).to.deep.eq({ ids: [ 1 ] })
 
-    describe 'withQ()', ->
-      it 'should clear q', -> expect(c(q: 'foo').withQ().q).to.be.null
-      it 'should replace q', -> expect(c(q: 'foo').withQ('bar').q).to.eq('bar')
-
     describe 'withObjects()', ->
       it 'should clear objects', ->
         expect(c(objects: { ids: [ 1 ], title: '%s in foo' }).withObjects().objects).to.be.null

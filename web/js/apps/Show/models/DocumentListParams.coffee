@@ -51,13 +51,6 @@ define [ 'underscore' ], (_) ->
       @q = @_parseQ(options.q)
       @sortByMetadataField = @_parseSortByMetadataField(options.sortByMetadataField)
 
-    withQ: (q) ->
-      new DocumentListParams
-        objects: @objects
-        tags: @tags
-        q: q
-        sortBymetadataField: @sortByMetadataField
-
     withTags: (tags) ->
       new DocumentListParams
         objects: @objects
