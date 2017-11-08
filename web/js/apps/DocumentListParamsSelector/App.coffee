@@ -33,6 +33,7 @@ define [
     _refreshModel: ->
       params = @state.get('documentList')?.params || {}
       @model.set
+        title: params.title
         tags: params.tags
         tagOperation: params.tagOperation
         tagged: params.tagged

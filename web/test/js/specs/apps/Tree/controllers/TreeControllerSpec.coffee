@@ -131,7 +131,7 @@ define [
           @view.nodeid_below.withArgs(1).returns(2)
           @tree.id_tree.children[1] = [ 2, 3, 4 ]
           @tree.getNode.withArgs(2).returns(id: 2)
-          @state.set(documentList: { params: { params: { nodes: [1] }}})
+          @state.set(documentList: { params: { nodes: [1] }})
           @subject.goDown()
 
         it 'should select the node', -> expect(@state.refineDocumentListParams).to.have.been.calledWith(nodes: [ 2 ], title: 'node,undefined')
@@ -143,7 +143,7 @@ define [
           @tree.id_tree.parent[2] = 1
           @view.nodeid_above.withArgs(2).returns(1)
           @tree.getNode.withArgs(1).returns(id: 1)
-          @state.set(documentList: { params: { params: { nodes: [2] }}})
+          @state.set(documentList: { params: { nodes: [2] }})
           @subject.goUp()
 
         it 'should select the parent node', -> expect(@state.refineDocumentListParams).to.have.been.calledWith(nodes: [ 1 ], title: 'node,undefined')
@@ -159,7 +159,7 @@ define [
           @view.nodeid_right.withArgs(4).returns(null)
           @tree.getNode.withArgs(2).returns(id: 2)
           @tree.getNode.withArgs(4).returns(id: 4)
-          @state.set(documentList: { params: { params: { nodes: [3] }}})
+          @state.set(documentList: { params: { nodes: [3] }})
 
         it 'should go Right', ->
           @subject.goRight()
@@ -172,12 +172,12 @@ define [
           expect(@tree.demandNode).to.have.been.calledWith(2)
 
         it 'should not go too far Right', ->
-          @state.set(documentList: { params: { params: { nodes: [4] }}})
+          @state.set(documentList: { params: { nodes: [4] }})
           @subject.goRight()
           expect(@state.refineDocumentListParams).not.to.have.been.called
 
         it 'should not go too far Left', ->
-          @state.set(documentList: { params: { params: { nodes: [2] }}})
+          @state.set(documentList: { params: { nodes: [2] }})
           @subject.goLeft()
           expect(@state.refineDocumentListParams).not.to.have.been.called
 
@@ -202,7 +202,7 @@ define [
           expect(spy).not.to.have.been.called
 
         it 'should change the document list params if a node is being unloaded', ->
-          @state.set(documentList: { params: { params: { nodes: [6] }}})
+          @state.set(documentList: { params: { nodes: [6] }})
           @tree.id_tree.is_id_ancestor_of_id.returns(true)
 
           @view.trigger('collapse', @node)
@@ -219,19 +219,15 @@ define [
           expect(@tree.demandNode).to.have.been.calledWith(@node.id)
 
         it 'should deselect a selected document when clicking on a selected node', ->
-          params1 =
-            equals: (x) -> x == params1
-            reset:
-              byNode: -> params1
           @state.set
             document: 'foo'
-            documentList: { params: { params: { nodes: [ @node.id ] }}}
+            documentList: { params: { nodes: [ @node.id ] }}
           @view.trigger('click', @node)
           expect(@state.get('document')).to.be.null
 
         it 'should change parameters when changing nodes', ->
           @state.set
             document: 'foo'
-            documentList: { params: { params: { nodes: [ 1 ] }}}
+            documentList: { params: { nodes: [ 1 ] }}
           @view.trigger('click', @node)
           expect(@state.refineDocumentListParams).to.have.been.calledWith(nodes: [ @node.id ], title: 'node,description')

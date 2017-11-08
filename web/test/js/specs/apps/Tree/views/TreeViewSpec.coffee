@@ -28,7 +28,7 @@ define [
         it 'highlights only the selection child nodes', ->
           document = new Document(id: 12, nodeids: [ 5, 3, 2, 1 ])
           expect(
-            TreeView.helpers.getHighlightedNodeIds({ objects: { nodeIds: [ 3 ] } }, document, onDemandTree)
+            TreeView.helpers.getHighlightedNodeIds({ nodes: [ 3 ] }, document, onDemandTree)
           ).to.deep.eq(
             5: null
           )

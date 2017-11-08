@@ -44,7 +44,7 @@ define [
       @tags = options.tags
 
       @listenTo(@tags, 'change', @render) # handle tag name change
-      @listenTo(@model, 'change', @render)
+      @listenTo(@model, 'change:tags change:tagged change:tagOperation', @render)
       @_initialRender()
 
     _initialRender: ->

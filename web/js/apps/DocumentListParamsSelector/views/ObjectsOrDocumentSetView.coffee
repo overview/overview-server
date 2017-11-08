@@ -24,15 +24,15 @@ define [
       @state = options.state
       @render()
 
-      @listenTo(@model, 'change:objects', @render)
+      @listenTo(@model, 'change:title', @render)
 
     events:
       'click a.nix': '_onClickNix'
 
     render: ->
-      if (objects = @model.get('objects'))?
+      title = @model.get('title')
+      if title?
         canNix = true
-        title = objects.title
       else
         canNix = false
         title = t('all')

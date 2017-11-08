@@ -1,9 +1,10 @@
 define [
   'underscore'
   'backbone'
+  '../models/DocumentListParams'
   'i18n'
   'bootstrap-modal'
-], (_, Backbone, i18n) ->
+], (_, Backbone, DocumentListParams, i18n) ->
   t = i18n.namespaced('views.DocumentSet.show.ExportDialog')
 
   class ExportDialog extends Backbone.View
@@ -127,7 +128,7 @@ define [
       queryString = if selection == 'all'
         ''
       else
-        '?' + @documentList.params.toQueryString()
+        '?' + DocumentListParams.buildQueryString(@documentList.params)
 
       @$('a.download-zip')
         .attr(href: "#{urlPrefix}/archive/view/#{basenameEncoded}.zip#{queryString}")

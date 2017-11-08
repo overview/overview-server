@@ -50,7 +50,7 @@ define [
       node = maybeNode
       @tree.demandNode(node.id)
 
-      if _.isEqual(@state.get('documentList')?.params?.params, nodes: [ node.id ])
+      if _.isEqual(@state.get('documentList')?.params, nodes: [ node.id ])
         @state.set(document: null)
       else
         @_refineStateDocumentListParams(node)
@@ -61,7 +61,7 @@ define [
     _onCollapse: (node) ->
       @tree.unloadNodeChildren(node.id)
 
-      selectedNodeIds = @state.get('documentList')?.params?.params?.nodes || []
+      selectedNodeIds = @state.get('documentList')?.params?.nodes || []
       collapsedIsSelected = selectedNodeIds.some((id) => @tree.id_tree.is_id_ancestor_of_id(node.id, id))
       if collapsedIsSelected
         @_refineStateDocumentListParams(node)
@@ -74,7 +74,7 @@ define [
       @state.refineDocumentListParams(nodes: [ node.id ], title: t('node', node.description))
 
     _findNodeRelativeToSelectedNode: (finder) ->
-      nodeId = @state.get('documentList')?.params?.params?.nodes?[0] || null
+      nodeId = @state.get('documentList')?.params?.nodes?[0] || null
       return @tree.getRoot() if !nodeId?
       newId = @view[finder](nodeId)
       if newId?

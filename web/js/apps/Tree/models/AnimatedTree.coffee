@@ -114,7 +114,7 @@ define [ 'underscore', './observable', './AnimatedNode' ], (_, observable, Anima
     # Returns an Object set of { nodeId: null } from the current DocumentList
     _getSelectedNodeIds: ->
       ret = {}
-      for nodeId in @state.get('documentList')?.objects?.nodeIds || []
+      for nodeId in @state.get('documentList')?.nodes || []
         ret[nodeId] = null
       ret
 
@@ -128,7 +128,7 @@ define [ 'underscore', './observable', './AnimatedNode' ], (_, observable, Anima
           for nodeId in selectedNodeIds
             @nodes[nodeId]?.setSelected(false, @animator, time)
 
-          selectedNodeIds = documentList?.params?.objects?.nodeIds || []
+          selectedNodeIds = documentList?.params?.nodes || []
 
           for nodeId in selectedNodeIds
             @nodes[nodeId]?.setSelected(true, @animator, time)

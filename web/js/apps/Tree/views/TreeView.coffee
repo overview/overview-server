@@ -3,9 +3,10 @@ define [
   'underscore'
   'backbone'
   './DrawOperation'
+  '../../Show/models/DocumentListParams'
   'i18n'
   'jquery.mousewheel' # to catch the 'mousewheel' event properly
-], ($, _, Backbone, DrawOperation, i18n) ->
+], ($, _, Backbone, DrawOperation, DocumentListParams, i18n) ->
   t = i18n.namespaced('views.Tree.show.Tree')
 
   DEFAULT_OPTIONS = {
@@ -247,11 +248,12 @@ define [
     _getHighlightColor: ->
       params = @state.get('documentList')?.params
 
-      if params?.tags?.ids?.length == 1 && !params?.tags?.tagged && !params?.tags?.operation
-        @state.documentSet.tags.get(params.tags.ids[0])?.get('color')
-      else if params?.tags?.tagged? && !params?.tags?.ids
+      if params?.tags?.length == 1 && !params?.tagged && !params?.tagOperation
+        @state.documentSet.tags.get(params.tags[0])?.get('color')
+      else if params?.tagged? && !params?.tags
         '#dddddd'
       else if params?.tags? || params?.objects? || params?.q
+        # FIXME replace this if-statement: check for any filter except sort
         '#50ade5'
       else
         null
@@ -334,7 +336,7 @@ define [
     _onTagOrUntag: (tag) -> @tree.on_demand_tree.refreshHighlightCountsOnCurrentNodes()
 
     refreshDocumentListParams: ->
-      fullQueryString = @state.get('documentList')?.params?.toQueryString() || ''
+      fullQueryString = DocumentListParams.buildQueryString(@state.get('documentList')?.params || {})
       parts = fullQueryString.split('&')
         .filter((s) -> !/^nodes=/.test(s))
       highlightQueryString = parts.join('&')
@@ -357,7 +359,7 @@ define [
       # parentNodes: if our doclist is showing a node's contents, no need to
       # highlight its parents.
       parentNodes = {}
-      for nodeId in (documentListParams?.objects?.nodeIds || [])
+      for nodeId in (documentListParams?.nodes || [])
         parentNodes[nodeId] = null
         while (nodeId = onDemandTree.nodes[nodeId]?.parentId)?
           parentNodes[nodeId] = null
