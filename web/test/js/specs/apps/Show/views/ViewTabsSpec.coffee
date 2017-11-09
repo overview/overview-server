@@ -181,13 +181,21 @@ define [
         @view.on('click-new-view', spy)
         @view.$('a[data-toggle=dropdown]').click()
         @view.$('a[data-plugin-url="http://example.org"]').click()
-        expect(spy).to.have.been.calledWith(url: 'http://example.org', title: 'plugin2')
+        expect(spy).to.have.been.calledWith(url: 'http://example.org', title: 'plugin2', serverUrlFromPlugin: '')
 
       it 'should emit click-new-view with no args about:custom', ->
         @view.on('click-new-view', spy = sinon.spy())
         @view.$('a[data-toggle=dropdown]').click()
         @view.$('a[data-plugin-url="about:custom"]').click()
         expect(spy).to.have.been.called
+
+      it 'should emit click-new-view with a serverUrlFromPlugin', ->
+        @plugin2.set(serverUrlFromPlugin: 'http://overview-web')
+        @view.render()
+        @view.on('click-new-view', spy = sinon.spy())
+        @view.$('a[data-toggle=dropdown]').click()
+        @view.$('a[data-plugin-url="http://example.org"]').click()
+        expect(spy).to.have.been.calledWith(url: 'http://example.org', title: 'plugin2', serverUrlFromPlugin: 'http://overview-web')
 
       it 'should destroy a view when it is removed', ->
         @viewList.remove(@view1)

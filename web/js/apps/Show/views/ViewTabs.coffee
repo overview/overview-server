@@ -125,7 +125,7 @@ define [
           <ul class="dropdown-menu" role="menu">
             <% plugins.forEach(function(plugin) { %>
               <li role="presentation">
-                <a role="menuitem" href="#" data-plugin-url="<%- plugin.get('url') %>">
+                <a role="menuitem" href="#" data-plugin-url="<%- plugin.get('url') %>" data-server-url-from-plugin="<%- plugin.get('serverUrlFromPlugin') || '' %>">
                   <span class="name"><%- plugin.get('name') %></span>
                   <span class="description"><%- plugin.get('description') %></span>
                 </a>
@@ -266,10 +266,16 @@ define [
     _onClickNewView: (e) ->
       e.preventDefault()
       url = e.currentTarget.getAttribute('data-plugin-url')
+      serverUrlFromPlugin = e.currentTarget.getAttribute('data-server-url-from-plugin')
       switch url
         when 'about:tree' then @trigger('click-new-tree')
         when 'about:custom' then @trigger('click-new-view')
-        else @trigger('click-new-view', url: url, title: $('span.name', e.currentTarget).text())
+        else
+          @trigger('click-new-view',
+            url: url,
+            serverUrlFromPlugin: serverUrlFromPlugin,
+            title: $('span.name', e.currentTarget).text()
+          )
 
     _onClickDelete: (e) ->
       e.preventDefault()
