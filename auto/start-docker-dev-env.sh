@@ -13,7 +13,7 @@ services_are_online() {
 }
 
 wait_for_database() {
-  docker exec -it overview-dev-database \
+  docker exec overview-dev-database \
     sh -c 'until psql -U overview -c "SELECT 1" overview >/dev/null 2>&1; do sleep 1; done'
 }
 
