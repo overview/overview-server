@@ -350,7 +350,7 @@ The Document resource has the following attributes:
 
     [Document][]
 
-## Documents Collection [/document-sets/{documentSetId}/documents?q={q}&tags={tags}&tagged={tagged}&objects={objects}&selectionId={selectionId}&refresh={refresh}&fields={fields}&offset={offset}&limit={limit}&stream={stream}]
+## Documents Collection [/document-sets/{documentSetId}/documents?q={q}&tags={tags}&tagged={tagged}&tagOperation={tagOperation}&objects={objects}&documentIdsBitSetBase64={documentIdsBitSetBase64}&selectionId={selectionId}&refresh={refresh}&fields={fields}&sortByMetadataField={sortByMetadataField}&reverse={reverse}&offset={offset}&limit={limit}&stream={stream}]
 <a name="documents-collection"></a>Collection of Documents.
 
 Document collections can be rather large. By default, the `text`, `tokens` and `metadata` columns are omitted to save bandwidth.
@@ -364,7 +364,7 @@ Use a streaming-JSON client library such as [Oboe.js](http://oboejs.com/), [Yajl
     + documentSetId (required, number, `1`) ... The document set ID.
     + q (optional, string, `bar`) ... An [ElasticSearch query string](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-dsl-query-string-query.html#query-string-syntax) to filter documents.
     + tags (optional, string, `123,234,345`) ... A comma-separated list of Tag IDs. Return documents matching any tag in the list.
-    + tagOperation (optional, string, `any`) ... Only makes sense with `tags`. If `all`, return documents matching _all_ tags. If `none`, return documents matching _none_ of the tags. The default is `any`.
+    + tagOperation (optional, string, `any`) ... Only makes sense with `tags`. If `all`, return documents matching _all_ of the tags. If `none`, return documents matching _none_ of the tags. The default is `any`.
     + tagged (optional, boolean, `true`) ... If set, return all documents that have at least one tag (`true`) or that have zero tags (`false`).
     + objects (optional, string, `456,567,678`) ... A comma-separated list of StoreObject IDs. Return documents matching any StoreObject in the list.
     + documentIdsBitSetBase64 (optional, string, `oA==`) ... For mass-selecting documents. See [Base64 BitSet](#base64-bit-set) for a description.
@@ -373,6 +373,8 @@ Use a streaming-JSON client library such as [Oboe.js](http://oboejs.com/), [Yajl
     + fields (optional, string, `id`) ... Defaults to `id,pageNumber,suppliedId,title,url`. You may include `text`, `tokens` and/or `metadata`; those fields cost bandwidth, and if you aren't streaming they'll reduce the maximum page size. If you specify `id` on its own, the return value will be an Array of Document IDs (without pagination) instead of an Array of Document JSON objects.
     + offset (optional, number, `0`) ... We're paginating; skip this many documents in the result list.
     + limit (optional, number, `1000`) ... We're paginating; return at most this many documents.
+    + sortByMetadataField (optional, string, `Author`) ... Tell the server to order documents by the given metadata field name. By default, the server orders documents by title.
+    + reverse (optional, boolean, `true`) ... Reverse the order of returned documents. By default, the server orders documents alphabetically (by title or `sortByMetadataField`).
     + stream (optional, boolean, `true`) ... When `true`, respond with `Transfer-Encoding: chunked` and allow returning an unlimited number of documents.
 
 + Model (application/json)
