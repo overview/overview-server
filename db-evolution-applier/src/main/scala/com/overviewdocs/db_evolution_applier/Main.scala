@@ -1,7 +1,8 @@
 package com.overviewdocs.db_evolution_applier
 
 import com.typesafe.config.{Config,ConfigFactory}
-import javax.sql.DataSource
+import java.sql.{Connection,SQLException}
+import java.util.logging.{Logger,Level}
 import org.flywaydb.core.Flyway
 import org.postgresql.ds.PGSimpleDataSource
 import scala.util.Try
@@ -14,7 +15,7 @@ import scala.util.Try
   * have all been applied.
   */
 object Main {
-  private lazy val dataSource: DataSource = {
+  private lazy val dataSource: PGSimpleDataSource = {
     val entireConfig: Config = ConfigFactory.systemProperties
       .withFallback(ConfigFactory.parseString("""
         |# We keep 'db.default' so caller can override via Java system properties
@@ -58,6 +59,35 @@ object Main {
     migrate
   }
 
+  /** Synchronously connect to the database. Try until it succeeds.
+    */
+  private def connect = {
+    var ret: Option[Connection] = None
+
+    // pgjdbc logs the exception with SEVERE. That seems stupid: if we don't
+    // catch the exception, isn't it going to be printed anyway? We have to
+    // disable logging, because we _expect_ to try and connect when the database
+    // is down. Because it's 2017, and that's how we do things in 2017.
+    val logger = Logger.getLogger("org.postgresql.Driver")
+
+    while (ret.isEmpty) {
+      val logLevel = logger.getLevel
+      logger.setLevel(Level.OFF)
+      try {
+        ret = Some(dataSource.getConnection)
+      } catch {
+        case e: SQLException => {
+          System.err.println("Failed to connect to " + dataSource.getUrl + ". Will retry in 1s.")
+          Thread.sleep(1000)
+        }
+      } finally {
+        logger.setLevel(logLevel)
+      }
+    }
+
+    ret.get
+  }
+
   /** Convert a Play Evolutions-style schema to a Flyway-style one.
     *
     * Steps:
@@ -67,7 +97,7 @@ object Main {
     * 3. Delete the play_evolutions table.
     */
   private def migrateToFlyway: Unit = {
-    val connection = dataSource.getConnection
+    val connection = connect
 
     val maybePlayEvolutionVersion: Try[Int] = Try {
       val statement = connection.createStatement
