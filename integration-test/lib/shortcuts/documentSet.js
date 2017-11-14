@@ -1,9 +1,7 @@
 'use strict'
 
 const debug = require('debug')('shortcuts/documentSet')
-const childProcess = require('child_process')
-const http = require('http')
-const path = require('path')
+const MockPlugin = require('../MockPlugin')
 
 const clientTests = {
   noJobsInProgress: function() {
@@ -49,7 +47,7 @@ class DocumentSetShortcuts {
     await this.s.jquery.waitUntilReady()
 
     // Within the iframe is a JS app. We need to wait for it to finish loading:
-    const checked = await this.b.isSelected({ css: '[name=public]', wait: 'pageLoad' })
+    const checked = await this.b.isSelected({ css: '[name=public]', wait: true })
 
     if (checked != bool) {
       await this.s.jquery.listenForAjaxComplete()
@@ -147,43 +145,26 @@ class DocumentSetShortcuts {
   }
 
   /**
-   * Starts a child process; creates a new View and returns the child process
+   * Starts a MockPlugin listening on localhost:3333; creates a View and returns
+   * the MockPlugin.
+   *
+   * When you're done, you must `await returnedPlugin.close()`
    */
-  async createViewAndChildProcess(name) { // returns child process
+  async createViewAndServer(name) { // returns child process
     debug(`createCustomView(${name})`)
 
-    const args = [
-      'run',
-      '--publish', '127.0.0.1:3333:80',
-      '--mount', `type=bind,source=${path.resolve(__dirname, '../../mock-plugins/server/serve')},target=/serve,readonly`,
-      '--mount', `type=bind,source=${path.resolve(__dirname, `../../mock-plugins/${name}.html`)},target=/show.html,readonly`,
-      '--rm',
-      'busybox',
-      '/serve',
-    ]
+    const server = new MockPlugin(name)
+    await server.listen()
 
-    debug(`docker ${args.join(' ')}`)
-
-    const child = childProcess.spawn('docker', args, { killSignal: 'SIGKILL' })
-
-    // poll until listening on port 80
     try {
-      await this.b.waitUntilFunctionReturnsTrue('plugin loads', 'pageLoad', function() {
-        return new Promise((resolve, reject) => {
-          http.get('http://localhost:3333/metadata')
-            .on('response', () => resolve(true))
-            .on('error', () => resolve(false))
-        })
-      })
-
       await this.b.click({ link: 'Add view' })
       await this.b.click({ link: 'Custom…' })
       // Enter URL first, then name. Entering name will blur URL. Blurring URL
       // makes the browser test the endpoint.
-      await this.b.sendKeys('http://localhost:3333', { css: '#new-view-dialog-url', wait: true })
+      await this.b.sendKeys('http://localhost:3333', { css: '#new-view-dialog-url', wait: 'fast' })
       await this.b.sendKeys(name, { css: '#new-view-dialog-title' })
       await this.b.click({ link: 'use it anyway' , wait: true }) // dismiss not-HTTPS warning
-      await this.b.assertExists({ css: '#new-view-dialog .state .ok', wait: 'pageLoad' })
+      await this.b.assertExists({ css: '#new-view-dialog .state .ok', wait: 'slow' })
       await this.b.click({ css: 'input[value="Create visualization"]', wait: 'fast' })
 
       // Wait for the plugin to _begin_ loading. (Let's not assume it _will_ end:
@@ -191,11 +172,11 @@ class DocumentSetShortcuts {
       // load ends, anyway.)
       await this.b.find('#view-app-iframe', { wait: 'fast' })
     } catch (e) {
-      child.kill()
+      await server.close()
       throw e
     }
 
-    return child
+    return server
   }
 }
 

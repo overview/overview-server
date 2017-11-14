@@ -1,16 +1,16 @@
 To Run A Simple Plugin
 ======================
 
-```sh
-docker run --rm \
-    --publish 127.0.0.1:3333:80 \
-    -v "$(pwd)"/server/serve:/serve:ro \
-    -v "$(pwd)"/PLUGIN_NAME.html:/show.html:ro \
-    busybox \
-    /serve
+In a test:
+
+```javascript
+
+const MockPlugin = require('./lib/MockPlugin')
+
+const plugin = new MockPlugin('PLUGIN_NAME')
+await plugin.listen()
+// ... do stuff, assuming http://localhost:3333 is listening, and
+// `GET /show` will return `PLUGIN_NAME.html` from this directory
+await plugin.close()
+// ... do stuff, assuming http://localhost:3333 is gone
 ```
-
-... where:
-
-* `PLUGIN_NAME` is the name of the plugin (see the HTML files in this dir); and
-* `busybox` is _any_ Docker image without an entrypoint

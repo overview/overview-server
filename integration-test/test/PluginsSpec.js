@@ -10,7 +10,7 @@ describe('Plugins', function() {
     })
 
     it('should pass server, apiToken and documentSetId in the plugin query string', async function() {
-      const child = await this.documentSet.createViewAndChildProcess('show-query-string')
+      const server = await this.documentSet.createViewAndServer('show-query-string')
 
       try {
         await this.browser.switchToFrame('view-app-iframe')
@@ -19,8 +19,9 @@ describe('Plugins', function() {
         const text = await this.browser.getText({ css: 'pre' })
         expect(text).to.match(/^\?server=http%3A%2F%2Flocalhost%3A9000&documentSetId=\d+&apiToken=[a-z0-9]+$/)
         await this.browser.switchToFrame(null)
-      } finally {
-        child.kill()
+      } catch (e) {
+        await server.close()
+        throw e
       }
 
       await this.documentSet.destroyView('show-query-string')
