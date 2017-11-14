@@ -1,9 +1,12 @@
 #!/bin/sh
 
-JS_ENGINE=$(which node >/dev/null && echo 'Node' || echo 'Trireme')
-SBT_OPTS="-Xms512M -Xmx2048M -Xss1M -XX:+CMSClassUnloadingEnabled -Dsbt.jse.engineType=${JS_ENGINE}"
-SBT_JARFILE="$(dirname $0)/auto/sbt-launch.jar"
+DIR="$(dirname "$0")"
 
-set -x
+. "$DIR"/auto/ensure-in-docker.sh
 
-java $SBT_OPTS -jar "$SBT_JARFILE" "$@"
+java \
+  -Xmx2048m \
+  -Dsbt.task.timing=true \
+  -Dsbt.jse.engineType=Node \
+  -jar "$DIR"/auto/sbt-launch.jar \
+  "$@"

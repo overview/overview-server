@@ -6,4 +6,6 @@
 #
 #   auto/psql.sh overview-dev
 
-docker exec -it overview-dev-database psql -U overview "$@"
+DATABASE=${1:-overview-dev}
+
+docker-compose exec database psql -U overview "$DATABASE"

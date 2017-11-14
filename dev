@@ -2,9 +2,4 @@
 
 set -e
 
-. "$(dirname "$0")"/auto/start-docker-dev-env.sh
-
-start_logging_if_not_started
-
-echo "Starting Overview..."
-./sbt all/compile db-evolution-applier/run worker/re-start web/run
+docker-compose up --build --exit-code-from dev

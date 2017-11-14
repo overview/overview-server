@@ -1,27 +1,33 @@
 # Servers Overview relies upon.
 #
 # Usage: `docker-compose start` to create a dev/test environment.
-#
-# Services:
-#   * :9010 -> Postgres
-#   * :9020 -> Redis
 
 version: "3"
 
 volumes:
-  overview-dev-database-data:
+  database-data:
+  search-data:
+  blob-storage-data:
+  homedir:
 
 services:
-  overview-dev-redis:
-    container_name: overview-dev-redis 
+  redis:
     image: redis:2.8
-    ports:
-      - "9020:6379"
 
-  overview-dev-database:
-    container_name: overview-dev-database
+  database:
     image: overview/database
     volumes:
-      - overview-dev-database-data:/var/lib/postgresql/data
+      - database-data:/var/lib/postgresql/data
+
+  dev:
+    build: ./docker/overview-dev
+    image: overview-dev
+    stdin_open: true
+    volumes:
+      - search-data:/var/lib/overview/search
+      - blob-storage-data:/var/lib/overview/blob-storage
+      - homedir:/root # sbt's and npm's caches
+      #- .:/app:ro
+      - .:/app # we can't go "ro" because Webpack writes to the source directory for now
     ports:
-      - "9010:5432"
+      - '127.0.0.1:9000:80'

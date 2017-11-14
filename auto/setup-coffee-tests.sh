@@ -2,4 +2,6 @@
 
 # Requires npm to be installed in the user's path.
 
-(cd "$(dirname $0)/../web" && npm install)
+. "$(dirname "$0")"/ensure-in-docker.sh
+
+(cd /app/web && npm install)

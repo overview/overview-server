@@ -2,43 +2,23 @@ import java.io.{File,IOException}
 
 val rootDirectory = sys.props("user.dir")
 
-lazy val dockerIp: String = {
-  import scala.sys.process._
-
-  // We only evaluate these commands if we're *running*. If we're just
-  // compiling, we'll never run these commands.
-  try {
-    "docker-machine ip".!!.trim
-  } catch {
-    case _: IOException => {
-      Seq("docker", "inspect", "-f", "{{ .NetworkSettings.Gateway }}", "overview-dev-database").!!.trim
-    }
-  }
-}
-
 val baseJavaOpts = Seq(
-  "-Duser.timezone=UTC"
+  "-Duser.timezone=UTC",
+  "-Ddb.default.properties.serverName=database",
+  "-Dredis.host=redis"
 )
 
 lazy val devJavaOpts = baseJavaOpts ++ Seq(
-  s"-Ddb.default.properties.databaseName=overview-dev",
-  s"-Ddb.default.properties.portNumber=9010",
-  s"-Ddb.default.properties.serverName=$dockerIp",
-  s"-Dredis.host=$dockerIp",
-  s"-Dredis.port=9020",
-  s"-DblobStorage.file.baseDirectory=$rootDirectory/blob-storage/dev",
-  s"-Dsearch.baseDirectory=$rootDirectory/search/dev"
+  "-Ddb.default.properties.databaseName=overview-dev",
+  "-DblobStorage.file.baseDirectory=/var/lib/overview/blob-storage/dev",
+  "-Dsearch.baseDirectory=/var/lib/overview/search/dev"
 )
 
 lazy val testJavaOpts = baseJavaOpts ++ Seq(
-  s"-Ddb.default.properties.databaseName=overview-test",
-  s"-Ddb.default.properties.portNumber=9010",
-  s"-Ddb.default.properties.serverName=$dockerIp",
-  s"-Dredis.host=$dockerIp",
-  s"-Dredis.port=9020",
-  s"-Dlogback.configurationFile=logback-test.xml",
-  s"-DblobStorage.file.baseDirectory=$rootDirectory/blob-storage/test",
-  s"-Dsearch.baseDirectory=$rootDirectory/search/test"
+  "-Ddb.default.properties.databaseName=overview-test",
+  "-Dlogback.configurationFile=logback-test.xml",
+  "-DblobStorage.file.baseDirectory=/var/lib/overview/blob-storage/test",
+  "-Dsearch.baseDirectory=/var/lib/overview/blob-storage/test"
 )
 
 // Settings that apply to all our projects
@@ -76,7 +56,7 @@ lazy val root = (project in file("."))
 lazy val `db-evolution-applier` = (project in file("db-evolution-applier"))
   .enablePlugins(JavaAppPackaging)
   .settings(
-    target := baseDirectory.value / "target" / "db-evolution-applier", // [error] Overlapping output directories
+    target := file("/root") / "overview-build" / "db-evolution-applier",
     libraryDependencies ++= Dependencies.dbEvolutionApplierDependencies
   )
 
@@ -84,7 +64,7 @@ lazy val `db-evolution-applier` = (project in file("db-evolution-applier"))
 lazy val `test-db-evolution-applier` = (project in file("db-evolution-applier"))
   .enablePlugins(JavaAppPackaging)
   .settings(
-    target := baseDirectory.value / "target" / "test-db-evolution-applier", // [error] Overlapping output directories
+    target := file("/root") / "overview-build" / "test-db-evolution-applier",
     javaOptions in Compile := testJavaOpts,
     libraryDependencies ++= Dependencies.dbEvolutionApplierDependencies
   )
@@ -93,6 +73,7 @@ lazy val `test-db-evolution-applier` = (project in file("db-evolution-applier"))
 lazy val common = (project in file("common"))
   .enablePlugins(JavaAppPackaging)
   .settings(
+    target := file("/root") / "overview-build" / "common",
     libraryDependencies ++= Dependencies.commonDependencies,
     sources in doc in Compile := List() // docs take time; skip 'em
   )
@@ -102,6 +83,7 @@ lazy val worker = (project in file("worker"))
   .enablePlugins(JavaAppPackaging)
   //.enablePlugins(Revolver)
   .settings(
+    target := file("/root") / "overview-build" / "worker",
     libraryDependencies ++= Dependencies.workerDependencies,
     mainClass in Compile := Some("com.overviewdocs.Worker"),
     sources in doc in Compile := List(), // docs take time; skip 'em
@@ -117,6 +99,7 @@ lazy val web = (project in file("web"))
   .enablePlugins(JavaAppPackaging)
   .settings(PlayNpm.projectSettings)
   .settings(
+    target := file("/root") / "overview-build" / "web",
     PlayKeys.externalizeResources := false, // so `stage` doesn't nix all assets
     libraryDependencies ++= Dependencies.serverDependencies,
     TwirlKeys.templateImports ++= Seq("views.Magic._", "play.twirl.api.HtmlFormat"),
@@ -139,6 +122,7 @@ lazy val web = (project in file("web"))
 lazy val all = (project in file("all"))
   .aggregate(web, worker, common)
   .settings(
+    target := file("/root") / "overview-build" / "all",
     test in Test := Def.sequential(
       (run in Runtime in `test-db-evolution-applier`).toTask(""),
       test in Test in common,
