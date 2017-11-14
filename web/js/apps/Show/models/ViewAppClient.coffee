@@ -52,6 +52,7 @@ define [
         when 'notifyDocumentSet' then @viewApp.notifyDocumentSet?(@state.documentSet)
         when 'notifyDocument' then @viewApp.notifyDocument?(@state.get('document'))
         when 'setDocumentListParams' then @setDocumentListParams(e.data.args...)
+        when 'setRightPane' then @viewApp.setRightPane?(e.data.args...)
         when 'openMetadataSchemaEditor' then @globalActions.openMetadataSchemaEditor()
         when 'patchDocument'
           attrs = e.data.args[0]

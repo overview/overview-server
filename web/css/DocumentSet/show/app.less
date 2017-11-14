@@ -1,6 +1,4 @@
 #tree-app-left {
-  .flex(1 1 auto);
-  width: 1px; // equal to tree-app-left
   position: relative;
   z-index: 2; // hover descriptions go above everything
   .display-flex();
@@ -27,40 +25,14 @@
   }
 }
 
-#tree-app-vertical-split {
-  .flex(0 0 auto);
-  width: 1rem;
-  cursor: ew-resize;
-  position: relative;
-
-  &::before {
-    content: '';
-    display: block;
-    position: absolute;
-    top: 0;
-    left: 25%;
-    right: 25%;
-    bottom: 0;
-    background-color: @body-bg;
-    transition: background-color 100ms ease-in-out;
-  }
-
-  &:hover::before {
-    background-color: #efefef;
-  }
-}
-
 #tree-app-right {
-  .flex(1 1 auto);
-  width: 1px; // equal to tree-app-left
-  position: relative;
-
   overflow: hidden;
 
   // Nudge ever so slightly to the right. Otherwise Chrome rounds down and a
   // scrollbar on the right only works if you move your mouse a pixel to the
   // left of the edge of the screen. It's no big deal if a pixel of the
   // scrollbar gets cut off, but it *is* a big deal if we violate Fitts' law.
+  position: relative;
   right: -.5px;
 }
 
@@ -103,18 +75,8 @@
     // modularize our HTML, JavaScript and CSS, which takes time.
     //
     // TODO modularize our code and nix this floating button.
-    position: fixed;
+    position: absolute;
     right: 0;
     z-index: 1;
   }
-}
-
-// FIXME move the below code somewhere better
-#tree-app-tree {
-  .flex(1 1 auto);
-}
-
-#tree-app-zoom-slider {
-  position: relative;
-  height: @focus_height;
 }

@@ -112,7 +112,7 @@ define [
           ><div id="tree-app-views"></div
           ><div id="tree-app-view"></div
         ></div
-        ><div id="tree-app-vertical-split"></div
+        ><div id="tree-app-vertical-split"><button class="toggle-right-pane"></button></div
         ><div id="tree-app-right"
           ><div id="document-list-container"
             ><div class="header"
@@ -123,6 +123,8 @@ define [
           ></div
           ><div id="document-current"></div
         ></div
+        ><div id="tree-app-vertical-split-2"><button class="toggle-right-pane"></button></div
+        ><div id="tree-app-right-pane"></div
         ><div id="transaction-queue-error-monitor"></div
         ><div id="metadata-schema-editor-app"></div
       """
@@ -209,6 +211,7 @@ define [
 
       new ViewAppController
         el: els.view
+        main: els.main
         state: @state
         transactionQueue: @transactionQueue
         keyboardController: keyboardController

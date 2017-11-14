@@ -21,6 +21,7 @@ describe('Metadata', function() {
         this.locatorWithWait = findInput('foo', 'fast')
 
         await this.browser.click({ tag: 'h3', contains: 'First' })
+        await this.browser.sleep(500) // animation -- the "tag" button moves
         await this.browser.click({ link: 'Fields', wait: 'fast' })
         await this.browser.find(this.locatorWithWait)
       })

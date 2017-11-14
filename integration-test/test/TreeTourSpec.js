@@ -36,11 +36,11 @@ describe('TreeTour', function() {
   })
 
   describe('after reading through all the tooltips', function() {
-    asUserWithDocumentSet('TreeTooltips/documents.csv', function() {
+    asUserWithDocumentSet('TreeTooltips/documents.csv', { dismissTour: false }, function() {
       it('should only show the tooltips the first time', async function() {
         this.browser.loadShortcuts('documentSets')
 
-        await this.browser.click([ { class: 'popover' }, { link: '×' } ])
+        await this.browser.click({ css: '.popover a.skip' })
         await this.browser.shortcuts.documentSets.open('documents.csv')
         await this.browser.assertNotExists({ class: 'popover' })
       })

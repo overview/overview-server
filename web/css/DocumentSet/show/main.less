@@ -1,0 +1,106 @@
+// Vertical-split styles. All this supports VerticalSplit.coffee's code
+#main {
+  #tree-app-left, #tree-app-right, #tree-app-right-pane {
+    width: 0;
+    flex: 1 1 auto;
+    background-color: @body-bg;
+  }
+
+  &:not(.resizing) {
+    #tree-app-left, #tree-app-vertical-split, #tree-app-right, #tree-app-vertical-split-2, #tree-app-right-pane {
+      transition: width 200ms ease-in-out;
+    }
+  }
+
+  #tree-app-vertical-split, #tree-app-vertical-split-2 {
+    .flex(0 0 auto);
+    width: 1rem;
+    cursor: ew-resize;
+    position: relative; // to place shading and <button>s
+
+    &::before {
+      content: '';
+      display: block;
+      position: absolute;
+      top: 0;
+      left: 25%;
+      right: 25%;
+      bottom: 0;
+      background-color: @body-bg;
+      transition: background-color 100ms ease-in-out;
+    }
+
+    &:hover::before {
+      background-color: #efefef;
+    }
+
+    button.toggle-right-pane {
+      display: none;
+    }
+  }
+
+  #tree-app-vertical-split-2, #tree-app-right-pane {
+    display: none;
+  }
+
+  &.has-right-pane {
+    #tree-app-vertical-split-2, #tree-app-right-pane {
+      display: block; // whether or not they have width>0
+    }
+
+    #tree-app-vertical-split, #tree-app-vertical-split-2 {
+      z-index: 1; // so <button> goes above other content
+
+      button.toggle-right-pane {
+        display: block; // we display both buttons, always
+        position: absolute;
+        top: 50%;
+        height: 2rem;
+        left: 0;
+        width: 1rem;
+        margin-top: -1rem;
+        padding: 0;
+        text-align: center;
+      }
+    }
+
+    &.on-right-pane {
+      button.toggle-right-pane {
+        &::before { content: '❭'; }
+        left: 0;
+      }
+
+      #tree-app-vertical-split {
+        width: 0;
+      }
+
+      #tree-app-left {
+        z-index: -1;
+      }
+    }
+    &:not(.on-right-pane) {
+      button.toggle-right-pane {
+        &::before { content: '❬'; }
+        right: 0;
+      }
+
+      #tree-app-vertical-split-2 {
+        width: 0;
+        button.toggle-right-pane { left: auto; right: 0; }
+      }
+    }
+  }
+
+  #tree-app-right-pane {
+    position: relative;
+
+    iframe {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      border: 0;
+    }
+  }
+}

@@ -30,6 +30,7 @@ define [
           notifyDocumentListParams: sinon.spy()
           notifyDocumentSet: sinon.spy()
           notifyDocument: sinon.spy()
+          setRightPane: sinon.spy()
           onTag: sinon.spy()
           onUntag: sinon.spy()
           remove: sinon.spy()
@@ -79,6 +80,10 @@ define [
       it 'should notify document', ->
         @subject._onMessage(origin: '', data: { call: 'notifyDocument' })
         expect(@viewApp.notifyDocument).to.have.been.calledWith(@state.get('document'))
+
+      it 'should setRightPane', ->
+        @subject._onMessage(origin: '', data: { call: 'setRightPane', args: [ { url: 'http://example.com' } ] })
+        expect(@viewApp.setRightPane).to.have.been.calledWith({ url: 'http://example.com' })
 
       it 'should set metadata on document', ->
         document = new Backbone.Model(id: 2, metadata: { foo: 'bar' })

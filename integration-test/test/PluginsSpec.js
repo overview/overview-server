@@ -19,12 +19,39 @@ describe('Plugins', function() {
         const text = await this.browser.getText({ css: 'pre' })
         expect(text).to.match(/^\?server=http%3A%2F%2Flocalhost%3A9000&documentSetId=\d+&apiToken=[a-z0-9]+$/)
         await this.browser.switchToFrame(null)
-      } catch (e) {
+      } finally {
         await server.close()
-        throw e
       }
 
       await this.documentSet.destroyView('show-query-string')
+    })
+
+    describe('with a plugin that calls setRightPane', async function() {
+      before(async function() {
+        this.server = await this.documentSet.createViewAndServer('right-pane')
+      })
+
+      after(async function() {
+        await this.server.close()
+      })
+
+      it('should create a right pane', async function() {
+        await this.browser.assertNotExists({ id: 'tree-app-vertical-split-2' }) // it's invisible
+
+        // wait for load
+        await this.browser.switchToFrame('view-app-iframe')
+        await this.browser.assertExists({ css: 'body.loaded', wait: 'slow' })
+        await this.browser.click({ button: 'Set Right Pane' })
+        await this.browser.switchToFrame(null)
+
+        await this.browser.assertExists({ id: 'tree-app-vertical-split-2', wait: true }) // wait for animation
+        await this.browser.click({ css: '#tree-app-vertical-split-2 button' })
+        await this.browser.assertExists({ id: 'view-app-right-pane-iframe' })
+        await this.browser.switchToFrame('view-app-right-pane-iframe')
+        const url = await this.browser.execute(function() { return window.location.href })
+        expect(url).to.eq('http://localhost:3333/show?placement=right-pane')
+        await this.browser.switchToFrame(null)
+      })
     })
   })
 })

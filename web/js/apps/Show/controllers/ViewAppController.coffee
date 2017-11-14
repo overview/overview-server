@@ -9,6 +9,7 @@ define [
 
     constructor: (options) ->
       throw 'Must pass options.el, an HTMLElement' if !options.el
+      throw 'Must pass options.main, an HTMLElement' if !options.main
       throw 'Must pass options.state, a State' if !options.state
       throw 'Must pass options.keyboardController, a KeyboardController' if !options.keyboardController
       throw 'Must pass options.transactionQueue, a TransactionQueue' if !options.transactionQueue
@@ -16,6 +17,7 @@ define [
       throw 'Must pass options.globalActions, an Object full of callbacks' if !options.globalActions
 
       @el = options.el
+      @main = options.main
       @$el = $(@el)
       @state = options.state
       @keyboardController = options.keyboardController
@@ -49,6 +51,7 @@ define [
           document: @state.attributes.document
           documentListParams: @state.attributes.documentList?.params
           el: el
+          main: @main
           state: @state
 
         # EVIL HACK

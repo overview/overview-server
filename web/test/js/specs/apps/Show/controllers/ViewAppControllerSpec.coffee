@@ -43,12 +43,14 @@ define [
         tree: sinon.stub().returns(@treeViewApp)
 
       @el = document.createElement('div')
+      @main = document.createElement('main')
 
       @keyboardController = {}
 
       @init = =>
         @subject = new ViewAppController
           state: @state
+          main: @main
           globalActions: @globalActions
           transactionQueue: @transactionQueue
           keyboardController: @keyboardController
@@ -99,6 +101,10 @@ define [
         # These parameters won't work across iframes. We should deprecate them.
         options = @viewAppConstructors.job.lastCall.args[0]
         expect(options.state).to.eq(@state)
+
+      it 'should pass main to the viewApp', ->
+        expect(@viewAppConstructors.job).to.have.been.calledWithMatch
+          main: @main
 
       it 'should use ViewAppClient to notify the viewApp of changes', ->
         document = new Backbone.Model(foo: 'document2')

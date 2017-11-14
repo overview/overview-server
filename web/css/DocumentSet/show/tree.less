@@ -1,6 +1,7 @@
 @import '../../mixins.less';
 
 #tree-app-tree {
+  .flex(1 1 auto);
   position: relative;
   box-sizing: content-box; // that's the default, but I want you to really think about it :)
   border-right: 1px solid @nav-tabs-border-color;
@@ -62,4 +63,9 @@
       }
     }
   }
+}
+
+#tree-app-zoom-slider {
+  position: relative;
+  height: @focus_height;
 }

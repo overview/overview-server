@@ -11,7 +11,10 @@ delete webpackConfig.entry
 
 module.exports = function(config) {
   config.set({
-    files: [ 'test_index.js' ],
+    files: [
+      'test_index.js',
+      { pattern: './mock-plugin/**/*', included: false },
+    ],
     preprocessors: {
       'test_index.js': [ 'webpack', 'sourcemap' ],
     },
