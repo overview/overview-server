@@ -1,9 +1,15 @@
 FROM openjdk:8u151-jdk
 
+# Deps:
+# tesseract+libreoffice: for worker
+# nodejs+build-essential+xvfb+libxss1+libgconf-2-4: for web/js tests (which run Electron and Node)
 RUN true \
       && curl -sL https://deb.nodesource.com/setup_8.x | bash \
       && apt-get update \
-      && apt-get -y install tesseract-ocr-all libreoffice build-essential nodejs \
+      && apt-get -y install \
+        libreoffice \
+        tesseract-ocr tesseract-ocr-{osd,ara,cat,deu,eng,fra,ita,nld,nor,por,rus,spa,swe} \
+        nodejs build-essential xvfb libxss1 libgconf-2-4 \
       && touch /this-is-overview-dev-on-docker
 
 WORKDIR /app

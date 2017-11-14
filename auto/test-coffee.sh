@@ -2,4 +2,4 @@
 
 . "$(dirname "$0")"/ensure-in-docker.sh
 
-(cd /app/web && npm run-script test-continuously)
+(cd /app/web && npm install && xvfb-run npm run-script test-continuously)

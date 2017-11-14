@@ -20,4 +20,4 @@ curl --retry-connrefused --retry 99999 --output /dev/null --silent http://localh
 
 sleep 5 # ensure worker _and_ web have started
 
-(cd web/test/integration && npm run test-with-jenkins) || true
+(cd web/test/integration && npm install && npm run test-with-jenkins) || true

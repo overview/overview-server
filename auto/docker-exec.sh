@@ -11,6 +11,4 @@
 #
 # A useful command is: "./auto/docker-exec.sh bash"
 
-if [ ! -f /this-is-overview-dev-on-docker ]; then
-  exec docker-compose exec dev "$0" "$@"
-fi
+exec docker-compose exec dev "$@"
