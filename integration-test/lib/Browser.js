@@ -128,14 +128,25 @@ module.exports = class Browser {
     }
   }
 
-  // Just like webdriver's findElement(), but it filters out invisible elements.
+  // Just like webdriver's findElement(), but it filters out invisible elements
+  // and returns null if there's a StaleElementReferenceError (a race that
+  // ends up deleting an element we're looking for).
   async _findBy(locateBy) {
     const elements = await this.driver.findElements(locateBy)
 
     for (let i = 0; i < elements.length; i++) {
       const element = elements[i]
-      if (await element.isDisplayed()) {
-        return element
+      try {
+        if (await element.isDisplayed()) {
+          return element
+        }
+      } catch (e) {
+        if (e.name === 'StaleElementReferenceError') {
+          // ignore the error. It means the element isn't displayed any more:
+          // it isn't even on the page
+        } else {
+          throw e
+        }
       }
     }
 
