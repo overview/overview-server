@@ -104,11 +104,13 @@ describe('PdfAnnotations', function() {
       // left us in an inconsistent state
       await b.waitUntilBlockReturnsTrue('notes code is loaded', 'pageLoad', function() {
         return document.querySelector('.noteLayer') !== null
-      });
+      })
 
       await b.click('#viewer .noteLayer section')
       await b.click({ css: '.editNoteTool button.editNoteDelete', wait: true })
-      await b.assertNotExists('.editNoteTool')
+      await b.waitUntilFunctionReturnsTrue('.editNoteTool disappears', true, function() {
+        return b.find('.editNoteTool', { throwOnNull: false }).then(x => x === null)
+      })
       await b.assertNotExists('#viewer .noteLayer section')
 
       await b.switchToFrame(null)
