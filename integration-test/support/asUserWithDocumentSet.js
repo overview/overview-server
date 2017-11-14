@@ -2,7 +2,12 @@
 
 const asUser = require('./asUser')
 
-module.exports = function asUserWithDocumentSet(csvFilename, body) {
+module.exports = function asUserWithDocumentSet(csvFilename, options, body) {
+  if (body === undefined) {
+    body = options
+    options = {}
+  }
+
   asUser.usingTemporaryUser(function() {
     describe(`with imported document set ${csvFilename}`, function() {
       before(async function() {
@@ -17,6 +22,10 @@ module.exports = function asUserWithDocumentSet(csvFilename, body) {
         await s.importCsv.startUpload(csvFilename)
         await s.importCsv.waitUntilRedirectToDocumentSet(csvFilename)
         await s.documentSet.waitUntilStable()
+
+        if (options.dismissTour !== false) {
+          await b.click([ { class: 'popover' }, { link: '×' } ])
+        }
       })
 
       after(async function() {

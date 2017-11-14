@@ -4,7 +4,7 @@ const asUserWithDocumentSet = require('../support/asUserWithDocumentSet')
 
 describe('TreeTour', function() {
   describe('with tooltips enabled', function() {
-    asUserWithDocumentSet('TreeTooltips/documents.csv', function() {
+    asUserWithDocumentSet('TreeTooltips/documents.csv', { dismissTour: false }, function() {
       it('should show a tooltip on first load', async function() {
         await this.browser.assertExists({ class: 'popover', contains: 'Document list' })
       })

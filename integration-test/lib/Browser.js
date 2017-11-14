@@ -273,8 +273,8 @@ module.exports = class Browser {
     }
   }
 
-  // Runs and runs the given JavaScript in the browser until it returns truthy.
-  async waitUntilBlockReturnsTrue(message, timeout, block) {
+  // Runs and runs the given JavaScript in _node_ until it returns truthy.
+  async waitUntilFunctionReturnsTrue(message, timeout, block) {
     timeout = TIMEOUTS[timeout]
     if (!timeout) {
       throw new Error(`timeout must be ${Object.keys(TIMEOUTS).join(' or ')}`)
@@ -286,7 +286,7 @@ module.exports = class Browser {
     const lastRetval = {} // we log return values, but not duplicates
 
     do {
-      const retval = await this.driver.executeScript(block)
+      const retval = await block()
 
       if (!lastRetval.hasOwnProperty('value') || retval !== lastRetval.value) {
         lastRetval.value = retval
@@ -297,6 +297,13 @@ module.exports = class Browser {
     } while (new Date() - start < timeout)
 
     throw new Error(`Timed out waiting for ${message}`)
+  }
+
+  // Runs and runs the given JavaScript in the browser until it returns truthy.
+  async waitUntilBlockReturnsTrue(message, timeout, block) {
+    return this.waitUntilFunctionReturnsTrue(message, timeout, async () => {
+      return this.driver.executeScript(block)
+    })
   }
 
   // Runs JavaScript on the browser; returns a Promise of the result.

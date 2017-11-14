@@ -6,7 +6,7 @@ define [
   class ViewApp extends Backbone.View
     template: _.template("""
       <div class="view-app">
-        <iframe width="1" height="1" src="<%- url %>/show?<%- params %>"></iframe>
+        <iframe id="view-app-iframe" width="1" height="1" src="<%- url %>/show?<%- params %>"></iframe>
       </div>
     """)
 
