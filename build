@@ -2,6 +2,8 @@
 
 # Usage: ./build overview-server.zip
 #
+# (If invoked from your shell, it will run in a new Docker container.)
+#
 # Runs the "stage" command for all important targets; then zips them into the
 # specified file, rooted in a directory of the same name as the zipfile.
 #
@@ -14,11 +16,10 @@
 # 2. cd into its main directory
 # 3. Run ./run there
 
-set -e
-#set -x
+. "$(dirname "$0")"/auto/ensure-in-docker.sh
 
-ZIP=$(which zip)
-OVERVIEW_DIR="$(cd "$(dirname "$0")"; pwd)" # absolute-ish path
+set -e
+set -x
 
 fail() {
   echo "$@" >&2
@@ -27,69 +28,38 @@ fail() {
   exit 1
 }
 
-if [ -z "$ZIP" ]; then
-  fail "You must install the 'zip' command-line tool"
-fi
-
 OUTPUT_ZIP="$1"
+[ -n "$OUTPUT_ZIP" ] || fail "You did not specify a zipfile to write to"
+[ -n "$(echo "$OUTPUT_ZIP" | grep -E '^[a-zA-Z0-9_-]+\.zip$')" ] || fail "Your zipfile name must look like [a-zA-Z0-9_-].zip -- no directories allowed"
 
-if [ -z "$OUTPUT_ZIP" ]; then
-  fail "You did not specify a zipfile to write to"
-fi
-
-OUTPUT_DIRECTORY=${OUTPUT_ZIP%.zip}
-
-if [ "$OUTPUT_ZIP" = "$OUTPUT_DIRECTORY" ]; then
-  fail "The zipfile you specify must end with '.zip'"
-fi
-
-# Remove the "dist" folder before building: otherwise sbt will find the jars
-# inside from a previous build and complain about "Duplicate mappings"
-rm -rf "$OVERVIEW_DIR"/dist
-
+# Compile
 ./sbt $SBT_OPTIONS -Dsbt.log.noformat=true '; db-evolution-applier/stage; worker/stage; web/stage'
 
-BASE="$OUTPUT_DIRECTORY"
-STAGE="target/universal/stage"
+OVERVIEW_DIR=$(echo $OUTPUT_ZIP | cut -d. -f1)
 
-mkdir -p "$OVERVIEW_DIR"/dist
-pushd "$OVERVIEW_DIR"/dist
-
-# Copy over all jars
+# Symlink the jars
 #
-# We put these in a "lib" directory because the runner scripts that sbt
-# generates expect to be in a "bin" directory -- they look for "../lib" and
-# it's really easy if we just go with that.
+# Symlink is faster than copy and doesn't take space. That's useful, because
+# we're presumably running in a temporary Docker container, so all that space
+# will need to be freed, too.
+#
+# We put jars in a "lib" directory for legacy reasons.
+OUTPUT_DIRECTORY="/tmp/$OVERVIEW_DIR"
+mkdir $OUTPUT_DIRECTORY
+mkdir $OUTPUT_DIRECTORY/lib
 
-mkdir lib
-
-mkdir worker
-ls ../worker/$STAGE/lib > worker/classpath.txt
-ln -f ../worker/$STAGE/lib/* lib/
-[[ -d ../worker/$STAGE/bin ]] && cp -f ../worker/$STAGE/bin/* worker/
-
-mkdir web
-ln -f ../web/$STAGE/lib/* lib/
-ls ../web/$STAGE/lib > web/classpath.txt
-cp -f ../web/$STAGE/bin/* web/
-
-mkdir db-evolution-applier
-ln -f ../db-evolution-applier/target/db-evolution-applier/universal/stage/lib/* lib/
-ls ../db-evolution-applier/target/db-evolution-applier/universal/stage/lib > db-evolution-applier/classpath.txt
-cp -f ../db-evolution-applier/target/db-evolution-applier/universal/stage/bin/* db-evolution-applier/
-
-# Add the other files
-for file in README.md LICENSE; do
-  cp ../$file .
+for project in worker web db-evolution-applier; do
+  mkdir $OUTPUT_DIRECTORY/$project
+  ls /root/overview-build/$project/universal/stage/lib > $OUTPUT_DIRECTORY/$project/classpath.txt
+  ln -sf /root/overview-build/$project/universal/stage/lib/* $OUTPUT_DIRECTORY/lib/
 done
 
-TEMP_DIR=$(mktemp -d --suffix=overview-server-build)
-ln -s "$OVERVIEW_DIR"/dist "$TEMP_DIR"/"$OUTPUT_DIRECTORY"
+# Copy the other useful files
+for file in README.md LICENSE; do
+  ln -sf /root/overview-build/$file $OUTPUT_DIRECTORY/
+done
 
-rm -f "$OVERVIEW_DIR"/"$OUTPUT_ZIP"
-(cd "$TEMP_DIR" && "$ZIP" --quiet -r "$OVERVIEW_DIR"/"$OUTPUT_ZIP" "$OUTPUT_DIRECTORY")
-
-popd # "$OVERVIEW_DIR"/dist
-rm -r "$OVERVIEW_DIR"/dist
-rm "$TEMP_DIR"/"$OUTPUT_DIRECTORY"
-rmdir "$TEMP_DIR"
+# Now write the zipfile
+(cd /tmp && zip --quiet -r /app/$OUTPUT_ZIP $OVERVIEW_DIR)
+# We'll leave those symlinks in /tmp. When the Docker container is removed,
+# they'll disappear.
