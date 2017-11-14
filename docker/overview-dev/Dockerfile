@@ -8,7 +8,7 @@ RUN true \
       && apt-get update \
       && apt-get -y install \
         libreoffice \
-        tesseract-ocr tesseract-ocr-{osd,ara,cat,deu,eng,fra,ita,nld,nor,por,rus,spa,swe} \
+        tesseract-ocr $(bash -c 'echo tesseract-ocr-{osd,ara,cat,deu,eng,fra,ita,nld,nor,por,rus,spa,swe}') \
         nodejs build-essential xvfb libxss1 libgconf-2-4 \
       && touch /this-is-overview-dev-on-docker
 
