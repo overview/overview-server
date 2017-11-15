@@ -97,7 +97,7 @@ until curl -qs http://localhost:9000 -o /dev/null; do sleep 1; done
 echo 'Waiting another 20s for background jobs, so everything is fast when we test...' >&2
 sleep 20
 
-"$DIR"/auto/test-integration.sh || true # Jenkins will pick up test-result XML
+xvfb-run ./auto/test-integration.sh || true # Jenkins will pick up test-result XML
 
 kill -9 $DOCKER_PID
 wait
