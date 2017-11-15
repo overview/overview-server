@@ -3,7 +3,7 @@ package com.overviewdocs.util
 import java.nio.file.Paths
 
 object JavaCommand {
-  // Revolver ("re-start", dev mode) uses "-Xbootclasspath/a", which doesn't
+  // Revolver ("reStart", dev mode) uses "-Xbootclasspath/a", which doesn't
   // appear in java.class.path
   private val BootClassPathRegex = """^.*-classpath (.*) com.overviewdocs.Worker$""".r
 
