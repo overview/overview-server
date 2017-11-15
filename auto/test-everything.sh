@@ -33,8 +33,22 @@ $DOCKER_RUN /app/build archive.zip
 # CoffeeScript tests are the fastest, so run them first
 $DOCKER_RUN /app/auto/test-coffee-once.sh || true # Jenkins will pick up test-result XML
 
-# The actual unit tests
-$DOCKER_RUN /app/sbt all/test || true # Jenkins will pick up test-result XML
+# Now run sbt unit tests. They'll output in the build directory; move those files
+# into /app so the host (Jenkins) can see them.
+COMMANDS=$(cat <<"EOT"
+/app/auto/sbt all/test || true
+
+# Save unit-test results where Jenkins can see them. Error if none were
+# generated.
+set -e
+rm -rf /app/unit-test-results
+mkdir -p /app/unit-test-results/{common,web,worker,js}
+for project in common web worker; do
+  cp /root/overview-build/$project/test-reports/* /app/unit-test-results/$project/
+done
+EOT
+)
+echo "$COMMANDS" | $DOCKER_RUN # Jenkins will pick up test-result XML
 
 # Run integration tests with the production jarfiles.
 #
@@ -107,7 +121,7 @@ until curl -qs http://localhost:9000 -o /dev/null; do sleep 1; done
 echo 'Waiting another 20s for background jobs, so everything is fast when we test...' >&2
 sleep 20
 
-xvfb-run ./auto/test-integration.sh || true # Jenkins will pick up test-result XML
+(cd integration-test && npm install && (xvfb-run npm run test-with-jenkins || true)) # Jenkins will pick up test-result XML
 
 kill $DOCKER_PID
 wait $DOCKER_PID
