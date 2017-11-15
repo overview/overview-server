@@ -68,6 +68,7 @@ java -cp 'worker/*' \
   -Xmx600m \
   com.overviewdocs.Worker \
   &
+PIDS="$!"
 
 # Run server and leave it running
 #
@@ -83,8 +84,17 @@ java -cp 'web/*' \
   -Xmx600m \
   play.core.server.ProdServerStart /tmp \
   &
+PIDS="$PIDS $!"
 
-wait
+# Now wait until SIGTERM or until a service dies -- whichever comes first.
+# "wait" will return when a child dies or when the trap is fired.
+trap 'echo "Received SIGTERM. Killing children and cleaning up...." >&2' TERM
+wait -n $PIDS # Wait for SIGTERM or for a child to die
+trap - TERM # We're done with the trap
+
+echo 'Killing Overview services...' >&2
+kill -9 $PIDS
+wait $PIDS
 EOT
 )
 echo "$COMMANDS" | $DOCKER_RUN bash &
@@ -99,7 +109,7 @@ sleep 20
 
 xvfb-run ./auto/test-integration.sh || true # Jenkins will pick up test-result XML
 
-kill -9 $DOCKER_PID
+kill $DOCKER_PID
 wait
 $DOCKER_COMPOSE kill
 $DOCKER_COMPOSE down -v
