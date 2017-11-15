@@ -51,8 +51,10 @@ define [
         when 'notifyDocumentListParams' then @viewApp.notifyDocumentListParams?(@state.get('documentList')?.params)
         when 'notifyDocumentSet' then @viewApp.notifyDocumentSet?(@state.documentSet)
         when 'notifyDocument' then @viewApp.notifyDocument?(@state.get('document'))
+        when 'postMessageToPluginIframes' then @viewApp.postMessageToPluginIframes?(e.data.message || null)
         when 'setDocumentListParams' then @setDocumentListParams(e.data.args...)
         when 'setRightPane' then @viewApp.setRightPane?(e.data.args...)
+        when 'setModalDialog' then @viewApp.setModalDialog?(e.data.args...)
         when 'openMetadataSchemaEditor' then @globalActions.openMetadataSchemaEditor()
         when 'patchDocument'
           attrs = e.data.args[0]

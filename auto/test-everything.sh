@@ -10,7 +10,7 @@ set -e # any error means the whole thing failed
 set -x
 
 DOCKER_COMPOSE="docker-compose --project-name overviewjenkins"
-DOCKER_RUN="$DOCKER_COMPOSE run --rm --no-deps dev"
+DOCKER_RUN="$DOCKER_COMPOSE run -T --rm --no-deps dev"
 
 # Clean everything. Note that we're wiping all data for the "overviewjenkins"
 # project, not the default "overviewserver" project that you use in dev mode.

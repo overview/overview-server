@@ -30,7 +30,9 @@ define [
           notifyDocumentListParams: sinon.spy()
           notifyDocumentSet: sinon.spy()
           notifyDocument: sinon.spy()
+          postMessageToPluginIframes: sinon.spy()
           setRightPane: sinon.spy()
+          setModalDialog: sinon.spy()
           onTag: sinon.spy()
           onUntag: sinon.spy()
           remove: sinon.spy()
@@ -81,9 +83,17 @@ define [
         @subject._onMessage(origin: '', data: { call: 'notifyDocument' })
         expect(@viewApp.notifyDocument).to.have.been.calledWith(@state.get('document'))
 
+      it 'should postMessageToPluginIframes', ->
+        @subject._onMessage(origin: '', data: { call: 'postMessageToPluginIframes', message: 'hello, world' })
+        expect(@viewApp.postMessageToPluginIframes).to.have.been.calledWith('hello, world')
+
       it 'should setRightPane', ->
         @subject._onMessage(origin: '', data: { call: 'setRightPane', args: [ { url: 'http://example.com' } ] })
         expect(@viewApp.setRightPane).to.have.been.calledWith({ url: 'http://example.com' })
+
+      it 'should setModalDialog', ->
+        @subject._onMessage(origin: '', data: { call: 'setModalDialog', args: [ { url: 'http://example.com' } ] })
+        expect(@viewApp.setModalDialog).to.have.been.calledWith({ url: 'http://example.com' })
 
       it 'should set metadata on document', ->
         document = new Backbone.Model(id: 2, metadata: { foo: 'bar' })

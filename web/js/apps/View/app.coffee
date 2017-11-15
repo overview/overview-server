@@ -2,6 +2,7 @@ define [
   'underscore'
   'jquery'
   'backbone'
+  'bootstrap-modal'
 ], (_, $, Backbone) ->
   class ViewApp extends Backbone.View
     templates:
@@ -15,6 +16,18 @@ define [
         <iframe id="view-app-right-pane-iframe" width="1" height="1" src="<%- url %>"></iframe>
       """)
 
+      modalDialog: _.template("""
+        <div id="view-app-modal-dialog" class="modal show" tabindex="-1" role="dialog">
+          <div class="modal-dialog" role="document">
+            <div class="modal-content">
+              <div class="modal-body">
+                <iframe id="view-app-modal-dialog-iframe" src="<%- url %>" width="1" height="1"></iframe>
+              </div>
+            </div>
+          </div>
+        </div>
+      """)
+
     initialize: (options) ->
       throw 'Must pass options.view, a View' if !options.view
       throw 'Must pass options.documentSetId, a Number' if !options.documentSetId
@@ -26,8 +39,13 @@ define [
 
       @rightPane = @main.querySelector('#tree-app-right-pane')
       throw 'options.main must have a #tree-app-right-pane child' if !@rightPane
+      @modalDialog = null
 
       @render()
+
+    remove: ->
+      @setModalDialog(null)
+      Backbone.View.prototype.remove.call(@)
 
     getServerUrl: ->
       serverUrl = @view.get('serverUrlFromPlugin')
@@ -72,11 +90,16 @@ define [
         event: 'notify:document'
         args: [ document && document.toJSON() ]
 
+    postMessageToPluginIframes: (message) ->
+      @_postMessage(message)
+
     _postMessage: (message) ->
       targetOrigin = @view.get('url').split('/')[0...3].join('/')
       @iframe.contentWindow.postMessage(message, targetOrigin)
       if @rightPaneIframe
         @rightPaneIframe.contentWindow.postMessage(message, targetOrigin)
+      if @modalDialog
+        @modalDialog.querySelector('iframe').contentWindow.postMessage(message, targetOrigin)
 
     setRightPane: (options) ->
       throw 'Must pass options.url, a fully-qualified HTTP(S) URL' if 'url' not of options
@@ -89,3 +112,23 @@ define [
         @main.classList.remove('has-right-pane')
 
       @rightPaneIframe = @rightPane.querySelector('iframe')
+
+    setModalDialog: (options) ->
+      throw 'Must pass options.url, a fully-qualified HTTP(S) URL' if options? && 'url' not of options
+
+      if @modalDialog?
+        Backbone.$(@modalDialog)
+          .modal('hide')
+          .remove()
+        @modalDialog = null
+
+      if options?.url
+        @modalDialog = $(@templates.modalDialog({ url: options.url }))[0]
+        document.body.appendChild(@modalDialog)
+        _this = this
+        Backbone.$(@modalDialog)
+          .modal()
+          .on 'hidden.bs.modal', ->
+            Backbone.$(this).remove()
+            if this == _this.modalDialog
+              _this.modalDialog = null

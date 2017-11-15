@@ -46,11 +46,69 @@ describe('Plugins', function() {
 
         await this.browser.assertExists({ id: 'tree-app-vertical-split-2', wait: true }) // wait for animation
         await this.browser.click({ css: '#tree-app-vertical-split-2 button' })
+        await browser.sleep(1000) // for animation
         await this.browser.assertExists({ id: 'view-app-right-pane-iframe' })
         await this.browser.switchToFrame('view-app-right-pane-iframe')
         const url = await this.browser.execute(function() { return window.location.href })
         expect(url).to.eq('http://localhost:3333/show?placement=right-pane')
         await this.browser.switchToFrame(null)
+
+        // Move back to left
+        await this.browser.click({ css: '#tree-app-vertical-split button' })
+        await browser.sleep(1000) // for animation
+      })
+    })
+
+    describe('with a plugin that calls setModalDialog', async function() {
+      before(async function() {
+        this.server = await this.documentSet.createViewAndServer('modal-dialog')
+      })
+
+      after(async function() {
+        await this.server.close()
+      })
+
+      it('should create and close a modal dialog', async function() {
+        const b = this.browser
+
+        await b.assertNotExists({ id: 'view-app-modal-dialog' })
+
+        // wait for load
+        await b.switchToFrame('view-app-iframe')
+        await b.assertExists({ css: 'body.loaded', wait: 'pageLoad' })
+        await b.click({ button: 'Set Modal Dialog' })
+        await b.switchToFrame(null)
+
+        await b.assertExists({ id: 'view-app-modal-dialog', wait: true })
+
+        await b.switchToFrame('view-app-modal-dialog-iframe')
+        await b.click({ button: 'Set Modal Dialog to Null', wait: 'pageLoad' })
+        await b.switchToFrame(null)
+
+        await b.assertNotExists({ id: 'view-app-modal-dialog' })
+      })
+
+      it('should send messages from one plugin to another', async function() {
+        const b = this.browser
+
+        // wait for load
+        await b.switchToFrame('view-app-iframe')
+        await b.assertExists({ css: 'body.loaded', wait: 'pageLoad' })
+        await b.click({ button: 'Set Modal Dialog' })
+        await b.switchToFrame(null)
+
+        await b.assertExists({ id: 'view-app-modal-dialog', wait: true })
+
+        await b.switchToFrame('view-app-modal-dialog-iframe')
+        await b.click({ button: 'Send Message', wait: 'pageLoad' })
+        await b.click({ button: 'Set Modal Dialog to Null' })
+        await b.switchToFrame(null)
+
+        await b.switchToFrame('view-app-iframe')
+        await b.assertExists({ tag: 'pre', contains: '{"This is":"a message"}', wait: true })
+        await b.switchToFrame(null)
+
+        await b.assertNotExists({ id: 'view-app-modal-dialog' })
       })
     })
   })

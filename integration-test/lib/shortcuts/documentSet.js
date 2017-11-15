@@ -158,7 +158,7 @@ class DocumentSetShortcuts {
 
     try {
       await this.b.click({ link: 'Add view' })
-      await this.b.click({ link: 'Custom…' })
+      await this.b.click({ link: 'Custom…', wait: 'fast' })
       // Enter URL first, then name. Entering name will blur URL. Blurring URL
       // makes the browser test the endpoint.
       await this.b.sendKeys('http://localhost:3333', { css: '#new-view-dialog-url', wait: 'fast' })
