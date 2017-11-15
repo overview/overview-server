@@ -21,41 +21,16 @@ node('test-slave') {
 
     checkout scm
 
-    def env = [
-      'DATABASE_PORT=9010',
-      'OVERVIEW_MULTI_USER=true',
-      "BLOB_STORAGE_FILE_BASE_DIRECTORY=${pwd()}/blob-storage",
-      "OV_SEARCH_DIRECTORY=${pwd()}/search"
-    ]
-
     stage('Download dependencies') {
+      sh 'docker-compose build'
       sh 'docker-compose pull'
-      sh 'auto/setup-coffee-tests.sh'
-      sh 'auto/setup-integration-tests.sh'
-      sh 'cd web && npm install'
-      sh './sbt -Dsbt.log.noformat=true "; set every logLevel := Level.Warn; common/update; worker/update; web/update; db-evolution-applier/update"'
     }
 
-    stage('Unit tests') {
-      withEnv(env) {
-        sh 'auto/start-docker-dev-env.sh'
-        sh 'auto/test-coffee-once.sh || true'
-        sh './sbt -Dsbt.log.noformat=true "; test-db-evolution-applier/run; all/test" || true'
-        junit 'web/test/js/**/test-results.xml'
-        junit '*/target/test-reports/*.xml'
-      }
-    }
-
-    stage('Build') {
-      sh './build archive.zip'
-    }
-
-    stage('Integration tests') {
-      withEnv(env) {
-        sh 'unzip -o -q archive.zip'
-        sh 'auto/run-integration-tests-in-dev-env.sh'
-        junit 'web/test/integration/test-results.xml'
-      }
+    stage('Build and Test') {
+      sh 'auto/test-everything.sh'
+      junit 'web/test/js/**/test-results.xml'
+      junit '*/target/test-reports/*.xml'
+      junit 'integration-test/test-results.xml'
     }
 
     stage('Publish') {

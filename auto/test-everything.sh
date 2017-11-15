@@ -22,7 +22,7 @@ $DOCKER_COMPOSE up -d database redis
 
 # Compile everything, or abort. Suppress excessive output.
 $DOCKER_RUN /app/sbt '; set every logLevel := Level.Warn; common/test:compile; worker/test:compile; web/test:compile; db-evolution-applier/run; test-db-evolution-applier/run'
-$DOCKER_RUN /app/build overview-server.zip
+$DOCKER_RUN /app/build archive.zip
 
 # CoffeeScript tests are the fastest, so run them first
 $DOCKER_RUN /app/auto/test-coffee-once.sh || true # Jenkins will pick up test-result XML
@@ -32,21 +32,21 @@ $DOCKER_RUN /app/sbt all/test || true # Jenkins will pick up test-result XML
 
 # Run integration tests with the production jarfiles.
 #
-# We'll extract our production.zip into /tmp/overview-server/. We'll have
-# jars in /tmp/overview-server/web/*.jar, /tmp/overview-server/worker/*.jar,
-# /tmp/overview-server/db-evolution-applier/*.jar.
+# We'll extract our production.zip into /tmp/archive/. We'll have
+# jars in /tmp/archive/web/*.jar, /tmp/archive/worker/*.jar,
+# /tmp/archive/db-evolution-applier/*.jar.
 echo 'Launching Overview...' >&2
 
 COMMANDS=<<"EOT"
 set -e
 set -x
 cd /tmp
-unzip -o -q /app/overview-server.zip
-cd overview-server/lib
+unzip -o -q /app/archive.zip
+cd archive/lib
 ln -f $(cat ../db-evolution-applier/classpath.txt) ../db-evolution-applier/
 ln -f $(cat ../web/classpath.txt) ../web/
 ln -f $(cat ../worker/classpath.txt) ../worker/
-cd /tmp/overview-server
+cd /tmp/archive
 
 # Run db-evolution-applier and wait until it's done
 DATABASE_SERVER_NAME=database \
@@ -55,6 +55,8 @@ java -cp db-evolution-applier/* \
 
 # Run worker and leave it running
 DATABASE_SERVER_NAME=database \
+BLOB_STORAGE_FILE_BASE_DIRECTORY=/var/lib/overview/blob-storage/prod \
+OV_SEARCH_DIRECTORY=/var/lib/overview/search/prod \
 OV_N_DOCUMENT_CONVERTERS=3 \
 java -cp worker/* \
   -Xmx600m \
@@ -66,6 +68,7 @@ java -cp worker/* \
 # we won't run with '-Dconfig.resource=production.conf', because
 # that forces SSL and we aren't testing with SSL. (We _could_....)
 DATABASE_SERVER_NAME=database \
+BLOB_STORAGE_FILE_BASE_DIRECTORY=/var/lib/overview/blob-storage/prod \
 REDIS_HOST=redis \
 OVERVIEW_MULTI_USER=true \
 java -cp web/* \
