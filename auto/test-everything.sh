@@ -30,58 +30,66 @@ $DOCKER_RUN /app/auto/test-coffee-once.sh || true # Jenkins will pick up test-re
 # The actual unit tests
 $DOCKER_RUN /app/sbt all/test || true # Jenkins will pick up test-result XML
 
-# Now that we've built, run integration tests with the resulting jars.
+# Run integration tests with the production jarfiles.
 #
 # We'll extract our production.zip into /tmp/overview-server/. We'll have
 # jars in /tmp/overview-server/web/*.jar, /tmp/overview-server/worker/*.jar,
 # /tmp/overview-server/db-evolution-applier/*.jar.
 echo 'Launching Overview...' >&2
-$DOCKER_RUN sh -c 'cd /tmp && unzip -o -q overview-server.zip && cd overview-server/lib && ln -f $(cat ../db-evolution-applier/classpath.txt) ../db-evolution-applier/ && ln -f $(cat ../web/classpath.txt) ../web/ && ln -f $(cat ../worker/classpath.txt) ../worker/'
 
-# db-evolution-applier: run it and wait until it's done
-$DOCKER_COMPOSE run --rm --no-deps \
-  -e DATABASE_SERVER_NAME=database \
-  dev \
-  java \
-    -cp 'overview-server/db-evolution-applier/*' \
-    com.overviewdocs.db_evolution_applier.Main
+COMMANDS=<<"EOT"
+set -e
+set -x
+cd /tmp
+unzip -o -q /app/overview-server.zip
+cd overview-server/lib
+ln -f $(cat ../db-evolution-applier/classpath.txt) ../db-evolution-applier/
+ln -f $(cat ../web/classpath.txt) ../web/
+ln -f $(cat ../worker/classpath.txt) ../worker/
+cd /tmp/overview-server
 
-# worker: run it and store in $PIDS
-$DOCKER_COMPOSE run --rm --no-deps \
-  -e DATABASE_SERVER_NAME=database \
-  dev \
-  java \
-    -cp "/tmp/overview-server/worker/*" \
-    -Xmx$JVM_MEMORY \
-    com.overviewdocs.Worker &
-PIDS="$!"
+# Run db-evolution-applier and wait until it's done
+DATABASE_SERVER_NAME=database \
+java -cp db-evolution-applier/* \
+  com.overviewdocs.db_evolution_applier.Main
 
-# web: run it and store in $PIDS
+# Run worker and leave it running
+DATABASE_SERVER_NAME=database \
+OV_N_DOCUMENT_CONVERTERS=3 \
+java -cp worker/* \
+  -Xmx600m \
+  com.overviewdocs.Worker \
+  &
+
+# Run server and leave it running
 #
-# we won't run with `-Dconfig.resource=production.conf`, because
-# that adds SSL and we aren't testing with SSL. (We _could_....)
-$DOCKER_COMPOSE run --rm --no-deps \
-  -e OVERVIEW_MULTI_USER=true \
-  -e DATABASE_SERVER_NAME=database \
-  -e REDIS_HOST=redis \
-  -p \
-  dev \
-  java -cp '/tmp/overview-server/web/*' \
-    -Dhttp.port=80 \
-    -Dpidfile.path=/dev/null \
-    -Xmx1000m \
-    play.core.server.ProdServerStart /tmp &
-PIDS="$PIDS $!"
+# we won't run with '-Dconfig.resource=production.conf', because
+# that forces SSL and we aren't testing with SSL. (We _could_....)
+DATABASE_SERVER_NAME=database \
+REDIS_HOST=redis \
+OVERVIEW_MULTI_USER=true \
+java -cp web/* \
+  -Dhttp.port=80 \
+  -Dpidfile.path=/dev/null \
+  -Xmx600m \
+  play.core.server.ProdServerStart /tmp \
+  &
+
+wait
+EOT
+echo $COMMANDS | $DOCKER_RUN bash &
+
+DOCKER_PID="$!"
 
 echo 'Waiting for Overview to respond to Web requests...' >&2
-$DOCKER_RUN sh -c 'until curl -qs http://web -o /dev/null; do sleep 1; done'
+until curl -qs http://localhost:9000 -o /dev/null; do sleep 1; done
 
 echo 'Waiting another 20s for background jobs, so everything is fast when we test...' >&2
 sleep 20
 
-/app/auto/test-integration || true # Jenkins will pick up test-result XML
+"$DIR"/auto/test-integration.sh || true # Jenkins will pick up test-result XML
 
-kill -9 $PIDS
+kill -9 $DOCKER_PID
 wait
 $DOCKER_COMPOSE kill
 $DOCKER_COMPOSE down -v

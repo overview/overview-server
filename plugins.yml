@@ -1,29 +1,28 @@
-overview-word-cloud:
+plugin-word-cloud:
   container_name: overview-word-cloud
   image: overview/overview-word-cloud
   ports:
-    - "3000:3000"
+    - "3000:80"
 
-overview-entity-filter:
+plugin-entity-filter:
   container_name: overview-entity-filter
   image: overview/overview-entity-filter
   ports:
-    - "3001:3000"
+    - "3001:80"
 
-overview-grep:
-  container_name: overview-grep
-  image: overview/overview-grep
-  ports:
-    - "3002:3000"
-
-overview-file-browser:
+plugin-file-browser:
   container_name: overview-file-browser
   image: overview/overview-file-browser
   ports:
-    - "3003:3000"
+    - "3003:80"
 
-overview-multi-search:
+plugin-multi-search:
   container_name: overview-multi-search
   image: overview/overview-multi-search
   ports:
-    - "3004:3000"
+    - "3004:80"
+
+plugin-metadata:
+  image: overview/overview-plugin-metadata
+  ports:
+    - "3005:80"
