@@ -110,6 +110,6 @@ sleep 20
 xvfb-run ./auto/test-integration.sh || true # Jenkins will pick up test-result XML
 
 kill $DOCKER_PID
-wait
+wait $DOCKER_PID
 $DOCKER_COMPOSE kill
 $DOCKER_COMPOSE down -v
