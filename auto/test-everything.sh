@@ -14,7 +14,7 @@ DOCKER_COMPOSE="docker-compose --project-name overviewjenkins"
 # So if we run this, we won't see any output:
 #exec docker-compose run --rm --no-deps dev "$@"
 # Solution: call Docker directly
-DOCKER_RUN="docker run --rm -it --network overviewjenkins_default --volume overviewjenkins_database-data:/var/lib/postgresql/data --volume overviewjenkins_search-data:/var/lib/overview/search --volume overviewjenkins_blob-storage-data:/var/lib/overview/blob-storage --volume overviewjenkins_homedir:/root --volume $DIR:/app --publish 127.0.0.1:9000:80 overview-dev:latest"
+DOCKER_RUN="docker run --rm -i --network overviewjenkins_default --volume overviewjenkins_database-data:/var/lib/postgresql/data --volume overviewjenkins_search-data:/var/lib/overview/search --volume overviewjenkins_blob-storage-data:/var/lib/overview/blob-storage --volume overviewjenkins_homedir:/root --volume $DIR:/app --publish 127.0.0.1:9000:80 overview-dev:latest"
 
 # Clean everything. Note that we're wiping all data for the "overviewjenkins"
 # project, not the default "overviewserver" project that you use in dev mode.
