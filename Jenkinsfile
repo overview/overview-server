@@ -23,7 +23,7 @@ node('test-slave') {
 
     stage('Download dependencies') {
       sh 'docker-compose build'
-      sh 'docker-compose pull'
+      sh 'docker-compose pull database redis'
     }
 
     stage('Build and Test') {
