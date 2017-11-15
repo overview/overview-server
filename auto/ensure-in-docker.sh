@@ -3,7 +3,7 @@
 # container. For instance, if your script is:
 #
 #     #!/bin/sh
-#     . auto/in-docker.sh
+#     . auto/ensure-in-docker.sh
 #     /app/sbt all/test
 #
 # ... then this will run on the host:
@@ -18,5 +18,5 @@ if [ ! -f /this-is-overview-dev-on-docker ]; then
   # Only build the image if it isn't built already. That should be faster than
   # running `docker-compose build` every time.
   [ -n "$(docker image ls -q overview-dev:latest)" ] || docker-compose build
-  exec docker-compose run --rm --no-deps dev "$0" "$@"
+  exec ./auto/docker-run.sh "$0" "$@"
 fi
