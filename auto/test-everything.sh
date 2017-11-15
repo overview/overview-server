@@ -43,7 +43,7 @@ $DOCKER_RUN /app/sbt all/test || true # Jenkins will pick up test-result XML
 # /tmp/archive/db-evolution-applier/*.jar.
 echo 'Launching Overview...' >&2
 
-COMMANDS=<<"EOT"
+COMMANDS=$(cat <<"EOT"
 set -e
 set -x
 cd /tmp
@@ -56,7 +56,7 @@ cd /tmp/archive
 
 # Run db-evolution-applier and wait until it's done
 DATABASE_SERVER_NAME=database \
-java -cp db-evolution-applier/* \
+java -cp 'db-evolution-applier/*' \
   com.overviewdocs.db_evolution_applier.Main
 
 # Run worker and leave it running
@@ -64,7 +64,7 @@ DATABASE_SERVER_NAME=database \
 BLOB_STORAGE_FILE_BASE_DIRECTORY=/var/lib/overview/blob-storage/prod \
 OV_SEARCH_DIRECTORY=/var/lib/overview/search/prod \
 OV_N_DOCUMENT_CONVERTERS=3 \
-java -cp worker/* \
+java -cp 'worker/*' \
   -Xmx600m \
   com.overviewdocs.Worker \
   &
@@ -77,7 +77,7 @@ DATABASE_SERVER_NAME=database \
 BLOB_STORAGE_FILE_BASE_DIRECTORY=/var/lib/overview/blob-storage/prod \
 REDIS_HOST=redis \
 OVERVIEW_MULTI_USER=true \
-java -cp web/* \
+java -cp 'web/*' \
   -Dhttp.port=80 \
   -Dpidfile.path=/dev/null \
   -Xmx600m \
@@ -86,7 +86,8 @@ java -cp web/* \
 
 wait
 EOT
-echo $COMMANDS | $DOCKER_RUN bash &
+)
+echo "$COMMANDS" | $DOCKER_RUN bash &
 
 DOCKER_PID="$!"
 
