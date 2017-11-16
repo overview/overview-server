@@ -54,6 +54,15 @@ class DocumentSetShortcuts {
     const checked = await this.b.isSelected({ css: '[name=public]', wait: true })
 
     if (checked != bool) {
+      // hack because this is an iframe. Even after jquery.isReady, we don't
+      // know that the CSS has loaded. That's important, because the modal
+      // dialog will resize once the CSS loads, which will move the checkbox,
+      // meaning we won't be able to click the checkbox.
+      //
+      // There's no easy way to know when the CSS loads. So we'll just wait 1s,
+      // assuming it's really, really fast.
+      await this.b.sleep(1000)
+
       await this.s.jquery.listenForAjaxComplete()
       await this.b.click('[name=public]')
       await this.s.jquery.waitUntilAjaxComplete()
