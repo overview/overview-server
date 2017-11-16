@@ -181,8 +181,29 @@ module.exports = class Browser {
   async assertNotExists(locator) {
     debug(`assertNotExists(${JSON.stringify(locator)}})`)
 
-    if (await this.find(locator, { throwOnNull: false })) {
-      throw new Error(`Element matching ${JSON.stringify(locator)} was found; expected not to find it`)
+    const wait = locator.wait
+    if (wait) {
+      locator = Object.assign({}, locator)
+      delete locator.wait
+
+      const timeout = TIMEOUTS[wait]
+      if (!timeout) {
+        throw new Error(`wait option must be ${Object.keys(TIMEOUTS).join(' or ')}`)
+      }
+
+      const start = new Date()
+      while (true) {
+        const element = await this.find(locator, { throwOnNull: false })
+        if (!element) {
+          return null
+        } else if (new Date() - start > timeout) {
+          throw new Error(`Element matching ${JSON.stringify(locator)} was found; expected it to leave over time`)
+        }
+      }
+    } else {
+      if (await this.find(locator, { throwOnNull: false })) {
+        throw new Error(`Element matching ${JSON.stringify(locator)} was found; expected not to find it`)
+      }
     }
   }
 
