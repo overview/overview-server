@@ -31,7 +31,7 @@ $DOCKER_RUN /app/sbt '; set every logLevel := Level.Warn; common/test:compile; w
 $DOCKER_RUN /app/build archive.zip
 
 # CoffeeScript tests are the fastest, so run them first
-$DOCKER_RUN /app/auto/test-coffee-once.sh || true # Jenkins will pick up test-result XML
+$DOCKER_RUN sh -c '(cd /app && ./auto/test-coffee-once.sh) || true' # Jenkins will pick up test-result XML
 
 # Now run sbt unit tests. They'll output in the build directory; move those files
 # into /app so the host (Jenkins) can see them.
@@ -49,6 +49,9 @@ done
 EOT
 )
 echo "$COMMANDS" | $DOCKER_RUN # Jenkins will pick up test-result XML
+=======
+# The actual unit tests
+$DOCKER_RUN sh -c '(cd /app && ./sbt all/test) || true' # Jenkins will pick up test-result XML
 
 # Run integration tests with the production jarfiles.
 #
