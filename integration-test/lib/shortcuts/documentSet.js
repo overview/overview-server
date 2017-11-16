@@ -31,6 +31,10 @@ class DocumentSetShortcuts {
     await this.b.click([ { link: name }, { class: 'toggle-popover' } ])
     await this.b.click({ button: 'Delete' })
     await this.b.alert().accept()
+
+    // deletion is async, meaning the "Add view" link will move. Wait for it
+    // to reach its new spot.
+    await this.b.assertNotExists({ link: name, wait: true })
   }
 
   // Set "public" on or off.

@@ -33,6 +33,7 @@ describe('Plugins', function() {
 
       after(async function() {
         await this.server.close()
+        await this.documentSet.destroyView('right-pane')
       })
 
       it('should create a right pane', async function() {
@@ -66,6 +67,7 @@ describe('Plugins', function() {
 
       after(async function() {
         await this.server.close()
+        await this.documentSet.destroyView('modal-dialog')
       })
 
       it('should create and close a modal dialog', async function() {
