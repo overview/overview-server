@@ -72,12 +72,18 @@ define [
       @
 
     onDocumentListParamsChanged: (params) -> @notifyDocumentListParams(params)
+    onDocumentListChanged: (params) -> @notifyDocumentList(params)
     onDocumentSetChanged: (documentSet) -> @notifyDocumentSet(documentSet)
     onDocumentChanged: (document) -> @notifyDocument(document)
 
     notifyDocumentListParams: (params) ->
       @_postMessage
         event: 'notify:documentListParams'
+        args: [ params ]
+
+    notifyDocumentList: (params) ->
+      @_postMessage
+        event: 'notify:documentList'
         args: [ params ]
 
     notifyDocumentSet: (documentSet) ->

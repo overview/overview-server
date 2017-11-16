@@ -2,9 +2,15 @@ define [
   'backbone'
   'apps/Show/models/ViewAppClient'
 ], (Backbone, ViewAppClient) ->
+  class MockDocumentList extends Backbone.Model
+    initialize: ->
+      @params = 'foo'
+
+    defaults:
+      length: 3
+
   class MockState extends Backbone.Model
     defaults:
-      documentList: { params: 'foo' }
       document: 'bar'
 
   describe 'apps/Show/models/ViewAppClient', ->
@@ -13,10 +19,10 @@ define [
       @sandbox.stub(console, 'log')
       @state = new MockState()
       @state.documentSet = new Backbone.Model(foo: 'bar')
+      @state.set('documentList', new MockDocumentList())
 
       @globalActions =
         openMetadataSchemaEditor: sinon.spy()
-
 
     afterEach ->
       @sandbox.restore()
@@ -25,9 +31,11 @@ define [
       beforeEach ->
         @viewApp =
           onDocumentListParamsChanged: sinon.spy()
+          onDocumentListChanged: sinon.spy()
           onDocumentSetChanged: sinon.spy()
           onDocumentChanged: sinon.spy()
           notifyDocumentListParams: sinon.spy()
+          notifyDocumentList: sinon.spy()
           notifyDocumentSet: sinon.spy()
           notifyDocument: sinon.spy()
           postMessageToPluginIframes: sinon.spy()
@@ -45,8 +53,18 @@ define [
       afterEach -> @subject.stopListening()
 
       it 'should invoke onDocumentListParamsChanged', ->
-        @state.set(documentList: { params: 'baz' })
+        newList = new MockDocumentList()
+        newList.params = 'baz'
+        @state.set(documentList: newList)
         expect(@viewApp.onDocumentListParamsChanged).to.have.been.calledWith('baz')
+
+      it 'should invoke onDocumentListChanged on changes to existing documentList', ->
+        @state.get('documentList').set(length: 6)
+        expect(@viewApp.onDocumentListChanged).to.have.been.calledWith(length: 6)
+
+      it 'should invoke onDocumentListChanged when state is set to new documentList', ->
+        @state.set('documentList', new MockDocumentList())
+        expect(@viewApp.onDocumentListChanged).to.have.been.calledWith(length: 3)
 
       it 'should invoke onDocumentChanged', ->
         document = new Backbone.Model(foo: 'bar')
@@ -74,6 +92,10 @@ define [
       it 'should notify documentListParams', ->
         @subject._onMessage(origin: '', data: { call: 'notifyDocumentListParams' })
         expect(@viewApp.notifyDocumentListParams).to.have.been.calledWith(@state.get('documentList').params)
+
+      it 'should notify documentList', ->
+        @subject._onMessage(origin: '', data: { call: 'notifyDocumentList' })
+        expect(@viewApp.notifyDocumentList).to.have.been.calledWith(length: 3)
 
       it 'should notify documentSet', ->
         @subject._onMessage(origin: '', data: { call: 'notifyDocumentSet' })
@@ -118,7 +140,7 @@ define [
           @subject.remove()
 
           @state.set
-            documentList: 'foo2'
+            documentList: new MockDocumentList()
             document: new Backbone.Model(foo: 'bar2')
           @state.trigger('tag', 'foo', 'bar')
           @state.trigger('untag', 'foo', 'bar')
@@ -146,7 +168,7 @@ define [
 
       it 'should do nothing', ->
         @state.set
-          documentList: 'foo2'
+          documentList: new MockDocumentList()
           document: new Backbone.Model(foo: 'bar2')
         @state.documentSet.set(foo: 'baz')
         @state.trigger('tag', 'foo', 'bar')

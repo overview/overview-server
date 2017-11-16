@@ -23,8 +23,28 @@ define [
       @listenTo(@state, 'untag', @onUntag)
       @onMessageCallback = @_onMessage.bind(@)
       window.addEventListener('message', @onMessageCallback, false)
+      @_setDocumentList(@state.get('documentList'))
 
-    onDocumentListChanged: (__, value) -> @viewApp.onDocumentListParamsChanged?(value?.params)
+    _setDocumentList: (documentList) ->
+      if @documentList?
+        @stopListening(@documentList)
+
+      @documentList = documentList
+
+      if @documentList?
+        @listenTo(@documentList, 'change:length', @onDocumentListLengthChanged)
+
+    onDocumentListChanged: (__, value) ->
+      @_setDocumentList(value)
+      @viewApp.onDocumentListParamsChanged?(@documentList?.params ? null)
+      @viewApp.onDocumentListChanged?(length: @documentList?.get?('length') ? null)
+
+    onDocumentListLengthChanged: (documentList) ->
+      object = {
+        length: documentList?.get?('length') ? null
+      }
+      @viewApp.onDocumentListChanged?(object)
+
     onDocumentSetChanged: (__, value) -> @viewApp.onDocumentSetChanged?(@state.documentSet)
     onTag: (tag, params) -> @viewApp.onTag?(tag, params)
     onUntag: (tag, params) -> @viewApp.onUntag?(tag, params)
@@ -49,6 +69,7 @@ define [
 
       switch e.data.call
         when 'notifyDocumentListParams' then @viewApp.notifyDocumentListParams?(@state.get('documentList')?.params)
+        when 'notifyDocumentList' then @viewApp.notifyDocumentList?(length: @state.get('documentList')?.get?('length') ? null)
         when 'notifyDocumentSet' then @viewApp.notifyDocumentSet?(@state.documentSet)
         when 'notifyDocument' then @viewApp.notifyDocument?(@state.get('document'))
         when 'postMessageToPluginIframes' then @viewApp.postMessageToPluginIframes?(e.data.message || null)

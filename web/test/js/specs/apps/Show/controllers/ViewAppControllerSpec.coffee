@@ -9,6 +9,11 @@ define [
 
   class MockView extends Backbone.Model
 
+  class MockDocumentList extends Backbone.Model
+    initialize: (params, attributes) ->
+      Object.assign(@, params)
+      @set(attributes)
+
   describe 'apps/Show/controllers/ViewAppController', ->
     beforeEach ->
       @tags = 'tags'
@@ -23,7 +28,7 @@ define [
         openMetadataSchemaEditor: sinon.spy()
 
       @state = new MockState
-        documentList: { params: 'documentListParams' }
+        documentList: new MockDocumentList({ params: 'documentListParams' })
         document: 'document'
         view: @jobView
       @state.documentSet = @documentSet
