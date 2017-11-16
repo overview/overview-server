@@ -29,7 +29,7 @@ node('test-slave') {
     stage('Build and Test') {
       sh 'auto/test-everything.sh'
       junit 'web/test/js/**/test-results.xml'
-      junit '*/target/test-reports/*.xml'
+      junit 'unit-test-results/**/test-results.xml'
       junit 'integration-test/test-results.xml'
     }
 
