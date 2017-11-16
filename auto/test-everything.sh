@@ -108,7 +108,7 @@ trap - TERM # We're done with the trap
 
 echo 'Killing Overview services...' >&2
 kill -9 $PIDS
-wait $PIDS
+wait $PIDS || true # exit successfully
 EOT
 )
 echo "$COMMANDS" | $DOCKER_RUN bash &
