@@ -22,11 +22,11 @@ object Main {
         |db {
         |  default {
         |    properties {
-        |      serverName="localhost"
+        |      serverName="database"
         |      portNumber="5432"
         |      databaseName="overview"
         |      user="overview"
-        |      password="overview"
+        |      password=""
         |      serverName=${?DATABASE_SERVER_NAME}
         |      portNumber=${?DATABASE_PORT}
         |      databaseName=${?DATABASE_NAME}
