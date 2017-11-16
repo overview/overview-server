@@ -36,11 +36,12 @@ $DOCKER_RUN sh -c '(cd /app && ./auto/test-coffee-once.sh) || true' # Jenkins wi
 # Now run sbt unit tests. They'll output in the build directory; move those files
 # into /app so the host (Jenkins) can see them.
 COMMANDS=$(cat <<"EOT"
-/app/auto/sbt all/test || true
+set -x
+set -e
+/app/sbt all/test || true
 
 # Save unit-test results where Jenkins can see them. Error if none were
 # generated.
-set -e
 rm -rf /app/unit-test-results
 mkdir -p /app/unit-test-results/{common,web,worker,js}
 for project in common web worker; do
@@ -48,7 +49,7 @@ for project in common web worker; do
 done
 EOT
 )
-echo "$COMMANDS" | $DOCKER_RUN # Jenkins will pick up test-result XML
+echo "$COMMANDS" | $DOCKER_RUN bash # Jenkins will pick up test-result XML
 
 # Run integration tests with the production jarfiles.
 #

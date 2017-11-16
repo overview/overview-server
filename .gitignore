@@ -33,3 +33,4 @@ overview-server*.zip
 /archive.zip
 test-results.xml
 /.ensime_cache/
+/unit-test-results/
