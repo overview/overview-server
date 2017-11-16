@@ -49,9 +49,6 @@ done
 EOT
 )
 echo "$COMMANDS" | $DOCKER_RUN # Jenkins will pick up test-result XML
-=======
-# The actual unit tests
-$DOCKER_RUN sh -c '(cd /app && ./sbt all/test) || true' # Jenkins will pick up test-result XML
 
 # Run integration tests with the production jarfiles.
 #
