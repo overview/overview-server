@@ -5,4 +5,4 @@
 #
 # This does not use Docker.
 
-(cd "$(dirname "$0")/../integration-test" && npm install && npm run test-with-jenkins)
+(cd "$(dirname "$0")/../integration-test" && npm install && npm test)
