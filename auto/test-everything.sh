@@ -103,7 +103,7 @@ PIDS="$PIDS $!"
 # Now wait until SIGTERM or until a service dies -- whichever comes first.
 # "wait" will return when a child dies or when the trap is fired.
 trap 'echo "Received SIGTERM. Killing children and cleaning up...." >&2' TERM
-wait -n $PIDS # Wait for SIGTERM or for a child to die
+wait -n $PIDS || true # Wait for SIGTERM or for a child to die. Do not trigger "set -e"
 trap - TERM # We're done with the trap
 
 echo 'Killing Overview services...' >&2
