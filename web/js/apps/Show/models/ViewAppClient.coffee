@@ -105,6 +105,8 @@ define [
         when 'setRightPane' then @viewApp.setRightPane?(e.data.args...)
         when 'setModalDialog' then @viewApp.setModalDialog?(e.data.args...)
         when 'openMetadataSchemaEditor' then @globalActions.openMetadataSchemaEditor()
+        when 'goToNextDocument' then @globalActions.goToNextDocument()
+        when 'goToPreviousDocument' then @globalActions.goToPreviousDocument()
         when 'patchDocument'
           attrs = e.data.args[0]
           if attrs.id != @document?.id

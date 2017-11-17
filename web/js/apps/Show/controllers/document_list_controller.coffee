@@ -176,3 +176,6 @@ define [
       K: go_up      # GMail
       U: select_all # GMail
       'Control+A': select_all # Windows, Mac, Linux
+
+    globalActions.goToNextDocument = go_down({})
+    globalActions.goToPreviousDocument = go_up({})
