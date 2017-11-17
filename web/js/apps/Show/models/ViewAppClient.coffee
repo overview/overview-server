@@ -16,14 +16,17 @@ define [
 
       throw 'options.viewApp needs a remove() method which removes all traces of the view' if !@viewApp.remove
 
-      @listenTo(@state, 'change:documentList', @onDocumentListChanged)
       @listenTo(@state.documentSet, 'change', @onDocumentSetChanged)
+      @listenTo(@state, 'change:documentList', @onDocumentListChanged)
       @listenTo(@state, 'change:document', @onDocumentChanged)
       @listenTo(@state, 'tag', @onTag)
       @listenTo(@state, 'untag', @onUntag)
       @onMessageCallback = @_onMessage.bind(@)
       window.addEventListener('message', @onMessageCallback, false)
+
+      @documentList = @document = null
       @_setDocumentList(@state.get('documentList'))
+      @_setDocument(@state.get('document'))
 
     _setDocumentList: (documentList) ->
       if @documentList?
@@ -32,14 +35,23 @@ define [
       @documentList = documentList
 
       if @documentList?
-        @listenTo(@documentList, 'change:length', @onDocumentListLengthChanged)
+        @listenTo(@documentList, 'change', @onDocumentListAttributesChanged)
+
+    _setDocument: (document) ->
+      if @document?
+        @stopListening(@document)
+
+      @document = document
+
+      if @document?
+        @listenTo(@document, 'change', @onDocumentAttributesChanged)
 
     onDocumentListChanged: (__, value) ->
       @_setDocumentList(value)
       @viewApp.onDocumentListParamsChanged?(@documentList?.params ? null)
       @viewApp.onDocumentListChanged?(length: @documentList?.get?('length') ? null)
 
-    onDocumentListLengthChanged: (documentList) ->
+    onDocumentListAttributesChanged: (documentList) ->
       object = {
         length: documentList?.get?('length') ? null
       }
@@ -49,14 +61,30 @@ define [
     onTag: (tag, params) -> @viewApp.onTag?(tag, params)
     onUntag: (tag, params) -> @viewApp.onUntag?(tag, params)
 
+    _currentDocumentJson: () ->
+      return null if !@document?
+
+      indexInDocumentList = null
+      if @documentList?
+        idx = @documentList.documents.findIndex((d) => d.id == @document.id)
+        indexInDocumentList = idx if idx != -1
+
+      {
+        id: @document.id,
+        title: @document.get('title') || '',
+        snippet: @document.get('snippet') || '',
+        pageNumber: @document.get('pageNumber') || null,
+        url: @document.get('url') || null,
+        metadata: @document.get('metadata') || {},
+        indexInDocumentList: indexInDocumentList,
+      }
+
     onDocumentChanged: (__, value) ->
-      if @document?
-        @stopListening(@document)
-      @document = value
-      if @document?
-        @listenTo @document, 'change', () =>
-          @viewApp.onDocumentChanged?(value)
-      @viewApp.onDocumentChanged?(value)
+      @_setDocument(value)
+      @viewApp.onDocumentChanged?(@_currentDocumentJson())
+
+    onDocumentAttributesChanged: () ->
+      @viewApp.onDocumentChanged?(@_currentDocumentJson())
 
     setDocumentListParams: (params) -> @state.setDocumentListParams(params)
 
@@ -68,10 +96,10 @@ define [
         return
 
       switch e.data.call
-        when 'notifyDocumentListParams' then @viewApp.notifyDocumentListParams?(@state.get('documentList')?.params)
-        when 'notifyDocumentList' then @viewApp.notifyDocumentList?(length: @state.get('documentList')?.get?('length') ? null)
+        when 'notifyDocumentListParams' then @viewApp.notifyDocumentListParams?(@documentList?.params)
+        when 'notifyDocumentList' then @viewApp.notifyDocumentList?(length: @documentList?.get?('length') ? null)
         when 'notifyDocumentSet' then @viewApp.notifyDocumentSet?(@state.documentSet)
-        when 'notifyDocument' then @viewApp.notifyDocument?(@state.get('document'))
+        when 'notifyDocument' then @viewApp.notifyDocument?(@_currentDocumentJson())
         when 'postMessageToPluginIframes' then @viewApp.postMessageToPluginIframes?(e.data.message || null)
         when 'setDocumentListParams' then @setDocumentListParams(e.data.args...)
         when 'setRightPane' then @viewApp.setRightPane?(e.data.args...)

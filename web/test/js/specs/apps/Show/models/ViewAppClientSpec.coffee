@@ -5,24 +5,35 @@ define [
   class MockDocumentList extends Backbone.Model
     initialize: ->
       @params = 'foo'
+      @documents = new Backbone.Collection([])
 
     defaults:
       length: 3
 
   class MockState extends Backbone.Model
     defaults:
-      document: 'bar'
+      document: null
 
   describe 'apps/Show/models/ViewAppClient', ->
     beforeEach ->
       @sandbox = sinon.sandbox.create()
-      @sandbox.stub(console, 'log')
+      @sandbox.stub(console, 'log') # some of these tests cause spurious messages
       @state = new MockState()
       @state.documentSet = new Backbone.Model(foo: 'bar')
       @state.set('documentList', new MockDocumentList())
+      @state.set('document', new Backbone.Model({ bar: 'baz' }))
 
       @globalActions =
         openMetadataSchemaEditor: sinon.spy()
+
+      @anInterestingDocument = new Backbone.Model({
+        id: 123,
+        title: 'foo',
+        snippet: 'ba--snip--r',
+        pageNumber: null,
+        url: 'http://example.org',
+        metadata: { foo: 'bar' },
+      })
 
     afterEach ->
       @sandbox.restore()
@@ -67,9 +78,11 @@ define [
         expect(@viewApp.onDocumentListChanged).to.have.been.calledWith(length: 3)
 
       it 'should invoke onDocumentChanged', ->
-        document = new Backbone.Model(foo: 'bar')
-        @state.set(document: document)
-        expect(@viewApp.onDocumentChanged).to.have.been.calledWith(document)
+        @state.get('documentList').documents.add([ {}, {}, @anInterestingDocument, {}, {} ])
+        @state.set(document: @anInterestingDocument)
+        expect(@viewApp.onDocumentChanged).to.have.been.calledWith(Object.assign({}, @anInterestingDocument.attributes, {
+          indexInDocumentList: 2,
+        }))
 
       it 'should invoke onDocumentChanged when the document attributes change', ->
         document = new Backbone.Model(foo: 'bar')
@@ -102,8 +115,13 @@ define [
         expect(@viewApp.notifyDocumentSet).to.have.been.calledWith(@state.documentSet)
 
       it 'should notify document', ->
+        @state.set('document', @anInterestingDocument)
+        @state.get('documentList').documents.add([ {}, {}, @anInterestingDocument, {}, {} ])
+        @viewApp.notifyDocument = sinon.spy() # Ignore any previous messages
         @subject._onMessage(origin: '', data: { call: 'notifyDocument' })
-        expect(@viewApp.notifyDocument).to.have.been.calledWith(@state.get('document'))
+        expect(@viewApp.notifyDocument).to.have.been.calledWith(Object.assign({}, @anInterestingDocument.attributes, {
+          indexInDocumentList: 2,
+        }))
 
       it 'should postMessageToPluginIframes', ->
         @subject._onMessage(origin: '', data: { call: 'postMessageToPluginIframes', message: 'hello, world' })

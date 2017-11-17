@@ -94,7 +94,7 @@ define [
     notifyDocument: (document) ->
       @_postMessage
         event: 'notify:document'
-        args: [ document && document.toJSON() ]
+        args: [ document ]
 
     postMessageToPluginIframes: (message) ->
       @_postMessage(message)

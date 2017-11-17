@@ -48,8 +48,6 @@ define [
           view: view
           transactionQueue: @transactionQueue
           keyboardController: @keyboardController
-          document: @state.attributes.document
-          documentListParams: @state.attributes.documentList?.params
           el: el
           main: @main
           state: @state

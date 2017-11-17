@@ -12,6 +12,7 @@ define [
   class MockDocumentList extends Backbone.Model
     initialize: (params, attributes) ->
       Object.assign(@, params)
+      @documents = []
       @set(attributes)
 
   describe 'apps/Show/controllers/ViewAppController', ->
@@ -27,9 +28,12 @@ define [
       @globalActions =
         openMetadataSchemaEditor: sinon.spy()
 
+      @aDocument = new Backbone.Model({ id: 123, title: 'aDocument' })
+      @anotherDocument = new Backbone.Model({ id: 124, title: 'anotherDocument' })
+
       @state = new MockState
         documentList: new MockDocumentList({ params: 'documentListParams' })
-        document: 'document'
+        document: @aDocument
         view: @jobView
       @state.documentSet = @documentSet
 
@@ -89,10 +93,13 @@ define [
       it 'should set state.viewApp', -> expect(@state.get('viewApp')).to.eq(@jobViewApp)
       it 'should pass view to the viewApp', -> expect(@viewAppConstructors.job.args[0][0].view).to.eq(@jobView)
 
+      # TODO figure out which of these features are necessary.
+      # [adam, 2017-11-17] We were passing `document` and `documentList`, which
+      # clearly were _not_ necessary since we already pass `state`. I haven't
+      # audited any further.
       it 'should pass state variables to the viewApp', ->
         expect(@viewAppConstructors.job).to.have.been.calledWithMatch
-          documentListParams: 'documentListParams'
-          document: 'document'
+          documentSetId: @state.documentSetId
 
       it 'should pass transactionQueue to the viewApp', ->
         expect(@viewAppConstructors.job).to.have.been.calledWithMatch
@@ -113,8 +120,11 @@ define [
 
       it 'should use ViewAppClient to notify the viewApp of changes', ->
         document = new Backbone.Model(foo: 'document2')
-        @state.set(document: document)
-        expect(@jobViewApp.onDocumentChanged).to.have.been.calledWith(document)
+        @state.set(document: @anotherDocument)
+        expect(@jobViewApp.onDocumentChanged).to.have.been.calledWithMatch({
+          id: 124,
+          title: 'anotherDocument',
+        })
 
       describe 'when a new View is set', ->
         beforeEach -> @state.set(view: @treeView)
@@ -125,12 +135,15 @@ define [
 
         it 'should use ViewAppClient to notify the new viewApp of changes', ->
           document = new Backbone.Model(foo: 'document2')
-          @state.set(document: document)
-          expect(@treeViewApp.onDocumentChanged).to.have.been.calledWith(document)
+          @state.set(document: @anotherDocument)
+          expect(@treeViewApp.onDocumentChanged).to.have.been.calledWithMatch({
+            id: 124,
+            title: 'anotherDocument',
+          })
 
         it 'should stop notifying the original ViewAppClient of changes', ->
           document = new Backbone.Model(foo: 'document2')
-          @state.set(document: document)
+          @state.set(document: @anotherDocument)
           expect(@jobViewApp.onDocumentChanged).not.to.have.been.called
 
       describe 'when the View changes type', ->
