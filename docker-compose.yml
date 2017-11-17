@@ -12,7 +12,7 @@ volumes:
 
 services:
   redis:
-    image: redis:2.8
+    image: overview/redis
 
   database:
     image: overview/database
