@@ -6,11 +6,6 @@ define [
 ], ($, _, Backbone, i18n) ->
   t = i18n.namespaced('views.DocumentSet.show.TagSelect')
 
-  fuzzyContains = (full, partial) ->
-    full = full.toLowerCase().trim()
-    partial = partial.toLowerCase().trim()
-    full.indexOf(partial) == 0
-
   # Displays a form with the current tag selection, and lets the user modify it.
   #
   # Calls:

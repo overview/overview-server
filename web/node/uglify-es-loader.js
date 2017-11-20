@@ -51,7 +51,7 @@ module.exports = function(source, inputSourceMap) {
     opts.sourceMap = true;
 
     const result = UglifyES.minify(source, opts);
-    if (result.error) throw result.error
+    if (result.error) throw new Error("Error in JS file: " + JSON.stringify(result.error))
     const sourceMap = JSON.parse(result.map);
 
     if (inputSourceMap) {

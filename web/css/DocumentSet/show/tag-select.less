@@ -1,15 +1,11 @@
-#document-list-params>.tags {
+.document-filter {
   position: relative;
+  display: flex;
   max-width: 25em;
   margin: 0 auto;
-  .expanded { display: none; }
-  &.open .expanded { display: block; }
 
   .nix {
     display: none;
-    position: absolute;
-    top: 0;
-    right: 0;
     font-size: 1.5em;
     font-weight: bold;
     width: 1em;
@@ -18,127 +14,146 @@
     line-height: @input-height-small;
   }
 
+  &:not(.empty) .nix {
+    display: block;
+  }
+
   a.description {
     .form-control();
     .input-sm();
+    flex: 1 1 auto;
     white-space: nowrap;
     overflow: hidden;
     text-decoration: none;
-
-    &.placeholder {
-      color: @input-color-placeholder;
-      padding-left: 0;
-
-      i {
-        width: 2.5em;
-        padding-right: .5em;
-        text-align: right;
-        color: @input-color;
-      }
-    }
-
-    span.tag {
-    }
+    padding-left: 0; // the <i> has enough padding; this mimics the search box CSS
   }
 
-  &.open a.description {
-    // Copy Bootstrap's .form-control-focus()
-    @color-rgba: rgba(red(@input-border-focus), green(@input-border-focus), blue(@input-border-focus), .6);
-    border-color: @input-border-focus;
-    outline: 0;
-    .box-shadow(~"inset 0 1px 1px rgba(0,0,0,.075), 0 0 8px @{color-rgba}");
+  &.empty a.description {
+    color: @input-color-placeholder;
   }
 
-  &:not(.empty) {
-    .nix { display: block; }
-    padding-right: 1.75em;
+  i {
+    width: 2.5em;
+    padding-right: .5em;
+    text-align: right;
+    color: @input-color;
   }
 
-  .expanded {
+  span.selected-filter + span.selected-filter {
+    padding-left: .5rem;
+  }
+}
+
+.document-filter-popup {
+  // This element fills the entire viewport, and it's invisible. (It traps mouse
+  // clicks.) We'll add a single child, .popup-frame, to render content.
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 2; // go above tree-app-left
+
+  &>.popup-frame {
     position: absolute;
-    top: 100%;
-    width: 100%;
-    left: 0;
+    // left, top, width will be set in JS
+    height: auto;
     margin-top: -1px;
     white-space: nowrap;
     background: white;
     border: 1px solid @input-border;
     box-shadow: 0 0 6px @input-border;
-    z-index: 2; // above tree-hover popups
-    min-width: 100%;
+  }
 
-    div.tags {
-      max-height: 15em;
-      overflow-y: auto;
-      overflow-x: hidden;
+  ul, li {
+    display: block;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  ul.filters {
+    max-height: 15em;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  ul.operations>li {
+    box-sizing: content-box;
+    overflow: hidden;
+    border-top: 1px solid @table-border-color;
+    margin-top: .25em;
+    padding-top: .25em;
+    transition: border-top-width .5s, margin-top .5s, padding-top .5s;
+
+    &.disabled {
+      border-top-width: 0;
+      margin-top: 0;
+      padding-top: 0;
     }
 
-    div.operation {
-      box-sizing: content-box;
+    div.radio {
       overflow: hidden;
-      border-top: 1px solid @table-border-color;
-      margin-top: .25em;
-      padding-top: .25em;
-      transition: border-top-width .5s, margin-top .5s, padding-top .5s;
+      transition: height .5s;
+      height: @input-height-small;
 
       &.disabled {
-        border-top-width: 0;
-        margin-top: 0;
-        padding-top: 0;
-      }
-
-      div.radio {
-        overflow: hidden;
-        transition: height .5s;
-        height: @input-height-small;
-
-        &.disabled {
-          color: @dropdown-link-disabled-color;
-          height: 0; // animates
-        }
-      }
-    }
-
-    div.checkbox, div.radio {
-      margin: 0;
-      font-size: @font-size-small;
-
-      &.hover {
-        // It's not ':hover', because the keyboard can "hover" elements too
-        background: @table-bg-hover;
-      }
-
-      label {
-        display: block;
-        padding-left: 30px; // 20px is for the <input> margin-left
-        padding-top: .5em;
-        padding-bottom: .5em;
-        overflow: hidden; // redundant, for ellipsis
-        white-space: nowrap;
-        text-overflow: ellipsis;
-      }
-
-      input[type=checkbox] {
-        margin-top: 3px; // Bootstrap says 4, but our font-size is small
+        color: @dropdown-link-disabled-color;
+        height: 0; // animates
       }
     }
   }
 
-  span.tags>span {
-    display: inline-block; // wrap together
-    margin-left: .5em;
+  label {
+    display: block;
+    padding: .25rem .25rem .25rem 0;
+    overflow: hidden; // redundant, for ellipsis
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-size: .8rem;
+    font-weight: normal; // Bootstrap sets label font-weight bold
+    margin: 0; // another Bootstrap gem :/
+    cursor: pointer;
+
+    &:hover {
+      background: @table-bg-hover;
+    }
   }
 
-  span.tag {
-    display: inline-block;
-    width: 1em;
-    height: 1em;
-    margin-right: .5em;
-
-    // Center vertically. Height is 1em, hence the margin-top.
-    vertical-align: top;
+  input[type=checkbox], input[type=radio] {
+    // Undo Bootstrap
     position: relative;
-    top: @font-size-small * @line-height-small / 2;
-    margin-top: -.5em;
+    margin: 0;
+    top: 3px;
+  }
+
+  span.checkbox, span.radio {
+    // Beware: ".checkbox" means something to Bootstrap, so we have to reset
+    // lots of its styles here
+    display: inline-block;
+    margin: 0;
+    padding: 0 .5em 0 0;
+    width: 30px;
+    text-align: right;
+
+    input {
+      margin-top: 3px; // Bootstrap says 4, but our font-size is small
+    }
+  }
+
+  div.checkbox, div.radio {
+    margin: 0;
+    font-size: @font-size-small;
+  }
+}
+
+.document-filter, .document-filter-popup {
+  span.swatch {
+    display: inline-block;
+    width: .75rem;
+    height: .75rem;
+    margin-right: .25rem;
+    position: relative;
+    top: 2px;
   }
 }
