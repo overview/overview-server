@@ -20,7 +20,7 @@ if [ ! -f /this-is-overview-dev-on-docker ]; then
   #exec docker-compose run --rm --no-deps dev "$@"
   # Solution: call Docker directly
   DIR="$(realpath "$(dirname "$0")"/..)"
-  CMD="docker run --rm -i --network overviewjenkins_default --volume overviewjenkins_database-data:/var/lib/postgresql/data --volume overviewjenkins_search-data:/var/lib/overview/search --volume overviewjenkins_blob-storage-data:/var/lib/overview/blob-storage --volume overviewjenkins_homedir:/root --volume $DIR:/app"
+  CMD="docker run --rm -i --network overviewserver_default --volume overviewserver_database-data:/var/lib/postgresql/data --volume overviewserver_search-data:/var/lib/overview/search --volume overviewserver_blob-storage-data:/var/lib/overview/blob-storage --volume overviewserver_homedir:/root --volume $DIR:/app"
 
   # Publish port 9000=>80, if nothing else is running on it
   if [ -z "$(docker ps -q --filter name=overviewserver_dev)" ]; then
