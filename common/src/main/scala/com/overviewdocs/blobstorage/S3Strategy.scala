@@ -2,8 +2,8 @@ package com.overviewdocs.blobstorage
 
 import akka.stream.scaladsl.{Source,StreamConverters}
 import akka.util.ByteString
-import com.amazonaws.services.s3.{AmazonS3,AmazonS3Client}
-import com.amazonaws.services.s3.transfer.TransferManager
+import com.amazonaws.services.s3.{AmazonS3,AmazonS3Client,AmazonS3ClientBuilder}
+import com.amazonaws.services.s3.transfer.{TransferManager,TransferManagerBuilder}
 import com.amazonaws.services.s3.model.{AmazonS3Exception,DeleteObjectsRequest,GeneratePresignedUrlRequest,MultiObjectDeleteException,ObjectMetadata}
 import com.amazonaws.event.{ProgressEvent,ProgressEventType,ProgressListener}
 import java.io.IOException
@@ -147,7 +147,7 @@ trait S3Strategy extends BlobStorageStrategy {
 }
 
 object S3Strategy extends S3Strategy {
-  override lazy val s3 = new AmazonS3Client
-  override lazy val transferManager = new TransferManager(s3)
+  override lazy val s3 = AmazonS3ClientBuilder.defaultClient
+  override lazy val transferManager = TransferManagerBuilder.standard.withS3Client(s3).build
   override val logger = Logger.forClass(getClass)
 }
