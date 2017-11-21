@@ -382,6 +382,7 @@ object DbFactory extends Factory with HasBlockingDatabase {
     serverUrlFromPlugin: Option[String],
     apiToken: String,
     title: String,
+    viewFilter: Option[ViewFilter],
     createdAt: Timestamp
   ) = run(q.insertView += podoFactory.view(
     id,
@@ -390,6 +391,7 @@ object DbFactory extends Factory with HasBlockingDatabase {
     serverUrlFromPlugin,
     apiToken,
     title,
+    viewFilter,
     createdAt
   ))
 

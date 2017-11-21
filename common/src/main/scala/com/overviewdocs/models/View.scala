@@ -1,5 +1,6 @@
 package com.overviewdocs.models
 
+import play.api.libs.json.JsObject
 import java.sql.Timestamp
 import java.util.Date
 
@@ -17,6 +18,7 @@ case class View(
   serverUrlFromPlugin: Option[String], /// URL plugin server uses to query Overview API
   apiToken: String,
   title: String,
+  viewFilter: Option[ViewFilter],
   createdAt: Timestamp
 ) {
   def update(attributes: View.UpdateAttributes): View = copy(

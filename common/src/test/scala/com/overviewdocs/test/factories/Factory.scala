@@ -229,6 +229,7 @@ trait Factory {
     serverUrlFromPlugin: Option[String] = None,
     apiToken: String = "api-token",
     title: String = "title",
+    viewFilter: Option[ViewFilter] = None,
     createdAt: Timestamp = now
   ): View
 

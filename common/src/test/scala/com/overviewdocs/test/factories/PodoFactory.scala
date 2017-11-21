@@ -430,6 +430,7 @@ object PodoFactory extends Factory {
     serverUrlFromPlugin: Option[String],
     apiToken: String,
     title: String,
+    viewFilter: Option[ViewFilter],
     createdAt: Timestamp
   ) = View(
     getId(id),
@@ -438,6 +439,7 @@ object PodoFactory extends Factory {
     serverUrlFromPlugin,
     apiToken,
     title,
+    viewFilter,
     createdAt
   )
 

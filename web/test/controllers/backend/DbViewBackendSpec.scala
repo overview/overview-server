@@ -1,6 +1,8 @@
 package controllers.backend
 
-import com.overviewdocs.models.View
+import play.api.libs.json.Json
+
+import com.overviewdocs.models.{View,ViewFilter}
 import com.overviewdocs.models.tables.Views
 
 class DbViewBackendSpec extends DbBackendSpecification {
@@ -98,9 +100,11 @@ class DbViewBackendSpec extends DbBackendSpecification {
         val apiToken = factory.apiToken(documentSetId=Some(documentSet.id))
         val view = factory.view(documentSetId=documentSet.id, apiToken=apiToken.token)
         val attributes = View.UpdateAttributes(title="new title")
+        val maybeViewFilter: Option[ViewFilter] = Some(ViewFilter(url="http://example.com/document-ids", json=Json.obj("foo" -> "bar")))
         val viewId = view.id
         lazy val newView = updateView
         def updateView = await(backend.update(viewId, attributes))
+        def updateViewFilter = await(backend.updateViewFilter(viewId, maybeViewFilter))
       }
 
       "return a View" in new UpdateScope {
@@ -115,6 +119,12 @@ class DbViewBackendSpec extends DbBackendSpecification {
         dbView.map(_.id) must beSome(viewId)
         dbView.map(_.url) must beSome(view.url)
         dbView.map(_.title) must beSome(attributes.title)
+      }
+
+      "update a View with filter options" in new UpdateScope {
+        updateViewFilter
+        val dbView = findView(viewId)
+        dbView.flatMap(_.viewFilter) must beSome(ViewFilter("http://example.com/document-ids", Json.obj("foo" -> "bar")))
       }
 
       "return None when updating a non-View" in new UpdateScope {
