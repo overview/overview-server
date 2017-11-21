@@ -19,6 +19,7 @@ object show {
       "url" -> view.url,
       "serverUrlFromPlugin" -> view.serverUrlFromPlugin,
       "apiToken" -> view.apiToken,
+      "filter" -> view.viewFilter.map(_.json),
       "createdAt" -> dateToISO8601(view.createdAt),
       "creationData" -> Json.obj()
     )

@@ -3,7 +3,8 @@ package controllers
 import com.google.inject.ImplementedBy
 import javax.inject.Inject
 import play.api.i18n.MessagesApi
-import play.api.mvc.Result
+import play.api.libs.json.{JsObject,JsNull,JsString}
+import play.api.mvc.{AnyContentAsJson,Result}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
@@ -12,7 +13,7 @@ import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.{userOwningDocumentSet,userViewingDocumentSet,userOwningView}
 import controllers.backend.{ApiTokenBackend,StoreBackend,ViewBackend}
 import controllers.forms.{ViewForm,ViewUpdateAttributesForm}
-import com.overviewdocs.models.{ApiToken,Tree,View}
+import com.overviewdocs.models.{ApiToken,Tree,View,ViewFilter}
 import com.overviewdocs.models.tables.{Trees}
 
 class ViewController @Inject() (
@@ -53,13 +54,46 @@ class ViewController @Inject() (
   }
 
   def update(documentSetId: Long, viewId: Long) = authorizedAction(userOwningView(viewId)).async { implicit request =>
-    ViewUpdateAttributesForm().bindFromRequest.fold(
-      f => Future.successful(BadRequest),
-      attributes => viewBackend.update(viewId, attributes).map(_ match {
-        case Some(view) => Ok(views.json.View.show(view))
-        case None => NotFound
-      })
-    )
+    request.body match {
+      case AnyContentAsJson(requestJsValue) => {
+        def err(message: String) = Future.successful(BadRequest(jsonError("illegal-arguments", message)))
+
+        requestJsValue match {
+          case JsObject(requestJson) => {
+            requestJson.get("filter") match {
+              case None => err("Please include a 'filter' property in the passed JSON object. It may be null.")
+              case Some(JsNull) => {
+                // unset the ViewFilter
+                viewBackend.updateViewFilter(viewId, None).map(_ match {
+                  case Some(view) => Ok(views.json.View.show(view))
+                  case None => NotFound
+                })
+              }
+              case Some(JsObject(filterMap)) => {
+                filterMap.get("url") match {
+                  case Some(JsString(filterUrl)) => {
+                    viewBackend.updateViewFilter(viewId, Some(ViewFilter(filterUrl, JsObject(filterMap)))).map(_ match {
+                      case Some(view) => Ok(views.json.View.show(view))
+                      case None => NotFound
+                    })
+                  }
+                  case _ => err("Please include a 'filter.url' property, a String: as it is, your filter is invalid.")
+                }
+              }
+              case _ => err("Please include a 'filter' property in the passed JSON Object.")
+            }
+          }
+          case _ => err("If you're going to send JSON, please send a JSON Object. You sent something else.")
+        }
+      }
+      case _ => ViewUpdateAttributesForm().bindFromRequest.fold(
+        f => Future.successful(BadRequest),
+        attributes => viewBackend.update(viewId, attributes).map(_ match {
+          case Some(view) => Ok(views.json.View.show(view))
+          case None => NotFound
+        })
+      )
+    }
   }
 
   def destroy(documentSetId: Long, viewId: Long) = authorizedAction(userOwningView(viewId)).async { request =>

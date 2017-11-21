@@ -2,11 +2,11 @@ package controllers
 
 import org.specs2.specification.Scope
 import org.specs2.matcher.JsonMatchers
-import play.api.libs.json.Json
+import play.api.libs.json.{Json,JsObject,JsNull}
 import scala.concurrent.Future
 
 import controllers.backend.{ApiTokenBackend,StoreBackend,ViewBackend}
-import com.overviewdocs.models.{ApiToken,Tree,View}
+import com.overviewdocs.models.{ApiToken,Tree,View,ViewFilter}
 import com.overviewdocs.test.factories.PodoFactory
 
 class ViewControllerSpec extends ControllerSpecification with JsonMatchers {
@@ -199,6 +199,46 @@ class ViewControllerSpec extends ControllerSpecification with JsonMatchers {
       "return BadRequest when the input is bad" in new UpdateScope {
         override val request = fakeAuthorizedRequest.withFormUrlEncodedBody("titleblah" -> "submittedblah")
         h.status(result) must beEqualTo(h.BAD_REQUEST)
+      }
+    }
+
+    "#update() with JSON ViewFilter" should {
+      trait UpdateViewFilterScope extends BaseScope {
+        val documentSetId = 1L
+        val viewId = 2L
+        def expectedResult: Option[View] = Some(PodoFactory.view(viewFilter=Some(ViewFilter("http://written", Json.obj("url" -> "http://written")))))
+        mockViewBackend.updateViewFilter(any, any) returns Future.successful { expectedResult }
+        val requestBody: JsObject = Json.obj("filter" -> Json.obj("url" -> "http://foo"))
+        lazy val request = fakeAuthorizedRequest.withJsonBody(requestBody)
+        lazy val result = controller.update(documentSetId, viewId)(request)
+      }
+
+      "call ViewBackend#updateViewFilter" in new UpdateViewFilterScope {
+        h.status(result)
+        there was one(mockViewBackend).updateViewFilter(viewId, Some(ViewFilter("http://foo", Json.obj("url" -> "http://foo"))))
+      }
+
+      "return the updated View" in new UpdateViewFilterScope {
+        h.status(result)
+        val json = h.contentAsString(result)
+
+        json must /("filter") /("url" -> "http://written")
+      }
+
+      "return NotFound when the View is not found" in new UpdateViewFilterScope {
+        override def expectedResult = None
+        h.status(result) must beEqualTo(h.NOT_FOUND)
+      }
+
+      "return BadRequest when the input has no URL" in new UpdateViewFilterScope {
+        override val requestBody = Json.obj("filter" -> Json.obj("foo" -> "bar"))
+        h.status(result) must beEqualTo(h.BAD_REQUEST)
+      }
+
+      "set viewFilter to None when given filter=null" in new UpdateViewFilterScope {
+        override val requestBody = JsObject(Map("filter" -> JsNull))
+        h.status(result) must beEqualTo(h.OK)
+        there was one(mockViewBackend).updateViewFilter(viewId, None)
       }
     }
 
