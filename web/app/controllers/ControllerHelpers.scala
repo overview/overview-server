@@ -1,6 +1,5 @@
 package controllers
 
-import java.nio.ByteBuffer
 import java.util.UUID
 import play.api.libs.json.JsValue
 import play.api.mvc.{Request,RequestHeader}
@@ -9,6 +8,7 @@ import scala.util.control.Exception.catching
 
 import models.pagination.PageRequest
 import models.IdList
+import _root_.util.BitSetUtil
 
 /** Utilities that don't depend on the environment. */
 trait ControllerHelpers {
@@ -131,20 +131,7 @@ trait ControllerHelpers {
             case e: IllegalArgumentException => return None
           }
 
-          val byteBuffer = ByteBuffer
-            .allocate((7 + bytes.length) / 8 * 8) // Pad it so .asLongBuffer works
-          val longBuffer = byteBuffer.asLongBuffer
-          byteBuffer.put(bytes)
-          val longs = Array.ofDim[Long](longBuffer.capacity)
-          longBuffer.get(longs)
-
-          // Scala's BitSet stores the least-significant integer at the last
-          // bit. For instance, if BitSet's internal Long is 0b0000...00011,
-          // that stores the numbers 1 and 2. But over the wire, "1 and 2" is
-          // sent as 0b11000000. So we need to reverse each Long -- but not
-          // the order of the Longs themselves.
-          val reversedLongs = longs.map(i => java.lang.Long.reverse(i))
-          Some(immutable.BitSet.fromBitMaskNoCopy(reversedLongs))
+          Some(BitSetUtil.bytesToBitSet(bytes))
         }
       }
     }

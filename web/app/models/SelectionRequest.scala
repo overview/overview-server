@@ -3,6 +3,7 @@ package models
 import scala.collection.immutable
 
 import com.overviewdocs.query.Query
+import com.overviewdocs.models.ViewFilterSelection
 
 /** Identifies a few documents out of an entire document set.
   *
@@ -17,8 +18,9 @@ case class SelectionRequest(
   val documentIdsBitSet: Option[immutable.BitSet] = None,
   val storeObjectIds: immutable.Seq[Long] = Vector(),
   val tagged: Option[Boolean] = None,
-  val q: Option[Query] = None,
   val tagOperation: SelectionRequest.TagOperation = SelectionRequest.TagOperation.Any,
+  val viewFilterSelections: immutable.Seq[ViewFilterSelection] = Vector(),
+  val q: Option[Query] = None,
   val sortByMetadataField: Option[String] = None
 ) {
   lazy val hash = hashCode
@@ -34,6 +36,7 @@ case class SelectionRequest(
       && documentIdsBitSet.isEmpty
       && storeObjectIds.isEmpty
       && tagged.isEmpty
+      && viewFilterSelections.isEmpty
       && q.isEmpty
     )
   }

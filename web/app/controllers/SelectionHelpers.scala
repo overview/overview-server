@@ -55,6 +55,8 @@ trait SelectionHelpers extends HeaderNames with Results { self: ControllerHelper
       case _ => None
     }
 
+    val viewFilterSelections = Vector()
+
     val sortByMetadataField = reqData.getString("sortByMetadataField")
 
     maybeQOrError
@@ -66,8 +68,9 @@ trait SelectionHelpers extends HeaderNames with Results { self: ControllerHelper
         maybeDocumentIdsBitSet,
         storeObjectIds,
         tagged,
-        _,
         tagOperation,
+        viewFilterSelections,
+        _,
         sortByMetadataField
       ))
   }

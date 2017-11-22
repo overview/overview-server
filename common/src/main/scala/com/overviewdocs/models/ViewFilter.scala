@@ -18,13 +18,16 @@ case class ViewFilter(
 )
 
 case class ViewFilterSelection(
+  viewId: Long,
   ids: immutable.Seq[String],
-  operation: ViewFilterSelectionOperation
+  operation: ViewFilterSelection.Operation
 )
 
-sealed trait ViewFilterSelectionOperation
-object ViewFilterSelectionOperation {
-  case object Any extends ViewFilterSelectionOperation
-  case object All extends ViewFilterSelectionOperation
-  case object None extends ViewFilterSelectionOperation
+object ViewFilterSelection {
+  sealed trait Operation
+  object Operation {
+    case object Any extends Operation
+    case object All extends Operation
+    case object None extends Operation
+  }
 }

@@ -4,14 +4,15 @@ import akka.stream.scaladsl.Source
 import com.google.re2j.Pattern
 import org.specs2.mock.Mockito
 import play.api.Configuration
+import play.api.libs.json.Json
 import scala.collection.{immutable,mutable}
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{Future,Promise}
 
 import com.overviewdocs.query.{AndQuery,Field,NotQuery,OrQuery,PhraseQuery,PrefixQuery,Query,RegexQuery}
 import com.overviewdocs.messages.Progress
 import com.overviewdocs.metadata.{MetadataField,MetadataFieldDisplay,MetadataFieldType,MetadataSchema}
-import com.overviewdocs.models.{DocumentIdList,DocumentIdSet}
+import com.overviewdocs.models.{DocumentIdList,DocumentIdSet,ViewFilter,ViewFilterSelection}
 import com.overviewdocs.searchindex.{SearchResult,SearchWarning}
 import models.{InMemorySelection,SelectionRequest,SelectionWarning}
 import test.helpers.InAppSpecification
@@ -33,6 +34,7 @@ class DbDocumentSelectionBackendSpec extends DbBackendSpecification with InAppSp
         val storeObjectIds: Vector[Long] = Vector()
         val tagged: Option[Boolean] = None
         val tagOperation: SelectionRequest.TagOperation = SelectionRequest.TagOperation.Any
+        val viewFilterSelections: Vector[ViewFilterSelection] = Vector()
         val q: Option[Query] = None
         val sortByMetadataField: Option[String] = None
 
@@ -44,6 +46,7 @@ class DbDocumentSelectionBackendSpec extends DbBackendSpecification with InAppSp
           nodeIds=nodeIds,
           storeObjectIds=storeObjectIds,
           tagged=tagged,
+          viewFilterSelections=viewFilterSelections,
           q=q,
           tagOperation=tagOperation,
           sortByMetadataField=sortByMetadataField

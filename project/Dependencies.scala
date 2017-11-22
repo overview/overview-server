@@ -7,6 +7,7 @@ object Dependencies {
     val akka = "com.typesafe.akka" %% "akka-actor" % "2.5.3"
     val akkaRemote = "com.typesafe.akka" %% "akka-remote" % "2.5.3"
     val akkaTestkit = "com.typesafe.akka" %% "akka-testkit"  % "2.5.3"
+    val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.0.10"
     val asyncHttpClient = "com.ning" % "async-http-client" % "1.9.31"
     val awsCore = "com.amazonaws" % "aws-java-sdk-core" % "1.11.232"
     val awsS3 = "com.amazonaws" % "aws-java-sdk-s3" % "1.11.232"
@@ -88,6 +89,7 @@ object Dependencies {
     filters,
     guice,
     ws,
+    deps.akkaHttp, // DbHttpViewFilterBackend
     deps.joddWot % "test",
     deps.playTest % "test"
   )
