@@ -122,11 +122,15 @@ define [
         liAttributes: @options.liAttributes || ''
 
     _renderWarningHtml: (warning) ->
+      # Todo HTML-escape these errors correctly.
       i18nKey = "warning.#{warning.type}"
       switch warning.type
         when 'TooManyExpansions' then "<li>#{t(i18nKey, warning.field, warning.term, warning.nExpansions)}</li>"
         when 'TooMuchFuzz' then "<li>#{t(i18nKey, warning.field, warning.term, warning.allowedFuzz)}</li>"
         when 'IndexDoesNotExist' then "<li>#{t(i18nKey)}</li>"
+        when 'ViewFilterUrlMissing' then "<li>#{t(i18nKey)}</li>"
+        when 'ViewFilterHttpTimeout' then "<li>#{t(i18nKey)}</li>"
+        when 'ViewFilterPluginError' then "<li>#{t(i18nKey, warning.message)}</li>"
         when 'RegexSyntaxError' then "<li>#{t(i18nKey, _.escape(warning.regex), _.escape(warning.message))} #{t(i18nKey + '.help_html')}</li>"
         when 'NestedRegexIgnored' then "<li>#{t(i18nKey, _.escape(warning.regex))}</li>"
         when 'RegexLimited' then "<li>#{t(i18nKey, warning.nTotal, warning.nTested)}</li>"

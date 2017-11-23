@@ -4,6 +4,7 @@ import play.api.libs.json.{JsArray,JsNumber,JsObject,JsString}
 
 import com.overviewdocs.query.{Field,FieldInSearchIndex}
 import com.overviewdocs.searchindex.SearchWarning
+import controllers.backend.ViewFilterBackend
 import models.SelectionWarning
 
 object selectionWarnings {
@@ -35,6 +36,20 @@ object selectionWarnings {
         ))
         case SearchWarning.IndexDoesNotExist => JsObject(Seq(
           "type" -> JsString("IndexDoesNotExist")
+        ))
+      }
+      case SelectionWarning.ViewFilterError(vfe) => vfe match {
+        case ViewFilterBackend.ResolveError.UrlNotFound => JsObject(Seq(
+          "type" -> JsString("ViewFilterUrlMissing")
+        ))
+        case ViewFilterBackend.ResolveError.HttpTimeout(url) => JsObject(Seq(
+          "type" -> JsString("ViewFilterHttpTimeout"),
+          "url" -> JsString(url)
+        ))
+        case ViewFilterBackend.ResolveError.PluginError(url, message) => JsObject(Seq(
+          "type" -> JsString("ViewFilterPluginError"),
+          "url" -> JsString(url),
+          "message" -> JsString(message)
         ))
       }
       case SelectionWarning.RegexSyntaxError(regex, errorEnglish, index) => JsObject(Seq(

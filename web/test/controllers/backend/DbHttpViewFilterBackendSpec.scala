@@ -38,7 +38,15 @@ class DbHttpViewFilterBackendSpec extends DbBackendSpecification with InAppSpeci
         lazy val view = factory.view(documentSetId=documentSet.id, apiToken=apiToken.token, viewFilter=viewFilter)
         val backendTimeout = Duration(10, "ms")
 
-        lazy val backend = new DbHttpViewFilterBackend(database, app.actorSystem, app.materializer, backendTimeout)
+        lazy val backend = {
+          val ret = new DbHttpViewFilterBackend(database, app.actorSystem, app.materializer)
+          // Icky hack to set should-be-private variable. We should use Configuration.
+          // [adam, 2017-11-23] my beef with this is that the configuration should be
+          // for this backend, _not_ for all HTTP requests; but I can't see the part
+          // of Akka that seamlessly enables per-class options.
+          ret.httpTimeout = backendTimeout
+          ret
+        }
 
         def selection(ids: Vector[String], operation: Operation) = ViewFilterSelection(view.id, ids, operation)
 
@@ -111,34 +119,34 @@ class DbHttpViewFilterBackendSpec extends DbBackendSpecification with InAppSpeci
         await(backend.resolve(documentSet.id, selection(Vector(), Operation.Any))) must beLeft(ResolveError.UrlNotFound)
       }
 
-      "return UrlInvalid when View.maybeFilterUrl is malformed" in new ResolveScope {
+      "return PluginError when View.maybeFilterUrl is malformed" in new ResolveScope {
         override val viewFilter = Some(ViewFilter("http://blah\\./meep", Json.obj()))
-        await(backend.resolve(documentSet.id, selection(Vector(), Operation.Any))) must beLeft((x: ResolveError) => x must beAnInstanceOf[ResolveError.UrlInvalid])
+        await(backend.resolve(documentSet.id, selection(Vector(), Operation.Any))) must beLeft((x: ResolveError) => x must beAnInstanceOf[ResolveError.PluginError])
       }
 
-      "return UrlInvalid when View.maybeFilterUrl has wrong schema" in new ResolveScope {
+      "return PluginError when View.maybeFilterUrl has wrong schema" in new ResolveScope {
         override val viewFilter = Some(ViewFilter("htt://example.org/blah", Json.obj()))
-        await(backend.resolve(documentSet.id, selection(Vector(), Operation.Any))) must beLeft((x: ResolveError) => x must beAnInstanceOf[ResolveError.UrlInvalid])
+        await(backend.resolve(documentSet.id, selection(Vector(), Operation.Any))) must beLeft((x: ResolveError) => x must beAnInstanceOf[ResolveError.PluginError])
       }
 
-      "return HttpError on non-200 OK" in new ResolveScope {
+      "return PluginError on non-200 OK" in new ResolveScope {
         resolve(Vector(), Operation.None, new HttpViewFilterServer {
           override def handleRequest(request: HttpRequest) = {
             HttpResponse(StatusCodes.NotFound, immutable.Seq[HttpHeader](), HttpEntity(ContentTypes.`text/plain(UTF-8)`, "failure message".getBytes(UTF_8)), request.protocol)
           }
-        }) must beEqualTo(Left(ResolveError.HttpError("http://localhost:9001/10101010?ids=&operation=none", "404 Not Found: failure message")))
+        }) must beEqualTo(Left(ResolveError.PluginError("http://localhost:9001/10101010?ids=&operation=none", "404 Not Found: failure message")))
       }
 
-      "return HttpError even when response is invalid utf-8" in new ResolveScope {
+      "return PluginError even when response is invalid utf-8" in new ResolveScope {
         resolve(Vector(), Operation.None, new HttpViewFilterServer {
           override def handleRequest(request: HttpRequest) = {
             HttpResponse(StatusCodes.NotFound, immutable.Seq[HttpHeader](), HttpEntity(ContentTypes.`application/octet-stream`, Array[Byte](0xaa.toByte)), request.protocol)
           }
-        }) must beLeft((x: ResolveError) => x must beAnInstanceOf[ResolveError.HttpError])
+        }) must beLeft((x: ResolveError) => x must beAnInstanceOf[ResolveError.PluginError])
       }
 
-      "return HttpError when connection is refused" in new ResolveScope {
-        await(backend.resolve(documentSet.id, selection(Vector(), Operation.Any))) must beLeft((x: ResolveError) => x must beAnInstanceOf[ResolveError.HttpError])
+      "return PluginError when connection is refused" in new ResolveScope {
+        await(backend.resolve(documentSet.id, selection(Vector(), Operation.Any))) must beLeft((x: ResolveError) => x must beAnInstanceOf[ResolveError.PluginError])
       }
 
       "return HttpTimeout when streaming response times out" in new ResolveScope {
@@ -178,12 +186,12 @@ class DbHttpViewFilterBackendSpec extends DbBackendSpecification with InAppSpeci
         }) must beLeft(ResolveError.HttpTimeout("http://localhost:9001/10101010?ids=no-headers&operation=none"))
       }
 
-      "return InvalidHttpResponse when Content-Type is not application/octet-stream" in new ResolveScope {
+      "return PluginError when Content-Type is not application/octet-stream" in new ResolveScope {
         resolve(Vector(), Operation.None, new HttpViewFilterServer {
           override def handleRequest(request: HttpRequest) = {
             HttpResponse(StatusCodes.OK, immutable.Seq[HttpHeader](), HttpEntity(ContentTypes.`text/html(UTF-8)`, Array[Byte](0xaa.toByte)), request.protocol)
           }
-        }) must beLeft(ResolveError.InvalidHttpResponse("http://localhost:9001/10101010?ids=&operation=none", "Expected Content-Type: application/octet-stream; got: text/html; charset=UTF-8"))
+        }) must beLeft(ResolveError.PluginError("http://localhost:9001/10101010?ids=&operation=none", "Expected Content-Type: application/octet-stream; got: text/html; charset=UTF-8"))
       }
     }
   }

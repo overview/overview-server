@@ -28,34 +28,36 @@ trait ViewFilterBackend {
 object ViewFilterBackend {
   sealed trait ResolveError
   object ResolveError {
-    /** There is no ViewFilter for this (documentSetId, viewId) combination. */
-    case object UrlNotFound extends ResolveError
-
-    /** The URL is invalid.
+    /** There is no ViewFilter for this (documentSetId, viewId) combination.
       *
-      * We don't bother translating "message" here, because the message is
-      * aimed at plugin authors and sysadmins.
+      * This can occur legitimately in the case of a race:
+      *
+      * 1. The plugin gets a viewFilter
+      * 2. The user searches with that viewFilter
+      * 3. The plugin unsets viewFilter
+      *
+      * That means this needs to be translated.
       */
-    case class UrlInvalid(url: String, message: String) extends ResolveError
+    case object UrlNotFound extends ResolveError
 
     /** The server did not respond completely in time. */
     case class HttpTimeout(url: String) extends ResolveError
 
-    /** The server responded with an HTTP error code.
+    /** The server did not reply `200 OK` with a `DocumentIdFilter` bitset.
       *
-      * In other words: the server is misbehaving.
+      * For instance:
+      *
+      * * The URL is an invalid URL.
+      * * The server refused the connection.
+      * * The server did not set `Content-Type: application/octet-stream`.
+      * * The server responded with a non-200 status code.
+      *
+      * These are all bugs in the plugin.
       *
       * We don't bother translating "message" here, because the message is
       * aimed at plugin authors and sysadmins.
       */
-    case class HttpError(url: String, message: String) extends ResolveError
-
-    /** The server's response does not parse to a DocumentIdFilter.
-      *
-      * We don't bother translating "message" here, because the message is
-      * aimed at plugin authors and sysadmins.
-      */
-    case class InvalidHttpResponse(url: String, message: String) extends ResolveError
+    case class PluginError(url: String, message: String) extends ResolveError
   }
 }
 
@@ -63,7 +65,6 @@ class DbHttpViewFilterBackend @Inject() (
   val database: Database,
   val actorSystem: ActorSystem,
   val materializer: Materializer,
-  val httpTimeout: scala.concurrent.duration.FiniteDuration = Duration(10, "s")
 ) extends ViewFilterBackend with DbBackend {
   import database.api._
   import ViewFilterBackend.ResolveError
@@ -74,6 +75,8 @@ class DbHttpViewFilterBackend @Inject() (
   import akka.http.scaladsl.settings.{ClientConnectionSettings,ConnectionPoolSettings}
 
   protected lazy val logger = Logger.forClass(getClass)
+
+  var httpTimeout: scala.concurrent.duration.FiniteDuration = Duration(10, "s") // overwritten in tests. TODO use Configuration?
 
   override def resolve(documentSetId: Long, viewFilterSelection: ViewFilterSelection): Future[Either[ResolveError,DocumentIdFilter]] = {
     import scala.concurrent.ExecutionContext.Implicits.global
@@ -100,6 +103,12 @@ class DbHttpViewFilterBackend @Inject() (
     Http(actorSystem)
   }
 
+  /** Turns an HttpResponse into a DocumentIdFilter.
+    *
+    * Returns Left[PluginError] if the response is not 200 OK.
+    *
+    * Returns Left[HttpTimeout] if the response does not complete in time.
+    */
   private def httpResponseToResult(url: String, documentSetId: Long, httpResponse: HttpResponse): Future[Either[ResolveError,DocumentIdFilter]] = {
     import actorSystem.dispatcher
 
@@ -117,14 +126,14 @@ class DbHttpViewFilterBackend @Inject() (
             Success(Right(documentIdSet))
           }
           case _ => {
-            Success(Left(ResolveError.InvalidHttpResponse(url, "Expected Content-Type: application/octet-stream; got: " + strict.contentType.toString)))
+            Success(Left(ResolveError.PluginError(url, "Expected Content-Type: application/octet-stream; got: " + strict.contentType.toString)))
           }
         }
       }
       case (status, Success(strict)) => {
         // We received a non-200 OK message
         val message = strict.data.utf8String
-        Success(Left(ResolveError.HttpError(url, status + ": " + message)))
+        Success(Left(ResolveError.PluginError(url, status + ": " + message)))
       }
       case (_, Failure(ex: java.util.concurrent.TimeoutException)) => {
         Success(Left(ResolveError.HttpTimeout(url)))
@@ -137,17 +146,54 @@ class DbHttpViewFilterBackend @Inject() (
     })
   }
 
-  private def resolveHttp(documentSetId: Long, filterUrl: String, apiToken: String, ids: immutable.Seq[String], operation: Operation): Future[Either[ResolveError,DocumentIdFilter]] = {
+  /** Requests a bitset from uri over HTTP.
+    *
+    * Returns Left[PluginError] if the connection is refused.
+    *
+    * Returns Left[HttpTimeout] if the connection stalls before a response
+    * header is sent.
+    *
+    * Also returns any errors from httpResponseToResult.
+    */
+  private def resolveUri(documentSetId: Long, uri: Uri): Future[Either[ResolveError,DocumentIdFilter]] = {
+    val url = uri.toString
     import actorSystem.dispatcher
 
+    logger.logExecutionTimeAsync("finding document IDs at URL {}", url) {
+      http.singleRequest(HttpRequest(uri=uri), settings=connectionPoolSettings)(materializer).transformWith(_ match {
+        case Success(httpResponse) => httpResponseToResult(url, documentSetId, httpResponse)
+        case Failure(ex: StreamTcpException) => {
+          Future.successful(Left(ResolveError.PluginError(url, ex.getMessage)))
+        }
+        case Failure(ex: TcpIdleTimeoutException) => {
+          // akka doesn't time out if we have an HTTP server that just accepts a
+          // request and doesn't respond. We force a _request_ timeout by using an
+          // _idle_ timeout. Sorry -- no keepalive.
+          Future.successful(Left(ResolveError.HttpTimeout(url)))
+        }
+        case Failure(ex) => {
+          ex.printStackTrace()
+          logger.warn("Unhandled exception", ex)
+          ???
+        }
+      })
+    }
+  }
+
+  /** Builds a URI and calls resolveUri() with it.
+    *
+    * Returns Left[UrlInvalaid] if the given filterUrl is not a valid
+    * 'http' or 'https' URL.
+    */
+  private def resolveHttp(documentSetId: Long, filterUrl: String, apiToken: String, ids: immutable.Seq[String], operation: Operation): Future[Either[ResolveError,DocumentIdFilter]] = {
     val uri = try {
       Uri.parseHttpRequestTarget(filterUrl)
     } catch {
-      case ex: IllegalUriException => return Future.successful(Left(ResolveError.UrlInvalid(filterUrl, ex.getMessage)))
+      case ex: IllegalUriException => return Future.successful(Left(ResolveError.PluginError(filterUrl, ex.getMessage)))
     }
 
     if (uri.scheme != "http" && uri.scheme != "https") {
-      return Future.successful(Left(ResolveError.UrlInvalid(filterUrl, "expected scheme to be https or, for testing only, http")))
+      return Future.successful(Left(ResolveError.PluginError(filterUrl, "expected scheme to be https or, for testing only, http")))
     }
 
     val fullUri = uri.withQuery(akka.http.scaladsl.model.Uri.Query(
@@ -160,25 +206,8 @@ class DbHttpViewFilterBackend @Inject() (
         })
       )
     ))
-    val fullUrl = fullUri.toString
 
-    http.singleRequest(HttpRequest(uri=fullUri), settings=connectionPoolSettings)(materializer).transformWith(_ match {
-      case Success(httpResponse) => httpResponseToResult(fullUrl, documentSetId, httpResponse)
-      case Failure(ex: StreamTcpException) => {
-        Future.successful(Left(ResolveError.HttpError(fullUrl, ex.getMessage)))
-      }
-      case Failure(ex: TcpIdleTimeoutException) => {
-        // akka doesn't time out if we have an HTTP server that just accepts a
-        // request and doesn't respond. We force a _request_ timeout by using an
-        // _idle_ timeout. Sorry -- no keepalive.
-        Future.successful(Left(ResolveError.HttpTimeout(fullUrl)))
-      }
-      case Failure(ex) => {
-        ex.printStackTrace()
-        logger.warn("Unhandled exception", ex)
-        ???
-      }
-    })
+    resolveUri(documentSetId, fullUri)
   }
 
   private lazy val filterUrlAndTokenByIdsCompiled = Compiled { (documentSetId: Rep[Long], viewId: Rep[Long]) =>

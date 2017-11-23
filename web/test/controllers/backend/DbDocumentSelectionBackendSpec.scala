@@ -54,6 +54,7 @@ class DbDocumentSelectionBackendSpec extends DbBackendSpecification with InAppSp
 
         val searchBackend = mock[SearchBackend]
         val documentBackend = mock[DocumentBackend]
+        val viewFilterBackend = mock[ViewFilterBackend]
         def searchDocumentIds: DocumentIdSet = DocumentIdSet.empty
         def searchWarnings: List[SearchWarning] = Nil
         def searchResult: SearchResult = SearchResult(searchDocumentIds, searchWarnings)
@@ -78,6 +79,7 @@ class DbDocumentSelectionBackendSpec extends DbBackendSpecification with InAppSp
           searchBackend,
           documentSetBackend,
           documentIdListBackend,
+          viewFilterBackend,
           Configuration("overview.max_n_regex_documents_per_search" -> 3),
           app.materializer
         )
@@ -332,6 +334,48 @@ class DbDocumentSelectionBackendSpec extends DbBackendSpecification with InAppSp
         override val storeObjectIds = Vector(obj.id)
 
         ret.documentIds must beEqualTo(Vector(doc2.id, doc1.id))
+      }
+
+      "filter by a ViewFilterSelection" in new CreateSelectionScope {
+        val selection = ViewFilterSelection(234, Vector("foo"), ViewFilterSelection.Operation.Any)
+        override val viewFilterSelections = Vector(selection)
+        val anIdSet = DocumentIdSet(Vector(doc1.id, doc3.id))
+        viewFilterBackend.resolve(documentSet.id, selection) returns Future.successful(Right(anIdSet))
+        ret.documentIds must containTheSameElementsAs(Vector(doc1.id, doc3.id))
+        ret.warnings must beEmpty
+      }
+
+      "AND ViewFilterSelection selections" in new CreateSelectionScope {
+        val selection1 = ViewFilterSelection(234, Vector("foo"), ViewFilterSelection.Operation.Any)
+        val selection2 = ViewFilterSelection(235, Vector("foo"), ViewFilterSelection.Operation.Any)
+        override val viewFilterSelections = Vector(selection1, selection2)
+        val idSet1 = DocumentIdSet(Vector(doc1.id, doc3.id))
+        val idSet2 = DocumentIdSet(Vector(doc1.id, doc2.id))
+        viewFilterBackend.resolve(documentSet.id, selection1) returns Future.successful(Right(idSet1))
+        viewFilterBackend.resolve(documentSet.id, selection2) returns Future.successful(Right(idSet2))
+        ret.documentIds must containTheSameElementsAs(Vector(doc1.id))
+        ret.warnings must beEmpty
+      }
+
+      "warn and not filter when ViewFilterSelection fails to resolve" in new CreateSelectionScope {
+        val selection = ViewFilterSelection(234, Vector("foo"), ViewFilterSelection.Operation.Any)
+        override val viewFilterSelections = Vector(selection)
+        val error = ViewFilterBackend.ResolveError.HttpTimeout("http://foo")
+        viewFilterBackend.resolve(documentSet.id, selection) returns Future.successful(Left(error))
+        ret.documentIds must containTheSameElementsAs(Vector(doc1.id, doc2.id, doc3.id))
+        ret.warnings must beEqualTo(Vector(SelectionWarning.ViewFilterError(error)))
+      }
+
+      "Combine one successful ViewFilterSelection with another's warning" in new CreateSelectionScope {
+        val selection1 = ViewFilterSelection(234, Vector("foo"), ViewFilterSelection.Operation.Any)
+        val selection2 = ViewFilterSelection(235, Vector("foo"), ViewFilterSelection.Operation.Any)
+        override val viewFilterSelections = Vector(selection1, selection2)
+        val idSet1 = DocumentIdSet(Vector(doc1.id, doc3.id))
+        val error = ViewFilterBackend.ResolveError.HttpTimeout("http://foo")
+        viewFilterBackend.resolve(documentSet.id, selection1) returns Future.successful(Right(idSet1))
+        viewFilterBackend.resolve(documentSet.id, selection2) returns Future.successful(Left(error))
+        ret.documentIds must containTheSameElementsAs(Vector(doc1.id, doc3.id))
+        ret.warnings must beEqualTo(Vector(SelectionWarning.ViewFilterError(error)))
       }
 
       "filter by regex (white-box)" in new CreateSelectionScope {

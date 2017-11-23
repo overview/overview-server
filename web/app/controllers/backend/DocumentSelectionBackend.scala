@@ -12,7 +12,7 @@ import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits._ // TODO use another context
 
 import com.overviewdocs.database.Database
-import com.overviewdocs.models.{DocumentIdFilter,DocumentIdSet,DocumentSet,Document}
+import com.overviewdocs.models.{DocumentIdFilter,DocumentIdSet,DocumentSet,Document,ViewFilterSelection}
 import com.overviewdocs.query.{Field,Query=>SearchQuery,AndQuery,OrQuery,NotQuery,RegexQuery} // "Query" conflicts with SQL Query
 import com.overviewdocs.searchindex.SearchResult
 import com.overviewdocs.util.Logger
@@ -131,6 +131,7 @@ class DbDocumentSelectionBackend @Inject() (
   val searchBackend: SearchBackend,
   val documentSetBackend: DocumentSetBackend,
   val documentIdListBackend: DocumentIdListBackend,
+  val viewFilterBackend: ViewFilterBackend,
   val configuration: Configuration,
   val materializer: Materializer
 ) extends DocumentSelectionBackend with DbBackend {
@@ -204,6 +205,20 @@ class DbDocumentSelectionBackend @Inject() (
     }
   }
 
+  private def indexByViewFilter(documentSetId: Int, selection: ViewFilterSelection): Future[(DocumentIdFilter,List[SelectionWarning])] = {
+    viewFilterBackend.resolve(documentSetId, selection).map(_ match {
+      case Right(filter) => (filter, Nil)
+      case Left(error) => (DocumentIdFilter.All(documentSetId), List(SelectionWarning.ViewFilterError(error)))
+    })
+  }
+
+  /** Returns IDs that match the given ViewFilterSelections */
+  private def indexByViewFilters(documentSetId: Int, selections: immutable.Seq[ViewFilterSelection]): Future[(DocumentIdFilter,List[SelectionWarning])] = {
+    val idSetFutures = selections.map(selection => indexByViewFilter(documentSetId, selection))
+    val all: (DocumentIdFilter, List[SelectionWarning]) = (DocumentIdFilter.All(documentSetId), Nil)
+    Future.foldLeft(idSetFutures)(all)((r1, r2) => (r1._1.intersect(r2._1), r1._2 ++ r2._2))
+  }
+
   /** Returns IDs that match the given tags/objects/etc (everything but
     * search pharse), unsorted.
     */
@@ -229,6 +244,8 @@ class DbDocumentSelectionBackend @Inject() (
           case Some(q) => indexByQ(documentSet, q)
         }
 
+        val byViewFiltersFuture = indexByViewFilters(request.documentSetId.toInt, request.viewFilterSelections)
+
         val byDbFuture: Future[DocumentIdFilter] = if (request.copy(q=None).isAll) {
           Future.successful(DocumentIdFilter.All(request.documentSetId.toInt))
         } else {
@@ -243,16 +260,17 @@ class DbDocumentSelectionBackend @Inject() (
         for {
           (allSortedIds, sortWarnings) <- getSortedIds(documentSet, request.sortByMetadataField, onProgress)
           (byQ, byQWarnings) <- byQFuture
+          (byViewFilters, byViewFiltersWarnings) <- byViewFiltersFuture
           byDb <- byDbFuture
           sortedIds <- Future.successful({
             logger.logExecutionTime("filtering sorted document IDs [docset {}]", request.documentSetId) {
-              val idsFilter = byQ.intersect(byDb).intersect(byBitSet)
+              val idsFilter = byQ.intersect(byDb).intersect(byBitSet).intersect(byViewFilters)
               allSortedIds.filter(idsFilter.contains _)
             }
           })
           (regexFilteredIds, regexWarnings) <- runRegexFilters(request.documentSetId, sortedIds, request.q)
         } yield {
-          InMemorySelection(regexFilteredIds, byQWarnings ++ sortWarnings ++ regexWarnings)
+          InMemorySelection(regexFilteredIds, byQWarnings ++ byViewFiltersWarnings ++ sortWarnings ++ regexWarnings)
         }
       }
     })
