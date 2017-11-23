@@ -5,8 +5,7 @@ define [
 ], (Backbone, FilterView, i18n) ->
   t = i18n.namespaced('views.DocumentSet.show.TagSelect')
 
-  # Displays the tag selection, and lets the user open a SelectTagsDropdownView
-  # to modify it.
+  # Displays and edits the tag selection.
   class SelectTagsView extends Backbone.View
     attributes:
       class: 'select-tags'
