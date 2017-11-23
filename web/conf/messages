@@ -531,9 +531,9 @@ views.Tree.show.DocumentList.tag.remove=Remove tag from document
 views.Tree.show.DocumentList.warning.TooManyExpansions=This list may be incomplete. “{0}:{1}” matched too many words from your document set; we limited our search to {2,number,integer} words.
 views.Tree.show.DocumentList.warning.TooMuchFuzz=This list may be incomplete. “{0}:{1}” has too great a distance to search; we limited the distance to {2}.
 views.Tree.show.DocumentList.warning.IndexDoesNotExist=We’re updating our search feature, and your document set is unavailable. Please wait five minutes and try again.
-views.Tree.show.documentList.warning.ViewFilterUrlMissing=We ignored one of your filters because the View in question was deleted.
-views.Tree.show.documentList.warning.ViewFilterHttpTimeout=We ignored one of your filters because the View’s server took too long to respond.
-views.Tree.show.documentList.warning.ViewFilterHttpTimeout=We ignored one of your filters because the View’s server misbehaved: {0}
+views.Tree.show.DocumentList.warning.ViewFilterUrlMissing=We ignored one of your filters because the View in question was deleted.
+views.Tree.show.DocumentList.warning.ViewFilterHttpTimeout=We ignored one of your filters because the View’s server took too long to respond.
+views.Tree.show.DocumentList.warning.ViewFilterPluginError=We ignored one of your filters because the View’s server misbehaved: {0}
 views.Tree.show.DocumentList.warning.MissingField=There is no “{0}” field. Either create it or search the following fields, capitalized correctly:
 views.Tree.show.DocumentList.warning.RegexSyntaxError=Overview ignored your regular expression, “{0}”, because of a syntax error: {1}.
 views.Tree.show.DocumentList.warning.RegexSyntaxError.help_html=<a target="_blank" href="https://github.com/google/re2/wiki/Syntax">syntax cheat sheet</a>

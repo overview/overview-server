@@ -30,4 +30,5 @@ services:
       #- .:/app:ro
       - .:/app # we can't go "ro" because Webpack writes to the source directory for now
     ports:
+      - '127.0.0.1:3333:3333' # port 3333 is useful when running integration-test/mock-plugins/standalone
       - '127.0.0.1:9000:80'

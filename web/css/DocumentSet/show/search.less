@@ -1,15 +1,19 @@
 #document-list-params>.search {
-  // We want the whole thing to "feel" like an input: a single border, which
-  // highlights.
-  height: @input-height-small;
-  position: relative;
-  margin: .5em auto;
-  max-width: 25em;
-  display: flex;
+  .wrapper {
+    // We want the whole thing to "feel" like an input: a single border, which
+    // highlights.
+    height: @input-height-small;
+    max-width: 25em;
+    margin-left: auto;
+    margin-right: auto;
+    position: relative;
+    display: flex;
+  }
 
   form {
     flex: 1 1 auto;
     display: flex;
+    position: relative;
     font-size: @font-size-small;
     line-height: @line-height-small;
 

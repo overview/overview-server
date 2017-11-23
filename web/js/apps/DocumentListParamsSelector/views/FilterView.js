@@ -4,7 +4,7 @@ const h = require('escape-html')
 
 const tinycolor = require('tinycolor')
 
-// Displays a small box and dropdown to view and change a group of filters.
+// Displays a small box and dropdown to view and change a group of choices.
 //
 // There are three groups of data here:
 //
@@ -15,7 +15,7 @@ const tinycolor = require('tinycolor')
 //         iconClass: 'coffee', // icon name from http://fontawesome.io/icons/
 //         messages: {
 //             placeholder: 'Search by coffees mentioned',
-//             filtersEmpty: 'We are unaware of any coffee in any document',
+//             choicesEmpty: 'We are unaware of any coffee in any document',
 //             // Prompts displayed in the drop-down:
 //             selectOneHtml: 'Documents <strong>mentioning</strong> this coffee',
 //             selectNotHtml: 'Documents <strong>not mentioning</strong> this coffee',
@@ -31,13 +31,10 @@ const tinycolor = require('tinycolor')
 //         }
 //     }
 //
-//         }
-//     }
+// **B. Choices.** These are set by code when options change. FilterView will
+// always display choices in the order specified.
 //
-// **B. Filters.** These are set by code when options change. FilterView will
-// always display filters in the order specified.
-//
-//     filters: [
+//     choices: [
 //         { id: '1', name: 'Filter', color: '#ffffff' },
 //         { id: '2', name: 'Cappuccino', color: '#b5947d' },
 //         { id: '3', name: 'Latte', color: '#6f4e37' },
@@ -54,13 +51,13 @@ const tinycolor = require('tinycolor')
 class FilterView {
   constructor(options) {
     if (!options.renderOptions) throw new Error('Must set options.renderOptions, an Object')
-    if (!options.filters) throw new Error('Must set options.filters, an Array')
+    if (!options.choices) throw new Error('Must set options.choices, an Array')
     if (!options.selection) throw new Error('Must set options.selection, an Object')
     if (!options.onSelect) throw new Error('Must set options.onSelect, a Function accepting a { ids, operation } Object')
 
     this.renderOptions = options.renderOptions
     this.messages = options.renderOptions.messages
-    this.filters = options.filters
+    this.choices = options.choices
     this.selection = options.selection
     this.onSelect = function(selection) { const f = options.onSelect; f(selection) } // do not set "this"
 
@@ -69,8 +66,8 @@ class FilterView {
     this.renderCollapsed()
   }
 
-  setFilters(filters) {
-    this.filters = filters
+  setChoices(choices) {
+    this.choices = choices
     this.renderCollapsed()
   }
 
@@ -82,19 +79,19 @@ class FilterView {
     this.renderCollapsed()
   }
 
-  _renderCollapsedFilterHtml(filter) {
+  _renderCollapsedChoiceHtml(choice) {
     return [
-      '<span class="selected-filter">',
-        renderSwatch(filter.color),
-        '<span class="name">', h(filter.name), '</span>',
+      '<span class="selected-choice">',
+        renderSwatch(choice.color),
+        '<span class="name">', h(choice.name), '</span>',
       '</span>',
     ].join('')
   }
 
-  _renderCollapsedFiltersHtmlByIds(ids) {
-    return this.filters
+  _renderCollapsedChoicesHtmlByIds(ids) {
+    return this.choices
       .filter(f => ids.indexOf(f.id) !== -1)
-      .map(f => this._renderCollapsedFilterHtml(f))
+      .map(f => this._renderCollapsedChoiceHtml(f))
       .join('')
   }
 
@@ -103,7 +100,7 @@ class FilterView {
     if (this.selection.ids.length === 0) {
       descriptionHtml = this.messages.placeholder
     } else {
-      const idsHtml = this._renderCollapsedFiltersHtmlByIds(this.selection.ids)
+      const idsHtml = this._renderCollapsedChoicesHtmlByIds(this.selection.ids)
       let opName
       if (this.selection.ids.length === 1) {
         opName = this.selection.operation == 'any' ? 'One' : 'Not'
@@ -125,23 +122,23 @@ class FilterView {
     ].join('')
   }
 
-  _renderExpandedFilterHtml(filter) {
-    const maybeChecked = this.selection.ids.indexOf(filter.id) === -1 ? '' : ' checked' // " checked" or ""
+  _renderExpandedChoiceHtml(choice) {
+    const maybeChecked = this.selection.ids.indexOf(choice.id) === -1 ? '' : ' checked' // " checked" or ""
     return [
       '<label>',
         '<span class="checkbox">',
-          '<input type="checkbox" name="filter" value="', h(filter.id), '" tabindex="-1"', maybeChecked, '>',
+          '<input type="checkbox" name="choice" value="', h(choice.id), '" tabindex="-1"', maybeChecked, '>',
         '</span>',
-        renderSwatch(filter.color),
-        '<span class="name">', h(filter.name), '</span>',
+        renderSwatch(choice.color),
+        '<span class="name">', h(choice.name), '</span>',
       '</label>',
     ].join('')
   }
 
-  _renderExpandedFiltersHtml() {
+  _renderExpandedChoicesHtml() {
     return [
-      '<ul class="filters">',
-        this.filters.map(f => `<li>${this._renderExpandedFilterHtml(f)}</li>`).join(''),
+      '<ul class="choices">',
+        this.choices.map(f => `<li>${this._renderExpandedChoiceHtml(f)}</li>`).join(''),
       '</ul>',
     ].join('')
   }
@@ -211,7 +208,7 @@ class FilterView {
   _renderExpandedHtml() {
     return [
       '<div class="popup-frame">',
-        this._renderExpandedFiltersHtml(),
+        this._renderExpandedChoicesHtml(),
         this._renderExpandedOperationsHtml(),
       '</div>',
     ].join('')
@@ -252,8 +249,6 @@ class FilterView {
   }
 
   expand() {
-    if (this.popupEl) return
-
     this.el.classList.add('expanded')
     this.popupEl = document.createElement('div')
     this.popupEl.className = 'document-filter-popup'
@@ -315,7 +310,7 @@ class FilterView {
   buildAndEmitSelection() {
     let selection = { ids: [], operation: 'any' }
     if (this.popupEl) {
-      for (const el of this.popupEl.querySelectorAll('input[name=filter]:checked')) {
+      for (const el of this.popupEl.querySelectorAll('input[name=choice]:checked')) {
         selection.ids.push(el.getAttribute('value'))
       }
 

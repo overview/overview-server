@@ -1,0 +1,49 @@
+<html>
+  <head>
+    <title>Test Plugin</title>
+    <meta charset="utf-8">
+  </head>
+  <body>
+    <main></main>
+    <pre></pre>
+    <script>
+var main = document.querySelector('main')
+
+window.parent.postMessage({
+  call: 'setViewFilter',
+  args: [ {
+    url: 'http://localhost:3333/filter/01010101',
+    renderOptions: {
+      iconClass: 'filter',
+      messages: {
+        placeholder: 'placeholder',
+        choicesEmpty: 'choicesEmpty',
+        selectOneHtml: 'selectOneHtml',
+        selectNotHtml: 'selectNotHtml',
+        selectAnyHtml: 'selectAnyHtml',
+        selectAllHtml: 'selectAllHtml',
+        selectNoneHtml: 'selectNoneHtml',
+        selectedOneHtml: 'selectedOneHtml,{0}',
+        selectedNotHtml: 'selectedNotHtml,{0}',
+        selectedAnyHtml: 'selectedAnyHtml,{0}',
+        selectedAllHtml: 'selectedAllHtml,{0}',
+        selectedNoneHtml: 'selectedNoneHtml,{0}',
+      },
+    },
+    choices: [
+      { id: 'foo', name: 'Foo', color: '#abcdef' },
+      { id: 'bar', name: 'Bar', color: '#fedcba' },
+    ],
+  } ]
+}, '*')
+
+window.addEventListener('message', function(ev) {
+  if (ev.data.event === 'notify:documentListParams') {
+    document.querySelector('pre').textContent = JSON.stringify(ev.data)
+  }
+})
+
+document.body.className = 'loaded'
+    </script>
+  </body>
+</html>

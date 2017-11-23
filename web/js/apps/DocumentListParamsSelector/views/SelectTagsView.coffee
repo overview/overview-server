@@ -27,7 +27,7 @@ define [
           iconClass: 'tag',
           messages: {
             placeholder: t('placeholder'),
-            filtersEmpty: t('noTags'),
+            choicesEmpty: t('noTags'),
             selectOneHtml: t('selectOneHtml'),
             selectNotHtml: t('selectNotHtml'),
             selectAnyHtml: t('selectAnyHtml'),
@@ -43,20 +43,20 @@ define [
             selectedNoneHtml: t('selectedNoneHtml', '{0}'),
           },
         },
-        filters: @_tagsAsFilters(),
+        choices: @_tagsAsChoices(),
         selection: @_paramsAsSelection(),
         onSelect: (selection) => @onSelect(selection),
       })
       @_initialRender()
 
     # Render tags, the way FilterView understands
-    _tagsAsFilters: ->
-      filters = @tags.models
+    _tagsAsChoices: ->
+      choices = @tags.models
         .map((tag) => { id: String(tag.id), name: tag.get('name'), color: tag.get('color') })
 
-      filters.push({ id: 'tagged', name: t('tagged'), color: '#dddddd' })
+      choices.push({ id: 'tagged', name: t('tagged'), color: '#dddddd' })
 
-      filters
+      choices
 
     # Render selection, the way FilterView understands
     _paramsAsSelection: ->
@@ -73,7 +73,7 @@ define [
       { ids: ids, operation: operation }
 
     sendTagsToFilterView: ->
-      @filterView.setFilters(@_tagsAsFilters())
+      @filterView.setChoices(@_tagsAsChoices())
 
     sendSelectionToFilterView: ->
       @filterView.setSelection(@_paramsAsSelection())

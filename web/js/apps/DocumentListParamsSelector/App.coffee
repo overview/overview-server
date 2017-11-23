@@ -4,12 +4,14 @@ define [
   './views/ObjectsOrDocumentSetView'
   './views/SearchView'
   './views/SelectTagsView'
-], (_, Backbone, ObjectsOrDocumentSetView, SearchView, SelectTagsView) ->
+  './views/FiltersView'
+], (_, Backbone, ObjectsOrDocumentSetView, SearchView, SelectTagsView, FiltersView) ->
   class App extends Backbone.View
     template: _.template('''
       <div class="objects-or-document-set"></div>
       <div class="search"></div>
       <div class="tags"></div>
+      <div class="view-filters"></div>
     ''')
 
     initialize: (options) ->
@@ -46,7 +48,9 @@ define [
         objectsOrDocumentSet: @$('.objects-or-document-set')
         search: @$('.search')
         tags: @$('.tags')
+        filters: @$('.view-filters')
 
       new ObjectsOrDocumentSetView(model: @model, state: @state, el: @ui.objectsOrDocumentSet)
       new SearchView(model: @model, state: @state, el: @ui.search, globalActions: @globalActions)
       new SelectTagsView(model: @model, state: @state, tags: @tags, el: @ui.tags)
+      new FiltersView(collection: @documentSet.views, state: @state, el: @ui.filters)

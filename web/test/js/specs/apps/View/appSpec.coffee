@@ -12,6 +12,7 @@ define [
         apiToken: 'api-token'
         title: 'title'
         url: 'http://localhost:9876/base/mock-plugin'
+        filter: null
         serverUrlFromPlugin: null
 
       @el = document.createElement('div')
@@ -27,6 +28,8 @@ define [
       document.body.appendChild(@el)
       document.body.appendChild(@main)
 
+      @sandbox = sinon.sandbox.create()
+
       @createViewApp = () =>
         @viewApp = new ViewApp
           documentSetId: 234
@@ -37,6 +40,7 @@ define [
     afterEach ->
       @viewApp?.remove()
       document.body.removeChild(@main) # we don't want viewApp.remove() to remove this
+      @sandbox.restore()
 
     it 'should use serverUrlFromPlugin when set', ->
       @view.set(serverUrlFromPlugin: 'http://overview-web')
@@ -56,6 +60,20 @@ define [
       $iframe = @viewApp.$('iframe')
       expect($iframe.length).to.exist
       expect($iframe).to.have.attr('src', 'http://localhost:9876/base/mock-plugin/show?server=http%3A%2F%2Flocalhost%3A9876&documentSetId=234&apiToken=api-token')
+
+    describe 'setViewFilter', ->
+      it 'should change attributes.filter', ->
+        @createViewApp()
+        @sandbox.stub(Backbone, 'sync')
+        @view.on('change:filter', onChange = sinon.spy())
+        @viewApp.setViewFilter({ foo: 'bar' })
+        expect(onChange).to.have.been.calledWith(@view, { foo: 'bar' })
+
+      it 'should PATCH the filter to the server', ->
+        @createViewApp()
+        @view.save = sinon.spy()
+        @viewApp.setViewFilter({ foo: 'bar' })
+        expect(@view.save).to.have.been.calledWith({ filter: { foo: 'bar' } }, { patch: true })
 
     describe 'after setRightPane', ->
       beforeEach (done) ->

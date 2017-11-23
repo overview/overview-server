@@ -54,6 +54,7 @@ define [
           postMessageToPluginIframes: sinon.spy()
           setRightPane: sinon.spy()
           setModalDialog: sinon.spy()
+          setViewFilter: sinon.spy()
           onTag: sinon.spy()
           onUntag: sinon.spy()
           remove: sinon.spy()
@@ -136,6 +137,10 @@ define [
       it 'should setModalDialog', ->
         @subject._onMessage(origin: '', data: { call: 'setModalDialog', args: [ { url: 'http://example.com' } ] })
         expect(@viewApp.setModalDialog).to.have.been.calledWith({ url: 'http://example.com' })
+
+      it 'should setViewFilter', ->
+        @subject._onMessage(origin: '', data: { call: 'setViewFilter', args: [ { foo: 'bar' } ] })
+        expect(@viewApp.setViewFilter).to.have.been.calledWith({ foo: 'bar' })
 
       it 'should set metadata on document', ->
         document = new Backbone.Model(id: 2, metadata: { foo: 'bar' })

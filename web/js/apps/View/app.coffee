@@ -54,6 +54,9 @@ define [
         serverUrl = "#{loc.protocol}//#{loc.host}"
       serverUrl
 
+    setViewFilter: (viewFilter) ->
+      @view.save({ filter: viewFilter }, { patch: true })
+
     render: ->
       params = $.param([
         { name: 'server', value: @getServerUrl() }

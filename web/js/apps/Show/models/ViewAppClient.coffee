@@ -104,6 +104,7 @@ define [
         when 'setDocumentListParams' then @setDocumentListParams(e.data.args...)
         when 'setRightPane' then @viewApp.setRightPane?(e.data.args...)
         when 'setModalDialog' then @viewApp.setModalDialog?(e.data.args...)
+        when 'setViewFilter' then @viewApp.setViewFilter?(e.data.args...)
         when 'openMetadataSchemaEditor' then @globalActions.openMetadataSchemaEditor()
         when 'goToNextDocument' then @globalActions.goToNextDocument()
         when 'goToPreviousDocument' then @globalActions.goToPreviousDocument()

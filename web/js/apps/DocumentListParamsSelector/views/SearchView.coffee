@@ -31,23 +31,25 @@ define [
   # Triggers: nothing
   class SearchView extends Backbone.View
     template: _.template("""
-      <form method="post" action="#">
-        <i class="icon icon-search"></i>
-        <input type="text" name="query" placeholder="<%- t('query_placeholder') %>" />
-        <div class="help">
-          <a href="#" class="btn btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span class="caret"></span></a>
-          <ul class="dropdown-menu dropdown-menu-right filter-options">
-            <li class="dropdown-header"><%- t('filter') %></li>
-            <li><a class="dropdown-item" href="#" data-field="text"><%- t('field.text') %></a></li>
-            <li><a class="dropdown-item" href="#" data-field="title"><%- t('field.title') %></a></li>
-            <li><a class="dropdown-item" href="#" data-field="notes"><%- t('field.notes') %></a></li>
-            <li class="dropdown-header metadata-fields"><%- t('field.metadataHeader') %></li>
-            <li class="open-metadata-schema-editor"><a class="open-metadata-schema-editor" href="#"><%- t('openMetadataSchemaEditor') %></a></li>
-          </ul>
-        </div>
-        <button class="btn btn-sm btn-primary"><%- t('button') %></button>
-      </form>
-      <a href="#" class="nix" title="<%- t('nix') %>">&times;</a>
+      <div class="wrapper">
+        <form method="post" action="#">
+          <i class="icon icon-search"></i>
+          <input type="text" name="query" placeholder="<%- t('query_placeholder') %>" />
+          <div class="help">
+            <a href="#" class="btn btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span class="caret"></span></a>
+            <ul class="dropdown-menu dropdown-menu-right filter-options">
+              <li class="dropdown-header"><%- t('filter') %></li>
+              <li><a class="dropdown-item" href="#" data-field="text"><%- t('field.text') %></a></li>
+              <li><a class="dropdown-item" href="#" data-field="title"><%- t('field.title') %></a></li>
+              <li><a class="dropdown-item" href="#" data-field="notes"><%- t('field.notes') %></a></li>
+              <li class="dropdown-header metadata-fields"><%- t('field.metadataHeader') %></li>
+              <li class="open-metadata-schema-editor"><a class="open-metadata-schema-editor" href="#"><%- t('openMetadataSchemaEditor') %></a></li>
+            </ul>
+          </div>
+          <button class="btn btn-sm btn-primary"><%- t('button') %></button>
+        </form>
+        <a href="#" class="nix" title="<%- t('nix') %>">&times;</a>
+      </div>
     """)
 
     events:
