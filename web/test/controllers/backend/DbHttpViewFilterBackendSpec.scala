@@ -13,8 +13,9 @@ import scala.collection.immutable
 import scala.concurrent.{ExecutionContext,Future,Promise}
 import scala.concurrent.duration.Duration
 
-import com.overviewdocs.models.{DocumentIdSet,DocumentIdFilter,View,ViewFilter,ViewFilterSelection}
+import com.overviewdocs.models.{DocumentIdSet,DocumentIdFilter,View,ViewFilter}
 import com.overviewdocs.models.tables.{ApiTokens,DocumentSets,Views}
+import models.ViewFilterSelection
 import test.helpers.InAppSpecification
 
 class DbHttpViewFilterBackendSpec extends DbBackendSpecification with InAppSpecification {

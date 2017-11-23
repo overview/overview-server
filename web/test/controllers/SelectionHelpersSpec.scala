@@ -14,10 +14,12 @@ import scala.concurrent.Future
 import com.overviewdocs.query.{Field,PhraseQuery}
 import com.overviewdocs.util.AwaitMethod
 import controllers.backend.SelectionBackend
-import models.{InMemorySelection,SelectionRequest}
+import models.{InMemorySelection,SelectionRequest,ViewFilterSelection}
 import test.helpers.MockMessages
 
 class SelectionHelpersSpec extends ControllerSpecification with Mockito with AwaitMethod {
+  import ViewFilterSelection.Operation
+
   "selectionRequest" should {
     trait SelectionScope extends Scope {
       trait F {
@@ -97,6 +99,39 @@ class SelectionHelpersSpec extends ControllerSpecification with Mockito with Awa
 
       "set tagOperation=any when given an invalid value" in new SelectionScope {
         test("/?tagOperation=moo", Right(SelectionRequest(1L, tagOperation=SelectionRequest.TagOperation.Any)))
+      }
+
+      "make a SelectionRequest with a ViewFilterSelection" in new SelectionScope {
+        test("/?filters.123.ids=1,2&filters.123.operation=all", Right(SelectionRequest(1L, viewFilterSelections=Vector(
+          ViewFilterSelection(123, Vector("1", "2"), Operation.All)
+        ))))
+      }
+
+      "make a SelectionRequest with two ViewFilterSelections" in new SelectionScope {
+        test("/?filters.123.ids=1,2&filters.123.operation=all&filters.234.ids=2,3&filters.234.operation=none", Right(SelectionRequest(1L, viewFilterSelections=Vector(
+          ViewFilterSelection(123, Vector("1", "2"), Operation.All),
+          ViewFilterSelection(234, Vector("2", "3"), Operation.None)
+        ))))
+      }
+
+      "set ViewFilterSelection operation=any by default" in new SelectionScope {
+        test("/?filters.123.ids=1,2", Right(SelectionRequest(1L, viewFilterSelections=Vector(
+          ViewFilterSelection(123, Vector("1", "2"), Operation.Any)
+        ))))
+      }
+
+      "set ViewFilterSelection operation=any if value is incorrect" in new SelectionScope {
+        test("/?filters.123.ids=1,2&filters.123.operation=WRONG", Right(SelectionRequest(1L, viewFilterSelections=Vector(
+          ViewFilterSelection(123, Vector("1", "2"), Operation.Any)
+        ))))
+      }
+
+      "ignore ViewFilterSelections with empty ids" in new SelectionScope {
+        test("/?filters.123.ids=&filters.123.operation=any", Right(SelectionRequest(1L, viewFilterSelections=Vector())))
+      }
+
+      "not make a SelectionRequest with a non-Long" in new SelectionScope {
+        test("/?filters.foo.ids=1,2&filters.foo.operation=all", Right(SelectionRequest(1L, viewFilterSelections=Vector())))
       }
 
       "default to tagOperation=any" in new SelectionScope {

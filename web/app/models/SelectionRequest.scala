@@ -3,7 +3,6 @@ package models
 import scala.collection.immutable
 
 import com.overviewdocs.query.Query
-import com.overviewdocs.models.ViewFilterSelection
 
 /** Identifies a few documents out of an entire document set.
   *

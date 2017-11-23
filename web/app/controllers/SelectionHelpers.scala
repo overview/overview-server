@@ -6,17 +6,24 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import play.api.i18n.Messages
 import play.api.mvc.{Request,Result,Results}
 import scala.concurrent.Future
+import scala.util.Try
 
 import com.overviewdocs.query.{Query, QueryParser}
 import controllers.auth.AuthorizedRequest
 import controllers.backend.SelectionBackend
-import models.{Selection,SelectionRequest}
+import models.{Selection,SelectionRequest,ViewFilterSelection}
 
 trait SelectionHelpers extends HeaderNames with Results { self: ControllerHelpers =>
   protected val selectionBackend: SelectionBackend
 
   private val selectionIdKey: String = "selectionId" // query string parameter
   private val refreshKey: String = "refresh" // query string parameter
+
+  private def stringToViewFilterOperation(s: String): ViewFilterSelection.Operation = s match {
+    case "all" => ViewFilterSelection.Operation.All
+    case "none" => ViewFilterSelection.Operation.None
+    case _ => ViewFilterSelection.Operation.Any
+  }
 
   /** Returns a Right(SelectionRequest) from the query string or form.
     *
@@ -41,6 +48,21 @@ trait SelectionHelpers extends HeaderNames with Results { self: ControllerHelper
     val documentIds = reqData.getLongs("documents")
     val maybeDocumentIdsBitSet = reqData.getBase64BitSet("documentIdsBitSetBase64")
     val storeObjectIds = reqData.getLongs("objects")
+    val viewFilterSelections = reqData.get2LevelStringMap("filters")
+      .flatMap(nameValues => {
+        val (name, values) = nameValues
+        val maybeViewId = Try(name.toLong).toOption
+        val idStrings = values.getOrElse("ids", "").split(",").filter(_.nonEmpty).toVector
+        (maybeViewId, idStrings) match {
+          case (Some(viewId), ids) if ids.nonEmpty => {
+            val operation = stringToViewFilterOperation(values.getOrElse("operation", ""))
+            Some(ViewFilterSelection(viewId, ids, operation))
+          }
+          case _ => None
+        }
+      })
+      .toVector
+
     val maybeQOrError: Either[Result,Option[Query]] = reqData.getString("q").getOrElse("") match {
       case "" => Right(None)
       case s: String => QueryParser.parse(s) match {
@@ -54,8 +76,6 @@ trait SelectionHelpers extends HeaderNames with Results { self: ControllerHelper
       case Some("false") => Some(false)
       case _ => None
     }
-
-    val viewFilterSelections = Vector()
 
     val sortByMetadataField = reqData.getString("sortByMetadataField")
 

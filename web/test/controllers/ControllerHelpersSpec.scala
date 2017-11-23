@@ -113,6 +113,34 @@ class ControllerHelpersSpec extends Specification with JsonMatchers {
       qs("ids=1,2,3,4").getLongs("ids") must beEqualTo(Vector(1L, 2L, 3L, 4L))
     }
 
+    "#get2LevelStringMap" should {
+      "get a 2-level Map" in new RequestDataScope {
+        qs("x.foo.bar=baz&x.foo.moo=mar&x.bar.foo=moo").get2LevelStringMap("x") must beEqualTo(Map(
+          "foo" -> Map("bar" -> "baz", "moo" -> "mar"),
+          "bar" -> Map("foo" -> "moo")
+        ))
+      }
+
+      "ignore roots that are not requested" in new RequestDataScope {
+        qs("x.foo.bar=baz&y.foo.moo=mar&x.bar.foo=moo").get2LevelStringMap("x") must beEqualTo(Map(
+          "foo" -> Map("bar" -> "baz"),
+          "bar" -> Map("foo" -> "moo")
+        ))
+      }
+
+      "ignore extra dots" in new RequestDataScope {
+        qs("x.foo.bar.baz=moo").get2LevelStringMap("x") must beEqualTo(Map(
+          "foo" -> Map("bar.baz" -> "moo"),
+        ))
+      }
+
+      "return empty-String values" in new RequestDataScope {
+        qs("x.foo.bar=").get2LevelStringMap("x") must beEqualTo(Map(
+          "foo" -> Map("bar" -> ""),
+        ))
+      }
+    }
+
     "#getBase64BitSet" should {
       "get a BitSet" in new RequestDataScope {
         // 1, 3, 5, 11:

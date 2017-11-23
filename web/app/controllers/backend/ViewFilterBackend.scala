@@ -12,9 +12,10 @@ import scala.concurrent.duration.Duration
 import scala.util.{Success,Failure}
 
 import com.overviewdocs.database.Database
-import com.overviewdocs.models.{DocumentIdFilter,DocumentIdSet,ViewFilterSelection}
+import com.overviewdocs.models.{DocumentIdFilter,DocumentIdSet}
 import com.overviewdocs.models.tables.Views
 import com.overviewdocs.util.Logger
+import models.ViewFilterSelection
 import _root_.util.BitSetUtil
 
 /** Queries the database and a remote server to transform a ViewFilterSelection

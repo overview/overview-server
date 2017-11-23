@@ -12,11 +12,11 @@ import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits._ // TODO use another context
 
 import com.overviewdocs.database.Database
-import com.overviewdocs.models.{DocumentIdFilter,DocumentIdSet,DocumentSet,Document,ViewFilterSelection}
+import com.overviewdocs.models.{DocumentIdFilter,DocumentIdSet,DocumentSet,Document}
 import com.overviewdocs.query.{Field,Query=>SearchQuery,AndQuery,OrQuery,NotQuery,RegexQuery} // "Query" conflicts with SQL Query
 import com.overviewdocs.searchindex.SearchResult
 import com.overviewdocs.util.Logger
-import models.{InMemorySelection,SelectionRequest,SelectionWarning}
+import models.{InMemorySelection,SelectionRequest,SelectionWarning,ViewFilterSelection}
 
 /** Constructs an InMemorySelection out of a SelectionRequest.
   *

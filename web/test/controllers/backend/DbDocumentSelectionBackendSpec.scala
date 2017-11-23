@@ -12,9 +12,9 @@ import scala.concurrent.{Future,Promise}
 import com.overviewdocs.query.{AndQuery,Field,NotQuery,OrQuery,PhraseQuery,PrefixQuery,Query,RegexQuery}
 import com.overviewdocs.messages.Progress
 import com.overviewdocs.metadata.{MetadataField,MetadataFieldDisplay,MetadataFieldType,MetadataSchema}
-import com.overviewdocs.models.{DocumentIdList,DocumentIdSet,ViewFilter,ViewFilterSelection}
+import com.overviewdocs.models.{DocumentIdList,DocumentIdSet,ViewFilter}
 import com.overviewdocs.searchindex.{SearchResult,SearchWarning}
-import models.{InMemorySelection,SelectionRequest,SelectionWarning}
+import models.{InMemorySelection,SelectionRequest,SelectionWarning,ViewFilterSelection}
 import test.helpers.InAppSpecification
 
 class DbDocumentSelectionBackendSpec extends DbBackendSpecification with InAppSpecification with Mockito {

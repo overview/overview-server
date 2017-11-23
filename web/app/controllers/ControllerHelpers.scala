@@ -115,6 +115,27 @@ trait ControllerHelpers {
       IdList.longs(s).ids
     }
 
+    /** Returns a Map[String,Map[String,String]] from the input.
+      *
+      * For instance, given "root.foo.bar=baz", the return value when called
+      * with "root" will be `Map("foo" -> Map("bar" -> "baz"))`.
+      */
+    def get2LevelStringMap(root: String): Map[String,Map[String,String]] = {
+      val Pattern = """([^.]+)\.([^.]+)\.(.+)""".r
+      data
+        .foldLeft(Map.empty[String,Map[String,String]])((acc: Map[String,Map[String,String]], kv: (String,Seq[String])) => {
+          val (key, values) = kv
+          key match {
+            case Pattern(keyRoot, outer, inner) if keyRoot == root => {
+              val innerMap = acc.getOrElse(outer, Map.empty[String,String])
+              val newInnerMap = innerMap ++ Map(inner -> values.last)
+              acc ++ Map(outer -> newInnerMap)
+            }
+            case _ => acc
+          }
+        })
+    }
+
     /** Decodes a BitSet from an encoded input; returns None if decoding
       * fails or the key is not specified.
       */

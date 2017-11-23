@@ -1,7 +1,6 @@
 package com.overviewdocs.models
 
 import play.api.libs.json.JsObject
-import scala.collection.immutable
 
 /** A component that produces document-ID filters.
   *
@@ -16,18 +15,3 @@ case class ViewFilter(
   url: String,
   json: JsObject
 )
-
-case class ViewFilterSelection(
-  viewId: Long,
-  ids: immutable.Seq[String],
-  operation: ViewFilterSelection.Operation
-)
-
-object ViewFilterSelection {
-  sealed trait Operation
-  object Operation {
-    case object Any extends Operation
-    case object All extends Operation
-    case object None extends Operation
-  }
-}
