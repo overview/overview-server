@@ -46,6 +46,32 @@ define [
       it 'should error when given no object title', ->
         expect(-> n(objects: [ 1, 2 ])).to.throw('Missing options.title')
 
+      it 'should parse filters', ->
+        filters = {
+          123: { ids: [ 'foo', 'bar' ], operation: 'any' },
+          234: { ids: [ 'bar', 'baz' ], operation: 'all' },
+        }
+        expect(n(filters: filters)).to.deep.eq(filters: filters)
+
+      it 'should set empty filter ids to nothing', ->
+        expect(n(filters: { 123: { ids: [], operation: 'all' } })).to.deep.eq({})
+
+      it 'should throw when missing filter ids', ->
+        expect(-> n(filters: { 123: { idos: [ '1' ], operation: 'all' } })).to.throw
+
+      it 'should default filter operation to any', ->
+        expect(n(filters: { 123: { ids: [ '1' ] } })).to.deep.eq({
+          filters: { 123: { ids: [ '1' ], operation: 'any' } }
+        })
+
+      it 'should throw on invalid filter operation', ->
+        expect(-> n(filters: { 123: { ids: [ '1' ], operation: 'allo' } })).to.throw
+
+      it 'should make filter IDs strings', ->
+        expect(n(filters: { 123: { ids: [ 1 ], operation: 'any' } })).to.deep.eq({
+          filters: { 123: { ids: [ '1' ], operation: 'any' } }
+        })
+
     describe 'buildQueryJson()', ->
       j = DocumentListParams.buildQueryJson
 
@@ -76,6 +102,15 @@ define [
       it 'should give sortByMetadataField', ->
         expect(j(sortByMetadataField: 'foo')).to.deep.eq(sortByMetadataField: 'foo')
 
+      it 'should give filters', ->
+        params = {
+          filters: {
+            123: { ids: [ 'foo', 'bar' ], operation: 'all' },
+            234: { ids: [ 'bar', 'baz' ], operation: 'any' },
+          }
+        }
+        expect(j(params)).to.deep.eq(params)
+
     describe 'extend', ->
       e = DocumentListParams.extend
 
@@ -96,6 +131,44 @@ define [
 
       it 'should empty objects when given null objects', ->
         expect(e({ title: 'foo', objects: [ 1 ] }, { objects: null })).to.deep.eq({})
+
+      it 'should add a filter when there are none', ->
+        filters = { 123: { ids: [ '1', '2' ], operation: 'any' } }
+        expect(e({ q: 'foo' }, { filters: filters })).to.deep.eq({ q: 'foo', filters: filters })
+
+      it 'should add a filter when there is already a filter', ->
+        filter123 = { ids: [ '1', '2' ], operation: 'any' }
+        filter234 = { ids: [ '2', '3' ], operation: 'all' }
+
+        expect(e({ filters: { 123: filter123 } }, { filters: { 234: filter234 } }))
+          .to.deep.eq({ filters: { 123: filter123, 234: filter234 }})
+
+      it 'should remove a filter when given null', ->
+        filter123 = { ids: [ '1', '2' ], operation: 'any' }
+        filter234 = { ids: [ '2', '3' ], operation: 'all' }
+
+        expect(e({ filters: { 123: filter123, 234: filter234 } }, { filters: { 123: null } }))
+          .to.deep.eq({ filters: { 234: filter234 }})
+
+      it 'should remove a filter when given empty ids', ->
+        filter123 = { ids: [ '1', '2' ], operation: 'any' }
+        filter234 = { ids: [ '2', '3' ], operation: 'all' }
+
+        expect(e({ filters: { 123: filter123, 234: filter234 } }, { filters: { 123: { ids: [] } } }))
+          .to.deep.eq({ filters: { 234: filter234 }})
+
+      it 'should replace a filter', ->
+        filter123 = { ids: [ '1', '2' ], operation: 'any' }
+        filter123_2 = { ids: [ '2', '3' ], operation: 'all' }
+
+        expect(e({ filters: { 123: filter123 } }, { filters: { 123: filter123_2 } }))
+          .to.deep.eq({ filters: { 123: filter123_2 } })
+
+      it 'should remove all filters when the last one is removed', ->
+        filter123 = { ids: [ '1', '2' ], operation: 'any' }
+
+        expect(e({ q: 'foo', filters: { 123: filter123 } }, { filters: { 123: null } }))
+          .to.deep.eq({ q: 'foo' })
 
     describe 'buildQueryString()', ->
       q = DocumentListParams.buildQueryString
@@ -123,3 +196,12 @@ define [
 
       it 'should encode sortByMetadataField', ->
         expect(q(sortByMetadataField: 'foo')).to.eq('sortByMetadataField=foo')
+
+      it 'should encode filters', ->
+        params = {
+          filters: {
+            123: { ids: [ 'foo', 'bar' ], operation: 'all' },
+            234: { ids: [ 'bar', 'baz' ], operation: 'any' },
+          }
+        }
+        expect(q(params)).to.eq('filters.123.ids=foo,bar&filters.123.operation=all&filters.234.ids=bar,baz&filters.234.operation=any')

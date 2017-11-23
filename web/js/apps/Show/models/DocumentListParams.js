@@ -32,6 +32,8 @@
 //                                0. Be sure to give Overview a "true" bitset:
 //                                the most-significant bit must refer to
 //                                document 0.
+//   * `filters`: Object keyed by view ID, with values that look like
+//                `{ ids: (Array of Strings), operation: 'any|all|none' }`
 // * **Filters related to tags**:
 //   * tags: Array of Tag IDs
 //   * tagOperation: 'all' or 'none' (if unset, 'any'). If 'all', accept
@@ -72,6 +74,7 @@ const _ = require('underscore')
 function normalize(options) {
   return Object.assign(
     parseObjects(options) || {},
+    parseFilters(options) || {},
     parseTags(options) || {},
     parseQ(options) || {},
     parseSortByMetadataField(options) || {}
@@ -89,14 +92,36 @@ function normalize(options) {
 //     // overwrites all old info in that part. Here, "tags" and "tagged"
 //     // are both in the same part, so the new info overwrites the old.
 //     extend({ tagged: true }, { tags: [ 1 ] }) // => { tags: [ 1 ] }
+//
+// Each filter is its own group. To change or remove a filter, set a new value
+// for that filter or set it to `null`.
 function extend(lhs, rhs) {
   const ret = Object.assign(
     parseObjects(rhs) || parseObjects(lhs) || {},
     parseTags(rhs) || parseTags(lhs) || {},
     parseQ(rhs) || parseQ(lhs) || {},
+    extendFilters(parseFilters(lhs), parseFiltersWithNull(rhs)),
     parseSortByMetadataField(rhs) || parseSortByMetadataField(lhs) || {}
   )
   return ret
+}
+
+function extendFilters(lhs, rhs) {
+  const filters = Object.assign({}, lhs.filters || {})
+
+  const rhsFilters = rhs.filters || {}
+
+  for (const viewId of Object.keys(rhsFilters)) {
+    const filter = rhsFilters[viewId]
+
+    if (!filter || filter.ids.length === 0) {
+      delete filters[viewId]
+    } else {
+      filters[viewId] = filter
+    }
+  }
+
+  return Object.keys(filters).length === 0 ? {} : { filters: filters }
 }
 
 // Returns { q: 'foo' }
@@ -195,6 +220,43 @@ function parseObjects(options) {
   }
 }
 
+function parseFiltersWithNull(options) {
+  const input = options.filters || {}
+
+  const filters = {}
+
+  for (const key of Object.keys(input)) {
+    const spec = options.filters[key]
+    const ids = (spec || {}).ids || []
+    if (!_.isArray(ids)) throw new Error("Each Filter must have a 'ids' property")
+    if (ids.length > 0) {
+      const operation = spec.operation || 'any'
+      if (operation !== 'any' && operation !== 'all' && operation !== 'none') {
+        throw new Error("Each Filter operation must be 'any', 'all' or 'none'")
+      }
+      filters[key] = { ids: ids.map(String), operation: operation }
+    } else {
+      filters[key] = null
+    }
+  }
+
+  return { filters: filters }
+}
+
+function parseFilters(options) {
+  const ret = parseFiltersWithNull(options)
+
+  if (ret.filters) {
+    for (const key of Object.keys(ret.filters)) {
+      if (!ret.filters[key]) delete ret.filters[key]
+    }
+
+    if (Object.keys(ret.filters).length === 0) delete ret.filters
+  }
+
+  return ret
+}
+
 // Finds the sortByMetadataField from the constructor option `sortByMetadataField`.
 //
 // Returns a partial selection Object if any data was given, or `null` if none
@@ -221,20 +283,29 @@ function buildQueryJson(params) {
   return ret
 }
 
+function flattenObjectIntoArray(array, root, o) {
+  Object.keys(o).sort().forEach(function(key) {
+    const value = o[key]
+    if (_.isObject(value) && !_.isArray(value)) {
+      flattenObjectIntoArray(array, root + key + '.', value)
+    } else {
+      // String(value) does what we want on Array, Number and String
+      // encodeURIComponent() encodes commas, which is correct; but we _like_
+      // commas, because they're easy to read, and we don't expect any
+      // servers to barf from them.
+      const encodedValue = encodeURIComponent(String(value))
+        .replace(/%2C/g, ',')
+      array.push(root + key + '=' + encodedValue)
+    }
+  })
+}
+
 function buildQueryString(params) {
   const parts = []
 
   const json = buildQueryJson(params)
 
-  // sort so unit tests are easier elsewhere
-  Object.keys(json).sort().forEach(function(key) {
-    const value = json[key]
-    if (_.isArray(value)) {
-      parts.push(key + '=' + String(value))
-    } else {
-      parts.push(key + '=' + encodeURIComponent(value))
-    }
-  })
+  flattenObjectIntoArray(parts, '', json)
 
   return parts.join('&')
 }
