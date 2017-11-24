@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 set -e
 
@@ -13,7 +13,9 @@ docker build "$ABSOLUTE_DIR"
 
 image_id=$(docker build --quiet "$ABSOLUTE_DIR") # this will be fast
 
-exec docker run -it --rm \
+flags="$([ -t 0 ] && echo "-it" || echo "-i")"
+
+exec docker run $flags --rm \
   --network "${PROJECT}_default" \
   --volume "$ABSOLUTE_DIR"/test-results.xml:/integration-test/test-results.xml \
   $image_id 
