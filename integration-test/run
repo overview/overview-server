@@ -1,0 +1,19 @@
+#!/bin/sh
+
+set -e
+
+PROJECT="${PROJECT:=overviewserver}"
+
+ABSOLUTE_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+cp "$ABSOLUTE_DIR"/files/initial-test-results-xml "$ABSOLUTE_DIR"/test-results.xml
+
+echo "Building integration-test Docker image. This may take a while...." >&2
+docker build "$ABSOLUTE_DIR"
+
+image_id=$(docker build --quiet "$ABSOLUTE_DIR") # this will be fast
+
+exec docker run -it --rm \
+  --network "${PROJECT}_default" \
+  --volume "$ABSOLUTE_DIR"/test-results.xml:/integration-test/test-results.xml \
+  $image_id 

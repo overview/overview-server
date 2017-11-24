@@ -9,12 +9,14 @@ DIR="$(pwd)"
 set -e # any error means the whole thing failed
 set -x
 
-DOCKER_COMPOSE="docker-compose --project-name overviewjenkins"
+PROJECT=overviewjenkins
+
+DOCKER_COMPOSE="docker-compose --project-name $PROJECT"
 # Failure: https://github.com/docker/compose/issues/4076 -- this affects Jenkins
 # So if we run this, we won't see any output:
 #exec docker-compose run --rm --no-deps dev "$@"
 # Solution: call Docker directly
-DOCKER_RUN="docker run --rm -i --network overviewjenkins_default --volume overviewjenkins_database-data:/var/lib/postgresql/data --volume overviewjenkins_search-data:/var/lib/overview/search --volume overviewjenkins_blob-storage-data:/var/lib/overview/blob-storage --volume overviewjenkins_homedir:/root --volume $DIR:/app --publish 127.0.0.1:9000:80 overview-dev:latest"
+DOCKER_RUN="docker run --rm -i --network ${PROJECT}_default --volume ${PROJECT}_database-data:/var/lib/postgresql/data --volume ${PROJECT}_search-data:/var/lib/overview/search --volume ${PROJECT}_blob-storage-data:/var/lib/overview/blob-storage --volume ${PROJECT}_homedir:/root --volume $DIR:/app --publish 127.0.0.1:9000:80 overview-dev:latest"
 
 # Clean everything. Note that we're wiping all data for the "overviewjenkins"
 # project, not the default "overviewserver" project that you use in dev mode.
@@ -122,7 +124,7 @@ until curl -qs http://localhost:9000 -o /dev/null; do sleep 1; done
 echo 'Waiting another 20s for background jobs, so everything is fast when we test...' >&2
 sleep 20
 
-(cd integration-test && npm install && (npm run test-with-jenkins || true)) # Jenkins will pick up the test-result XML
+(PROJECT="$PROJECT" integration-test/run) || true # Jenkins will pick up the test-result XML
 
 kill $DOCKER_PID
 wait $DOCKER_PID
