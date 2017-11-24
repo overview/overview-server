@@ -75,9 +75,10 @@ object Main {
       logger.setLevel(Level.OFF)
       try {
         ret = Some(dataSource.getConnection)
+        System.out.println("Connected to " + dataSource.getUrl + " as " + dataSource.getUser)
       } catch {
         case e: SQLException => {
-          System.err.println("Failed to connect to " + dataSource.getUrl + ". Will retry in 1s.")
+          System.err.println("Failed to connect to " + dataSource.getUrl + " as " + dataSource.getUser + ". Will retry in 1s.")
           Thread.sleep(1000)
         }
       } finally {
