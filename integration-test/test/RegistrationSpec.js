@@ -90,19 +90,14 @@ describe('Registration', function() {
         email: this.userEmail,
         password: this.validPassword,
       })
+
+      await this.b.get(Url.login)
+      await this.registration.tryRegister(this.userEmail, this.validPassword + '1', this.validPassword + '1')
+      await this.b.assertExists({ tag: 'h1', contains: 'Check your email', wait: 'pageLoad' })
     })
 
     after(async function() {
       await this.adminSession.deleteUser({ email: this.userEmail })
-    })
-
-    before(async function() {
-      await this.b.get(Url.login)
-      await this.registration.tryRegister(this.userEmail, this.validPassword + '1', this.validPassword + '1')
-    })
-
-    it('should prompt the user to check his or her email', async function() {
-      await this.b.assertExists({ tag: 'h1', contains: 'Check your email', wait: 'pageLoad' })
     })
 
     it('should not change the password', async function() {
@@ -124,7 +119,7 @@ describe('Registration', function() {
   })
 
   describe('when the user tries to register', function() {
-    before(async function () {
+    before(/* beware -- not async */ function () {
       this.getConfirmationToken = async () => {
         const json = await this.adminSession.showUser({ email: this.userEmail })
         return JSON.parse(json).confirmation_token
@@ -134,6 +129,7 @@ describe('Registration', function() {
     beforeEach(async function() {
       await this.b.get(Url.login)
       await this.registration.tryRegister(this.userEmail, this.validPassword, this.validPassword)
+      await this.b.assertExists({ tag: 'h1', contains: 'Check your email', wait: 'pageLoad' })
     })
 
     afterEach(async function() {
