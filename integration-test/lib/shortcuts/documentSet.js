@@ -158,7 +158,7 @@ class DocumentSetShortcuts {
   }
 
   /**
-   * Starts a MockPlugin listening on localhost:3333; creates a View and returns
+   * Starts a MockPlugin listening on :3333; creates a View and returns
    * the MockPlugin.
    *
    * When you're done, you must `await returnedPlugin.close()`
@@ -174,7 +174,7 @@ class DocumentSetShortcuts {
       await this.b.click({ link: 'Custom…', wait: 'fast' })
       // Enter URL first, then name. Entering name will blur URL. Blurring URL
       // makes the browser test the endpoint.
-      await this.b.sendKeys('http://localhost:3333', { css: '#new-view-dialog-url', wait: 'fast' })
+      await this.b.sendKeys('http://' + server.hostname + ':3333', { css: '#new-view-dialog-url', wait: 'fast' })
       await this.b.sendKeys(name, { css: '#new-view-dialog-title' })
       await this.b.click({ link: 'use it anyway' , wait: true }) // dismiss not-HTTPS warning
       await this.b.assertExists({ css: '#new-view-dialog .state .ok', wait: 'slow' })

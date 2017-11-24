@@ -17,7 +17,7 @@ describe('Plugins', function() {
         // Wait for load. This plugin is loaded when the <pre> is non-empty
         await this.browser.assertExists({ xpath: '//pre[text() and string-length()>0]', wait: true })
         const text = await this.browser.getText({ css: 'pre' })
-        expect(text).to.match(/^\?server=http%3A%2F%2Flocalhost%3A9000&documentSetId=\d+&apiToken=[a-z0-9]+$/)
+        expect(text).to.match(/^\?server=http%3A%2F%2F[-\w.]+(?:%3A\d+)?&documentSetId=\d+&apiToken=[a-z0-9]+$/)
         await this.browser.switchToFrame(null)
       } finally {
         await server.close()
@@ -51,7 +51,7 @@ describe('Plugins', function() {
         await this.browser.assertExists({ id: 'view-app-right-pane-iframe' })
         await this.browser.switchToFrame('view-app-right-pane-iframe')
         const url = await this.browser.execute(function() { return window.location.href })
-        expect(url).to.eq('http://localhost:3333/show?placement=right-pane')
+        expect(url).to.contain('?placement=right-pane')
         await this.browser.switchToFrame(null)
 
         // Move back to left

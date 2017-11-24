@@ -3,10 +3,13 @@
 const debug = require('debug')('MockPlugin')
 const fs = require('fs')
 const http = require('http')
+const os = require('os')
 const url = require('url')
 
 module.exports = class MockPlugin {
   constructor(name) {
+    this.hostname = os.hostname()
+
     const buf = fs.readFileSync(`${__dirname}/../mock-plugins/${name}.html`)
 
     this.server = http.createServer((req, res) => {
@@ -58,23 +61,24 @@ module.exports = class MockPlugin {
 
   listen() {
     return new Promise((resolve, reject) => {
-      this.server.listen(3333, 'localhost', (err, ...args) => {
+      // 0.0.0.0 inside a Docker container, that is
+      this.server.listen(3333, '0.0.0.0', (err, ...args) => {
         if (err) return reject(err)
         resolve(...args)
       })
     })
       .then((...args) => {
-        debug('Listening on http://localhost:3333')
+        debug('Listening on http://0.0.0.0:3333')
         return args
       })
   }
 
   close() {
-    debug('Closing server on http://localhost:3333')
+    debug('Closing server on http://0.0.0.0:3333')
     return new Promise((resolve, reject) => {
       this.server.close((err, ...args) => {
         if (err) return reject(err)
-        debug('Stopped listening on http://localhost:3333')
+        debug('Stopped listening on http://0.0.0.0:3333')
         resolve(...args)
       })
 

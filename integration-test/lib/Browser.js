@@ -1,5 +1,4 @@
 const debug = require('debug')('Browser')
-const webdriver = require('selenium-webdriver')
 
 const Element = require('./Element')
 const Locator = require('./Locator')
@@ -207,6 +206,18 @@ module.exports = class Browser {
     }
   }
 
+  /**
+   * Sets window.stillOnPage=true, calls `await func()`, and then waits
+   * until window.stillOnPage disappears -- meaning the page has changed.
+   */
+  async assertFunctionChangesDocument(timeout, func) {
+    await this.execute(function() { window.stillOnOldPage = true })
+    await func()
+    await this.waitUntilFunctionReturnsTrue('next page load', timeout, async () => {
+      await this.driver.executeScript(function() { return window.stillOnOldPage !== true })
+    })
+  }
+
   // find(locator).clear()
   async clear(locator) {
     debug(`click(${JSON.stringify(locator)})`)
@@ -312,7 +323,7 @@ module.exports = class Browser {
       throw new Error(`timeout must be ${Object.keys(TIMEOUTS).join(' or ')}`)
     }
 
-    debug(`waitForJavascriptBlock(${message}, ${timeout} -- ${block})`)
+    debug(`waitUntilFunctionReturnsTrue(${message}, ${timeout} -- ${block})`)
 
     const start = new Date()
     const lastRetval = {} // we log return values, but not duplicates
@@ -343,7 +354,7 @@ module.exports = class Browser {
   // The first argument must be a function. Subsequent arguments are its
   // arguments. Only plain old data objects will work.
   async execute(func, ...args) {
-    debug('execute()')
+    debug(`execute(${func}, ${args})`)
     return await this.driver.executeScript(func, ...args)
   }
 

@@ -13,7 +13,6 @@ global.expect = chai.expect
 process.env.SELENIUM_PROMISE_MANAGER = '0'
 
 const child_process = require('child_process')
-const chromedriver = require('chromedriver')
 const net = require('net')
 
 // Tries to connect() to a given port on localhost. Returns when
@@ -32,7 +31,7 @@ function waitForConnect(port, done) {
 // Calls cb once the webdriver is listening
 function runBrowser(cb) {
   const child = child_process.spawn(
-    chromedriver.path,
+    'chromedriver',
     [
       '--port=4444',
       //'--verbose', // uncomment this for overwhelming data
@@ -62,15 +61,11 @@ function killRunningBrowser() {
 }
 
 before(function(done) {
-  if (process.env.SAUCE_USERNAME) {
+  runBrowser(browser => {
+    runningBrowser = browser
+    process.on('exit', killRunningBrowser) // in case Mocha exits before the after() hook is called
     process.nextTick(done)
-  } else {
-    runBrowser(browser => {
-      runningBrowser = browser
-      process.on('exit', killRunningBrowser) // in case Mocha exits before the after() hook is called
-      process.nextTick(done)
-    })
-  }
+  })
 })
 
 after(killRunningBrowser)

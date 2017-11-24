@@ -4,8 +4,7 @@
   "description": "Integration-tests an Overview server",
   "main": "index.js",
   "scripts": {
-    "test": "node ./node_modules/.bin/mocha",
-    "test-with-jenkins": "JUNIT_REPORT_PATH=test-results.xml JUNIT_REPORT_STACK=1 JUNIT_REPORT_PACKAGES=1 JUNIT_REPORT_NAME='Integration tests' xvfb-run node ./node_modules/.bin/mocha --reporter mocha-jenkins-reporter || true"
+    "test": "JUNIT_REPORT_PATH=/integration-test/test-results.xml JUNIT_REPORT_STACK=1 JUNIT_REPORT_PACKAGES=1 JUNIT_REPORT_NAME='Integration tests' node ./node_modules/.bin/mocha --reporter mocha-jenkins-reporter"
   },
   "repository": {
     "type": "git",
@@ -25,7 +24,6 @@
   "dependencies": {
     "chai": "^4.1.2",
     "chai-as-promised": "^7.1.1",
-    "chromedriver": "^2.33.2",
     "debug": "^3.1.0",
     "faker": "^4.1.0",
     "mocha": "^4.0.1",

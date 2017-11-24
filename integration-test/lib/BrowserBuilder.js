@@ -8,57 +8,49 @@ const Constants = {
   pageLoadTimeout: 30000 // Travis+SauceLabs is slow, especially for Vimeo
 }
 
-const options = {
-  desiredCapabilities: {
-    browserName: 'chrome',
-    version: '',
-    platform: 'ANY',
-    build: process.env.BUILD_TAG,
-    handlesAlerts: true,
-  },
-  seleniumLocation: {
-    host: 'localhost',
-    port: 4444,
-    url: 'http://localhost:4444', // no Selenium Hub: just a straight web driver
-  },
-}
+if (!process.env.OVERVIEW_URL) process.env.OVERVIEW_URL="http://dev"
+if (!process.env.OVERVIEW_ADMIN_EMAIL) process.env.OVERVIEW_ADMIN_EMAIL="admin@overviewdocs.com"
+if (!process.env.OVERVIEW_ADMIN_PASSWORD) process.env.OVERVIEW_ADMIN_PASSWORD="admin@overviewdocs.com"
 
-if (process.env.SAUCE_USER_NAME) {
-  const x = options.seleniumLocation
-  x.hostname = process.env.SELENIUM_HOST
-  x.port = process.env.SELENIUM_PORT
-  x.user = process.env.SAUCE_USER_NAME
-  x.pwd = process.env.SAUCE_API_KEY
-  x.url = 'http://localhost:4444/wd/hub'
-}
+const chromeCapabilities = webdriver.Capabilities.chrome()
+chromeCapabilities.set('chromeOptions', {
+  args: [
+    '--headless',
+    '--no-sandbox',
+    '--disable-gpu',
+  ],
+})
+chromeCapabilities.set('handlesAlerts', true)
 
 module.exports = {
-  baseUrl: 'http://localhost:9000',
-
+  baseUrl: process.env.OVERVIEW_URL,
   adminLogin: {
-    email: 'admin@overviewdocs.com',
-    password: 'admin@overviewdocs.com',
+    email: process.env.OVERVIEW_ADMIN_EMAIL,
+    password: process.env.OVERVIEW_ADMIN_PASSWORD,
   },
 
   createUserAdminSession: function(title) {
     return new UserAdminSession({
-      baseUrl: module.exports.baseUrl,
+      baseUrl: process.env.OVERVIEW_URL,
       timeout: Constants.pageLoadTimeout,
-      login: module.exports.adminLogin,
+      login: {
+        email: process.env.OVERVIEW_ADMIN_EMAIL,
+        password: process.env.OVERVIEW_ADMIN_PASSWORD,
+      },
     })
   },
 
   createBrowser: async function() {
     const driver = new webdriver.Builder()
-      .usingServer(options.seleniumLocation.url)
       .forBrowser('chrome')
-      .withCapabilities(options.desiredCapabilities)
+      .usingServer('http://localhost:4444')
+      .withCapabilities(chromeCapabilities)
       .setLoggingPrefs({ browser: 'ALL' })
       .build()
 
     driver.setFileDetector(new FileDetector())
 
-    browser = new Browser(driver, { baseUrl: module.exports.baseUrl })
+    browser = new Browser(driver, { baseUrl: process.env.OVERVIEW_URL })
     await browser.init()
 
     return browser
