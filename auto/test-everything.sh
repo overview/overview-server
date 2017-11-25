@@ -16,7 +16,7 @@ DOCKER_COMPOSE="docker-compose --project-name $PROJECT"
 # So if we run this, we won't see any output:
 #exec docker-compose run --rm --no-deps dev "$@"
 # Solution: call Docker directly
-DOCKER_RUN="docker run --rm -i --network ${PROJECT}_default --volume ${PROJECT}_database-data:/var/lib/postgresql/data --volume ${PROJECT}_search-data:/var/lib/overview/search --volume ${PROJECT}_blob-storage-data:/var/lib/overview/blob-storage --volume ${PROJECT}_homedir:/root --volume $DIR:/app --publish 127.0.0.1:9000:80 overview-dev:latest"
+DOCKER_RUN="docker run --rm -i --network ${PROJECT}_default --volume ${PROJECT}_database-data:/var/lib/postgresql/data --volume ${PROJECT}_search-data:/var/lib/overview/search --volume ${PROJECT}_blob-storage-data:/var/lib/overview/blob-storage --volume ${PROJECT}_homedir:/root --volume $DIR:/app"
 
 # Clean everything. Note that we're wiping all data for the "overviewjenkins"
 # project, not the default "overviewserver" project that you use in dev mode.
@@ -119,7 +119,7 @@ echo "$COMMANDS" | $DOCKER_RUN --name web overview-dev bash &
 DOCKER_PID="$!"
 
 echo 'Waiting for Overview to respond to Web requests...' >&2
-until curl -qs http://localhost:9000 -o /dev/null; do sleep 1; done
+$DOCKER_RUN overview-dev bash -c 'until curl -qs http://web -o /dev/null; do sleep 1; done'
 
 (PROJECT="$PROJECT" integration-test/run) || true # Jenkins will pick up the test-result XML
 
