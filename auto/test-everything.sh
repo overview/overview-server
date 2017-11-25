@@ -29,11 +29,11 @@ $DOCKER_COMPOSE down -v
 $DOCKER_COMPOSE up -d database redis
 
 # Compile everything, or abort. Suppress excessive output.
-$DOCKER_RUN /app/sbt '; set every logLevel := Level.Warn; common/test:compile; worker/test:compile; web/test:compile; db-evolution-applier/run; test-db-evolution-applier/run'
-$DOCKER_RUN /app/build archive.zip
+$DOCKER_RUN overview-dev /app/sbt '; set every logLevel := Level.Warn; common/test:compile; worker/test:compile; web/test:compile; db-evolution-applier/run; test-db-evolution-applier/run'
+$DOCKER_RUN overview-dev /app/build archive.zip
 
 # CoffeeScript tests are the fastest, so run them first
-$DOCKER_RUN sh -c '(cd /app && ./auto/test-coffee-once.sh) || true' # Jenkins will pick up test-result XML
+$DOCKER_RUN overview-dev sh -c '(cd /app && ./auto/test-coffee-once.sh) || true' # Jenkins will pick up test-result XML
 
 # Now run sbt unit tests. They'll output in the build directory; move those files
 # into /app so the host (Jenkins) can see them.
@@ -51,7 +51,7 @@ for project in common web worker; do
 done
 EOT
 )
-echo "$COMMANDS" | $DOCKER_RUN bash # Jenkins will pick up test-result XML
+echo "$COMMANDS" | $DOCKER_RUN overview-dev bash # Jenkins will pick up test-result XML
 
 # Run integration tests with the production jarfiles.
 #
@@ -114,15 +114,12 @@ kill -9 $PIDS
 wait $PIDS || true # exit successfully
 EOT
 )
-echo "$COMMANDS" | $DOCKER_RUN bash &
+echo "$COMMANDS" | $DOCKER_RUN --name web overview-dev bash &
 
 DOCKER_PID="$!"
 
 echo 'Waiting for Overview to respond to Web requests...' >&2
 until curl -qs http://localhost:9000 -o /dev/null; do sleep 1; done
-
-echo 'Waiting another 20s for background jobs, so everything is fast when we test...' >&2
-sleep 20
 
 (PROJECT="$PROJECT" integration-test/run) || true # Jenkins will pick up the test-result XML
 
