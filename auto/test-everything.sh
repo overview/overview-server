@@ -114,7 +114,7 @@ kill -9 $PIDS
 wait $PIDS || true # exit successfully
 EOT
 )
-echo "$COMMANDS" | $DOCKER_RUN --name web overview-dev bash &
+echo "$COMMANDS" | $DOCKER_RUN --name dev overview-dev bash &
 
 DOCKER_PID="$!"
 
