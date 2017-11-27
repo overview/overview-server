@@ -87,6 +87,7 @@ define [
       @viewApp.onDocumentChanged?(@_currentDocumentJson())
 
     setDocumentListParams: (params) -> @state.setDocumentListParams(params)
+    refineDocumentListParams: (params) -> @state.refineDocumentListParams(params)
 
     _onMessage: (e) ->
       viewUrl = @viewApp?.view?.attributes?.url || '' # _any_ iframe, e.g. Twitter, can post a message
@@ -102,6 +103,7 @@ define [
         when 'notifyDocument' then @viewApp.notifyDocument?(@_currentDocumentJson())
         when 'postMessageToPluginIframes' then @viewApp.postMessageToPluginIframes?(e.data.message || null)
         when 'setDocumentListParams' then @setDocumentListParams(e.data.args...)
+        when 'refineDocumentListParams' then @refineDocumentListParams(e.data.args...)
         when 'setRightPane' then @viewApp.setRightPane?(e.data.args...)
         when 'setModalDialog' then @viewApp.setModalDialog?(e.data.args...)
         when 'setViewFilter' then @viewApp.setViewFilter?(e.data.args...)
