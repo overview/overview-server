@@ -16,6 +16,10 @@ image_id=$(docker build --quiet "$ABSOLUTE_DIR") # this will be fast
 flags="$([ -t 0 ] && echo "-it" || echo "-i")"
 
 exec docker run $flags --rm \
-  --network "${PROJECT}_default" \
   --volume "$ABSOLUTE_DIR"/test-results.xml:/integration-test/test-results.xml \
-  $image_id 
+  --volume "$ABSOLUTE_DIR"/screenshots:/integration-test/screenshots/ \
+  --name "${PROJECT}_integration_tests" \
+  --network "${PROJECT}_default" \
+  --hostname "${PROJECT}_integration_tests" \
+  --publish-all \
+  $image_id "$@"
