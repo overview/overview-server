@@ -199,6 +199,7 @@ class DbHttpViewFilterBackend @Inject() (
 
     val fullUri = uri.withQuery(akka.http.scaladsl.model.Uri.Query(
       uri.query(UTF_8).toMap ++ Map(
+        "apiToken" -> apiToken,
         "ids" -> ids.mkString(","),
         "operation" -> (operation match {
           case Operation.Any => "any"
