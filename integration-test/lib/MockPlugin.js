@@ -2,11 +2,7 @@
 
 const fs = require('fs')
 const http = require('http')
-<<<<<<< HEAD
-const os = require('os')
-=======
 const path = require('path')
->>>>>>> Wire up setViewFilter for plugins
 const url = require('url')
 
 // To work well with `./standalone`, we don't require any external
@@ -19,16 +15,12 @@ function debug(...args) {
 
 module.exports = class MockPlugin {
   constructor(name) {
-<<<<<<< HEAD
-    this.hostname = os.hostname()
+    this.hostname = process.env.HOSTNAME // we're in Docker
 
-    const buf = fs.readFileSync(`${__dirname}/../mock-plugins/${name}.html`)
-=======
     const htmlFilename = path.join(path.dirname(__filename), '../mock-plugins', name + '.html')
 
     // Read file, to throw an error if it does not exist
     fs.readFileSync(htmlFilename)
->>>>>>> Wire up setViewFilter for plugins
 
     this.server = http.createServer((req, res) => {
       debug([ req.method, req.url ].join(' '))
@@ -36,7 +28,7 @@ module.exports = class MockPlugin {
       // Re-read the file, in case it changed. This is useful when running `./standalone`
       const buf = fs.readFileSync(htmlFilename)
 
-      this.lastRequest = req
+      this.lastRequestUrl = url.parse(req.url, true)
       const pathname = url.parse(req.url).pathname
 
       switch (pathname) {
@@ -89,14 +81,8 @@ module.exports = class MockPlugin {
 
   listen() {
     return new Promise((resolve, reject) => {
-<<<<<<< HEAD
       // 0.0.0.0 inside a Docker container, that is
       this.server.listen(3333, '0.0.0.0', (err, ...args) => {
-=======
-      // We run this in Docker; to access container from host, listen on '0.0.0.0' instead of 'localhost'
-      const host = '0.0.0.0'
-      this.server.listen(3333, host, (err, ...args) => {
->>>>>>> Wire up setViewFilter for plugins
         if (err) return reject(err)
         resolve(...args)
       })
