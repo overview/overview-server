@@ -4,7 +4,7 @@ const asUserWithDocumentSet = require('../support/asUserWithDocumentSet')
 
 describe('Plugins', function() {
   asUserWithDocumentSet('Metadata/basic.csv', function() {
-    before(async function() {
+    before(function() {
       this.browser.loadShortcuts('documentSet')
       this.documentSet = this.browser.shortcuts.documentSet
     })
@@ -111,6 +111,33 @@ describe('Plugins', function() {
         await b.switchToFrame(null)
 
         await b.assertNotExists({ id: 'view-app-modal-dialog' })
+      })
+    })
+
+    describe('with a plugin that calls setViewFilter', async function() {
+      before(async function() {
+        this.server = await this.documentSet.createViewAndServer('view-filter')
+      })
+
+      after(async function() {
+        await this.server.close()
+        await this.documentSet.destroyView('view-filter')
+      })
+
+      it('should allow filtering by view', async function() {
+        const b = this.browser
+
+        await b.click({ tag: 'a', contains: 'view-filter placeholder' })
+        await b.click({ tag: 'span', contains: 'VF-Foo' })
+        await this.documentSet.waitUntilDocumentListLoaded()
+        expect(this.server.lastRequestUrl.path).to.match(/^\/filter\/01010101\?/)
+        expect(this.server.lastRequestUrl.query.apiToken || '').to.match(/[a-z0-9]+/)
+        expect(this.server.lastRequestUrl.query.ids).to.eq('foo')
+        expect(this.server.lastRequestUrl.query.operation).to.eq('any')
+        const text = await(b.getText('#document-list ul.documents'))
+        expect(text).not.to.match(/First/)
+        expect(text).to.match(/Second/)
+        expect(text).not.to.match(/Third/)
       })
     })
   })

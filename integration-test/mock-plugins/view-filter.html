@@ -12,11 +12,11 @@ var main = document.querySelector('main')
 window.parent.postMessage({
   call: 'setViewFilter',
   args: [ {
-    url: 'http://localhost:3333/filter/01010101',
+    url: `${window.location.origin}/filter/01010101`,
     renderOptions: {
       iconClass: 'filter',
       messages: {
-        placeholder: 'placeholder',
+        placeholder: 'view-filter placeholder',
         choicesEmpty: 'choicesEmpty',
         selectOneHtml: 'selectOneHtml',
         selectNotHtml: 'selectNotHtml',
@@ -31,8 +31,8 @@ window.parent.postMessage({
       },
     },
     choices: [
-      { id: 'foo', name: 'Foo', color: '#abcdef' },
-      { id: 'bar', name: 'Bar', color: '#fedcba' },
+      { id: 'foo', name: 'VF-Foo', color: '#abcdef' },
+      { id: 'bar', name: 'VF-Bar', color: '#fedcba' },
     ],
   } ]
 }, '*')
