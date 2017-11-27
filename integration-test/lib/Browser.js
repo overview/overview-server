@@ -1,4 +1,5 @@
 const debug = require('debug')('Browser')
+const fs = require('fs')
 
 const Element = require('./Element')
 const Locator = require('./Locator')
@@ -216,6 +217,15 @@ module.exports = class Browser {
     await this.waitUntilFunctionReturnsTrue('next page load', timeout, async () => {
       await this.driver.executeScript(function() { return window.stillOnOldPage !== true })
     })
+  }
+
+  async saveScreenshot(filename) {
+    debug(`saveScreenshot(${filename})`)
+
+    const dataUrl = await this.driver.takeScreenshot()
+    const base64 = dataUrl.replace(/^data:image\/png;base64,/, '')
+    const buf = Buffer.from(base64, 'base64')
+    fs.writeFileSync(`screenshots/${filename}`, buf)
   }
 
   // find(locator).clear()
