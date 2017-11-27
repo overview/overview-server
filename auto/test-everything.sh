@@ -21,7 +21,7 @@ DOCKER_RUN="docker run --rm -i --network ${PROJECT}_default --volume ${PROJECT}_
 # Clean everything. Note that we're wiping all data for the "overviewjenkins"
 # project, not the default "overviewserver" project that you use in dev mode.
 $DOCKER_COMPOSE kill
-still_running="$(docker ps -q --filter name="${PROJECT}_")"
+still_running="$(docker ps -q --filter network="${PROJECT}_default")"
 [ -z "$still_running" ] || docker rm -f -v $(still_running)
 $DOCKER_COMPOSE down -v --remove-orphans
 
