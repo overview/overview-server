@@ -119,7 +119,7 @@ echo "$COMMANDS" | $DOCKER_RUN --name dev overview-dev bash &
 DOCKER_PID="$!"
 
 echo 'Waiting for Overview to respond to Web requests...' >&2
-$DOCKER_RUN overview-dev bash -c 'until curl -qs http://web -o /dev/null; do sleep 1; done'
+$DOCKER_RUN overview-dev bash -c 'until curl -qs http://dev -o /dev/null; do sleep 1; done'
 
 (PROJECT="$PROJECT" integration-test/run) || true # Jenkins will pick up the test-result XML
 
