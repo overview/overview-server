@@ -57,6 +57,14 @@ define [
     setViewFilter: (viewFilter) ->
       @view.save({ filter: viewFilter }, { patch: true })
 
+    setViewFilterChoices: (choices) ->
+      existingViewFilter = @view.get('filter')
+      if existingViewFilter
+        @view.save(
+          { filter: Object.assign({}, existingViewFilter, { choices: choices }) },
+          { patch: true }
+        )
+
     render: ->
       params = $.param([
         { name: 'server', value: @getServerUrl() }

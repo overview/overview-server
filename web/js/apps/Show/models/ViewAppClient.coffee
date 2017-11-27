@@ -89,6 +89,13 @@ define [
     setDocumentListParams: (params) -> @state.setDocumentListParams(params)
     refineDocumentListParams: (params) -> @state.refineDocumentListParams(params)
 
+    setViewFilterSelection: (selection) ->
+      viewId = @viewApp?.view?.id
+      viewId = viewId.replace(/^\w+-/, '') # "view-1234" => "1234" -- "view-1234" is ugly, but it happens 2011-11-27
+      filters = {}
+      filters[viewId] = selection
+      @state.refineDocumentListParams({ filters: filters })
+
     _onMessage: (e) ->
       viewUrl = @viewApp?.view?.attributes?.url || '' # _any_ iframe, e.g. Twitter, can post a message
       viewUrl = "#{window.location.protocol}#{viewUrl}" if viewUrl.substring(0, 2) == '//'
@@ -107,6 +114,8 @@ define [
         when 'setRightPane' then @viewApp.setRightPane?(e.data.args...)
         when 'setModalDialog' then @viewApp.setModalDialog?(e.data.args...)
         when 'setViewFilter' then @viewApp.setViewFilter?(e.data.args...)
+        when 'setViewFilterChoices' then @viewApp.setViewFilterChoices?(e.data.args...)
+        when 'setViewFilterSelection' then @setViewFilterSelection(e.data.args...)
         when 'openMetadataSchemaEditor' then @globalActions.openMetadataSchemaEditor()
         when 'goToNextDocument' then @globalActions.goToNextDocument()
         when 'goToPreviousDocument' then @globalActions.goToPreviousDocument()

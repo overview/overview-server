@@ -75,6 +75,29 @@ define [
         @viewApp.setViewFilter({ foo: 'bar' })
         expect(@view.save).to.have.been.calledWith({ filter: { foo: 'bar' } }, { patch: true })
 
+    describe 'setViewFilterChoices', ->
+      it 'should change attributes.filter', ->
+        @createViewApp()
+        @sandbox.stub(Backbone, 'sync')
+        @viewApp.setViewFilter({ foo: 'bar', choices: [] })
+        @view.on('change:filter', onChange = sinon.spy())
+        @viewApp.setViewFilterChoices([ { id: '1', name: 'One', color: '#abcdef' } ])
+        expect(onChange).to.have.been.calledWith(@view, { foo: 'bar', choices: [ { id: '1', name: 'One', color: '#abcdef' } ] })
+
+      it 'should PATCH the filter to the server', ->
+        @createViewApp()
+        @sandbox.stub(Backbone, 'sync')
+        @viewApp.setViewFilter({ foo: 'bar' })
+        @view.save = sinon.spy() # reset it
+        @viewApp.setViewFilterChoices([ { id: '1', name: 'One', color: '#abcdef' } ])
+        expect(@view.save).to.have.been.calledWith({ filter: { foo: 'bar', choices: [ { id: '1', name: 'One', color: '#abcdef' } ] } }, { patch: true })
+
+      it 'should no-op when no filter is set', ->
+        @createViewApp()
+        @view.save = sinon.spy()
+        @viewApp.setViewFilterChoices([ { id: '1', name: 'One', color: '#abcdef' } ])
+        expect(@view.save).not.to.have.been.called
+
     describe 'after setRightPane', ->
       beforeEach (done) ->
         @rightPane = @main.querySelector('#tree-app-right-pane')

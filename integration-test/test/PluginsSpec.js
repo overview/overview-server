@@ -138,6 +138,45 @@ describe('Plugins', function() {
         expect(text).not.to.match(/First/)
         expect(text).to.match(/Second/)
         expect(text).not.to.match(/Third/)
+
+        // reset
+        await b.click('.view-filters a.nix')
+        await this.documentSet.waitUntilDocumentListLoaded()
+        const text2 = await(b.getText('#document-list ul.documents'))
+        expect(text2).to.match(/First/)
+      })
+
+      it('should allow setViewFilterChoices', async function() {
+        const b = this.browser
+
+        await b.switchToFrame('view-app-iframe')
+        await b.click({ button: 'setViewFilterChoices' })
+        await b.switchToFrame(null)
+
+        await b.click({ tag: 'a', contains: 'view-filter placeholder' })
+        await b.click({ tag: 'span', contains: 'VF-Foo2' }) // assert it exists, really
+
+        // reset
+        await b.click('.view-filters a.nix')
+        await this.documentSet.waitUntilDocumentListLoaded()
+      })
+
+      it('should allow setViewFilterSelection', async function() {
+        const b = this.browser
+
+        await b.switchToFrame('view-app-iframe')
+        await b.click({ button: 'setViewFilterChoices' })
+        await b.click({ button: 'setViewFilterSelection' })
+        await b.sleep(100) // make sure postMessage() goes through. TODO notify from plugin?
+        await b.switchToFrame(null)
+
+        await this.documentSet.waitUntilDocumentListLoaded()
+        expect(this.server.lastRequestUrl.path).to.match(/^\/filter\/01010101\?/) // the document list reloaded
+        await b.assertExists({ tag: 'a', contains: 'VF-Foo2' }) // the tag was selected in the ViewFilter
+
+        // reset
+        await b.click('.view-filters a.nix')
+        await this.documentSet.waitUntilDocumentListLoaded()
       })
     })
   })

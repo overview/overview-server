@@ -55,9 +55,11 @@ define [
           setRightPane: sinon.spy()
           setModalDialog: sinon.spy()
           setViewFilter: sinon.spy()
+          setViewFilterChoices: sinon.spy()
           onTag: sinon.spy()
           onUntag: sinon.spy()
           remove: sinon.spy()
+          view: { id: 'view-1234' }
 
         @subject = new ViewAppClient
           globalActions: @globalActions
@@ -141,6 +143,17 @@ define [
       it 'should setViewFilter', ->
         @subject._onMessage(origin: '', data: { call: 'setViewFilter', args: [ { foo: 'bar' } ] })
         expect(@viewApp.setViewFilter).to.have.been.calledWith({ foo: 'bar' })
+
+      it 'should setViewFilterChoices', ->
+        choices = [ { id: 'foo', name: 'Foo', color: '#abcdef' } ]
+        @subject._onMessage(origin: '', data: { call: 'setViewFilterChoices', args: [ choices ] })
+        expect(@viewApp.setViewFilterChoices).to.have.been.calledWith(choices)
+
+      it 'should setViewFilterSelection', ->
+        selection = { ids: [ 'foo', 'bar' ], operation: 'any' }
+        @state.refineDocumentListParams = sinon.spy()
+        @subject._onMessage(origin: '', data: { call: 'setViewFilterSelection', args: [ selection ] })
+        expect(@state.refineDocumentListParams).to.have.been.calledWith({ filters: { '1234': selection } })
 
       it 'should set metadata on document', ->
         document = new Backbone.Model(id: 2, metadata: { foo: 'bar' })
