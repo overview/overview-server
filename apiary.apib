@@ -123,6 +123,31 @@ Test your encoding approach: To select just document 0, `documentIdsBitSetBase64
 
 One last space-saving measure: where standard Base64 uses `+` and `/`, you may use `-` and `_`. That saves you from needing to URL-encode your `documentIdsBitSetBase64`, which makes a smaller GET request.
 
+# Group Api Token
+
+Your **ApiToken** holds data about what you can access. You send the token
+implicitly with every request (see above); here, you can read extra information
+about the token from Overview.
+
+## ApiToken [/api-token]
+
+A singleton JSON object associated with your API key.
+
++ Model (application/json)
+
+        {
+          "token": "abcde12345",
+          "description": "created by SomethingOrOther",
+          "userEmail": "mary@example.com",
+          "createdAt": "2017-11-28T19:31:12.000Z",
+          "documentSetId": 12345
+        }
+
+### Retrieve your ApiToken [GET]
++ Response 200
+
+    [ApiToken][]
+    
 # Group Document Sets
 A **Document Set** is a collection of documents.
 
