@@ -1,6 +1,6 @@
 package controllers.api
 
-import play.api.libs.json.Json
+import play.api.libs.json.{Json,JsValue}
 import play.api.mvc.Result
 import scala.concurrent.Future
 
@@ -361,6 +361,35 @@ class DocumentControllerSpec extends ApiControllerSpecification {
         val json = contentAsString(result)
         json must /("metadata") /("foo" -> "3")
         json must not(contain("baz"))
+      }
+    }
+
+    "#update" should {
+      trait UpdateScope extends BaseScope {
+        val documentId = 2L
+        val body: JsValue = Json.obj("foo" -> "bar")
+        override lazy val request = fakeJsonRequest(body)
+        override def action = controller.update(documentSet.id, documentId)
+      }
+
+      "call updateMetadataJson" in new UpdateScope {
+        override val body = Json.obj("metadata" -> Json.obj("foo" -> "bar"))
+        mockDocumentBackend.updateMetadataJson(documentSet.id, documentId, Json.obj("foo" -> "bar")) returns Future.successful(None)
+        status(result) must beEqualTo(ACCEPTED)
+      }
+
+      "error if metadata is not set" in new UpdateScope {
+        override val body = Json.obj("metadatax" -> Json.obj("foo" -> "bar"))
+        status(result) must beEqualTo(BAD_REQUEST)
+        contentType(result) must beSome("application/json")
+        contentAsString(result) must /("message" -> "You must pass a JSON Object with a 'metadata' property that is also an Object")
+      }
+
+      "error if metadata is not a JSON Object" in new UpdateScope {
+        override val body = Json.obj("metadata" -> "I am bad")
+        status(result) must beEqualTo(BAD_REQUEST)
+        contentType(result) must beSome("application/json")
+        contentAsString(result) must /("message" -> "You must pass a JSON Object with a 'metadata' property that is also an Object")
       }
     }
   }

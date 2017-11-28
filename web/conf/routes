@@ -162,8 +162,9 @@ DELETE /api/v1/files        controllers.api.MassUploadController.cancel()
 
 HEAD   /api/v1/document-sets/files/$sha1<[0-9a-fA-f]{40}> controllers.api.DocumentSetHashController.head(sha1: Array[Byte])
 
-GET /api/v1/document-sets/:docsetId/documents     controllers.api.DocumentController.index(docsetId: Long, fields: String ?= "")
-GET /api/v1/document-sets/:docsetId/documents/:id controllers.api.DocumentController.show(docsetId: Long, id: Long)
+GET   /api/v1/document-sets/:docsetId/documents     controllers.api.DocumentController.index(docsetId: Long, fields: String ?= "")
+GET   /api/v1/document-sets/:docsetId/documents/:id controllers.api.DocumentController.show(docsetId: Long, id: Long)
+PATCH /api/v1/document-sets/:docsetId/documents/:id controllers.api.DocumentController.update(docsetId: Long, id: Long)
 
 GET /api/v1/store/state controllers.api.StoreStateController.show()
 PUT /api/v1/store/state controllers.api.StoreStateController.update()

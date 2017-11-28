@@ -132,6 +132,22 @@ class DocumentController @Inject() (
       case _ => NotFound(jsonError("not-found", s"Document $documentId not found in document set $documentSetId"))
     }
   }
+
+  def update(documentSetId: Long, documentId: Long) = apiAuthorizedAction(userOwningDocumentSet(documentSetId)).async { request =>
+    val maybeJson: Option[JsObject] = request.body.asJson.flatMap(_.asOpt[JsObject])
+    val maybeMetadataJson: Option[JsObject] = maybeJson.flatMap(_.value.get("metadata")).flatMap(_.asOpt[JsObject])
+
+    maybeMetadataJson match {
+      case None => {
+        Future.successful(BadRequest(jsonError("bad-request", "You must pass a JSON Object with a 'metadata' property that is also an Object")))
+      }
+      case Some(metadataJson) => {
+        for {
+          _ <- documentBackend.updateMetadataJson(documentSetId, documentId, metadataJson)
+        } yield Accepted
+      }
+    }
+  }
 }
 
 object DocumentController {
