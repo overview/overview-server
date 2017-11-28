@@ -149,8 +149,10 @@ DELETE /plugins/:id controllers.PluginController.destroy(id: java.util.UUID)
 
 # API V1
 #
-# Each is documented at https://github.com/overview/overview-server/wiki/API-v1
-GET    /api/v1/document-sets/:id/tags      controllers.api.TagController.index(id: Long)
+# Each is documented at https://overviewproject.docs.apiary.io
+GET    /api/v1/api-token controllers.api.ApiTokenController.show()
+
+GET    /api/v1/document-sets/:id/tags controllers.api.TagController.index(id: Long)
 
 POST   /api/v1/document-sets controllers.api.DocumentSetController.create()
 
