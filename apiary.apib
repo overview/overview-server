@@ -329,6 +329,10 @@ The Document resource has the following attributes:
 - text: The text of the document
 - isFromOcr: `true` when Overview generated the text with an Optical Character Recognition engine ([Tesseract](https://github.com/tesseract-ocr/tesseract)); `false` when the document was already machine-readable
 
+Programs should make an effort to _not_ overwrite each other's `metadata`. If you're
+about to `PATCH` new metadata, don't write from scratch. `GET` the existing metadata
+first, modify that metadata in memory, and then `PATCH` the modified metadata.
+
 + Parameters
     + documentSetId (required, number, `1`) ... The Document Set ID.
     + id (required, number, `2`) ... The Document ID.
@@ -349,6 +353,18 @@ The Document resource has the following attributes:
 + Response 200
 
     [Document][]
+    
+### Update a Document's Metadata [PATCH]
+
++ Request (application/json)
+
+        {
+            "metadata": {
+                "foo": "bar"
+            }
+        }
+
++ Response 202
 
 ## Documents Collection [/document-sets/{documentSetId}/documents?q={q}&tags={tags}&tagged={tagged}&tagOperation={tagOperation}&objects={objects}&documentIdsBitSetBase64={documentIdsBitSetBase64}&selectionId={selectionId}&refresh={refresh}&fields={fields}&sortByMetadataField={sortByMetadataField}&reverse={reverse}&offset={offset}&limit={limit}&stream={stream}]
 <a name="documents-collection"></a>Collection of Documents.
