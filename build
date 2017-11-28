@@ -33,7 +33,7 @@ OUTPUT_ZIP="$1"
 [ -n "$(echo "$OUTPUT_ZIP" | grep -E '^[a-zA-Z0-9_-]+\.zip$')" ] || fail "Your zipfile name must look like [a-zA-Z0-9_-].zip -- no directories allowed"
 
 # Compile
-./sbt $SBT_OPTIONS -Dsbt.log.noformat=true '; db-evolution-applier/stage; worker/stage; web/stage'
+/app/sbt $SBT_OPTIONS -Dsbt.log.noformat=true '; db-evolution-applier/stage; worker/stage; web/stage'
 
 OVERVIEW_DIR=$(echo $OUTPUT_ZIP | cut -d. -f1)
 
