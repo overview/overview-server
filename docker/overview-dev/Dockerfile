@@ -18,4 +18,4 @@ WORKDIR /app
 
 EXPOSE 80
 
-CMD ./sbt all/compile db-evolution-applier/run test-db-evolution-applier/run worker/reStart 'web/run 80'
+CMD [ "/app/sbt", "all/compile", "db-evolution-applier/run", "test-db-evolution-applier/run", "worker/reStart", "web/run 80" ]
