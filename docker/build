@@ -1,8 +1,8 @@
 #!/bin/bash
 #
-# Builds overview-web, overview-database, overview-worker,
-# overview-redis and overview-db-evolution-applier, all tagged
-# both :latest and with the git HEAD commit sha1
+# Builds overview-web, overview-database, overview-worker, overview-dev,
+# overview-redis, overview-db-evolution-applier and overview-integration-test,
+# all tagged both :latest and with the git HEAD commit sha1
 
 set -e
 set -x
@@ -11,7 +11,7 @@ DIR="$(dirname "$0")"
 OVERVIEW_VERSION=$(git rev-parse HEAD)
 
 # 1. Make a development image
-docker build --pull "$DIR"/overview-dev --tag overview-dev:latest # tag used by ../build
+docker build --pull "$DIR"/overview-dev --tag overview-dev:$OVERVIEW_VERSION --tag overview-dev:latest # tag used by ../build
 
 # 2. Use it to build archive.tar.gz
 #
