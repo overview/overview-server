@@ -54,11 +54,11 @@ done
 
 # Copy the other useful files
 for file in README.md LICENSE; do
-  ln -sf /root/overview-build/$file $OUTPUT_DIRECTORY/
+  ln -sf /app/$file $OUTPUT_DIRECTORY/
 done
 
 # Now write the zipfile
 (cd /tmp && zip --quiet -r /app/$OUTPUT_ZIP $OVERVIEW_DIR)
-(cd /tmp && tar -czf /app/$OUTPUT_TGZ $OVERVIEW_DIR)
+(cd /tmp && tar --dereference -czf /app/$OUTPUT_TGZ $OVERVIEW_DIR)
 # We'll leave those symlinks in /tmp. When the Docker container is removed,
 # they'll disappear.
