@@ -18,6 +18,9 @@ DOCKER_COMPOSE="docker-compose --project-name $PROJECT"
 # Solution: call Docker directly
 DOCKER_RUN="docker run --rm -i --network ${PROJECT}_default --volume ${PROJECT}_database-data:/var/lib/postgresql/data --volume ${PROJECT}_search-data:/var/lib/overview/search --volume ${PROJECT}_blob-storage-data:/var/lib/overview/blob-storage --volume ${PROJECT}_homedir:/root --volume $DIR:/app"
 
+# Build all the images we'll use
+docker/build
+
 # Clean everything. Note that we're wiping all data for the "overviewjenkins"
 # project, not the default "overviewserver" project that you use in dev mode.
 $DOCKER_COMPOSE kill
@@ -55,77 +58,7 @@ EOT
 )
 echo "$COMMANDS" | $DOCKER_RUN overview-dev bash # Jenkins will pick up test-result XML
 
-# Run integration tests with the production jarfiles.
-#
-# We'll extract our production.zip into /tmp/archive/. We'll have
-# jars in /tmp/archive/web/*.jar, /tmp/archive/worker/*.jar,
-# /tmp/archive/db-evolution-applier/*.jar.
-echo 'Launching Overview...' >&2
-
-COMMANDS=$(cat <<"EOT"
-set -e
-set -x
-cd /tmp
-unzip -o -q /app/archive.zip
-cd archive/lib
-ln -f $(cat ../db-evolution-applier/classpath.txt) ../db-evolution-applier/
-ln -f $(cat ../web/classpath.txt) ../web/
-ln -f $(cat ../worker/classpath.txt) ../worker/
-cd /tmp/archive
-
-# Run db-evolution-applier and wait until it's done
-DATABASE_SERVER_NAME=database \
-java -cp 'db-evolution-applier/*' \
-  com.overviewdocs.db_evolution_applier.Main
-
-# Run worker and leave it running
-DATABASE_SERVER_NAME=database \
-BLOB_STORAGE_FILE_BASE_DIRECTORY=/var/lib/overview/blob-storage/prod \
-OV_SEARCH_DIRECTORY=/var/lib/overview/search/prod \
-OV_N_DOCUMENT_CONVERTERS=3 \
-java -cp 'worker/*' \
-  -Xmx600m \
-  com.overviewdocs.Worker \
-  &
-PIDS="$!"
-
-# Run server and leave it running
-#
-# we won't run with '-Dconfig.resource=production.conf', because
-# that forces SSL and we aren't testing with SSL. (We _could_....)
-DATABASE_SERVER_NAME=database \
-BLOB_STORAGE_FILE_BASE_DIRECTORY=/var/lib/overview/blob-storage/prod \
-REDIS_HOST=redis \
-OVERVIEW_MULTI_USER=true \
-java -cp 'web/*' \
-  -Dhttp.port=80 \
-  -Dpidfile.path=/dev/null \
-  -Xmx600m \
-  play.core.server.ProdServerStart /tmp \
-  &
-PIDS="$PIDS $!"
-
-# Now wait until SIGTERM or until a service dies -- whichever comes first.
-# "wait" will return when a child dies or when the trap is fired.
-trap 'echo "Received SIGTERM. Killing children and cleaning up...." >&2' TERM
-wait -n $PIDS || true # Wait for SIGTERM or for a child to die. Do not trigger "set -e"
-trap - TERM # We're done with the trap
-
-echo 'Killing Overview services...' >&2
-kill -9 $PIDS
-wait $PIDS || true # exit successfully
-EOT
-)
-echo "$COMMANDS" | $DOCKER_RUN --name dev overview-dev bash &
-
-DOCKER_PID="$!"
-
-echo 'Waiting for Overview to respond to Web requests...' >&2
-$DOCKER_RUN overview-dev bash -c 'until curl -qs http://dev -o /dev/null; do sleep 1; done'
-
-(PROJECT="$PROJECT" integration-test/run) || true # Jenkins will pick up the test-result XML
-
-kill $DOCKER_PID
-wait $DOCKER_PID
 $DOCKER_COMPOSE kill
 $DOCKER_COMPOSE down -v
+
+docker/test-integration

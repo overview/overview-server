@@ -12,16 +12,15 @@ volumes:
 
 services:
   redis:
-    image: overview/redis
+    build: ./docker/redis
 
   database:
-    image: overview/database
+    build: ./docker/database
     volumes:
       - database-data:/var/lib/postgresql/data
 
   dev:
     build: ./docker/overview-dev
-    image: overview-dev
     stdin_open: true
     volumes:
       - search-data:/var/lib/overview/search

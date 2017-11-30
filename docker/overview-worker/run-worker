@@ -1,0 +1,22 @@
+#!/bin/sh
+
+# In ideal Docker-land, we'd set a maximum amount of memory through Docker
+# and not through -Xmx. But the worker spawns child processes, and we
+# want to limit the _worker's_ RAM without limiting those children.
+OV_WORKER_HEAP_MEMORY=${OV_WORKER_HEAP_MEMORY:-2000m}
+
+# Set defaults that will work in a Docker swarm
+DATABASE_SERVER_NAME=${DATABASE_SERVER_NAME:-overview-database} \
+DATABASE_PORT=${DATABASE_PORT:-5432} \
+DATABASE_NAME=${DATABASE_NAME:-overview} \
+DATABASE_USERNAME=${DATABASE_USERNAME:-overview} \
+DATABASE_PASSWORD=${DATABASE_PASSWORD} \
+MESSAGE_BROKER_HOSTNAME=${MESSAGE_BROKER_HOSTNAME:-overview-worker} \
+MESSAGE_BROKER_PORT=${MESSAGE_BROKER_PORT:-9030} \
+MESSAGE_BROKER_CLIENT_HOSTNAME=${MESSAGE_BROKER_CLIENT_HOSTNAME:-overview-web} \
+MESSAGE_BROKER_CLIENT_PORT=${MESSAGE_BROKER_CLIENT_PORT:-9031} \
+BLOB_STORAGE_FILE_BASE_DIRECTORY=${BLOB_STORAGE_FILE_BASE_DIRECTORY:-/var/lib/overview/blob-storage/prod} \
+OV_SEARCH_DIRECTORY=${OV_SEARCH_DIRECTORY:-/var/lib/overview/searchindex/prod} \
+exec java -cp 'worker/*' \
+  -Xmx$OV_WORKER_HEAP_MEMORY \
+  com.overviewdocs.Worker

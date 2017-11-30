@@ -1,0 +1,32 @@
+#!/bin/bash
+#
+# Builds overview-web, overview-database, overview-worker,
+# overview-redis and overview-db-evolution-applier, all tagged
+# both :latest and with the git HEAD commit sha1
+
+set -e
+set -x
+
+DIR="$(dirname "$0")"
+OVERVIEW_VERSION=$(git rev-parse HEAD)
+
+# 1. Make a development image
+docker build --pull "$DIR"/overview-dev --tag overview-dev:latest # tag used by ../build
+
+# 2. Use it to build archive.tar.gz
+#
+# (awkwardness: building archive.zip is the only way to build archive.tar.gz. TODO fix this.)
+(cd "$DIR"/.. && ./build archive.zip)
+
+# 3. Build overview-java, our base image for other images
+tar -c -C "$DIR"/.. archive.tar.gz -C "$DIR"/overview-java Dockerfile | docker build --pull - --tag overview-java:build --tag overview-java:$OVERVIEW_VERSION
+
+# 4. Build all other images
+for subdir in overview-database overview-redis; do
+  docker build --pull "$DIR"/$subdir --tag $subdir:$OVERVIEW_VERSION --tag $subdir:latest
+done
+for subdir in overview-web overview-worker overview-db-evolution-applier; do
+  # Do not --pull: we want to use the overview-java we built in step 3
+  docker build "$DIR"/$subdir --tag $subdir:$OVERVIEW_VERSION --tag $subdir:latest
+done
+docker build --pull "$DIR"/../integration-test --tag overview-integration-test:$OVERVIEW_VERSION --tag overview-integration-test:latest

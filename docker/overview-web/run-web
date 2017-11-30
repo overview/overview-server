@@ -1,0 +1,23 @@
+#!/bin/sh
+
+FALLBACK_SECRET="$(openssl rand -base64 200 | tr -s "\n" "!")"
+
+# Set some defaults that will work in a docker swarm
+DATABASE_SERVER_NAME=${DATABASE_SERVER_NAME:-overview-database} \
+DATABASE_PORT=${DATABASE_PORT:-5432} \
+DATABASE_NAME=${DATABASE_NAME:-overview} \
+DATABASE_USERNAME=${DATABASE_USERNAME:-overview} \
+DATABASE_PASSWORD=${DATABASE_PASSWORD} \
+REDIS_HOST=${REDIS_HOST:-overview-redis} \
+REDIS_PORT=${REDIS_PORT:-6379} \
+MESSAGE_BROKER_HOSTNAME=${MESSAGE_BROKER_HOSTNAME:-overview-worker} \
+MESSAGE_BROKER_PORT=${MESSAGE_BROKER_PORT:-9030} \
+MESSAGE_BROKER_CLIENT_HOSTNAME=${MESSAGE_BROKER_CLIENT_HOSTNAME:-overview-web} \
+MESSAGE_BROKER_CLIENT_PORT=${MESSAGE_BROKER_CLIENT_PORT:-9031} \
+BLOB_STORAGE_FILE_BASE_DIRECTORY=${BLOB_STORAGE_FILE_BASE_DIRECTORY:-/var/lib/overview/blob-storage/prod} \
+DOCUMENTCLOUD_URL=${DOCUMENTCLOUD_URL:-https://www.documentcloud.org} \
+OV_APPLICATION_SECRET=${OV_APPLICATION_SECRET:-$FALLBACK_SECRET} \
+exec java -cp 'web/*' \
+  -Dhttp.port=80 \
+  -Dpidfile.path=/dev/null \
+  play.core.server.ProdServerStart /tmp

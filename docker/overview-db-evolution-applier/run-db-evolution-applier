@@ -1,0 +1,9 @@
+#!/bin/sh
+
+DATABASE_SERVER_NAME=${DATABASE_SERVER_NAME:-overview-database} \
+DATABASE_PORT=${DATABASE_PORT:-5432} \
+DATABASE_NAME=${DATABASE_NAME:-overview} \
+DATABASE_USERNAME=${DATABASE_USERNAME:-overview} \
+DATABASE_PASSWORD=${DATABASE_PASSWORD} \
+exec java -cp 'db-evolution-applier/*' \
+  com.overviewdocs.db_evolution_applier.Main
