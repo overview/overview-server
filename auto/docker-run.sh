@@ -29,7 +29,7 @@ if [ ! -f /this-is-overview-dev-on-docker ]; then
 
   DOCKER_OPTIONS=
   # Add docker options _before_ the image name
-  while [[ "x$1" != "x${1#-}" ]]; do
+  while [ "x$1" != "x${1#-}" ]; do
     DOCKER_OPTIONS="$DOCKER_OPTIONS $1"
     shift
   done
