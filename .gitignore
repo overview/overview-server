@@ -31,6 +31,7 @@ overview-server*.zip
 *.iml
 /archive/
 /archive.zip
+/archive.tar.gz
 test-results.xml
 /.ensime_cache/
 /unit-test-results/

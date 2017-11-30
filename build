@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Usage: ./build overview-server.zip
+# Usage: ./build overview-server.zip (also builds overview-server.tar.gz)
 #
 # (If invoked from your shell, it will run in a new Docker container.)
 #
@@ -8,13 +8,10 @@
 # specified file, rooted in a directory of the same name as the zipfile.
 #
 # For instance: ./build overview-server.zip will create overview-server.zip
-# with all its contents in an "overview-server/" directory.
+# with all its contents in an "overview-server/" directory. It will also create
+# overview-server.tar.gz.
 #
-# To use the resulting zipfile:
-#
-# 1. Unzip it
-# 2. cd into its main directory
-# 3. Run ./run there
+# The resulting zipfiles are only for experts.
 
 . "$(dirname "$0")"/auto/ensure-in-docker.sh
 
@@ -29,8 +26,9 @@ fail() {
 }
 
 OUTPUT_ZIP="$1"
-[ -n "$OUTPUT_ZIP" ] || fail "You did not specify a zipfile to write to"
+[ -n "$OUTPUT_ZIP" ] || fail "You did not specify a zipfile or tarfile to write to"
 [ -n "$(echo "$OUTPUT_ZIP" | grep -E '^[a-zA-Z0-9_-]+\.zip$')" ] || fail "Your zipfile name must look like [a-zA-Z0-9_-].zip -- no directories allowed"
+OUTPUT_TGZ="${OUTPUT_ZIP%.*}.tar.gz"
 
 # Compile
 /app/sbt $SBT_OPTIONS -Dsbt.log.noformat=true '; db-evolution-applier/stage; worker/stage; web/stage'
@@ -61,5 +59,6 @@ done
 
 # Now write the zipfile
 (cd /tmp && zip --quiet -r /app/$OUTPUT_ZIP $OVERVIEW_DIR)
+(cd /tmp && tar -czf /app/$OUTPUT_TGZ $OVERVIEW_DIR)
 # We'll leave those symlinks in /tmp. When the Docker container is removed,
 # they'll disappear.
