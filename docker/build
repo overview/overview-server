@@ -18,7 +18,7 @@ docker build --pull "$DIR"/overview-dev --tag overview-dev:$OVERVIEW_VERSION --t
 #
 # (awkwardness: building archive.zip is the only way to build archive.tar.gz. TODO fix this.)
 docker volume create overviewserver_homedir # if it isn't already created
-(cd "$DIR"/.. && docker run --rm -it --volume overviewserver_homedir:/root --volume "$ABSOLUTE_DIR":/app overview-dev:latest ./build archive.zip)
+(cd "$DIR"/.. && docker run --rm --volume overviewserver_homedir:/root --volume "$ABSOLUTE_DIR":/app overview-dev:latest ./build archive.zip)
 
 # 3. Build overview-java, our base image for other images
 tar -c -C "$DIR"/.. archive.tar.gz -C "$DIR"/overview-java Dockerfile | docker build --pull - --tag overview-java:build --tag overview-java:$OVERVIEW_VERSION
