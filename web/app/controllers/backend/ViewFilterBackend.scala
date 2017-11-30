@@ -81,10 +81,10 @@ class DbHttpViewFilterBackend @Inject() (
 
   override def resolve(documentSetId: Long, viewFilterSelection: ViewFilterSelection): Future[Either[ResolveError,DocumentIdFilter]] = {
     import scala.concurrent.ExecutionContext.Implicits.global
-    database.option(filterUrlAndTokenByIdsCompiled(documentSetId, viewFilterSelection.viewId)).flatMap(_ match {
+    database.option(filterUrlAndTokenAndServerUrlByIdsCompiled(documentSetId, viewFilterSelection.viewId)).flatMap(_ match {
       case None => Future.successful(Left(ResolveError.UrlNotFound))
-      case Some((filterUrl, apiToken)) => {
-        resolveHttp(documentSetId, filterUrl, apiToken, viewFilterSelection.ids, viewFilterSelection.operation)
+      case Some((filterUrl, apiToken, serverUrl)) => {
+        resolveHttp(documentSetId, filterUrl, apiToken, serverUrl.getOrElse(""), viewFilterSelection.ids, viewFilterSelection.operation)
       }
     })
   }
@@ -186,7 +186,7 @@ class DbHttpViewFilterBackend @Inject() (
     * Returns Left[UrlInvalaid] if the given filterUrl is not a valid
     * 'http' or 'https' URL.
     */
-  private def resolveHttp(documentSetId: Long, filterUrl: String, apiToken: String, ids: immutable.Seq[String], operation: Operation): Future[Either[ResolveError,DocumentIdFilter]] = {
+  private def resolveHttp(documentSetId: Long, filterUrl: String, apiToken: String, serverUrlFromPlugin: String, ids: immutable.Seq[String], operation: Operation): Future[Either[ResolveError,DocumentIdFilter]] = {
     val uri = try {
       Uri.parseHttpRequestTarget(filterUrl)
     } catch {
@@ -200,6 +200,7 @@ class DbHttpViewFilterBackend @Inject() (
     val fullUri = uri.withQuery(akka.http.scaladsl.model.Uri.Query(
       uri.query(UTF_8).toMap ++ Map(
         "apiToken" -> apiToken,
+        "server" -> serverUrlFromPlugin,
         "ids" -> ids.mkString(","),
         "operation" -> (operation match {
           case Operation.Any => "any"
@@ -212,11 +213,11 @@ class DbHttpViewFilterBackend @Inject() (
     resolveUri(documentSetId, fullUri)
   }
 
-  private lazy val filterUrlAndTokenByIdsCompiled = Compiled { (documentSetId: Rep[Long], viewId: Rep[Long]) =>
+  private lazy val filterUrlAndTokenAndServerUrlByIdsCompiled = Compiled { (documentSetId: Rep[Long], viewId: Rep[Long]) =>
     Views
       .filter(_.id === viewId)
       .filter(_.documentSetId === documentSetId)
       .filter(_.maybeFilterUrl.nonEmpty)
-      .map(view => (view.maybeFilterUrl.get, view.apiToken))
+      .map(view => (view.maybeFilterUrl.get, view.apiToken, view.serverUrlFromPlugin))
   }
 }

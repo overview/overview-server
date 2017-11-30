@@ -36,7 +36,12 @@ class DbHttpViewFilterBackendSpec extends DbBackendSpecification with InAppSpeci
         val viewFilter: Option[ViewFilter] = Some(ViewFilter("http://localhost:9001/10101010", Json.obj()))
         val documentSet = factory.documentSet(id=3L)
         val apiToken = factory.apiToken(documentSetId=Some(documentSet.id), token="mytoken")
-        lazy val view = factory.view(documentSetId=documentSet.id, apiToken=apiToken.token, viewFilter=viewFilter)
+        lazy val view = factory.view(
+          documentSetId=documentSet.id,
+          apiToken=apiToken.token,
+          serverUrlFromPlugin=Some("https://overview"),
+          viewFilter=viewFilter
+        )
         val backendTimeout = Duration(10, "ms")
 
         lazy val backend = {
@@ -84,6 +89,11 @@ class DbHttpViewFilterBackendSpec extends DbBackendSpecification with InAppSpeci
       "add apiToken to query" in new ResolveScope {
         resolve(Vector("foo", "bar"), Operation.Any) must beRight
         httpQuery.get("apiToken") must beSome("mytoken")
+      }
+
+      "add server to query" in new ResolveScope {
+        resolve(Vector("foo", "bar"), Operation.Any) must beRight
+        httpQuery.get("server") must beSome("https://overview")
       }
 
       "query with given IDs" in new ResolveScope {
@@ -140,7 +150,7 @@ class DbHttpViewFilterBackendSpec extends DbBackendSpecification with InAppSpeci
           override def handleRequest(request: HttpRequest) = {
             HttpResponse(StatusCodes.NotFound, immutable.Seq[HttpHeader](), HttpEntity(ContentTypes.`text/plain(UTF-8)`, "failure message".getBytes(UTF_8)), request.protocol)
           }
-        }) must beEqualTo(Left(ResolveError.PluginError("http://localhost:9001/10101010?apiToken=mytoken&ids=&operation=none", "404 Not Found: failure message")))
+        }) must beEqualTo(Left(ResolveError.PluginError("http://localhost:9001/10101010?apiToken=mytoken&server=https://overview&ids=&operation=none", "404 Not Found: failure message")))
       }
 
       "return PluginError even when response is invalid utf-8" in new ResolveScope {
@@ -173,7 +183,7 @@ class DbHttpViewFilterBackendSpec extends DbBackendSpecification with InAppSpeci
           override def prepareForStop = {
             queue.complete
           }
-        }) must beLeft(ResolveError.HttpTimeout("http://localhost:9001/10101010?apiToken=mytoken&ids=stalled-response&operation=none"))
+        }) must beLeft(ResolveError.HttpTimeout("http://localhost:9001/10101010?apiToken=mytoken&server=https://overview&ids=stalled-response&operation=none"))
       }
 
       "return HttpTimeout when connecting but not receiving headers" in new ResolveScope {
@@ -189,7 +199,7 @@ class DbHttpViewFilterBackendSpec extends DbBackendSpecification with InAppSpeci
           override def prepareForStop = {
             resultPromise.success(RouteResult.Complete(handleRequest(lastRequest.get)))
           }
-        }) must beLeft(ResolveError.HttpTimeout("http://localhost:9001/10101010?apiToken=mytoken&ids=no-headers&operation=none"))
+        }) must beLeft(ResolveError.HttpTimeout("http://localhost:9001/10101010?apiToken=mytoken&server=https://overview&ids=no-headers&operation=none"))
       }
 
       "return PluginError when Content-Type is not application/octet-stream" in new ResolveScope {
@@ -197,7 +207,7 @@ class DbHttpViewFilterBackendSpec extends DbBackendSpecification with InAppSpeci
           override def handleRequest(request: HttpRequest) = {
             HttpResponse(StatusCodes.OK, immutable.Seq[HttpHeader](), HttpEntity(ContentTypes.`text/html(UTF-8)`, Array[Byte](0xaa.toByte)), request.protocol)
           }
-        }) must beLeft(ResolveError.PluginError("http://localhost:9001/10101010?apiToken=mytoken&ids=&operation=none", "Expected Content-Type: application/octet-stream; got: text/html; charset=UTF-8"))
+        }) must beLeft(ResolveError.PluginError("http://localhost:9001/10101010?apiToken=mytoken&server=https://overview&ids=&operation=none", "Expected Content-Type: application/octet-stream; got: text/html; charset=UTF-8"))
       }
     }
   }
