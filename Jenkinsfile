@@ -26,8 +26,6 @@ node('test-slave') {
     }
 
     stage('Unit test') {
-      sh 'auto/test-coffee-once.sh'
-      junit 'web/test/js/**/test-results.xml'
       sh 'docker/unit-test'
       junit 'unit-test-results/**/*.xml'
     }

@@ -26,8 +26,8 @@ module.exports = function(config) {
     webpack: webpackConfig,
 
     junitReporter: {
-      outputFile: 'test-results.xml',
-      outputDir: 'test/js',
+      outputFile: 'js-test-results.xml',
+      outputDir: '/app/unit-test-results',
     },
 
     client: {
