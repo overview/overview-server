@@ -23,6 +23,7 @@ fail() {
 cleanup # from a previous, failed run
 
 docker network create overview-unit-test
+docker volume create overviewserver_homedir # if it doesn't already exist
 
 DOCKER_RUN="docker run --rm -e DATABASE_SERVER_NAME=overview-unit-test-database -e DATABASE_NAME=overview-test -e REDIS_HOST=overview-unit-test-redis --network overview-unit-test"
 
@@ -30,6 +31,10 @@ $DOCKER_RUN -d --name overview-unit-test-database overview-database:${OVERVIEW_V
 $DOCKER_RUN -d --name overview-unit-test-redis overview-redis:${OVERVIEW_VERSION} || fail
 
 $DOCKER_RUN --name overview-unit-test-db-evolution-applier overview-db-evolution-applier:${OVERVIEW_VERSION} || fail
-$DOCKER_RUN --name overview-unit-test-dev --volume "$ABSOLUTE_DIR":/app overview-dev:${OVERVIEW_VERSION} sh -c 'set -x; /app/sbt all/test && rm -f /app/unit-test-results/ && mkdir -p /app/unit-test-results/ && find /root -name "com.overviewdocs.*.xml" -exec cp {} /app/unit-test-results/' || fail
+$DOCKER_RUN --name overview-unit-test-dev \
+  --volume overviewserver_homedir:/root \
+  --volume "$ABSOLUTE_DIR":/app overview-dev:${OVERVIEW_VERSION} \
+  sh -c 'set -x; /app/sbt all/test && rm -f /app/unit-test-results/ && mkdir -p /app/unit-test-results/ && find /root -name "com.overviewdocs.*.xml" -exec cp {} /app/unit-test-results/' \
+  || fail
 
 cleanup
