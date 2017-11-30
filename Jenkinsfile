@@ -21,16 +21,19 @@ node('test-slave') {
 
     checkout scm
 
-    stage('Download dependencies') {
-      sh 'docker-compose build'
-      sh 'docker-compose pull database redis'
+    stage('Build') {
+      sh 'docker/build'
     }
 
-    stage('Build and Test') {
-      sh 'auto/test-everything.sh'
+    stage('Unit test') {
+      sh 'auto/test-coffee-once.sh'
       junit 'web/test/js/**/test-results.xml'
+      sh 'docker/unit-test'
       junit 'unit-test-results/**/*.xml'
-      junit 'integration-test/test-results.xml'
+    }
+
+    stage('Integration test') {
+      sh 'docker/integration-test'
     }
 
     stage('Publish') {
