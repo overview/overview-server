@@ -1,0 +1,35 @@
+#!/bin/sh
+#
+# Runs all our unit tests: those in Node and in Scala. Writes to
+# ../unit-test-results (wiping the directory and creating it)
+
+set -e
+set -x
+
+DIR="$(dirname "$0")"
+ABSOLUTE_DIR="$(realpath "$DIR"/..)"
+OVERVIEW_VERSION=$(git rev-parse HEAD)
+
+cleanup() {
+  docker network rm overview-unit-test 2>/dev/null || true
+  docker rm -f overview-unit-test-database overview-unit-test-redis overview-unit-test-db-evolution-applier overview-unit-test-dev 2>/dev/null || true
+}
+
+fail() {
+  cleanup
+  exit 1
+}
+
+cleanup # from a previous, failed run
+
+docker network create overview-unit-test
+
+DOCKER_RUN="docker run --rm -e DATABASE_SERVER_NAME=overview-unit-test-database -e DATABASE_NAME=overview-test -e REDIS_HOST=overview-unit-test-redis --network overview-unit-test"
+
+$DOCKER_RUN -d --name overview-unit-test-database overview-database:${OVERVIEW_VERSION} || fail
+$DOCKER_RUN -d --name overview-unit-test-redis overview-redis:${OVERVIEW_VERSION} || fail
+
+$DOCKER_RUN --name overview-unit-test-db-evolution-applier overview-db-evolution-applier:${OVERVIEW_VERSION} || fail
+$DOCKER_RUN --name overview-unit-test-dev --volume "$ABSOLUTE_DIR":/app overview-dev:${OVERVIEW_VERSION} sh -c 'set -x; /app/sbt all/test && rm -f /app/unit-test-results/ && mkdir -p /app/unit-test-results/ && find /root -name "com.overviewdocs.*.xml" -exec cp {} /app/unit-test-results/' || fail
+
+cleanup
