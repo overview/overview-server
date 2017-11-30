@@ -12,10 +12,10 @@ volumes:
 
 services:
   redis:
-    build: ./docker/redis
+    build: ./docker/overview-redis
 
   database:
-    build: ./docker/database
+    build: ./docker/overview-database
     volumes:
       - database-data:/var/lib/postgresql/data
 
