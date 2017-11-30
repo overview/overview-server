@@ -33,7 +33,7 @@ $DOCKER_RUN -d --name overview-unit-test-redis --network-alias redis overview-re
 $DOCKER_RUN --name overview-unit-test-dev \
   --volume overviewserver_homedir:/root \
   --volume "$ABSOLUTE_DIR":/app overview-dev:latest \
-  sh -c 'set -x; rm -rf unit-test-results && mkdir unit-test-results && auto/test-coffee-once.sh && ./sbt all/test && find /root/overview-build -name "com.overviewdocs.*.xml" -exec cp {} /app/unit-test-results/' \
+  sh -c 'set -x; rm -rf unit-test-results && mkdir unit-test-results && auto/test-coffee-once.sh && ./sbt all/test && find /root/overview-build -name "com.overviewdocs.*.xml" -exec cp {} /app/unit-test-results/ \;' \
   || fail
 
 cleanup
