@@ -60,12 +60,44 @@ function killRunningBrowser() {
   }
 }
 
+function waitForOverviewToComeOnline(msRemaining, callback) {
+  const PollFrequencyMs = 1000
+  const browserBuilder = require('../lib/BrowserBuilder')
+  const userAdmin = browserBuilder.createUserAdminSession()
+  const t1 = new Date()
+
+  userAdmin.loginPromise
+    .then(() => {
+      console.log(`Overview is online at ${browserBuilder.baseUrl}`)
+      callback(null)
+    })
+    .catch(err => {
+      console.log(err.message)
+      const t2 = new Date()
+      const dt = t2 - t1
+      if (dt >= msRemaining) {
+        return callback(new Error(`Could not connect to Overview at ${browserBuilder.baseUrl}`))
+      } else {
+        const wait = Math.max(0, PollFrequencyMs - dt)
+        console.log(`Failed to connect to Overview at ${browserBuilder.baseUrl}. Trying again.`)
+        setTimeout(
+          function() { waitForOverviewToComeOnline(msRemaining - dt - wait, callback) },
+          wait
+        )
+      }
+    })
+}
+
 before(function(done) {
   runBrowser(browser => {
     runningBrowser = browser
     process.on('exit', killRunningBrowser) // in case Mocha exits before the after() hook is called
     process.nextTick(done)
   })
+})
+
+before(function(done) {
+  waitForOverviewToComeOnline(60000, done)
 })
 
 after(killRunningBrowser)
