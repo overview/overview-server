@@ -10,6 +10,7 @@ import slick.dbio.DBIO
 import slick.jdbc.JdbcBackend.{Database=>DatabaseFactory}
 import slick.lifted.RunnableCompiled
 import slick.util.AsyncExecutor
+import com.typesafe.config.ConfigFactory
 
 import com.overviewdocs.database.Slick.api._
 
@@ -196,7 +197,43 @@ class Database(val slickDatabase: slick.jdbc.JdbcBackend.Database) {
 }
 
 object Database {
-  private lazy val database = new Database(DatabaseFactory.forConfig("db.default"))
+  private lazy val database: Database = connectToGlobalDatabaseAndWaitUntilSuccess
+
+  private def connectToGlobalDatabaseAndWaitUntilSuccess: Database = {
+    val path = "db.default"
+    val config = ConfigFactory.load.getConfig(path)
+      .withFallback(ConfigFactory.parseString(s"""
+        poolName: "$path",
+        numThreads: 5,
+        registerMbeans: false,
+        queueSize: 1000
+      """))
+
+    while (true) {
+      val jdbcDataSource = slick.jdbc.hikaricp.HikariCPJdbcDataSource.forConfig(config, null, path, slick.util.ClassLoaderUtil.defaultClassLoader)
+
+      try {
+        jdbcDataSource.ds.getConnection.close // will throw if cannot connect
+
+        // If we're here, then connecting works! Now to return a Database.
+				// Copied from Slick's internals
+				val poolName = config.getString("poolName")
+				val numThreads = config.getInt("numThreads")
+				val maxConnections = jdbcDataSource.maxConnections.fold(numThreads*5)(identity)
+				val registerMbeans = config.getBoolean("registerMbeans")
+				val executor = AsyncExecutor(poolName, numThreads, numThreads, config.getInt("queueSize"),
+					maxConnections, registerMbeans = registerMbeans)
+				val slickDatabase = DatabaseFactory.forSource(jdbcDataSource, executor)
+				return new Database(slickDatabase)
+      } catch {
+        case e: java.sql.SQLTransientConnectionException => {
+          System.err.println("Failed to connect to database. Will retry in 1s...")
+          Thread.sleep(1000)
+        }
+      }
+    }
+    ???
+  }
   
   def apply(): Database = database
 }

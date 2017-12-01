@@ -10,28 +10,11 @@ import com.overviewdocs.database.{DanglingNodeDeleter,DanglingCommandFinder,Data
 import com.overviewdocs.messages.DocumentSetCommands
 import com.overviewdocs.util.Logger
 
-object Worker extends App {
+object Worker {
   private val logger = Logger.forClass(getClass)
 
   TimeZone.setDefault(TimeZone.getTimeZone("UTC"))
   TempDirectory.create // wipe temp dir
-  val database = Database()
-  database.slickDatabase.createSession.close // Test DB connection, crash if dead
-
-  // Start an ActorSystem so we'll have non-daemon threads running.
-  val broker = startMainActorSystem
-
-  for {
-    _ <- cleanDanglingReferences
-    commands <- loadDanglingCommands
-  } yield {
-    startTreeThread
-
-    commands.foreach { command =>
-      logger.info("Resuming {}...", command)
-      broker ! command
-    }
-  }
 
   private def cleanDanglingReferences: Future[Unit] = DanglingNodeDeleter.run
   private def loadDanglingCommands: Future[Seq[DocumentSetCommands.Command]] = DanglingCommandFinder.run
@@ -43,8 +26,26 @@ object Worker extends App {
     thread.start
   }
 
-  private def startMainActorSystem: ActorRef = {
+  private def startMainActorSystem(database: Database): ActorRef = {
     logger.info("Starting actor system...")
     new WorkerActorEnvironment(database, TempDirectory.path).messageBroker
+  }
+
+  def main(args: Array[String]): Unit = {
+    // Start an ActorSystem so we'll have non-daemon threads running.
+    val database = Database()
+    val broker = startMainActorSystem(database)
+
+    for {
+      _ <- cleanDanglingReferences
+      commands <- loadDanglingCommands
+    } yield {
+      startTreeThread
+
+      commands.foreach { command =>
+        logger.info("Resuming {}...", command)
+        broker ! command
+      }
+    }
   }
 }
