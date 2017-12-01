@@ -13,7 +13,7 @@ class DocumentWriterSpec extends DbSpecification with Mockito {
   trait BaseScope extends DbScope {
     val documentSet = factory.documentSet()
     val dcImport = factory.documentCloudImport(documentSetId=documentSet.id)
-    val bulkDocumentWriter = smartMock[BulkDocumentWriter]
+    val bulkDocumentWriter = mock[BulkDocumentWriter]
     bulkDocumentWriter.flush returns Future.unit
 
     var lastProgress: Int = -1
@@ -29,7 +29,6 @@ class DocumentWriterSpec extends DbSpecification with Mockito {
 
   "DocumentWriter" should {
     "write documents" in new BaseScope {
-      subject.flushPeriodically
       val document = PodoFactory.document(documentSetId=documentSet.id)
       subject.addDocument(document)
       stop must beEqualTo(())
@@ -39,7 +38,6 @@ class DocumentWriterSpec extends DbSpecification with Mockito {
     }
 
     "write errors" in new BaseScope {
-      subject.flushPeriodically
       subject.addError("dc1", "some problem")
       stop must beEqualTo(())
 
@@ -50,7 +48,6 @@ class DocumentWriterSpec extends DbSpecification with Mockito {
     }
 
     "update progress on error" in new BaseScope {
-      subject.flushPeriodically
       subject.addError("dc1", "some problem")
       stop must beEqualTo(())
 
@@ -58,7 +55,6 @@ class DocumentWriterSpec extends DbSpecification with Mockito {
     }
 
     "update progress on write" in new BaseScope {
-      subject.flushPeriodically
       subject.addDocument(PodoFactory.document(documentSetId=documentSet.id))
       stop must beEqualTo(())
 
@@ -66,7 +62,6 @@ class DocumentWriterSpec extends DbSpecification with Mockito {
     }
 
     "update progress on skip" in new BaseScope {
-      subject.flushPeriodically
       subject.skip(10)
       stop must beEqualTo(())
 
@@ -74,7 +69,6 @@ class DocumentWriterSpec extends DbSpecification with Mockito {
     }
 
     "add all progress" in new BaseScope {
-      subject.flushPeriodically
       subject.skip(10)
       subject.addDocument(PodoFactory.document(documentSetId=documentSet.id))
       subject.addError("a", "b")

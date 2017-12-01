@@ -99,7 +99,6 @@ trait Main extends HasDatabase {
     }
 
     val writer = new DocumentWriter(dcImport, updateProgressAndMaybeCancel)
-    writer.flushPeriodically
 
     val doneFetching = Future.sequence(Seq(
       fetcher.run(headerProducer, writer),
