@@ -86,6 +86,7 @@ class DocumentWriter(
 
       // Schedule a _faster_ flush. This guarantees that only one
       // thread calls startFlush, which makes life much simpler
+      isFlushScheduled = true
       timer.schedule(flushTask, 0)
     }
 
