@@ -36,7 +36,9 @@ node('test-slave') {
 
     stage('Publish') {
       if (currentBuild.result == null || currentBuild.result == 'SUCCESS') {
-        sh 'auto/publish-from-jenkins-test-slave.sh'
+        withCredentials([usernamePassword(credentialsId: 'docker-hub', usernameVariable: 'DOCKER_HUB_USERNAME', passwordVariable: 'DOCKER_HUB_PASSWORD')]) {
+          sh 'auto/publish-from-jenkins-test-slave.sh'
+        }
         currentBuild.result = 'SUCCESS'
       }
     }

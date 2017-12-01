@@ -1,0 +1,36 @@
+#!/bin/bash
+#
+# Publishes images Docker Hub.
+#
+# Jenkins invokes this when all tests pass.
+#
+# Docker images are tagged :latest and :[sha1].
+#
+# It sure would be nice if Docker Hub behaved like every other registry out
+# there and used SSL keys+certificates or some-such. Alas, we do not live in
+# that world. So we pass username+password through environment variables.
+
+set -e
+# make extra-sure we don't log passwords
+set +x
+
+fail() {
+  echo "$1" >&2
+  exit 1
+}
+[ -n "$DOCKER_HUB_USERNAME" ] || fail "DOCKER_HUB_USERNAME environment variable is not set"
+[ -n "$DOCKER_HUB_PASSWORD" ] || fail "DOCKER_HUB_PASSWORD environment variable is not set"
+
+echo "$DOCKER_HUB_PASSWORD" | docker login --username "$DOCKER_HUB_USERNAME" --password-stdin
+
+set -x
+
+SHA1="$(git rev-parse HEAD)"
+REPOSITORY="overview"
+
+IMAGES="overview-database overview-redis overview-db-evolution-applier overview-web overview-worker"
+for image in $IMAGES; do
+  docker tag "$image:$SHA1" "$REPOSITORY/$image:latest"
+  docker tag "$image:$SHA1" "$REPOSITORY/$image:$SHA1"
+  docker push "$REPOSITORY/$image"
+done

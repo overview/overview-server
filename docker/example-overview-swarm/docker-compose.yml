@@ -1,0 +1,40 @@
+version: '3.4'
+
+services:
+  overview-web:
+    image: overview-web:${OVERVIEW_VERSION}
+    networks: [ 'default', 'database', 'redis', 'worker' ]
+    depends_on: [ 'overview-database', 'overview-redis', 'overview-worker' ]
+    ports:
+      - '127.0.0.1:9000:80'
+    volumes:
+      - blob-storage:/var/lib/overview/blob-storage
+
+  overview-worker:
+    image: overview-worker:${OVERVIEW_VERSION}
+    networks: [ 'database', 'worker' ]
+    depends_on: [ 'overview-database' ]
+    volumes:
+      - blob-storage:/var/lib/overview/blob-storage
+
+  overview-database:
+    image: overview-database:${OVERVIEW_VERSION}
+    networks: [ 'database' ]
+
+  overview-redis:
+    image: overview-redis:${OVERVIEW_VERSION}
+    networks: [ 'redis' ]
+
+  overview-db-evolution-applier:
+    image: overview-db-evolution-applier:${OVERVIEW_VERSION}
+    networks: [ 'database' ]
+    depends_on: [ 'overview-database' ]
+
+networks:
+  database:
+  redis:
+  worker:
+
+# Most data is transient. only one directory is shared.
+volumes:
+  blob-storage:
