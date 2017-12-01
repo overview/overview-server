@@ -133,7 +133,7 @@ class DocumentWriter(
     doFlush(aSnapshot)
       .onComplete(_ => synchronized {
         nActiveFlushes -= 1
-        if (stopped && nActiveFlushes == 0) {
+        if (stopped && !isFlushScheduled && nActiveFlushes == 0) {
           donePromise.success(())
         }
       })
