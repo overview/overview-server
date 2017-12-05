@@ -30,6 +30,8 @@ services:
 
   overview-integration-test:
     image: overview-integration-test:${OVERVIEW_VERSION}
+    volumes:
+      - '../integration-test/test-results.xml:/integration-test/test-results.xml'
     environment:
       - 'OVERVIEW_URL=http://overview-web'
     depends_on: [ 'overview-web' ]
