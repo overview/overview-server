@@ -21,7 +21,7 @@ docker volume create overviewserver_homedir # if it isn't already created
 (cd "$DIR"/.. && docker run --rm --volume overviewserver_homedir:/root --volume "$ABSOLUTE_DIR":/app overview-dev:latest ./build archive.zip)
 
 # 3. Build overview-java, our base image for other images
-tar -c -C "$DIR"/.. archive.tar.gz -C "$DIR"/overview-java Dockerfile | docker build --pull - --tag overview-java:build --tag overview-java:$OVERVIEW_VERSION
+tar -c -C "$ABSOLUTE_DIR" archive.tar.gz -C "$ABSOLUTE_DIR"/docker/overview-java Dockerfile | docker build --pull --tag overview-java:build --tag overview-java:$OVERVIEW_VERSION -
 
 # 4. Build all other images
 for subdir in overview-database overview-redis; do
