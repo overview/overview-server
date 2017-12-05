@@ -32,6 +32,7 @@ node('test-slave') {
 
     stage('Integration test') {
       sh 'docker/integration-test'
+      junit 'integration-test/test-results.xml'
     }
 
     stage('Publish') {
