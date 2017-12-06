@@ -23,6 +23,9 @@ OVERVIEW_VERSION=$OVERVIEW_VERSION $DOCKER_COMPOSE up -d overview-database
 
 OVERVIEW_VERSION=$OVERVIEW_VERSION $DOCKER_COMPOSE run overview-db-evolution-applier
 
+TEST_RESULTS_XML="$DIR"/../integration-test/test-results.xml
+rm -rf $TEST_RESULTS_XML
+touch $TEST_RESULTS_XML
 OVERVIEW_VERSION=$OVERVIEW_VERSION $DOCKER_COMPOSE up \
   --abort-on-container-exit \
   --exit-code-from overview-integration-test \
