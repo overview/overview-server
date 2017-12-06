@@ -37,6 +37,7 @@ describe('PdfAnnotations', function() {
       });
 
       await b.click('button#addNote')
+      await b.assertExists({ css: '#viewerContainer.addingNote' }, { wait: 'fast' }) // wait for it to listen to mouse events
 
       const el = (await b.find({ css: '#viewer .textLayer div' })).driverElement
 
