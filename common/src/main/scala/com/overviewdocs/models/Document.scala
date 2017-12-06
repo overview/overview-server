@@ -2,11 +2,11 @@ package com.overviewdocs.models
 
 import com.ibm.icu.lang.{UCharacter,UScript}
 import com.ibm.icu.lang.UCharacterEnums.ECharacterCategory
-import com.ibm.icu.text.{BreakIterator,RuleBasedBreakIterator,UTF16}
+import com.ibm.icu.text.{BreakIterator,RuleBasedBreakIterator,UTF16,Normalizer2}
 import com.ibm.icu.util.ULocale
 import java.io.StringReader
 import java.util.Date
-import java.text.{Normalizer,StringCharacterIterator}
+import java.text.StringCharacterIterator
 import play.api.libs.json.JsObject
 import scala.collection.mutable
 
@@ -32,6 +32,11 @@ case class Document(
   override val pdfNotes: PdfNoteCollection,
   override val text: String
 ) extends DocumentHeader {
+  // Beware: java.text.Normalizer gave _horrid_ performance with the text of one
+  // particular PDF (which is not public). We did not debug this: we simply
+  // switched to com.ibm.icu.text.Normalizer2, which does not share this problem.
+  private val normalizer = Normalizer2.getNFKCInstance
+
   def toDocumentInfo: DocumentInfo = DocumentInfo(
     id,
     documentSetId,
@@ -61,7 +66,7 @@ case class Document(
   }
 
   /** Text, normalized as NFKC. */
-  def normalizedText: String = Normalizer.normalize(text, Normalizer.Form.NFKC)
+  def normalizedText: String = normalizer.normalize(text)
 
   /** The approximate cost of this Document in memory.
     *
