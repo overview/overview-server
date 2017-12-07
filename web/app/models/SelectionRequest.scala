@@ -10,18 +10,43 @@ import com.overviewdocs.query.Query
   * <em>SelectionRequest</em> is, well, a request to create one.
   */
 case class SelectionRequest(
-  val documentSetId: Long,
-  val nodeIds: immutable.Seq[Long] = Vector(),
-  val tagIds: immutable.Seq[Long] = Vector(),
-  val documentIds: immutable.Seq[Long] = Vector(),
-  val documentIdsBitSet: Option[immutable.BitSet] = None,
-  val storeObjectIds: immutable.Seq[Long] = Vector(),
-  val tagged: Option[Boolean] = None,
-  val tagOperation: SelectionRequest.TagOperation = SelectionRequest.TagOperation.Any,
-  val viewFilterSelections: immutable.Seq[ViewFilterSelection] = Vector(),
-  val q: Option[Query] = None,
-  val sortByMetadataField: Option[String] = None
+  /** DocumentSet ID */
+  documentSetId: Long,
+
+  /** Node IDs. TODO: nix these and use a ViewFilter. */
+  nodeIds: immutable.Seq[Long] = Vector(),
+
+  /** Tag IDs. Empty means all documents. */
+  tagIds: immutable.Seq[Long] = Vector(),
+
+  /** Document IDs. Empty means all documents. */
+  documentIds: immutable.Seq[Long] = Vector(),
+
+  /** Document IDs, by bitset. None means all documents. */
+  documentIdsBitSet: Option[immutable.BitSet] = None,
+
+  /** StoreObject IDs. Empty means all documents. TODO consider nixing StoreObjects? */
+  storeObjectIds: immutable.Seq[Long] = Vector(),
+
+  /** "any tag" specifier. TODO consider a front-end change to "select all" */
+  tagged: Option[Boolean] = None,
+
+  /** Whether to AND, OR or NOT tagIds. */
+  tagOperation: SelectionRequest.TagOperation = SelectionRequest.TagOperation.Any,
+
+  /** ViewFilter selections.
+    *
+    * Each comes from a separate View and will produce a set of document IDs.
+    */
+  viewFilterSelections: immutable.Seq[ViewFilterSelection] = Vector(),
+
+  /** Full-text query. None means all documents. So does the empty string. TODO nix None. */
+  q: Option[Query] = None,
+
+  /** What to sort by. TODO add "reverse" here. */
+  sortByMetadataField: Option[String] = None
 ) {
+  /** Unique ID of this SelectionRequest, used for caching. */
   lazy val hash = hashCode
 
   /** Returns true iff this selection request is for all Documents in the

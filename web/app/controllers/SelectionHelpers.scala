@@ -56,7 +56,8 @@ trait SelectionHelpers extends HeaderNames with Results { self: ControllerHelper
         (maybeViewId, idStrings) match {
           case (Some(viewId), ids) if ids.nonEmpty => {
             val operation = stringToViewFilterOperation(values.getOrElse("operation", ""))
-            Some(ViewFilterSelection(viewId, ids, operation))
+            val url = (if (request.secure) { "https://" } else { "http://" }) + request.host
+            Some(ViewFilterSelection(viewId, url, ids, operation))
           }
           case _ => None
         }

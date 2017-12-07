@@ -337,7 +337,7 @@ class DbDocumentSelectionBackendSpec extends DbBackendSpecification with InAppSp
       }
 
       "filter by a ViewFilterSelection" in new CreateSelectionScope {
-        val selection = ViewFilterSelection(234, Vector("foo"), ViewFilterSelection.Operation.Any)
+        val selection = ViewFilterSelection(234, "https://api", Vector("foo"), ViewFilterSelection.Operation.Any)
         override val viewFilterSelections = Vector(selection)
         val anIdSet = DocumentIdSet(Vector(doc1.id, doc3.id))
         viewFilterBackend.resolve(documentSet.id, selection) returns Future.successful(Right(anIdSet))
@@ -346,8 +346,8 @@ class DbDocumentSelectionBackendSpec extends DbBackendSpecification with InAppSp
       }
 
       "AND ViewFilterSelection selections" in new CreateSelectionScope {
-        val selection1 = ViewFilterSelection(234, Vector("foo"), ViewFilterSelection.Operation.Any)
-        val selection2 = ViewFilterSelection(235, Vector("foo"), ViewFilterSelection.Operation.Any)
+        val selection1 = ViewFilterSelection(234, "https://api", Vector("foo"), ViewFilterSelection.Operation.Any)
+        val selection2 = ViewFilterSelection(235, "https://api", Vector("foo"), ViewFilterSelection.Operation.Any)
         override val viewFilterSelections = Vector(selection1, selection2)
         val idSet1 = DocumentIdSet(Vector(doc1.id, doc3.id))
         val idSet2 = DocumentIdSet(Vector(doc1.id, doc2.id))
@@ -358,7 +358,7 @@ class DbDocumentSelectionBackendSpec extends DbBackendSpecification with InAppSp
       }
 
       "warn and not filter when ViewFilterSelection fails to resolve" in new CreateSelectionScope {
-        val selection = ViewFilterSelection(234, Vector("foo"), ViewFilterSelection.Operation.Any)
+        val selection = ViewFilterSelection(234, "https://api", Vector("foo"), ViewFilterSelection.Operation.Any)
         override val viewFilterSelections = Vector(selection)
         val error = ViewFilterBackend.ResolveError.HttpTimeout("http://foo")
         viewFilterBackend.resolve(documentSet.id, selection) returns Future.successful(Left(error))
@@ -367,8 +367,8 @@ class DbDocumentSelectionBackendSpec extends DbBackendSpecification with InAppSp
       }
 
       "Combine one successful ViewFilterSelection with another's warning" in new CreateSelectionScope {
-        val selection1 = ViewFilterSelection(234, Vector("foo"), ViewFilterSelection.Operation.Any)
-        val selection2 = ViewFilterSelection(235, Vector("foo"), ViewFilterSelection.Operation.Any)
+        val selection1 = ViewFilterSelection(234, "https://api", Vector("foo"), ViewFilterSelection.Operation.Any)
+        val selection2 = ViewFilterSelection(235, "https://api", Vector("foo"), ViewFilterSelection.Operation.Any)
         override val viewFilterSelections = Vector(selection1, selection2)
         val idSet1 = DocumentIdSet(Vector(doc1.id, doc3.id))
         val error = ViewFilterBackend.ResolveError.HttpTimeout("http://foo")

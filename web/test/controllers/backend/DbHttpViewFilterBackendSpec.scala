@@ -54,7 +54,12 @@ class DbHttpViewFilterBackendSpec extends DbBackendSpecification with InAppSpeci
           ret
         }
 
-        def selection(ids: Vector[String], operation: Operation) = ViewFilterSelection(view.id, ids, operation)
+        def selection(ids: Vector[String], operation: Operation) = ViewFilterSelection(
+          view.id,
+          "https://url-from-view-filter-selection",
+          ids,
+          operation
+        )
 
         var lastRequest: Option[HttpRequest] = None
 
@@ -94,6 +99,18 @@ class DbHttpViewFilterBackendSpec extends DbBackendSpecification with InAppSpeci
       "add server to query" in new ResolveScope {
         resolve(Vector("foo", "bar"), Operation.Any) must beRight
         httpQuery.get("server") must beSome("https://overview")
+      }
+
+      "use ViewFilterSelection defaultOverviewApiUrl when View.serverUrlFromPlugin is unset" in new ResolveScope {
+        override lazy val view = factory.view(
+          documentSetId=documentSet.id,
+          apiToken=apiToken.token,
+          serverUrlFromPlugin=None,
+          viewFilter=viewFilter
+        )
+
+        resolve(Vector("foo", "bar"), Operation.Any) must beRight
+        httpQuery.get("server") must beSome("https://url-from-view-filter-selection")
       }
 
       "query with given IDs" in new ResolveScope {

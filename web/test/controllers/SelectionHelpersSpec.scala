@@ -32,11 +32,11 @@ class SelectionHelpersSpec extends ControllerSpecification with Mockito with Awa
       val controller = new AController(smartMock[SelectionBackend], fakeControllerComponents) 
 
       def f(documentSetId: Long, path: String) = {
-        val request = FakeRequest("GET", path)
+        val request = FakeRequest("GET", path).withHeaders("Host" -> "overview-host")
         controller.f(documentSetId, request)
       }
       def f(documentSetId: Long, data: (String,String)*) = {
-        val request = FakeRequest("POST", "").withFormUrlEncodedBody(data: _*)
+        val request = FakeRequest("POST", "").withFormUrlEncodedBody(data: _*).withHeaders("Host" -> "overview-host")
         controller.f(documentSetId, request)
       }
 
@@ -103,26 +103,26 @@ class SelectionHelpersSpec extends ControllerSpecification with Mockito with Awa
 
       "make a SelectionRequest with a ViewFilterSelection" in new SelectionScope {
         test("/?filters.123.ids=1,2&filters.123.operation=all", Right(SelectionRequest(1L, viewFilterSelections=Vector(
-          ViewFilterSelection(123, Vector("1", "2"), Operation.All)
+          ViewFilterSelection(123, "http://overview-host", Vector("1", "2"), Operation.All)
         ))))
       }
 
       "make a SelectionRequest with two ViewFilterSelections" in new SelectionScope {
         test("/?filters.123.ids=1,2&filters.123.operation=all&filters.234.ids=2,3&filters.234.operation=none", Right(SelectionRequest(1L, viewFilterSelections=Vector(
-          ViewFilterSelection(123, Vector("1", "2"), Operation.All),
-          ViewFilterSelection(234, Vector("2", "3"), Operation.None)
+          ViewFilterSelection(123, "http://overview-host", Vector("1", "2"), Operation.All),
+          ViewFilterSelection(234, "http://overview-host", Vector("2", "3"), Operation.None)
         ))))
       }
 
       "set ViewFilterSelection operation=any by default" in new SelectionScope {
         test("/?filters.123.ids=1,2", Right(SelectionRequest(1L, viewFilterSelections=Vector(
-          ViewFilterSelection(123, Vector("1", "2"), Operation.Any)
+          ViewFilterSelection(123, "http://overview-host", Vector("1", "2"), Operation.Any)
         ))))
       }
 
       "set ViewFilterSelection operation=any if value is incorrect" in new SelectionScope {
         test("/?filters.123.ids=1,2&filters.123.operation=WRONG", Right(SelectionRequest(1L, viewFilterSelections=Vector(
-          ViewFilterSelection(123, Vector("1", "2"), Operation.Any)
+          ViewFilterSelection(123, "http://overview-host", Vector("1", "2"), Operation.Any)
         ))))
       }
 

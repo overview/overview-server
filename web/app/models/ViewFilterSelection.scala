@@ -7,8 +7,16 @@ import scala.collection.immutable
   * It depends on a View existing in the database with a ViewFilter.
   */
 case class ViewFilterSelection(
+  /** View ID. */
   viewId: Long,
+
+  /** Overview URL to send to the plugin (iff the View does not specify one). */
+  defaultOverviewApiUrl: String,
+
+  /** IDs to send to the plugin. */
   ids: immutable.Seq[String],
+
+  /** operation to send to the plugin. */
   operation: ViewFilterSelection.Operation
 )
 

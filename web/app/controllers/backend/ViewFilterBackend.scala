@@ -23,6 +23,11 @@ import _root_.util.BitSetUtil
   */
 @ImplementedBy(classOf[DbHttpViewFilterBackend])
 trait ViewFilterBackend {
+  /** Fetches a DocumentIdFilter from the plugin.
+    *
+    * @param documentSetId DocumentSet ID
+    * @param viewFilterSelection Query parameters the plugin will use to derive a set of IDs
+    */
   def resolve(documentSetId: Long, viewFilterSelection: ViewFilterSelection): Future[Either[ViewFilterBackend.ResolveError,DocumentIdFilter]]
 }
 
@@ -84,7 +89,14 @@ class DbHttpViewFilterBackend @Inject() (
     database.option(filterUrlAndTokenAndServerUrlByIdsCompiled(documentSetId, viewFilterSelection.viewId)).flatMap(_ match {
       case None => Future.successful(Left(ResolveError.UrlNotFound))
       case Some((filterUrl, apiToken, serverUrl)) => {
-        resolveHttp(documentSetId, filterUrl, apiToken, serverUrl.getOrElse(""), viewFilterSelection.ids, viewFilterSelection.operation)
+        resolveHttp(
+          documentSetId,
+          filterUrl,
+          apiToken,
+          serverUrl.getOrElse(viewFilterSelection.defaultOverviewApiUrl),
+          viewFilterSelection.ids,
+          viewFilterSelection.operation
+        )
       }
     })
   }
