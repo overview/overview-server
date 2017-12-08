@@ -21,7 +21,7 @@ define [
                 <i class="icon overview-icon-plus"></i>
                 <%- t('upload_prompt') %>
               </button>
-              <input type="file" class="invisible-file-input" multiple="multiple" />
+              <input name="file" type="file" class="invisible-file-input" multiple="multiple" />
             </div>
 
             <% if (isFolderUploadSupported) { %>
@@ -30,7 +30,7 @@ define [
                   <i class="icon overview-icon-plus"></i>
                   <%- t('upload_folder_prompt') %>
                 </button>
-                <input type="file" class="invisible-file-input" multiple webkitdirectory />
+                <input name="folder" type="file" class="invisible-file-input" multiple webkitdirectory />
               </div>
             <% } %>
 
