@@ -36,6 +36,13 @@ describe('PdfAnnotations', function() {
         return document.querySelector('.noteLayer') !== null
       });
 
+      // Often, even after the notes code is loaded, clicking button#addNote
+      // doesn't accomplish anything. [adam, 2017-12-08] I suspect that's
+      // because the _toolbar_ code isn't loaded yet, but I'm not going to delve
+      // into pdfjs to be sure. So let's just assume it's on its way; there are
+      // no HTTP requests remaining.
+      await b.sleep(1000)
+
       await b.click('button#addNote')
       await b.assertExists({ css: '#viewerContainer.addingNote' }, { wait: 'fast' }) // wait for it to listen to mouse events
 
