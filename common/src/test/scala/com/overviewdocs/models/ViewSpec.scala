@@ -16,6 +16,7 @@ class ViewSpec extends Specification {
           "api-token",
           "title",
           None,
+          None,
           new Timestamp(1234L)
         )
         val attributes = View.UpdateAttributes(title = "new title")
@@ -27,6 +28,7 @@ class ViewSpec extends Specification {
           None,
           "api-token",
           "new title",
+          None,
           None,
           new Timestamp(1234L)
         ))

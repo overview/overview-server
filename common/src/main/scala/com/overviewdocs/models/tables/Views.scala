@@ -4,7 +4,7 @@ import play.api.libs.json.JsObject
 
 import java.sql.Timestamp
 import com.overviewdocs.database.Slick.api._
-import com.overviewdocs.models.{View,ViewFilter}
+import com.overviewdocs.models.{View,ViewDocumentDetailLink,ViewFilter}
 
 class ViewsImpl(tag: Tag) extends Table[View](tag, "view") {
   def id = column[Long]("id", O.PrimaryKey)
@@ -15,6 +15,10 @@ class ViewsImpl(tag: Tag) extends Table[View](tag, "view") {
   def title = column[String]("title")
   def maybeFilterUrl = column[Option[String]]("filter_url")
   def maybeFilterJson = column[Option[JsObject]]("filter_json_text")
+  def maybeDocumentDetailLinkUrl = column[Option[String]]("document_detail_link_url")
+  def maybeDocumentDetailLinkTitle = column[Option[String]]("document_detail_link_title")
+  def maybeDocumentDetailLinkText = column[Option[String]]("document_detail_link_text")
+  def maybeDocumentDetailLinkIconClass = column[Option[String]]("document_detail_link_icon_class")
   def createdAt = column[Timestamp]("created_at")
 
   def * = (
@@ -26,6 +30,10 @@ class ViewsImpl(tag: Tag) extends Table[View](tag, "view") {
     title,
     maybeFilterUrl,
     maybeFilterJson,
+    maybeDocumentDetailLinkUrl,
+    maybeDocumentDetailLinkTitle,
+    maybeDocumentDetailLinkText,
+    maybeDocumentDetailLinkIconClass,
     createdAt
   ) <> ((ViewsImpl.buildView _).tupled, ViewsImpl.unapplyView)
 
@@ -39,9 +47,28 @@ class ViewsImpl(tag: Tag) extends Table[View](tag, "view") {
 }
 
 object ViewsImpl {
-  def buildView(id: Long, documentSetId: Long, url: String, serverUrlFromPlugin: Option[String], apiToken: String, title: String, maybeFilterUrl: Option[String], maybeFilterJson: Option[JsObject], createdAt: Timestamp): View = {
+  def buildView(
+    id: Long,
+    documentSetId: Long,
+    url: String,
+    serverUrlFromPlugin: Option[String],
+    apiToken: String,
+    title: String,
+    maybeFilterUrl: Option[String],
+    maybeFilterJson: Option[JsObject],
+    maybeDocumentDetailLinkUrl: Option[String],
+    maybeDocumentDetailLinkTitle: Option[String],
+    maybeDocumentDetailLinkText: Option[String],
+    maybeDocumentDetailLinkIconClass: Option[String],
+    createdAt: Timestamp
+  ): View = {
     val viewFilter = (maybeFilterUrl, maybeFilterJson) match {
       case (Some(filterUrl), Some(filterJson)) => Some(ViewFilter(filterUrl, filterJson))
+      case _ => None
+    }
+
+    val documentDetailLink = (maybeDocumentDetailLinkUrl, maybeDocumentDetailLinkTitle, maybeDocumentDetailLinkText, maybeDocumentDetailLinkIconClass) match {
+      case (Some(url), Some(title), Some(text), Some(iconClass)) => Some(ViewDocumentDetailLink(url, title, text, iconClass))
       case _ => None
     }
 
@@ -53,6 +80,7 @@ object ViewsImpl {
       apiToken=apiToken,
       title=title,
       viewFilter=viewFilter,
+      documentDetailLink=documentDetailLink,
       createdAt=createdAt
     )
   }
@@ -67,6 +95,10 @@ object ViewsImpl {
       view.title,
       view.viewFilter.map(_.url),
       view.viewFilter.map(_.json),
+      view.documentDetailLink.map(_.url),
+      view.documentDetailLink.map(_.title),
+      view.documentDetailLink.map(_.text),
+      view.documentDetailLink.map(_.iconClass),
       view.createdAt
     ))
   }

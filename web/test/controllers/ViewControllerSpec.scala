@@ -6,7 +6,7 @@ import play.api.libs.json.{Json,JsObject,JsNull}
 import scala.concurrent.Future
 
 import controllers.backend.{ApiTokenBackend,StoreBackend,ViewBackend}
-import com.overviewdocs.models.{ApiToken,Tree,View,ViewFilter}
+import com.overviewdocs.models.{ApiToken,Tree,View,ViewDocumentDetailLink,ViewFilter}
 import com.overviewdocs.test.factories.PodoFactory
 
 class ViewControllerSpec extends ControllerSpecification with JsonMatchers {
@@ -239,6 +239,69 @@ class ViewControllerSpec extends ControllerSpecification with JsonMatchers {
         override val requestBody = JsObject(Map("filter" -> JsNull))
         h.status(result) must beEqualTo(h.OK)
         there was one(mockViewBackend).updateViewFilter(viewId, None)
+      }
+    }
+
+    "#update() with JSON documentDetailLink" should {
+      trait UpdateDocumentDetailLink extends BaseScope {
+        val documentSetId = 1L
+        val viewId = 2L
+        def documentDetailLink: Option[ViewDocumentDetailLink] = Some(ViewDocumentDetailLink("https://url/:documentId", "Title", "Text", "icon-class"))
+        def expectedResult: Option[View] = Some(PodoFactory.view(documentDetailLink=documentDetailLink))
+        mockViewBackend.updateDocumentDetailLink(any, any) returns Future.successful { expectedResult }
+        val documentDetailLinkUrl = "https://url/:documentId"
+        val documentDetailLinkTitle = "Title"
+        val documentDetailLinkText = "Text"
+        val documentDetailLinkIconClass = "icon-class"
+        lazy val documentDetailLinkJs = Json.obj(
+          "url" -> documentDetailLinkUrl,
+          "title" -> documentDetailLinkTitle,
+          "text" -> documentDetailLinkText,
+          "iconClass" -> documentDetailLinkIconClass
+        )
+        lazy val requestBody: JsObject = Json.obj("documentDetailLink" -> documentDetailLinkJs)
+        lazy val request = fakeAuthorizedRequest.withJsonBody(requestBody)
+        lazy val result = controller.update(documentSetId, viewId)(request)
+      }
+
+      "call ViewBackend#updateDocumentDetailLink" in new UpdateDocumentDetailLink {
+        h.status(result)
+        there was one(mockViewBackend).updateDocumentDetailLink(viewId, documentDetailLink)
+      }
+
+      "return the updated View" in new UpdateDocumentDetailLink {
+        h.status(result)
+        val json = h.contentAsString(result)
+
+        json must /("documentDetailLink") /("url" -> "https://url/:documentId")
+        json must /("documentDetailLink") /("title" -> "Title")
+        json must /("documentDetailLink") /("text" -> "Text")
+        json must /("documentDetailLink") /("iconClass" -> "icon-class")
+      }
+
+      "return NotFound when the View is not found" in new UpdateDocumentDetailLink {
+        override def expectedResult = None
+        h.status(result) must beEqualTo(h.NOT_FOUND)
+      }
+
+      "return BadRequest when the input has no URL" in new UpdateDocumentDetailLink {
+        override lazy val documentDetailLinkJs = Json.obj(
+          "title" -> documentDetailLinkTitle,
+          "text" -> documentDetailLinkText,
+          "iconClass" -> documentDetailLinkIconClass
+        )
+        h.status(result) must beEqualTo(h.BAD_REQUEST)
+      }
+
+      "return BadRequest when the input url has no ':documentId'" in new UpdateDocumentDetailLink {
+        override val documentDetailLinkUrl = "https://url"
+        h.status(result) must beEqualTo(h.BAD_REQUEST)
+      }
+
+      "set documentDetailLink to None when given documentDetailLink=null" in new UpdateDocumentDetailLink {
+        override lazy val requestBody = JsObject(Map("documentDetailLink" -> JsNull))
+        h.status(result) must beEqualTo(h.OK)
+        there was one(mockViewBackend).updateDocumentDetailLink(viewId, None)
       }
     }
 

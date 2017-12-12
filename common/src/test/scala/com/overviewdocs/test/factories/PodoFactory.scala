@@ -431,6 +431,7 @@ object PodoFactory extends Factory {
     apiToken: String,
     title: String,
     viewFilter: Option[ViewFilter],
+    documentDetailLink: Option[ViewDocumentDetailLink],
     createdAt: Timestamp
   ) = View(
     getId(id),
@@ -440,6 +441,7 @@ object PodoFactory extends Factory {
     apiToken,
     title,
     viewFilter,
+    documentDetailLink,
     createdAt
   )
 

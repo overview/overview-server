@@ -19,6 +19,7 @@ case class View(
   apiToken: String,
   title: String,
   viewFilter: Option[ViewFilter],
+  documentDetailLink: Option[ViewDocumentDetailLink],
   createdAt: Timestamp
 ) {
   def update(attributes: View.UpdateAttributes): View = copy(

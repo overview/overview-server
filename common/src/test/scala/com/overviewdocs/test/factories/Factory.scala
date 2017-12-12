@@ -230,6 +230,7 @@ trait Factory {
     apiToken: String = "api-token",
     title: String = "title",
     viewFilter: Option[ViewFilter] = None,
+    documentDetailLink: Option[ViewDocumentDetailLink] = None,
     createdAt: Timestamp = now
   ): View
 

@@ -2,7 +2,7 @@ package controllers.backend
 
 import play.api.libs.json.Json
 
-import com.overviewdocs.models.{View,ViewFilter}
+import com.overviewdocs.models.{View,ViewDocumentDetailLink,ViewFilter}
 import com.overviewdocs.models.tables.Views
 
 class DbViewBackendSpec extends DbBackendSpecification {
@@ -101,10 +101,12 @@ class DbViewBackendSpec extends DbBackendSpecification {
         val view = factory.view(documentSetId=documentSet.id, apiToken=apiToken.token)
         val attributes = View.UpdateAttributes(title="new title")
         val maybeViewFilter: Option[ViewFilter] = Some(ViewFilter(url="http://example.com/document-ids", json=Json.obj("foo" -> "bar")))
+        val maybeDocumentDetailLink: Option[ViewDocumentDetailLink] = Some(ViewDocumentDetailLink("http://ddl", "Title", "Text", "tag"))
         val viewId = view.id
         lazy val newView = updateView
         def updateView = await(backend.update(viewId, attributes))
         def updateViewFilter = await(backend.updateViewFilter(viewId, maybeViewFilter))
+        def updateDocumentDetailLink = await(backend.updateDocumentDetailLink(viewId, maybeDocumentDetailLink))
       }
 
       "return a View" in new UpdateScope {
@@ -125,6 +127,12 @@ class DbViewBackendSpec extends DbBackendSpecification {
         updateViewFilter
         val dbView = findView(viewId)
         dbView.flatMap(_.viewFilter) must beSome(ViewFilter("http://example.com/document-ids", Json.obj("foo" -> "bar")))
+      }
+
+      "update a ViewDocumentDetailLink" in new UpdateScope {
+        updateDocumentDetailLink
+        val dbView = findView(viewId)
+        dbView.flatMap(_.documentDetailLink) must beEqualTo(maybeDocumentDetailLink)
       }
 
       "return None when updating a non-View" in new UpdateScope {

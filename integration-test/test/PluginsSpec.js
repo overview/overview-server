@@ -179,5 +179,21 @@ describe('Plugins', function() {
         await this.documentSet.waitUntilDocumentListLoaded()
       })
     })
+
+    describe('with a plugin that calls setDocumentDetailLink', function() {
+      before(async function() {
+        this.server = await this.documentSet.createViewAndServer('document-detail-link')
+      })
+
+      after(async function() {
+        await this.server.close()
+        await this.documentSet.destroyView('document-detail-link')
+      })
+
+      it('should add the given link')
+      it('should show the link even after page refresh')
+      it('should not duplicate the link when given twice')
+      it('should open the popup')
+    })
   })
 })

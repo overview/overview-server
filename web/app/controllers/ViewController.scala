@@ -3,7 +3,7 @@ package controllers
 import com.google.inject.ImplementedBy
 import javax.inject.Inject
 import play.api.i18n.MessagesApi
-import play.api.libs.json.{JsObject,JsNull,JsString}
+import play.api.libs.json.{JsObject,JsNull,JsString,JsValue}
 import play.api.mvc.{AnyContentAsJson,Result}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -13,7 +13,7 @@ import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.{userOwningDocumentSet,userViewingDocumentSet,userOwningView}
 import controllers.backend.{ApiTokenBackend,StoreBackend,ViewBackend}
 import controllers.forms.{ViewForm,ViewUpdateAttributesForm}
-import com.overviewdocs.models.{ApiToken,Tree,View,ViewFilter}
+import com.overviewdocs.models.{ApiToken,Tree,View,ViewDocumentDetailLink,ViewFilter}
 import com.overviewdocs.models.tables.{Trees}
 
 class ViewController @Inject() (
@@ -53,6 +53,63 @@ class ViewController @Inject() (
     }
   }
 
+  private def updateViewFilter(viewId: Long, filterJson: JsValue) = {
+    def err(message: String) = Future.successful(BadRequest(jsonError("illegal-arguments", message)))
+
+    filterJson match {
+      case JsNull => {
+        // unset the ViewFilter
+        viewBackend.updateViewFilter(viewId, None).map(_ match {
+          case Some(view) => Ok(views.json.View.show(view))
+          case None => NotFound
+        })
+      }
+      case JsObject(filterMap) => {
+        filterMap.get("url") match {
+          case Some(JsString(filterUrl)) => {
+            viewBackend.updateViewFilter(viewId, Some(ViewFilter(filterUrl, JsObject(filterMap)))).map(_ match {
+              case Some(view) => Ok(views.json.View.show(view))
+              case None => NotFound
+            })
+          }
+          case _ => err("Please include a 'filter.url' property, a String: as it is, your filter is invalid.")
+        }
+      }
+      case _ => err("Please make the 'filter' property a JSON Object or null: not a String or Array or Number or Boolean.")
+    }
+  }
+
+  private def updateDocumentDetailLink(viewId: Long, documentDetailLinkJson: JsValue) = {
+    def err(message: String) = Future.successful(BadRequest(jsonError("illegal-arguments", message)))
+
+    documentDetailLinkJson match {
+      case JsNull => {
+        // unset the DocumentDetailLink
+        viewBackend.updateDocumentDetailLink(viewId, None).map(_ match {
+          case Some(view) => Ok(views.json.View.show(view))
+          case None => NotFound
+        })
+      }
+      case JsObject(map) => {
+        (map.get("url"), map.get("title"), map.get("text"), map.get("iconClass")) match {
+          case (Some(JsString(url)), Some(JsString(title)), Some(JsString(text)), Some(JsString(iconClass))) => {
+            if (url.replace(":documentId", "1") == url) {
+              err("Your documentDetailLink.url must include ':documentId' somewhere: for instance, 'http://example.com/documents/:documentId/details")
+            } else {
+              val link = ViewDocumentDetailLink(url=url, title=title, text=text, iconClass=iconClass)
+              viewBackend.updateDocumentDetailLink(viewId, Some(link)).map(_ match {
+                case Some(view) => Ok(views.json.View.show(view))
+                case None => NotFound
+              })
+            }
+          }
+          case _ => err("Invalid 'documentDetailLink' object. It needs 'url', 'title', 'text', and 'iconClass' properties: all Strings")
+        }
+      }
+      case _ => err("Please make the 'documentDetailLink' property a JSON Object or null: not a String or Array or Number or Boolean.")
+    }
+  }
+
   def update(documentSetId: Long, viewId: Long) = authorizedAction(userOwningView(viewId)).async { implicit request =>
     request.body match {
       case AnyContentAsJson(requestJsValue) => {
@@ -60,27 +117,12 @@ class ViewController @Inject() (
 
         requestJsValue match {
           case JsObject(requestJson) => {
-            requestJson.get("filter") match {
-              case None => err("Please include a 'filter' property in the passed JSON object. It may be null.")
-              case Some(JsNull) => {
-                // unset the ViewFilter
-                viewBackend.updateViewFilter(viewId, None).map(_ match {
-                  case Some(view) => Ok(views.json.View.show(view))
-                  case None => NotFound
-                })
-              }
-              case Some(JsObject(filterMap)) => {
-                filterMap.get("url") match {
-                  case Some(JsString(filterUrl)) => {
-                    viewBackend.updateViewFilter(viewId, Some(ViewFilter(filterUrl, JsObject(filterMap)))).map(_ match {
-                      case Some(view) => Ok(views.json.View.show(view))
-                      case None => NotFound
-                    })
-                  }
-                  case _ => err("Please include a 'filter.url' property, a String: as it is, your filter is invalid.")
-                }
-              }
-              case _ => err("Please include a 'filter' property in the passed JSON Object.")
+            (requestJson.get("filter"), requestJson.get("documentDetailLink")) match {
+              case (Some(jsValue), None) => updateViewFilter(viewId, jsValue)
+              case (None, Some(jsValue)) => updateDocumentDetailLink(viewId, jsValue)
+              // We don't support both at once. No real reason; just that there's no spec.
+              case (Some(_), Some(_)) => err("Please do not set both a 'filter' and a 'documentDetailLink'")
+              case _ => err("Please include a 'filter' property or a 'documentDetailLink' property")
             }
           }
           case _ => err("If you're going to send JSON, please send a JSON Object. You sent something else.")
