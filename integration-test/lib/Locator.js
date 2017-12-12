@@ -58,7 +58,7 @@ module.exports = class Locator {
   _itemToXPath(item) {
     const invalidKeys = Object.keys(item).filter(k => !ValidOptions.hasOwnProperty(k))
     if (invalidKeys.length > 0) {
-      throw new Error(`Invalid option(s) {invalidKeys.join(', ')} in Locator ${JSON.stringify(item)}`)
+      throw new Error(`Invalid option(s) ${invalidKeys.join(', ')} in Locator ${JSON.stringify(item)}`)
     }
 
     let tag = '*'

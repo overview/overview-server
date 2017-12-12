@@ -125,6 +125,7 @@ define [
         documentDisplayApp: DocumentDisplayApp
         documentMetadataApp: CurrentDocumentMetadataApp.create(state: @state, globalActions: @globalActions)
         tags: @tags
+        views: @state.documentSet.views
         el: @cursorEl
 
       @listenTo @state, 'change:documentList', (__, documentList) ->

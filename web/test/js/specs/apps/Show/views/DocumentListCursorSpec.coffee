@@ -13,6 +13,8 @@ define [
   class Documents extends Backbone.Collection
     model: Document
 
+  class Views extends Backbone.Collection
+
   class Tag extends Backbone.Model
     defaults:
       name: 'tag'
@@ -37,6 +39,7 @@ define [
   describe 'apps/Show/views/DocumentListCursor', ->
     view = undefined
     tags = undefined
+    views = undefined
     selection = undefined
     documentList = undefined
     displayApp = undefined
@@ -46,7 +49,13 @@ define [
       selection = new Selection(cursorIndex: cursorIndex)
       documentList = nDocuments? && new DocumentList(length: nDocuments) || undefined
       documentList?.documents = new Backbone.Collection([])
+
+      if nDocuments
+        for id in [ 0 ... nDocuments ]
+          documentList.documents.add({ id: id })
+
       tags = new Tags([])
+      views = new Views([])
 
       documentMetadataApp =
         el: $('<div class="document-metadata-app"></div>')[0]
@@ -56,6 +65,7 @@ define [
         selection: selection
         documentList: documentList
         tags: tags
+        views: views
         documentDisplayApp: (options) ->
           @options = options
           @setDocument = sinon.spy()
@@ -199,3 +209,13 @@ define [
     it 'should allow starting with documentList undefined', ->
       initAt(5, undefined)
       expect(view.el.className).to.eq('showing-unloaded-document')
+
+    it 'should render a DocumentDetailLinksView', ->
+      initAt(1, 3)
+      expect(view.detailLinksView).to.be.defined
+      expect(view.detailLinksView.views).to.eq(views)
+      # and test that the HTML appears
+      view.detailLinksView.el.innerHTML = 'FOOBAR'
+      expect(view.el.innerHTML).to.contain('FOOBAR')
+      # and test that DocumentListCursor.coffee set the documentId on detailLinksView
+      expect(view.detailLinksView.documentId).to.eq(1)

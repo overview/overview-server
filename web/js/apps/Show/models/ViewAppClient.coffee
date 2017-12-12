@@ -113,6 +113,7 @@ define [
         when 'refineDocumentListParams' then @refineDocumentListParams(e.data.args...)
         when 'setRightPane' then @viewApp.setRightPane?(e.data.args...)
         when 'setModalDialog' then @viewApp.setModalDialog?(e.data.args...)
+        when 'setDocumentDetailLink' then @viewApp.setDocumentDetailLink?(e.data.args...)
         when 'setViewFilter' then @viewApp.setViewFilter?(e.data.args...)
         when 'setViewFilterChoices' then @viewApp.setViewFilterChoices?(e.data.args...)
         when 'setViewFilterSelection' then @setViewFilterSelection(e.data.args...)

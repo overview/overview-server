@@ -6,6 +6,7 @@ describe('Plugins', function() {
   asUserWithDocumentSet('Metadata/basic.csv', function() {
     before(function() {
       this.browser.loadShortcuts('documentSet')
+      this.browser.loadShortcuts('jquery')
       this.documentSet = this.browser.shortcuts.documentSet
     })
 
@@ -41,7 +42,7 @@ describe('Plugins', function() {
 
         // wait for load
         await this.browser.switchToFrame('view-app-iframe')
-        await this.browser.assertExists({ css: 'body.loaded', wait: 'slow' })
+        await this.browser.assertExists({ css: 'body.loaded', wait: 'pageLoad' })
         await this.browser.click({ button: 'Set Right Pane' })
         await this.browser.switchToFrame(null)
 
@@ -182,18 +183,85 @@ describe('Plugins', function() {
 
     describe('with a plugin that calls setDocumentDetailLink', function() {
       before(async function() {
-        this.server = await this.documentSet.createViewAndServer('document-detail-link')
+        // open a document
+        await this.browser.click({ tag: 'h3', contains: 'First' })
+        await this.browser.sleep(1000) // wait for document to animate in
       })
 
-      after(async function() {
+      beforeEach(async function() {
+        this.server = await this.documentSet.createViewAndServer('view-document-detail-links')
+        this.clickViewButton = async function(name) {
+          const b = this.browser
+          await b.switchToFrame('view-app-iframe')
+          await b.assertExists({ css: 'body.loaded', wait: 'pageLoad' })
+          await b.click({ button: name })
+          await b.switchToFrame(null)
+        }
+      })
+
+      afterEach(async function() {
         await this.server.close()
         await this.documentSet.destroyView('document-detail-link')
       })
 
-      it('should add the given link')
-      it('should show the link even after page refresh')
-      it('should not duplicate the link when given twice')
-      it('should open the popup')
+      it('should add the given link', async function() {
+        const b = this.browser
+
+        await this.clickViewButton("setUrl(foo)")
+        await b.assertExists({ link: 'Text foo', wait: true })
+      })
+
+      it('should show the link even after page refresh', async function() {
+        const b = this.browser
+
+        await this.clickViewButton("setUrl(foo)")
+        await b.assertExists({ link: 'Text foo', wait: true }) // wait for it to appear
+
+        await b.refresh()
+        await this.documentSet.waitUntilStable()
+        // again, open a document
+        await b.click({ tag: 'h3', contains: 'First' })
+        await b.sleep(1000) // wait for document to animate in
+        await b.assertExists({ link: 'Text foo', wait: true })
+      })
+
+      it('not create a duplicate link (to the same URL)', async function() {
+        const b = this.browser
+
+        await this.clickViewButton("setUrl(foo)")
+        await b.assertExists({ link: 'Text foo', wait: true }) // wait for it to appear
+
+        // waitUntilAjaxComplete: make sure we have 0 ajax requests (for next stuff)
+        await b.shortcuts.jquery.listenForAjaxComplete()
+        await this.documentSet.createCustomView('another view', `http://${this.server.hostname}:3333`)
+        await b.shortcuts.jquery.waitUntilAjaxComplete()
+
+        // Add the same URL again. Wait for it to complete. (That's an ajax request;
+        // aren't you glad we're sure there were zero before?)
+        await b.shortcuts.jquery.listenForAjaxComplete()
+        await this.clickViewButton("setUrl(foo, foo with different text)")
+        await b.shortcuts.jquery.waitUntilAjaxComplete()
+        // Ajax is done. That means the new link has been saved to the server
+        // and rendering is definitely finished. But since the URL is the same,
+        // we expect nothing else to be rendered
+        await b.assertNotExists({ link: 'foo with different text' })
+
+        await this.documentSet.destroyView('another view') // cleanup
+      })
+
+      it('should open the popup', async function() {
+        const b = this.browser
+
+        await this.clickViewButton("setUrl(foo)")
+        await b.click({ link: 'Text foo', wait: true }) // wait for it to appear
+
+        await b.assertExists({ css: 'iframe#view-document-detail', wait: 'fast' }) // wait for iframe
+        await b.switchToFrame('view-document-detail')
+        const url = await this.browser.execute(function() { return window.location.href })
+        await b.switchToFrame(null)
+        expect(url).to.match(/\?documentId=\d+/)
+        expect(url).to.match(/&foo=foo/)
+      })
     })
   })
 })

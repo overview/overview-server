@@ -54,6 +54,9 @@ define [
         serverUrl = "#{loc.protocol}//#{loc.host}"
       serverUrl
 
+    setDocumentDetailLink: (link) ->
+      @view.save({ documentDetailLink: link }, { patch: true })
+
     setViewFilter: (viewFilter) ->
       @view.save({ filter: viewFilter }, { patch: true })
 

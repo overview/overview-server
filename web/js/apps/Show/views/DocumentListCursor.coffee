@@ -4,9 +4,10 @@ define [
   'backbone'
   '../helpers/DocumentHelper'
   '../models/DocumentDisplayPreferences'
+  './DocumentDetailLinksView'
   './DocumentDisplayPreferencesView'
   'i18n'
-], ($, _, Backbone, DocumentHelper, DocumentDisplayPreferences, DocumentDisplayPreferencesView, i18n) ->
+], ($, _, Backbone, DocumentHelper, DocumentDisplayPreferences, DocumentDetailLinksView, DocumentDisplayPreferencesView, i18n) ->
   t = i18n.namespaced('views.Tree.show.DocumentListCursor')
 
   # Shows the Document corresponding to the user's cursor.
@@ -73,6 +74,7 @@ define [
           <h2><%- title %></h2>
           <a href="#" class="edit-title"><%- t('title.edit') %></a>
         </div>
+        <div class="document-detail-links"></div>
         <ul class="tags">
           <% _.each(tags, function(tag) { %>
             <li class="tag" data-cid="<%- tag.cid %>">
@@ -90,7 +92,8 @@ define [
       throw 'Must pass options.documentList, a DocumentList' if 'documentList' not of @options
       throw 'Must pass options.documentDisplayApp, a DocumentDisplay App constructor' if !@options.documentDisplayApp
       throw 'Must pass options.documentMetadataApp, a DocumentMetadata App instance' if !@options.documentMetadataApp
-      throw 'Must pass options.tags, a Collection of Backbone.Tags' if !@options.tags
+      throw 'Must pass options.tags, a Collection of Backbone Tags' if !@options.tags
+      throw 'Must pass options.views, a Collection of Backbone Views' if !@options.views
 
       @selection = @options.selection
       @documentList = @options.documentList
@@ -117,12 +120,16 @@ define [
       @preferencesView = new DocumentDisplayPreferencesView(model: @preferences)
       @preferencesView.render()
 
+      @detailLinksView = new DocumentDetailLinksView(views: @options.views)
+      @detailLinksView.render()
+
       @$el.append(@documentMetadataApp.el)
 
       this
 
     remove: ->
       @preferencesView?.remove()
+      @detailLinksView?.remove()
       super()
 
     _renderHeader: (maybeDocument) ->
@@ -142,7 +149,10 @@ define [
           document: maybeDocument
           title: DocumentHelper.title(maybeDocument?.attributes)
 
+      @detailLinksView.setDocumentId(maybeDocument?.id ? null)
+
       @$headerEl.html(html)
+      @$headerEl.find('.document-detail-links').append(@detailLinksView.el)
       @$headerEl.find('.document-display-preferences').append(@preferencesView.el)
       @preferencesView.delegateEvents()
 

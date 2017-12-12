@@ -61,6 +61,20 @@ define [
       expect($iframe.length).to.exist
       expect($iframe).to.have.attr('src', 'http://localhost:9876/base/mock-plugin/show?server=http%3A%2F%2Flocalhost%3A9876&documentSetId=234&apiToken=api-token')
 
+    describe 'setDocumentDetailLink', ->
+      it 'should change attributes.filter', ->
+        @createViewApp()
+        @sandbox.stub(Backbone, 'sync')
+        @view.on('change:documentDetailLink', onChange = sinon.spy())
+        @viewApp.setDocumentDetailLink({ foo: 'bar' })
+        expect(onChange).to.have.been.calledWith(@view, { foo: 'bar' })
+
+      it 'should PATCH the filter to the server', ->
+        @createViewApp()
+        @view.save = sinon.spy()
+        @viewApp.setDocumentDetailLink({ foo: 'bar' })
+        expect(@view.save).to.have.been.calledWith({ documentDetailLink: { foo: 'bar' } }, { patch: true })
+
     describe 'setViewFilter', ->
       it 'should change attributes.filter', ->
         @createViewApp()

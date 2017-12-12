@@ -1,0 +1,58 @@
+.document-detail-popup-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+
+  .document-detail-background {
+    position: absolute;
+    // JavaScript will set these
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.75);
+  }
+
+  .document-detail-popup {
+    box-sizing: border-box;
+    width: 100%;
+    height: 100%;
+    padding: 1rem;
+    //background: white; // will appear behind the iframe
+  }
+
+  iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    margin: 0;
+    padding: 0;
+  }
+}
+
+.document-detail-links {
+  display: inline; // inline-block seems to displace ul.tags even when empty
+
+  i {
+    margin-right: .25rem;
+  }
+
+  span.caret {
+    margin-left: .25rem;
+  }
+
+  ul {
+    display: inline;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  li {
+    display: inline-block;
+    margin-right: .5rem;
+  }
+}

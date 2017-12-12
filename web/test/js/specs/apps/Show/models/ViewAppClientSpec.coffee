@@ -54,6 +54,7 @@ define [
           postMessageToPluginIframes: sinon.spy()
           setRightPane: sinon.spy()
           setModalDialog: sinon.spy()
+          setDocumentDetailLink: sinon.spy()
           setViewFilter: sinon.spy()
           setViewFilterChoices: sinon.spy()
           onTag: sinon.spy()
@@ -139,6 +140,10 @@ define [
       it 'should setModalDialog', ->
         @subject._onMessage(origin: '', data: { call: 'setModalDialog', args: [ { url: 'http://example.com' } ] })
         expect(@viewApp.setModalDialog).to.have.been.calledWith({ url: 'http://example.com' })
+
+      it 'should setDocumentDetailLink', ->
+        @subject._onMessage(origin: '', data: { call: 'setDocumentDetailLink', args: [ { foo: 'bar' } ] })
+        expect(@viewApp.setDocumentDetailLink).to.have.been.calledWith({ foo: 'bar' })
 
       it 'should setViewFilter', ->
         @subject._onMessage(origin: '', data: { call: 'setViewFilter', args: [ { foo: 'bar' } ] })

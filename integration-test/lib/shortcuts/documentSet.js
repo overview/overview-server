@@ -157,6 +157,23 @@ class DocumentSetShortcuts {
     await this.b.waitUntilBlockReturnsTrue('plugin data to load', 'pageLoad', clientTests.pluginDataLoaded)
   }
 
+  async createCustomView(name, url) {
+    await this.b.click({ link: 'Add view' })
+    await this.b.click({ link: 'Custom…', wait: 'fast' })
+    // Enter URL first, then name. Entering name will blur URL. Blurring URL
+    // makes the browser test the endpoint.
+    await this.b.sendKeys(url, { css: '#new-view-dialog-url', wait: 'fast' })
+    await this.b.sendKeys(name, { css: '#new-view-dialog-title' })
+    await this.b.click({ link: 'use it anyway' , wait: true }) // dismiss not-HTTPS warning
+    await this.b.assertExists({ css: '#new-view-dialog .state .ok', wait: 'slow' })
+    await this.b.click({ css: 'input[value="Create visualization"]', wait: 'fast' })
+
+    // Wait for the plugin to _begin_ loading. (Let's not assume it _will_ end:
+    // that's hard to do, and we might want to test that some things happen _before_
+    // load ends, anyway.)
+    await this.b.find('#view-app-iframe', { wait: 'fast' })
+  }
+
   /**
    * Starts a MockPlugin listening on :3333; creates a View and returns
    * the MockPlugin.
@@ -170,20 +187,7 @@ class DocumentSetShortcuts {
     await server.listen()
 
     try {
-      await this.b.click({ link: 'Add view' })
-      await this.b.click({ link: 'Custom…', wait: 'fast' })
-      // Enter URL first, then name. Entering name will blur URL. Blurring URL
-      // makes the browser test the endpoint.
-      await this.b.sendKeys('http://' + server.hostname + ':3333', { css: '#new-view-dialog-url', wait: 'fast' })
-      await this.b.sendKeys(name, { css: '#new-view-dialog-title' })
-      await this.b.click({ link: 'use it anyway' , wait: true }) // dismiss not-HTTPS warning
-      await this.b.assertExists({ css: '#new-view-dialog .state .ok', wait: 'slow' })
-      await this.b.click({ css: 'input[value="Create visualization"]', wait: 'fast' })
-
-      // Wait for the plugin to _begin_ loading. (Let's not assume it _will_ end:
-      // that's hard to do, and we might want to test that some things happen _before_
-      // load ends, anyway.)
-      await this.b.find('#view-app-iframe', { wait: 'fast' })
+      await this.createCustomView(name, `http://${server.hostname}:3333`)
     } catch (e) {
       await server.close()
       throw e
