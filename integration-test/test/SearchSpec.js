@@ -14,6 +14,8 @@ describe('Search', function() {
       await search(this.browser, 'word')
       await this.browser.click({ css: 'li.document h3', wait: 'pageLoad' })
 
+      await this.browser.sleep(1000) // Wait for document to animate into existence
+
       // The document slides over; wait for all highlights to be visible
       await this.browser.assertExists({ tag: 'em', class: 'highlight', index: 1, wait: 'fast' })
       await this.browser.assertExists({ tag: 'em', class: 'highlight', index: 2, wait: 'fast' })
