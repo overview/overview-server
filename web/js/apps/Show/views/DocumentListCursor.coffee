@@ -152,7 +152,12 @@ define [
       @detailLinksView.setDocumentId(maybeDocument?.id ? null)
 
       @$headerEl.html(html)
+
+      # undelegate+redelegate: moving an Element detaches its listeners.
+      @detailLinksView.undelegateEvents()
       @$headerEl.find('.document-detail-links').append(@detailLinksView.el)
+      @detailLinksView.delegateEvents()
+
       @$headerEl.find('.document-display-preferences').append(@preferencesView.el)
       @preferencesView.delegateEvents()
 

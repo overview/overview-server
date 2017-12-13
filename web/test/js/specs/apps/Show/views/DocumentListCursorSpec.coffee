@@ -219,3 +219,11 @@ define [
       expect(view.el.innerHTML).to.contain('FOOBAR')
       # and test that DocumentListCursor.coffee set the documentId on detailLinksView
       expect(view.detailLinksView.documentId).to.eq(1)
+
+    it 'should continue listening for events on detailLinksView after navigating', ->
+      initAt(1, 3)
+      spy = sinon.spy()
+      view.detailLinksView.events = { 'click': spy }
+      selection.set({ cursorIndex: 2 })
+      view.detailLinksView.el.click()
+      expect(spy).to.have.been.called
