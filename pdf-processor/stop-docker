@@ -1,0 +1,5 @@
+#!/bin/sh
+#
+# Stops the running Docker container.
+
+exec docker rm -f overview-pdf-processor-builder

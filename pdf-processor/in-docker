@@ -1,0 +1,26 @@
+#!/bin/sh
+#
+# Runs the given command within a Docker container.
+#
+# Examples:
+#
+# `./in-docker make clean` -- run `make clean` inside Docker
+
+set -e
+
+ABSDIR="$(realpath "$(dirname "$0")")"
+
+CONTAINER_NAME=overview-pdf-processor-builder
+
+EXISTING="$(docker ps -q -f name=$CONTAINER_NAME)"
+if [ -z "$EXISTING" ]; then
+  docker build "$ABSDIR" -t overview-pdf-processor-builder-image
+  docker run --rm -d \
+    --name $CONTAINER_NAME \
+    --volume "$ABSDIR":/src \
+    overview-pdf-processor-builder-image \
+    sh -c 'sleep 99999d'
+  echo "Spun up new Docker container overview-pdf-processor-builder" >&2
+fi
+
+exec docker exec $CONTAINER_NAME "$@"

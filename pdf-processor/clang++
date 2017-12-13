@@ -1,0 +1,9 @@
+#!/bin/sh
+#
+# Runs 'clang++' in an existing or new Docker container.
+#
+# Usage:
+#
+# `./clang++ foo.cc -o foo`
+
+exec "$(dirname "$0")"/in-docker make "$@"
