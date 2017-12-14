@@ -12,13 +12,32 @@
 #include "public/cpp/fpdf_deleters.h"
 #include "public/fpdfview.h"
 #include "public/fpdf_annot.h"
+#include "public/fpdf_ppo.h"
+#include "public/fpdf_save.h"
 #include "public/fpdf_text.h"
 #include "lodepng.h"
 
 static const int MaxNUtf16CharsPerPage = 100000;
 static const int MaxThumbnailDimension = 700;
+static const int StreamPdfBufferSize = 1024 * 1024; // 1MB
 static const std::vector<uint8_t> EmptyPng;
 static const std::string GetPageTextError; // we'll check the return value by address
+
+class FileWrite : public FPDF_FILEWRITE {
+public:
+  FileWrite(FILE* aFile) : mFile(aFile) {
+    FPDF_FILEWRITE::version = 1;
+    FPDF_FILEWRITE::WriteBlock = WriteBlockCallback;
+  }
+
+  static int WriteBlockCallback(FPDF_FILEWRITE* pFileWrite, const void* data, unsigned long size) {
+    FileWrite* pThis = static_cast<FileWrite*>(pFileWrite);
+    size_t nWritten = std::fwrite(data, 1, size, pThis->mFile);
+    return nWritten < size ? 0 : nWritten;
+  }
+
+  FILE* mFile;
+};
 
 std::string
 formatLastPdfiumError()
@@ -148,14 +167,46 @@ outputString(const std::string& s)
   std::cout.write(s.c_str(), s.size());
 }
 
+/**
+ * Outputs the given file contents to stdout, prefaced with a length integer.
+ *
+ * This assumes the file pointer is at the _end_: we calculate size with ftell()
+ * and then rewind() and fread() file contents.
+ *
+ * Any error is catastrophic and leads to undefined behavior. (If ftell and
+ * fread on a tempfile fail, we have problems.)
+ */
 void
 outputFileIfNotNull(FILE* f)
 {
-    if (f == NULL) {
-        outputString("");
-    } else {
-        // TODO implement me
+  if (f == nullptr) {
+    outputString("");
+  } else {
+    long nBytesRemaining = std::ftell(f);
+    if (nBytesRemaining == -1) {
+      std::perror("Could not ftell() tempfile");
+      return;
     }
+
+    std::rewind(f);
+
+    outputSize(static_cast<int>(nBytesRemaining));
+
+    char buf[StreamPdfBufferSize] = {};
+    while (true) {
+      size_t n = std::fread(&buf[0], 1, StreamPdfBufferSize, f);
+      if (n == 0) {
+        if (std::ferror(f)) {
+          std::perror("Could not fread() tempfile");
+          return;
+        } else {
+          break; // we're done reading the file
+        }
+      }
+
+      std::cout.write(&buf[0], n);
+    }
+  }
 }
 
 void
@@ -217,18 +268,31 @@ getPageTextUtf8OrOutputError(FPDF_PAGE fPage)
 
   std::wstring_convert<std::codecvt_utf8_utf16<char16_t>,char16_t> convert;
   std::string u8Text(convert.to_bytes(u16Text));
-  // [adam, 2017-12-14] pdfium tends to end its string with a NULL byte. That
-  // makes tests ugly, and it gives no value. Nix the NULL byte.
+  // [adam, 2017-12-14] pdfium tends to end its string with a nullptr byte. That
+  // makes tests ugly, and it gives no value. Nix the nullptr byte.
   if (u8Text.size() > 0 && u8Text[u8Text.size() - 1] == '\0') u8Text.resize(u8Text.size() - 1);
 
   return u8Text;
 }
 
-FILE*
-renderPagePdfToTempfileOrOutputErrorAndReturnNull(FPDF_PAGE page)
+std::unique_ptr<FILE, decltype(&fclose)>
+renderPagePdfToTempfileOrOutputErrorAndReturnNull(FPDF_DOCUMENT inDocument, int pageIndex)
 {
-    outputError("Splitting PDFs by page not yet implemented");
-    return NULL;
+  // always return spool: either a null pointer, or a FILE*
+  auto spool(std::unique_ptr<FILE, decltype(&fclose)>(nullptr, &fclose));
+
+  std::unique_ptr<void, FPDFDocumentDeleter> outDocument(FPDF_CreateNewDocument());
+  std::string pageIndexString = std::to_string(pageIndex + 1);
+  if (!FPDF_ImportPages(outDocument.get(), inDocument, pageIndexString.c_str(), 0)) {
+    outputError(std::string("Error outputting page with index ") + std::to_string(pageIndex) + ": " + formatLastPdfiumError());
+    return spool;
+  }
+
+  spool.reset(std::tmpfile());
+  FileWrite writer(spool.get());
+  FPDF_SaveAsCopy(outDocument.get(), &writer, FPDF_REMOVE_SECURITY);
+
+  return spool;
 }
 
 bool
@@ -261,10 +325,10 @@ streamPageParts(
   std::string u8Text = getPageTextUtf8OrOutputError(fPage.get());
   if (&u8Text == &GetPageTextError) return false;
 
-  std::unique_ptr<FILE, decltype(&fclose)> pdfFile(NULL, &fclose);
+  std::unique_ptr<FILE, decltype(&fclose)> pdfFile(nullptr, &fclose);
   if (makePdf) {
-      pdfFile.reset(renderPagePdfToTempfileOrOutputErrorAndReturnNull(fPage.get()));
-      if (pdfFile == NULL) return false;
+      pdfFile = renderPagePdfToTempfileOrOutputErrorAndReturnNull(fDocument, pageIndex);
+      if (!pdfFile) return false;
   }
 
   outputChar(0x2);           // "PAGE"
@@ -276,43 +340,55 @@ streamPageParts(
   return true;
 }
 
-void
-streamDocumentTextAndFirstPageThumbnail(FPDF_DOCUMENT fDocument)
+bool
+streamDocumentTextAndFirstPageThumbnail(FPDF_DOCUMENT fDocument, int nPages)
 {
-  const int nPages = FPDF_GetPageCount(fDocument);
-
-  outputChar(0x1); // HEADER
-  outputSize(nPages);
-
   for (int pageIndex = 0; pageIndex < nPages; pageIndex++) {
     if (!streamPageParts(fDocument, pageIndex, nPages, pageIndex == 0, false)) {
-      return; // we've already output a footer
+      return false; // we've already output a footer
     }
   }
 
-  outputChar(0x3); // FOOTER
-  outputString(""); // no error
+  return true;
 }
 
-void
-streamDocumentPages(FPDF_DOCUMENT fDocument)
+bool
+streamDocumentPages(FPDF_DOCUMENT fDocument, int nPages)
 {
+  for (int pageIndex = 0; pageIndex < nPages; pageIndex++) {
+    if (!streamPageParts(fDocument, pageIndex, nPages, true, true)) {
+      return false; // we've already output a footer
+    }
+  }
+
+  return true;
 }
 
 void
 processPdfFile(const char* filename, bool onlyExtract)
 {
-
   FPDF_STRING fFilename(filename);
-  std::unique_ptr<void, FPDFDocumentDeleter> fDocument(FPDF_LoadDocument(fFilename, NULL));
-  if (fDocument) {
-    if (onlyExtract) {
-      streamDocumentTextAndFirstPageThumbnail(fDocument.get());
-    } else {
-      streamDocumentPages(fDocument.get());
-    }
-  } else {
+  std::unique_ptr<void, FPDFDocumentDeleter> fDocument(FPDF_LoadDocument(fFilename, nullptr));
+  if (!fDocument) {
     outputError(std::string("Failed to open PDF: ") + formatLastPdfiumError());
+    return;
+  }
+
+  const int nPages = FPDF_GetPageCount(fDocument.get());
+  outputChar(0x1); // HEADER
+  outputSize(nPages);
+
+  bool success;
+
+  if (onlyExtract) {
+    success = streamDocumentTextAndFirstPageThumbnail(fDocument.get(), nPages);
+  } else {
+    success = streamDocumentPages(fDocument.get(), nPages);
+  }
+
+  if (success) {
+    outputChar(0x3); // FOOTER
+    outputString(""); // no error
   }
 }
 

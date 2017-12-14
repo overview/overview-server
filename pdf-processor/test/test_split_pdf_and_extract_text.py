@@ -2,6 +2,7 @@
 
 from contextlib import contextmanager
 import os.path
+import re
 import shutil
 import subprocess
 import tempfile
@@ -31,6 +32,11 @@ class TestSplitPdfAndExtractText(unittest.TestCase):
             yield
 
     def assertContent(self, expect, filename):
+        if isinstance(expect, str):
+            expect = bytes(expect, 'utf-8')
+        expect = re.sub(rb'/CreationDate\(D:[0-9]{14}\)', b'/CreationDate(D:XXXXXXXXXXXXXX)', expect)
+        expect = re.sub(rb'/ID\[<[A-F0-9]{32}><[A-F0-9]{32}>\]', b'ID[<XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX><XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX>]', expect)
+
         path = os.path.join(self.tempdir, filename)
         self.assertTrue(
             os.path.isfile(path),
@@ -38,8 +44,11 @@ class TestSplitPdfAndExtractText(unittest.TestCase):
         )
         with open(os.path.join(self.tempdir, filename), 'rb') as f:
             actual = f.read()
-        if isinstance(expect, str):
-            expect = bytes(expect, 'utf-8')
+        actual = re.sub(rb'/CreationDate\(D:[0-9]{14}\)', b'/CreationDate(D:XXXXXXXXXXXXXX)', actual)
+        actual = re.sub(rb'/ID\[<[A-F0-9]{32}><[A-F0-9]{32}>\]', b'ID[<XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX><XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX>]', actual)
+        if actual != expect:
+            with open('actual.bin', 'wb') as f2:
+                f2.write(actual)
         self.assertEqual(expect, actual, 'Output file {} has wrong contents'.format(filename))
 
     def assertNoOutput(self, filename):
@@ -108,6 +117,24 @@ class TestSplitPdfAndExtractText(unittest.TestCase):
 
     #TODO def test_unrecoverable_error_on_pdf_p2(self):
     # How to test this? Let's try a normalized PDF that's been truncated.
+
+    def test_split_thumbnails(self):
+        with self.split_pdf_and_extract_text('--only-extract=false', '2-pages.pdf'):
+            with open(os.path.join(ImagesDir, '2-pages.pdf-p1.png'), 'rb') as f:
+                png = f.read()
+                self.assertContent(png, 'p1.png')
+            with open(os.path.join(ImagesDir, '2-pages.pdf-p2.png'), 'rb') as f:
+                png = f.read()
+                self.assertContent(png, 'p2.png')
+
+    def test_split_pdfs(self):
+        with self.split_pdf_and_extract_text('--only-extract=false', '2-pages.pdf'):
+            with open(os.path.join(TestFilesDir, '2-pages.pdf-p1.pdf'), 'rb') as f:
+                png = f.read()
+                self.assertContent(png, 'p1.pdf')
+            with open(os.path.join(TestFilesDir, '2-pages.pdf-p2.pdf'), 'rb') as f:
+                png = f.read()
+                self.assertContent(png, 'p2.pdf')
 
 if __name__ == '__main__':
     unittest.main()
