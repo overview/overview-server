@@ -23,3 +23,60 @@ Developing
    if you're on Linux, [install docker-compose](https://docs.docker.com/compose/install/#install-compose).
 1. Install [Dazel](https://github.com/nadirizr/dazel): `pip3 install dazel`
 1. Build: `dazel build //main:split-pdf-and-extract-text`
+
+split-pdf-and-extract-text
+==========================
+
+Usage: `split-pdf-and-extract-text IN-FILE.pdf`
+
+Opens `IN-FILE.pdf` as a PDF. Streams it to a proprietary, streaming-friendly
+_binary_ output format on stdout:
+
+    HEADER
+    PAGE
+    PAGE
+    ...
+    FOOTER
+
+Where `HEADER` is:
+
+    0x1       [ 1 byte ]
+    nPages    [ 4-byte integer, big-endian ]
+
+`PAGE` is:
+    0x2       [ 1 byte ]
+    isOcr     [ boolean, 1 byte, either 0x0 or 0x1 ]
+    thumbLen  [ 4-byte integer, big-endian, may be 0x00000000 ]
+    thumbnail [ png-encoded thumbnail, may be empty ]
+    pdfLen    [ 4-byte integer, big-endian, may be 0x00000000 ]
+    pdf       [ pdf-encoded single page, may be empty ]
+    textLen   [ 4-byte integer, big-endian, may be 0x00000000 ]
+    text      [ utf8-encoded text from the page ]
+
+And `FOOTER` is:
+
+    0x3       [ 1 byte ]
+    len       [ 4-byte integer, big-endian, may be 0x00000000 ]
+    error     [ utf8-encoded text describing error; empty on success ]
+
+Only `FOOTER` is actually required. In a valid stream:
+
+* There is at most one `HEADER`
+* If there is a `HEADER`, it appears before any `PAGE`
+* If there is no `HEADER`, there are no `PAGE` entries
+* There are at most `nPages` `PAGE` entries
+* There is only one `FOOTER`
+
+dump-split-pdf-and-extract-text-output
+======================================
+
+Usage: `split-pdf-and-extract-text IN-FILE.pdf | dump-split-pdf-and-extract-text-output OUTDIR`
+
+Dumps the streamed data to a directory. Files will be:
+
+* `OUTDIR/n-pages`: number of pages
+* `OUTDIR/p1.is-ocr`: "true" or "false"
+* `OUTDIR/p1.png`: Thumbnail (only if non-empty)
+* `OUTDIR/p1.pdf`: Single page (only if non-empty)
+* `OUTDIR/p1.txt`: Text (even if empty)
+* `OUTDIR/error.txt`: Error (only if non-empty)

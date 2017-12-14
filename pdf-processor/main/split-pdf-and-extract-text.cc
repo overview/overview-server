@@ -33,27 +33,26 @@ formatLastPdfiumError()
 }
 
 /**
- * Destructively converts the given BGRA buffer to a PNG.
+ * Encodes a PNG from correctly-sized buffer of pixel data.
+ *
+ * This overwrites data in argbBuffer.
  */
 std::vector<uint8_t>
-bgraToPng(uint32_t* bgraBuffer, size_t width, size_t height)
+argbToPng(uint32_t* argbBuffer, size_t width, size_t height)
 {
-  // We'll edit bgraBuffer in-place. But let's name it rgbaBuffer when we write
-  // rgba to it.
-  uint32_t* rgbaBuffer = bgraBuffer;
+  // Write BGR to the same buffer, destroying it. This saves memory.
+  uint8_t* bgrBuffer = reinterpret_cast<uint8_t*>(argbBuffer);
 
-  const size_t nPixels = width * height;
-  for (size_t i = 0; i < nPixels; i++) {
-    const uint32_t bgra = bgraBuffer[i];
-    const uint32_t rgba =
-        ((bgra << 16) & 0xff000000)  // r
-      | ( bgra        & 0x00ff00ff)  // g+a
-      | ((bgra >> 16) & 0x0000ff00); // b
-    rgbaBuffer[i] = rgba;
+  size_t n = width * height;
+  for (size_t i = 0, o = 0; i < n; i++, o += 3) {
+    const uint32_t argb = argbBuffer[i];
+    bgrBuffer[o + 0] = (argb >>  0) & 0xff;
+    bgrBuffer[o + 1] = (argb >>  8) & 0xff;
+    bgrBuffer[o + 2] = (argb >> 16) & 0xff;
   }
 
   std::vector<uint8_t> out;
-  const unsigned int err = lodepng::encode(out, reinterpret_cast<uint8_t*>(rgbaBuffer), width, height, LCT_RGB);
+  const unsigned int err = lodepng::encode(out, &bgrBuffer[0], width, height, LCT_RGB);
   if (err) {
     return EmptyPng;
   }
@@ -61,7 +60,7 @@ bgraToPng(uint32_t* bgraBuffer, size_t width, size_t height)
 }
 
 /**
- * Renders the given PDF page as a PNG, base64-encoded.
+ * Renders the given PDF page as a PNG.
  *
  * Returns "" if rendering failed. That means out-of-memory.
  */
@@ -74,9 +73,9 @@ renderPageThumbnailPng(FPDF_PAGE& page)
   int width = MaxThumbnailDimension;
   int height = MaxThumbnailDimension;
   if (pageWidth > pageHeight) {
-    height = static_cast<int>(std::round(MaxThumbnailDimension * pageHeight / pageWidth));
+    height = static_cast<int>(std::round(1.0 * MaxThumbnailDimension * pageHeight / pageWidth));
   } else {
-    width = static_cast<int>(std::round(MaxThumbnailDimension * pageWidth / pageHeight));
+    width = static_cast<int>(std::round(1.0 * MaxThumbnailDimension * pageWidth / pageHeight));
   }
 
   std::unique_ptr<uint32_t[]> buffer(new (std::nothrow) uint32_t[width * height]);
@@ -96,7 +95,7 @@ renderPageThumbnailPng(FPDF_PAGE& page)
   FPDF_RenderPageBitmap(bitmap, page, 0, 0, width, height, 0, flags);
   FPDFBitmap_Destroy(bitmap);
 
-  std::vector<uint8_t> png(bgraToPng(&buffer[0], width, height));
+  std::vector<uint8_t> png(argbToPng(&buffer[0], width, height));
   return png; // TODO investigate possible lodepng errors and how to handle them.
 }
 
@@ -111,30 +110,80 @@ normalizeUtf16(char16_t* buf, int n) {
   }
 }
 
+void
+outputChar(char c)
+{
+  std::cout.put(c);
+}
+
+void
+outputBool(bool b)
+{
+  outputChar(static_cast<char>(b ? 0x1 : 0x0));
+}
+
+void
+outputSize(size_t size)
+{
+  outputChar(static_cast<char>((size >> 24) & 0xff));
+  outputChar(static_cast<char>((size >> 16) & 0xff));
+  outputChar(static_cast<char>((size >> 8) & 0xff));
+  outputChar(static_cast<char>((size >> 0) & 0xff));
+}
+
+void
+outputBytes(const std::vector<uint8_t>& bytes)
+{
+  outputSize(bytes.size());
+  std::cout.write(reinterpret_cast<const char*>(&bytes.cbegin()[0]), bytes.size());
+}
+
+void
+outputString(const std::string& s)
+{
+  outputSize(s.size());
+  std::cout.write(s.c_str(), s.size());
+}
+
+void
+outputError(const std::string& message)
+{
+  outputChar(0x3);
+  outputString(message);
+}
+
+bool
+pageHasOcr(FPDF_PAGE& fPage)
+{
+  return false; // TODO find a way to implement this
+}
+
 bool
 streamPageTextAndMaybeThumbnail(FPDF_DOCUMENT& fDocument, int pageIndex, int nPages, std::ostream& out, bool thumbnail)
 {
-  FPDF_PAGE page = FPDF_LoadPage(fDocument, pageIndex);
-  if (!page) {
-    std::cout << "Failed to read PDF page: " << formatLastPdfiumError();
+  FPDF_PAGE fPage = FPDF_LoadPage(fDocument, pageIndex);
+  if (!fPage) {
+    outputError(std::string("Failed to read PDF page: ") + formatLastPdfiumError());
     return false;
   }
 
+  bool hasOcr = pageHasOcr(fPage);
+
   std::vector<uint8_t> thumbnailPng;
   if (thumbnail) {
-    thumbnailPng = renderPageThumbnailPng(page);
+    thumbnailPng = renderPageThumbnailPng(fPage);
     if (thumbnailPng.empty()) {
       // [adam, 2017-12-11] I _think_ the only possible error is out-of-memory
-      std::cout << "Failed to render PDF thumbnail: out of memory";
-      FPDF_ClosePage(page);
+      outputError(std::string("Failed to render PDF thumbnail: out of memory"));
+      FPDF_ClosePage(fPage);
       return false;
     }
   }
 
-  FPDF_TEXTPAGE textPage = FPDFText_LoadPage(page);
+  FPDF_TEXTPAGE textPage = FPDFText_LoadPage(fPage);
   if (!textPage) {
-    std::cout << "Failed to read text from PDF page: " << formatLastPdfiumError();
-    FPDF_ClosePage(page);
+    outputError(std::string("Failed to read text from PDF page: ") + formatLastPdfiumError());
+    FPDF_ClosePage(fPage);
     return false;
   }
 
@@ -147,67 +196,66 @@ streamPageTextAndMaybeThumbnail(FPDF_DOCUMENT& fDocument, int pageIndex, int nPa
   std::string u8Text(convert.to_bytes(u16Text));
 
   FPDFText_ClosePage(textPage);
-  FPDF_ClosePage(page);
+  FPDF_ClosePage(fPage);
 
-  out << pageIndex << "/" << nPages << " ";
-
-  // output base64 PNG (may be zero-length)
-  typedef boost::archive::iterators::base64_from_binary<
-    boost::archive::iterators::transform_width<std::vector<uint8_t>::const_iterator, 6, 8>
-  > base64_text;
-  std::copy(
-      base64_text(thumbnailPng.cbegin()),
-      base64_text(thumbnailPng.cend()),
-      std::ostream_iterator<char>(out)
-  );
-
-  out << " " << u8Text << "\f";
+  outputChar(0x2);           // "PAGE"
+  outputBool(hasOcr);
+  outputBytes(thumbnailPng); // PNG
+  outputString("");          // PDF
+  outputString(u8Text);
 
   return true;
 }
 
 void
-streamDocumentTextAndThumbnails(FPDF_DOCUMENT& fDocument, std::ostream& out, bool thumbnailAll)
+streamDocumentTextAndFirstPageThumbnail(FPDF_DOCUMENT& fDocument, std::ostream& out)
 {
   const int nPages = FPDF_GetPageCount(fDocument);
 
+  outputChar(0x1); // HEADER
+  outputSize(nPages);
+
   for (int pageIndex = 0; pageIndex < nPages; pageIndex++) {
-    if (!streamPageTextAndMaybeThumbnail(fDocument, pageIndex, nPages, out, thumbnailAll || pageIndex == 0)) {
-      break;
+    if (!streamPageTextAndMaybeThumbnail(fDocument, pageIndex, nPages, out, pageIndex == 0)) {
+      return; // we've already output a footer
     }
   }
+
+  outputChar(0x3); // FOOTER
+  outputString(""); // no error
 }
 
 void
-streamFileTextAndThumbnails(const char* filename, std::ostream& out, bool thumbnailAll)
+streamDocumentPages(FPDF_DOCUMENT& fDocument, std::ostream& out)
 {
-  FPDF_InitLibrary();
-
-  FPDF_STRING fFilename(filename);
-  FPDF_DOCUMENT fDocument(FPDF_LoadDocument(fFilename, NULL));
-  if (fDocument) {
-    streamDocumentTextAndThumbnails(fDocument, out, thumbnailAll);
-    FPDF_CloseDocument(fDocument);
-  } else {
-    out << "Failed to open PDF: " << formatLastPdfiumError();
-  }
-
-  FPDF_DestroyLibrary();
 }
 
 int
 main(int argc, char** argv)
 {
   if (argc != 3) {
-    std::cerr << "Usage: " << argv[0] << " --thumbnails-for-page=first|all INFILE" << std::endl;
+    std::cerr << "Usage: " << argv[0] << " --only-extract=true|false INFILE" << std::endl;
     return 1;
   }
 
-  bool thumbnailAll = std::string("--thumbnails-for-page=all") == std::string(argv[1]);
+  FPDF_InitLibrary();
 
-  streamFileTextAndThumbnails(argv[2], std::cout, thumbnailAll);
+  FPDF_STRING fFilename(argv[2]);
+  FPDF_DOCUMENT fDocument(FPDF_LoadDocument(fFilename, NULL));
+  if (fDocument) {
+    if (std::string("--only-extract=true") == std::string(argv[1])) {
+      streamDocumentTextAndFirstPageThumbnail(fDocument, std::cout);
+    } else {
+      streamDocumentPages(fDocument, std::cout);
+    }
+    FPDF_CloseDocument(fDocument);
+  } else {
+    outputError(std::string("Failed to open PDF: ") + formatLastPdfiumError());
+  }
 
-  // No matter what, if we got this far we "succeeded". Because that's our
-  // definition of success. So return 0, the successful status code.
+  FPDF_DestroyLibrary();
+
+  // No matter what, if we got this far we "succeeded". (Our definition of
+  // "success" is: "this file does not contain a bug.") Return 0, for success.
   return 0;
 }
