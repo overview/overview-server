@@ -27,7 +27,7 @@ Developing
 split-pdf-and-extract-text
 ==========================
 
-Usage: `split-pdf-and-extract-text IN-FILE.pdf`
+Usage: `split-pdf-and-extract-text --only-extract=true IN-FILE.pdf`
 
 Opens `IN-FILE.pdf` as a PDF. Streams it to a proprietary, streaming-friendly
 _binary_ output format on stdout:
@@ -66,6 +66,9 @@ Only `FOOTER` is actually required. In a valid stream:
 * If there is no `HEADER`, there are no `PAGE` entries
 * There are at most `nPages` `PAGE` entries
 * There is only one `FOOTER`
+
+The `--only-extract` option will produce empty PNGs on all pages except the
+first, and it will produce empty PDFs.
 
 dump-split-pdf-and-extract-text-output
 ======================================

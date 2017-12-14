@@ -41,7 +41,7 @@ RUN set -x \
       && ninja -C out/Release pdfium \
       && mkdir -p /usr/include/pdfium \
       && cp -a out/Release/obj/libpdfium.a /usr/lib/libpdfium.a \
-      && install -t /usr/include/pdfium/ public/*.h
+      && cp -a public/ /usr/include/pdfium/public
 
 # Presto! A build environment with PDFium and Boost.
 WORKDIR /src

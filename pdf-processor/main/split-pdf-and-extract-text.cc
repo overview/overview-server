@@ -9,13 +9,16 @@
 
 #include <boost/archive/iterators/base64_from_binary.hpp>
 #include <boost/archive/iterators/transform_width.hpp>
-#include "fpdfview.h"
-#include "fpdf_text.h"
+#include "public/cpp/fpdf_deleters.h"
+#include "public/fpdfview.h"
+#include "public/fpdf_annot.h"
+#include "public/fpdf_text.h"
 #include "lodepng.h"
 
 static const int MaxNUtf16CharsPerPage = 100000;
 static const int MaxThumbnailDimension = 700;
 static const std::vector<uint8_t> EmptyPng;
+static const std::string GetPageTextError; // we'll check the return value by address
 
 std::string
 formatLastPdfiumError()
@@ -65,7 +68,7 @@ argbToPng(uint32_t* argbBuffer, size_t width, size_t height)
  * Returns "" if rendering failed. That means out-of-memory.
  */
 std::vector<uint8_t>
-renderPageThumbnailPng(FPDF_PAGE& page)
+renderPageThumbnailPngOrReturnEmptyPng(FPDF_PAGE page)
 {
   double pageWidth = FPDF_GetPageWidth(page);
   double pageHeight = FPDF_GetPageHeight(page);
@@ -146,69 +149,135 @@ outputString(const std::string& s)
 }
 
 void
+outputFileIfNotNull(FILE* f)
+{
+    if (f == NULL) {
+        outputString("");
+    } else {
+        // TODO implement me
+    }
+}
+
+void
 outputError(const std::string& message)
 {
   outputChar(0x3);
   outputString(message);
 }
 
+/**
+ * Returns `true` iff `fPage` had OCR run on it.
+ *
+ * We flag OCR on the page by adding an annotation. If the _last_ annotation
+ * on the page is invisible+hidden RGBA color 0xd0cd0c00, the page had OCR.
+ * (Better suggestions are welcome.)
+ */
 bool
-pageHasOcr(FPDF_PAGE& fPage)
+pageHasOcr(FPDF_PAGE fPage)
 {
-  return false; // TODO find a way to implement this
+  // Look for the text annotation, in rect 0,0,0,0,
+  // with text: "OCR by www.overviewdocs.com"
+  int nAnnotations = FPDFPage_GetAnnotCount(fPage);
+
+  if (nAnnotations == 0) return false;
+
+  FPDF_ANNOTATION annot = FPDFPage_GetAnnot(fPage, nAnnotations - 1);
+  if (!annot) return false;
+
+  unsigned int r = 0, g = 0, b = 0, a = 0;
+
+  bool ret = (
+      FPDF_ANNOT_LINE == FPDFAnnot_GetSubtype(annot)
+      && FPDFAnnot_GetColor(annot, FPDFANNOT_COLORTYPE_Color, &r, &g, &b, &a)
+      && (r / 255) == 0xd0
+      && (g / 255) == 0xcd
+      && (b / 255) == 0x0c
+  );
+
+  FPDFPage_CloseAnnot(annot);
+
+  return ret;
 }
 
-bool
-streamPageTextAndMaybeThumbnail(FPDF_DOCUMENT& fDocument, int pageIndex, int nPages, std::ostream& out, bool thumbnail)
+std::string
+getPageTextUtf8OrOutputError(FPDF_PAGE fPage)
 {
-  FPDF_PAGE fPage = FPDF_LoadPage(fDocument, pageIndex);
-  if (!fPage) {
-    outputError(std::string("Failed to read PDF page: ") + formatLastPdfiumError());
-    return false;
-  }
-
-  bool hasOcr = pageHasOcr(fPage);
-
-  std::vector<uint8_t> thumbnailPng;
-  if (thumbnail) {
-    thumbnailPng = renderPageThumbnailPng(fPage);
-    if (thumbnailPng.empty()) {
-      // [adam, 2017-12-11] I _think_ the only possible error is out-of-memory
-      outputError(std::string("Failed to render PDF thumbnail: out of memory"));
-      FPDF_ClosePage(fPage);
-      return false;
-    }
-  }
-
-  FPDF_TEXTPAGE textPage = FPDFText_LoadPage(fPage);
+  std::unique_ptr<void, FPDFTextPageDeleter> textPage(FPDFText_LoadPage(fPage));
   if (!textPage) {
     outputError(std::string("Failed to read text from PDF page: ") + formatLastPdfiumError());
-    FPDF_ClosePage(fPage);
-    return false;
+    return GetPageTextError;
   }
 
+  // TODO handle out-of-memory on big buffers
+
   char16_t utf16Buf[MaxNUtf16CharsPerPage];
-  int nChars = FPDFText_GetText(textPage, 0, MaxNUtf16CharsPerPage, reinterpret_cast<unsigned short*>(&utf16Buf[0]));
+  int nChars = FPDFText_GetText(textPage.get(), 0, MaxNUtf16CharsPerPage, reinterpret_cast<unsigned short*>(&utf16Buf[0]));
   normalizeUtf16(&utf16Buf[0], nChars);
   std::u16string u16Text(&utf16Buf[0], nChars);
 
   std::wstring_convert<std::codecvt_utf8_utf16<char16_t>,char16_t> convert;
   std::string u8Text(convert.to_bytes(u16Text));
+  // [adam, 2017-12-14] pdfium tends to end its string with a NULL byte. That
+  // makes tests ugly, and it gives no value. Nix the NULL byte.
+  if (u8Text.size() > 0 && u8Text[u8Text.size() - 1] == '\0') u8Text.resize(u8Text.size() - 1);
 
-  FPDFText_ClosePage(textPage);
-  FPDF_ClosePage(fPage);
+  return u8Text;
+}
+
+FILE*
+renderPagePdfToTempfileOrOutputErrorAndReturnNull(FPDF_PAGE page)
+{
+    outputError("Splitting PDFs by page not yet implemented");
+    return NULL;
+}
+
+bool
+streamPageParts(
+        FPDF_DOCUMENT fDocument,
+        int pageIndex,
+        int nPages,
+        bool makeThumbnail,
+        bool makePdf
+)
+{
+  std::unique_ptr<void, FPDFPageDeleter> fPage(FPDF_LoadPage(fDocument, pageIndex));
+  if (!fPage) {
+    outputError(std::string("Failed to read PDF page: ") + formatLastPdfiumError());
+    return false;
+  }
+
+  bool hasOcr = pageHasOcr(fPage.get());
+
+  std::vector<uint8_t> thumbnailPng;
+  if (makeThumbnail) {
+    thumbnailPng = renderPageThumbnailPngOrReturnEmptyPng(fPage.get());
+    if (thumbnailPng.empty()) {
+      // [adam, 2017-12-11] I _think_ the only possible error is out-of-memory
+      outputError(std::string("Failed to render PDF thumbnail: out of memory"));
+      return false;
+    }
+  }
+
+  std::string u8Text = getPageTextUtf8OrOutputError(fPage.get());
+  if (&u8Text == &GetPageTextError) return false;
+
+  std::unique_ptr<FILE, decltype(&fclose)> pdfFile(NULL, &fclose);
+  if (makePdf) {
+      pdfFile.reset(renderPagePdfToTempfileOrOutputErrorAndReturnNull(fPage.get()));
+      if (pdfFile == NULL) return false;
+  }
 
   outputChar(0x2);           // "PAGE"
   outputBool(hasOcr);
   outputBytes(thumbnailPng); // PNG
-  outputString("");          // PDF
+  outputFileIfNotNull(pdfFile.get());
   outputString(u8Text);
 
   return true;
 }
 
 void
-streamDocumentTextAndFirstPageThumbnail(FPDF_DOCUMENT& fDocument, std::ostream& out)
+streamDocumentTextAndFirstPageThumbnail(FPDF_DOCUMENT fDocument)
 {
   const int nPages = FPDF_GetPageCount(fDocument);
 
@@ -216,7 +285,7 @@ streamDocumentTextAndFirstPageThumbnail(FPDF_DOCUMENT& fDocument, std::ostream& 
   outputSize(nPages);
 
   for (int pageIndex = 0; pageIndex < nPages; pageIndex++) {
-    if (!streamPageTextAndMaybeThumbnail(fDocument, pageIndex, nPages, out, pageIndex == 0)) {
+    if (!streamPageParts(fDocument, pageIndex, nPages, pageIndex == 0, false)) {
       return; // we've already output a footer
     }
   }
@@ -226,8 +295,25 @@ streamDocumentTextAndFirstPageThumbnail(FPDF_DOCUMENT& fDocument, std::ostream& 
 }
 
 void
-streamDocumentPages(FPDF_DOCUMENT& fDocument, std::ostream& out)
+streamDocumentPages(FPDF_DOCUMENT fDocument)
 {
+}
+
+void
+processPdfFile(const char* filename, bool onlyExtract)
+{
+
+  FPDF_STRING fFilename(filename);
+  std::unique_ptr<void, FPDFDocumentDeleter> fDocument(FPDF_LoadDocument(fFilename, NULL));
+  if (fDocument) {
+    if (onlyExtract) {
+      streamDocumentTextAndFirstPageThumbnail(fDocument.get());
+    } else {
+      streamDocumentPages(fDocument.get());
+    }
+  } else {
+    outputError(std::string("Failed to open PDF: ") + formatLastPdfiumError());
+  }
 }
 
 int
@@ -240,18 +326,7 @@ main(int argc, char** argv)
 
   FPDF_InitLibrary();
 
-  FPDF_STRING fFilename(argv[2]);
-  FPDF_DOCUMENT fDocument(FPDF_LoadDocument(fFilename, NULL));
-  if (fDocument) {
-    if (std::string("--only-extract=true") == std::string(argv[1])) {
-      streamDocumentTextAndFirstPageThumbnail(fDocument, std::cout);
-    } else {
-      streamDocumentPages(fDocument, std::cout);
-    }
-    FPDF_CloseDocument(fDocument);
-  } else {
-    outputError(std::string("Failed to open PDF: ") + formatLastPdfiumError());
-  }
+  processPdfFile(argv[2], std::string("--only-extract=true") == argv[1]);
 
   FPDF_DestroyLibrary();
 

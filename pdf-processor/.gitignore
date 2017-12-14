@@ -1,2 +1,3 @@
 *.o
 split-pdf-and-extract-text
+dump-split-pdf-and-extract-text-output

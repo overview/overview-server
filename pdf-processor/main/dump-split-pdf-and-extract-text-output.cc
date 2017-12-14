@@ -199,6 +199,7 @@ streamNonEmptyInput(std::FILE* input, const std::string& outdir)
     std::cerr << "Expected non-zero number of pages" << std::endl;
     return false;
   }
+  writeFile(outdir + "/n-pages", std::to_string(nPages));
 
   for (uint32_t i = 0; i < nPages; i++) {
     int recordType = readRecordType(input, "PAGE or FOOTER");
