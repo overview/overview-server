@@ -1,3 +1,6 @@
+# TODO don't use :latest
+FROM overview/pdfocr-native:latest as pdfocr
+
 FROM openjdk:8u151-jdk
 
 # Deps:
@@ -13,6 +16,8 @@ RUN true \
         nodejs build-essential xvfb libxss1 libgconf-2-4 \
         zip \
       && touch /this-is-overview-dev-on-docker
+
+COPY --from=pdfocr /split-pdf-and-extract-text /opt/overview/
 
 WORKDIR /app
 

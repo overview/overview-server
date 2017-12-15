@@ -13,6 +13,7 @@ import com.overviewdocs.blobstorage.{BlobBucketId,BlobStorage}
 import com.overviewdocs.database.HasDatabase
 import com.overviewdocs.models.{DocumentDisplayMethod,File,Page}
 import com.overviewdocs.models.tables.Pages
+import com.overviewdocs.pdfocr.SplitPdfAndExtractTextReader
 import com.overviewdocs.util.{Configuration,Textify}
 
 class CreateDocumentDataForPages(
@@ -30,12 +31,11 @@ class CreateDocumentDataForPages(
       PdfSplitter.splitPdf(file.toPath, true, onSplitProgress)
     }
       .flatMap(_ match {
-        case Left(message) => Future.successful(Left(message))
-        case Right(pageInfos) => {
+        case SplitPdfAndExtractTextReader.ReadAllResult.Error(message) => Future.successful(Left(message))
+        case splitResult: SplitPdfAndExtractTextReader.ReadAllResult.Pages => {
           for {
-            result <- writePagesAndBuildDocuments(pageInfos)
-            _ <- Future(blocking(pageInfos.flatMap(_.pdfPath).foreach(JFiles.delete _)))
-            _ <- Future(blocking(pageInfos.flatMap(_.thumbnailPath).foreach(JFiles.delete _)))
+            result <- writePagesAndBuildDocuments(splitResult.pages)
+            _ <- splitResult.cleanup
           } yield result
         }
       })
@@ -51,7 +51,7 @@ class CreateDocumentDataForPages(
     * it as possible. (These stranded Files can be deleted, recovering the
     * extra space.)
     */
-  private def writePagesAndBuildDocuments(pageInfos: Seq[PdfSplitter.PageInfo]): Future[Either[String,Seq[IncompleteDocument]]] = {
+  private def writePagesAndBuildDocuments(pageInfos: Seq[SplitPdfAndExtractTextReader.ReadOneResult.Page]): Future[Either[String,Seq[IncompleteDocument]]] = {
     val ret = mutable.ArrayBuffer[IncompleteDocument]()
     val it = pageInfos.iterator
 
@@ -76,7 +76,7 @@ class CreateDocumentDataForPages(
     })
   }
 
-  private def writePageAndBuildDocument(pageInfo: PdfSplitter.PageInfo): Future[IncompleteDocument] = {
+  private def writePageAndBuildDocument(pageInfo: SplitPdfAndExtractTextReader.ReadOneResult.Page): Future[IncompleteDocument] = {
     System.out.println("Create document data for pages: write page and build document")
     System.out.println(pageInfo.thumbnailPath)
     for {

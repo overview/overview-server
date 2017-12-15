@@ -8,8 +8,6 @@ import org.specs2.specification.Scope
 import com.overviewdocs.util.AwaitMethod
 
 class SplitPdfAndExtractTextParserSpec extends Specification {
-  sequential
-
   import scala.concurrent.ExecutionContext.Implicits.global
   import SplitPdfAndExtractTextParser.Token._
 
