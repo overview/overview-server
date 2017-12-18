@@ -6,6 +6,9 @@ FROM alpine:3.6
 # libreoffice+tesseract are only for worker. Since Docker will only
 # keep one copy of this image, it actually _saves_ space to include
 # libreoffice+tesseract in the web+db-evolution-applier images
+#
+# daemontools is for `softlimit`, which we use to limit C++ children's
+# memory usage.
 RUN set -x \
       && apk add --update --no-cache \
         openjdk8-jre-base \
@@ -15,6 +18,7 @@ RUN set -x \
         tesseract-ocr \
         ttf-freefont \
         msttcorefonts-installer \
+        daemontools \
       && update-ms-fonts && fc-cache -f \
       && wget -P /usr/share/tessdata \
         https://github.com/tesseract-ocr/tessdata/raw/3.04.00/osd.traineddata \

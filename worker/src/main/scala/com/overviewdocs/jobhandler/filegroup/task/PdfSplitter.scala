@@ -1,11 +1,13 @@
 package com.overviewdocs.jobhandler.filegroup.task
 
+import com.google.common.io.ByteStreams
 import java.io.IOException
 import java.nio.charset.StandardCharsets
-import java.nio.file.{Path,Paths}
+import java.nio.file.{Files,Path,Paths}
 import scala.collection.mutable
 import scala.concurrent.{ExecutionContext,Future,blocking}
 
+import com.overviewdocs.pdfocr.SplitPdfAndExtractTextParser
 import com.overviewdocs.util.{Configuration,Logger,JavaCommand}
 
 /** Finds page info from a PDF.
@@ -16,8 +18,7 @@ import com.overviewdocs.util.{Configuration,Logger,JavaCommand}
 trait PdfSplitter {
   protected val logger: Logger
 
-  private val PageInfoRegex = """(?s)\n?(\d+)/(\d+) ([tf]) (.*)""".r
-  private val FormFeed = 0x0c.toByte
+  import com.overviewdocs.pdfocr.{SplitPdfAndExtractTextReader=>Reader}
 
   /** Runs the actual conversion.
     *
@@ -43,81 +44,35 @@ trait PdfSplitter {
     in: Path,
     createPdfs: Boolean,
     onProgress: (Int, Int) => Boolean
-  )(implicit ec: ExecutionContext): Future[Either[String,Seq[PdfSplitter.PageInfo]]] = {
-    val pageFilenamePattern = in.getFileName + "-p{}"
-    val maybeOutPattern = if (createPdfs) {
-      Some(pageFilenamePattern)
-    } else {
-      None
-    }
-
-    val cmd = command(in, pageFilenamePattern, createPdfs)
+  )(implicit ec: ExecutionContext): Future[Reader.ReadAllResult] = {
+    val cmd = command(in, createPdfs)
     logger.info(cmd.mkString(" "))
 
-    val pageInfos = mutable.ArrayBuffer[PdfSplitter.PageInfo]()
-    @volatile var error: Option[String] = None
+    def readFromAndWaitForProcess(child: Process, tempDir: Path): Future[Reader.ReadAllResult] = {
+      val parser = new SplitPdfAndExtractTextParser(child.getInputStream)
+      val reader = new Reader(parser, tempDir)
 
-    def processOutput(child: Process): Unit = {
-      def dataToPageInfo(bytes: Array[Byte]): Unit = {
-        val str = new String(bytes, StandardCharsets.UTF_8)
-        str match {
-          case PageInfoRegex(pageNumber, nPages, isFromOcr, text) => {
-            // create preview for page ?
-            pageInfos.+=(PdfSplitter.PageInfo(
-              pageNumber.toInt,
-              nPages.toInt,
-              isFromOcr == "t",
-              text,
-              maybeOutPattern.map(p => in.resolveSibling(p.replace("{}", pageNumber))),
-              if (createPdfs || pageNumber == "1")
-                Some(in.resolveSibling(pageFilenamePattern.replace("{}", pageNumber + "-thumbnail") + ".png"))
-              else
-                None
-            ))
-            if (!onProgress(pageNumber.toInt, nPages.toInt)) {
-              error = Some("You cancelled an import job")
-              child.destroyForcibly
-            }
+      reader.readAll(onProgress)
+        .flatMap(result => Future(blocking {
+          // readAll will return an early error if onProgress returns false.
+          // There may be other errors we don't expect, too. Make sure the child
+          // is dead.
+          child.destroyForcibly
+
+          // Does child.waitFor block if the input stream buffer never
+          // empties? Let's play it safe and empty the buffer.
+          try {
+            ByteStreams.exhaust(child.getInputStream)
+          } catch {
+            case _: java.io.IOException => {} // This error would not surprise us: the child is dead
           }
-          case _ => {
-            error = Some(s"Invalid data from splitter: $str")
-            child.destroyForcibly
-          }
-        }
-      }
 
-      val stream = child.getInputStream
-      val buf: Array[Byte] = new Array(10 * 1024) // 10kb covers most pages' text.
-      var nextPageBytes = mutable.ArrayBuffer[Byte]() // When complete, all but the final `\f` will be in here.
-
-      while (true) {
-        val bufSize = stream.read(buf)
-        if (bufSize == -1) {
-          // We're at the end of the file. If there's any text in
-          // nextPageBytes, that means we didn't find `\f`. So the text is an
-          // error message.
-          nextPageBytes.++=(buf.take(bufSize))
-          val text = new String(nextPageBytes.toArray, StandardCharsets.UTF_8).trim
-          if (text.nonEmpty && error.isEmpty) error = Some(text)
-          stream.close
-          return
-        }
-
-        var prevI: Int = 0
-        while (prevI < bufSize) {
-          val i = buf.indexOf(FormFeed, prevI)
-
-          if (i > -1 && i < bufSize) {
-            nextPageBytes.++=(buf.slice(prevI, i))
-            dataToPageInfo(nextPageBytes.toArray)
-            nextPageBytes.clear
-            prevI = i + 1 // after \f comes \n, but we can't skip it here: it might be in the next buf
-          } else {
-            nextPageBytes.++=(buf.slice(prevI, bufSize))
-            prevI = bufSize // break out of the inner while loop
-          }
-        }
-      }
+          (result, child.waitFor)
+        }))
+        .flatMap(_ match {
+          case (result, 0) => Future.successful(result)
+          case (result, n) => ???
+        })
     }
 
     Future(blocking {
@@ -125,81 +80,35 @@ trait PdfSplitter {
         .redirectError(ProcessBuilder.Redirect.INHERIT) // so Logger sees it
         .start
       process.getOutputStream.close
-
-      try {
-        processOutput(process)
-      } catch {
-        case _: IOException => {
-          // The stream was closed by something else (i.e., the child). We don't
-          // much care what happens, because we assume the child's exit code will
-          // be non-zero.
-        }
-      }
-
-      process.waitFor
-    }).flatMap { retval =>
-      if (retval != 0 && error.isEmpty) {
-        // could be a crash in PDFBox, missing tesseract on path, or some other problem...
-        error = Some("Problem parsing PDF")  
-      }
-
-      val ret = error.toLeft(pageInfos.toSeq)
-
-      ret match {
-        case Right(_) => Future.successful(ret)
-        case Left(_) => {
-          val nextPdfPath: Option[Path] = maybeOutPattern.map(p => in.resolveSibling(p.replace("{}", (pageInfos.length + 1).toString)))
-          val nextThumbnailPath: Option[Path] = maybeOutPattern.map(p => in.resolveSibling(p.replace("{}", (pageInfos.length + 1) + "-thumbnail") + ".png"))
-
-          val paths = pageInfos.flatMap(_.pdfPath) ++ nextPdfPath ++ pageInfos.flatMap(_.thumbnailPath) ++ nextThumbnailPath
-
-          println(paths)
-          Future(blocking {
-            paths.foreach(_.toFile.delete())
-            ret
-          })
-        }
-      }
-    }
+      val dir = Files.createTempDirectory(in.getParent, "pdf-splitter-temp")
+      (process, dir)
+    })
+      .flatMap { case (process: Process, dir: Path) => readFromAndWaitForProcess(process, dir) }
   }
 
-  private def command(in: Path, pageFilenamePattern: String, createPdfs: Boolean): Seq[String] = JavaCommand(
-    "-Xmx" + Configuration.getString("pdf_memory"),
-    "com.overviewdocs.helpers.SplitPdfAndExtractText",
-    in.toString,
-    pageFilenamePattern
-  ) ++ (if(createPdfs) Seq("--create-pdfs") else Nil)
+  private def command(in: Path, createPdfs: Boolean): Seq[String] = Seq(
+    "/usr/bin/softlimit", "-r", PdfSplitter.pdfMemoryNBytes.toString,
+    "/opt/overview/split-pdf-and-extract-text",
+    ("--only-extract=" + (if (createPdfs) "false" else "true")),
+    in.toString
+  )
 }
 
 object PdfSplitter extends PdfSplitter {
-  /** Details about a page we've extracted.
-    */
-  case class PageInfo(
-    /** Page number, starting at 1. */
-    pageNumber: Int,
+  private lazy val pdfMemoryNBytes: Long = {
+    val GigR = "^(\\d+)[gG]$".r
+    val MegR = "^(\\d+)[mM]$".r
+    val KiloR = "^(\\d+)[kK]$".r
+    val ByteR = "^(\\d+)[bB]?$".r
+    Configuration.getString("pdf_memory") match {
+      case GigR(gigs) => gigs.toLong * 1024 * 1024 * 1024
+      case MegR(megs) => megs.toLong * 1024 * 1024
+      case KiloR(kilos) => kilos.toLong * 1024
+      case ByteR(bytes) => bytes.toLong
+      case _ => throw new RuntimeException("pdf_memory must be specified as a number with 'G' or 'M', like '1g' or '1500m'")
+    }
+  }
 
-    /** Total number of pages. */
-    nPages: Int,
-
-    /** If true, pdfocr may have generated some of this text via Tesseract. */
-    isFromOcr: Boolean,
-
-    /** The text contents of the page.
-      *
-      * These have already have Textify() called on them, by
-      * SplitPdfAndExtractText.
-      */
-    text: String,
-
-    /** If set, a file on the filesystem containing a PDF version of this page.
-      */
-    pdfPath: Option[Path],
-
-    /** If set, a file on the filesystem containing a PNG thumbnail version of this page.
-      */
-    thumbnailPath: Option[Path]
-
-  )
 
   override protected val logger = Logger.forClass(getClass)
 }

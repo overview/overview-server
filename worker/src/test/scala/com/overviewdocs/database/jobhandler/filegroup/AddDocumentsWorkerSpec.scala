@@ -36,7 +36,7 @@ class AddDocumentsWorkerSpec extends Specification with Mockito {
       impl.processUpload(any, any, any)(any) returns Future.unit
       val upload = makeUpload
       subject.tell(HandleUpload(fileGroup, upload), broker.ref)
-      there was one(impl).processUpload(Matchers.eq(fileGroup), Matchers.eq(upload), any)(Matchers.eq(subject.dispatcher))
+      there was one(impl).processUpload(===(fileGroup), ===(upload), any)(===(subject.dispatcher))
     }
 
     "crash when impl returns a Failure" in new BaseScope {

@@ -14,7 +14,7 @@ object Dependencies {
     val bcrypt = "com.github.t3hnar" %% "scala-bcrypt" % "3.1"
     val config = "com.typesafe" % "config" % "1.3.0"
     val flywayDb = "org.flywaydb" % "flyway-core" % "3.2.1"
-    val guava = "com.google.guava" % "guava" % "18.0"
+    val guava = "com.google.guava" % "guava" % "23.5-jre"
     val icu4j = "com.ibm.icu" % "icu4j" % "56.1"
     val janino = "org.codehaus.janino" % "janino" % "2.7.8" // Runtime Java compiler -- for logback-test.xml
     val joddWot = "org.jodd" % "jodd-wot" % "3.3.8"
@@ -25,7 +25,7 @@ object Dependencies {
     val luceneAnalyzersIcu = "org.apache.lucene" % "lucene-analyzers-icu" % "6.5.1"
     val luceneHighlighter = "org.apache.lucene" % "lucene-highlighter" % "6.5.1"
     val mimeTypes = "org.overviewproject" % "mime-types" % "0.0.2"
-    val mockito = "org.mockito" % "mockito-all" % "1.9.5"
+    val mockito = "org.mockito" % "mockito-all" % "1.10.19"
     val owaspEncoder = "org.owasp.encoder" % "encoder" % "1.2.1"
     val parserCombinators = "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.6" // QueryParser
     val pdfocr = "org.overviewproject" %% "pdfocr" % "0.0.5"
