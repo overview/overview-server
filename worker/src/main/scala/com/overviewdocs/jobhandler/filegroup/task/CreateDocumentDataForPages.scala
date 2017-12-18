@@ -31,7 +31,9 @@ class CreateDocumentDataForPages(
       PdfSplitter.splitPdf(file.toPath, true, onSplitProgress)
     }
       .flatMap(_ match {
-        case SplitPdfAndExtractTextReader.ReadAllResult.Error(message) => Future.successful(Left(message))
+        case error: SplitPdfAndExtractTextReader.ReadAllResult.Error => {
+          error.cleanupAndDeleteTempDir.map(_ => Left(error.message))
+        }
         case splitResult: SplitPdfAndExtractTextReader.ReadAllResult.Pages => {
           for {
             result <- writePagesAndBuildDocuments(splitResult.pages)

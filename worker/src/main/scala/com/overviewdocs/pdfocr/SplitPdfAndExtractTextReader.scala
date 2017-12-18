@@ -95,7 +95,7 @@ class SplitPdfAndExtractTextReader(
       Future(blocking {
         val paths = pages.flatMap(_.thumbnailPath) ++ pages.flatMap(_.pdfPath)
         paths.foreach(Files.deleteIfExists _)
-        ReadAllResult.Error(message)
+        ReadAllResult.Error(message, tempDir)
       })
     }
 
@@ -155,22 +155,27 @@ object SplitPdfAndExtractTextReader {
     case class Error(message: String) extends ReadOneResult
   }
 
-  sealed trait ReadAllResult
+  sealed trait ReadAllResult {
+    val tempDir: Path
+
+    def cleanup(implicit ec: ExecutionContext): Future[Unit] = Future.unit
+
+    def cleanupAndDeleteTempDir(implicit ec: ExecutionContext): Future[Unit] = for {
+      _ <- cleanup
+      _ <- Future(blocking(Files.delete(tempDir)))
+    } yield ()
+  }
+
   object ReadAllResult {
     /** Becomes one or several Documents. */
-    case class Pages(pages: Vector[ReadOneResult.Page], tempDir: Path) extends ReadAllResult {
-      def cleanup(implicit ec: ExecutionContext): Future[Unit] = Future(blocking {
+    case class Pages(pages: Vector[ReadOneResult.Page], override val tempDir: Path) extends ReadAllResult {
+      override def cleanup(implicit ec: ExecutionContext): Future[Unit] = Future(blocking {
         pages.flatMap(_.pdfPath).foreach(Files.delete _)
         pages.flatMap(_.thumbnailPath).foreach(Files.delete _)
       })
-
-      def cleanupAndDeleteTempDir(implicit ec: ExecutionContext): Future[Unit] = for {
-        _ <- cleanup
-        _ <- Future(blocking(Files.delete(tempDir)))
-      } yield ()
     }
 
     /** Becomes a DocumentProcessingError */
-    case class Error(message: String) extends ReadAllResult
+    case class Error(message: String, override val tempDir: Path) extends ReadAllResult
   }
 }

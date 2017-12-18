@@ -52,7 +52,9 @@ class CreateDocumentDataForFile(file: File, onProgress: Double => Boolean)(impli
             text = Textify.truncateToNChars(text, CreateDocumentDataForFile.MaxNCharsPerDocument)
           )))
         }
-        case SplitPdfAndExtractTextReader.ReadAllResult.Error(message) => Future.successful(Left(message))
+        case error: SplitPdfAndExtractTextReader.ReadAllResult.Error => {
+          error.cleanupAndDeleteTempDir.map(_ => Left(error.message))
+        }
       }
   }
 }

@@ -182,7 +182,7 @@ class SplitPdfAndExtractTextReaderSpec extends Specification with Mockito {
       await(reader.readAll(onProgress)) must beEqualTo(ReadAllResult.Pages(Vector(
         ReadOneResult.Page(1, 2, false, "1", None, None),
         ReadOneResult.Page(2, 2, false, "2", None, None),
-      )))
+      ), reader.tempDir))
     }
 
     "call onProgress after each page" in new ReadAllScope {
@@ -205,7 +205,7 @@ class SplitPdfAndExtractTextReaderSpec extends Specification with Mockito {
         Token.Success
       )
       override def onProgressReturn = onProgressCalls.size < 2
-      await(reader.readAll(onProgress)) must beEqualTo(ReadAllResult.Error("You cancelled an import job"))
+      await(reader.readAll(onProgress)) must beEqualTo(ReadAllResult.Error("You cancelled an import job", reader.tempDir))
     }
 
     "delete files when cancelling" in new ReadAllScope {
@@ -255,10 +255,10 @@ class SplitPdfAndExtractTextReaderSpec extends Specification with Mockito {
       Files.exists(tempDir.resolve("p1.pdf")) must beTrue
       Files.exists(tempDir.resolve("p1.png")) must beTrue
       await(result.cleanup)
-      Files.exists(tempDir.resolve("p1.pdf")) must beTrue
-      Files.exists(tempDir.resolve("p1.png")) must beTrue
-      Files.exists(tempDir.resolve("p1.pdf")) must beTrue
-      Files.exists(tempDir.resolve("p1.png")) must beTrue
+      Files.exists(tempDir.resolve("p1.pdf")) must beFalse
+      Files.exists(tempDir.resolve("p1.png")) must beFalse
+      Files.exists(tempDir.resolve("p1.pdf")) must beFalse
+      Files.exists(tempDir.resolve("p1.png")) must beFalse
     }
   }
 }
