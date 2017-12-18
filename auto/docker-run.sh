@@ -23,7 +23,8 @@ if [ ! -f /this-is-overview-dev-on-docker ]; then
   CMD="docker run --rm -it --network overviewserver_default --volume overviewserver_database-data:/var/lib/postgresql/data --volume overviewserver_search-data:/var/lib/overview/search --volume overviewserver_blob-storage-data:/var/lib/overview/blob-storage --volume overviewserver_homedir:/root --volume $DIR:/app"
 
   # Publish port 9000=>80, if nothing else is running on it
-  if [ -z "$(docker ps -q --filter name=overviewserver_dev)" ]; then
+  if [ -z "$(docker ps -q -f publish=80 -f ancestor=overviewserver_dev:latest)" ]; then
+    echo "Exposing localhost:9000" >&2
     CMD="$CMD --publish 127.0.0.1:9000:80"
   fi
 
@@ -33,5 +34,5 @@ if [ ! -f /this-is-overview-dev-on-docker ]; then
     DOCKER_OPTIONS="$DOCKER_OPTIONS $1"
     shift
   done
-  exec $CMD $DOCKER_OPTIONS overview-dev:latest "$@"
+  exec $CMD $DOCKER_OPTIONS overviewserver_dev:latest "$@"
 fi

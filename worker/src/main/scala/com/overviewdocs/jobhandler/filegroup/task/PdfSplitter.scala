@@ -3,7 +3,7 @@ package com.overviewdocs.jobhandler.filegroup.task
 import com.google.common.io.ByteStreams
 import java.io.IOException
 import java.nio.charset.StandardCharsets
-import java.nio.file.{Path,Paths}
+import java.nio.file.{Files,Path,Paths}
 import scala.collection.mutable
 import scala.concurrent.{ExecutionContext,Future,blocking}
 
@@ -48,9 +48,9 @@ trait PdfSplitter {
     val cmd = command(in, createPdfs)
     logger.info(cmd.mkString(" "))
 
-    def readFromAndWaitForProcess(child: Process): Future[Reader.ReadAllResult] = {
+    def readFromAndWaitForProcess(child: Process, tempDir: Path): Future[Reader.ReadAllResult] = {
       val parser = new SplitPdfAndExtractTextParser(child.getInputStream)
-      val reader = new Reader(parser, in.getParent)
+      val reader = new Reader(parser, tempDir)
 
       reader.readAll(onProgress)
         .flatMap(result => Future(blocking {
@@ -76,19 +76,20 @@ trait PdfSplitter {
     }
 
     Future(blocking {
-      val ret = new ProcessBuilder(cmd: _*)
+      val process = new ProcessBuilder(cmd: _*)
         .redirectError(ProcessBuilder.Redirect.INHERIT) // so Logger sees it
         .start
-      ret.getOutputStream.close
-      ret
+      process.getOutputStream.close
+      val dir = Files.createTempDirectory(in.getParent, "pdf-splitter-temp")
+      (process, dir)
     })
-      .flatMap(readFromAndWaitForProcess _)
+      .flatMap { case (process: Process, dir: Path) => readFromAndWaitForProcess(process, dir) }
   }
 
-  private def command(in: Path, createPdfs: Boolean): Seq[String] = JavaCommand(
-    "softlimit", "-r", PdfSplitter.pdfMemoryNBytes.toString,
+  private def command(in: Path, createPdfs: Boolean): Seq[String] = Seq(
+    "/usr/bin/softlimit", "-r", PdfSplitter.pdfMemoryNBytes.toString,
     "/opt/overview/split-pdf-and-extract-text",
-    ("--only-extract=" + (if (createPdfs) "true" else "false")),
+    ("--only-extract=" + (if (createPdfs) "false" else "true")),
     in.toString
   )
 }

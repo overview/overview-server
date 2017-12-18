@@ -7,7 +7,7 @@ import scala.concurrent.{ExecutionContext,Future,blocking}
 
 class SplitPdfAndExtractTextReader(
   val parser: SplitPdfAndExtractTextParser,
-  val tempDir: Path // TODO nix tempDir: stream results without caching them
+  val tempDir: Path // TODO nix tempDir: stream results without caching them? (Would require more robust S3-uploader)
 ) {
   import SplitPdfAndExtractTextParser.Token
   import SplitPdfAndExtractTextReader.{ReadOneResult,ReadAllResult}
@@ -110,7 +110,7 @@ class SplitPdfAndExtractTextReader(
           }
         }
         case ReadOneResult.Error(message) => cancel(message)
-        case ReadOneResult.NoMorePages => Future.successful(ReadAllResult.Pages(pages.toVector))
+        case ReadOneResult.NoMorePages => Future.successful(ReadAllResult.Pages(pages.toVector, tempDir))
       })
     }
 
@@ -158,11 +158,16 @@ object SplitPdfAndExtractTextReader {
   sealed trait ReadAllResult
   object ReadAllResult {
     /** Becomes one or several Documents. */
-    case class Pages(pages: Vector[ReadOneResult.Page]) extends ReadAllResult {
-      def cleanup: Future[Unit] = ???
-      // TODO cleanup:
-      //_ <- Future(blocking(pageInfos.flatMap(_.pdfPath).foreach(JFiles.delete _)))
-      //_ <- Future(blocking(pageInfos.flatMap(_.thumbnailPath).foreach(JFiles.delete _)))
+    case class Pages(pages: Vector[ReadOneResult.Page], tempDir: Path) extends ReadAllResult {
+      def cleanup(implicit ec: ExecutionContext): Future[Unit] = Future(blocking {
+        pages.flatMap(_.pdfPath).foreach(Files.delete _)
+        pages.flatMap(_.thumbnailPath).foreach(Files.delete _)
+      })
+
+      def cleanupAndDeleteTempDir(implicit ec: ExecutionContext): Future[Unit] = for {
+        _ <- cleanup
+        _ <- Future(blocking(Files.delete(tempDir)))
+      } yield ()
     }
 
     /** Becomes a DocumentProcessingError */

@@ -35,7 +35,7 @@ class CreateDocumentDataForPages(
         case splitResult: SplitPdfAndExtractTextReader.ReadAllResult.Pages => {
           for {
             result <- writePagesAndBuildDocuments(splitResult.pages)
-            _ <- splitResult.cleanup
+            _ <- splitResult.cleanupAndDeleteTempDir
           } yield result
         }
       })
@@ -55,12 +55,16 @@ class CreateDocumentDataForPages(
     val ret = mutable.ArrayBuffer[IncompleteDocument]()
     val it = pageInfos.iterator
 
+    def finish(completed: Boolean): Future[Boolean] = {
+      Future.successful(completed)
+    }
+
     def step: Future[Boolean] = { // true if completed, false if user cancelled
       if (!it.hasNext) {
-        Future.successful(true)
+        finish(true)
       } else {
         if (!onWriteProgress(ret.length, pageInfos.length)) {
-          Future.successful(false)
+          finish(false)
         } else {
           writePageAndBuildDocument(it.next).flatMap { incompleteDocument =>
             ret.+=(incompleteDocument)
@@ -77,8 +81,6 @@ class CreateDocumentDataForPages(
   }
 
   private def writePageAndBuildDocument(pageInfo: SplitPdfAndExtractTextReader.ReadOneResult.Page): Future[IncompleteDocument] = {
-    System.out.println("Create document data for pages: write page and build document")
-    System.out.println(pageInfo.thumbnailPath)
     for {
       location <- BlobStorage.create(BlobBucketId.PageData, pageInfo.pdfPath.get)
 

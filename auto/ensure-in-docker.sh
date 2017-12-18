@@ -17,6 +17,6 @@
 if [ ! -f /this-is-overview-dev-on-docker ]; then
   # Only build the image if it isn't built already. That should be faster than
   # running `docker-compose build` every time.
-  [ -n "$(docker image ls -q overview-dev:latest)" ] || docker-compose build
+  [ -n "$(docker image ls -q overviewserver_dev:latest)" ] || docker-compose build
   exec ./auto/docker-run.sh "$0" "$@"
 fi

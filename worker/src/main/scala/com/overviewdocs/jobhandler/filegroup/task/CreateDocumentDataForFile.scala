@@ -18,7 +18,6 @@ class CreateDocumentDataForFile(file: File, onProgress: Double => Boolean)(impli
   private def onSplitterProgress(nPages: Int, pageNumber: Int): Boolean = onProgress(nPages.toDouble / pageNumber)
 
   def execute: Future[Either[String,Seq[IncompleteDocument]]] = {
-    // false don't split
     BlobStorage.withBlobInTempFile(file.viewLocation) { jFile =>
       PdfSplitter.splitPdf(jFile.toPath, false, onSplitterProgress)
     }
@@ -27,7 +26,12 @@ class CreateDocumentDataForFile(file: File, onProgress: Double => Boolean)(impli
           // If the first page has a thumbnail, save it
           val futureThumbnailLocation: Future[Option[String]] = {
             result.pages.headOption.flatMap(_.thumbnailPath) match {
-              case Some(path) => BlobStorage.create(BlobBucketId.PageData, path).map(Some(_))
+              case Some(path) => {
+                for {
+                  location <- BlobStorage.create(BlobBucketId.PageData, path) // TODO create thumbnails bucket
+                  _ <- result.cleanupAndDeleteTempDir
+                } yield Some(location)
+              }
               case None => Future.successful(None)
             }
           }

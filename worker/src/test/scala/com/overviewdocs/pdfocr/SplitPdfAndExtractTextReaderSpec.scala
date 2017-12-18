@@ -237,5 +237,28 @@ class SplitPdfAndExtractTextReaderSpec extends Specification with Mockito {
       Files.exists(tempDir.resolve("p1.pdf")) must beFalse
       Files.exists(tempDir.resolve("p1.png")) must beFalse
     }
+
+    "delete files on cleanup" in new ReadAllScope {
+      override val tokens = List(
+        Token.Header(2),
+        Token.PageThumbnail(1, stream(2)),
+        Token.PagePdf(1, stream(3)),
+        Token.Page(false, "1"),
+        Token.PageThumbnail(1, stream(2)),
+        Token.PagePdf(1, stream(3)),
+        Token.Page(false, "2"),
+        Token.Success
+      )
+      val result = await(reader.readAll(onProgress))
+      Files.exists(tempDir.resolve("p1.pdf")) must beTrue
+      Files.exists(tempDir.resolve("p1.png")) must beTrue
+      Files.exists(tempDir.resolve("p1.pdf")) must beTrue
+      Files.exists(tempDir.resolve("p1.png")) must beTrue
+      await(result.cleanup)
+      Files.exists(tempDir.resolve("p1.pdf")) must beTrue
+      Files.exists(tempDir.resolve("p1.png")) must beTrue
+      Files.exists(tempDir.resolve("p1.pdf")) must beTrue
+      Files.exists(tempDir.resolve("p1.png")) must beTrue
+    }
   }
 }
