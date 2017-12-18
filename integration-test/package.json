@@ -4,7 +4,7 @@
   "description": "Integration-tests an Overview server",
   "main": "index.js",
   "scripts": {
-    "test": "JUNIT_REPORT_PATH=/integration-test/test-results.xml JUNIT_REPORT_STACK=1 JUNIT_REPORT_PACKAGES=1 JUNIT_REPORT_NAME='Integration tests' node ./node_modules/.bin/mocha --reporter mocha-jenkins-reporter"
+    "test": "JUNIT_REPORT_PATH=test-results.xml JUNIT_REPORT_STACK=1 JUNIT_REPORT_PACKAGES=1 JUNIT_REPORT_NAME='Integration tests' node ./node_modules/.bin/mocha --reporter mocha-jenkins-reporter"
   },
   "repository": {
     "type": "git",

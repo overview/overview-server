@@ -87,7 +87,7 @@ trait PdfSplitter {
   }
 
   private def command(in: Path, createPdfs: Boolean): Seq[String] = Seq(
-    "/usr/bin/softlimit", "-r", PdfSplitter.pdfMemoryNBytes.toString,
+    PdfSplitter.SoftLimitPath, "-d", PdfSplitter.pdfMemoryNBytes.toString,
     "/opt/overview/split-pdf-and-extract-text",
     ("--only-extract=" + (if (createPdfs) "false" else "true")),
     in.toString
@@ -109,6 +109,13 @@ object PdfSplitter extends PdfSplitter {
     }
   }
 
+  private lazy val SoftLimitPath: String = {
+    if (Files.exists(Paths.get("/usr/bin/softlimit"))) {
+      "/usr/bin/softlimit" // Ubuntu with daemontools installed (dev)
+    } else {
+      "/sbin/chpst"        // Alpine Linux w/ runit installed (prod)
+    }
+  }
 
   override protected val logger = Logger.forClass(getClass)
 }

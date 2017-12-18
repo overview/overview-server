@@ -8,7 +8,7 @@ const Constants = {
   pageLoadTimeout: 30000 // Travis+SauceLabs is slow, especially for Vimeo
 }
 
-if (!process.env.OVERVIEW_URL) process.env.OVERVIEW_URL="http://dev"
+if (!process.env.OVERVIEW_URL) process.env.OVERVIEW_URL="http://overview-web"
 if (!process.env.OVERVIEW_ADMIN_EMAIL) process.env.OVERVIEW_ADMIN_EMAIL="admin@overviewdocs.com"
 if (!process.env.OVERVIEW_ADMIN_PASSWORD) process.env.OVERVIEW_ADMIN_PASSWORD="admin@overviewdocs.com"
 

@@ -5,6 +5,12 @@ services:
     image: overview-web:${OVERVIEW_VERSION}
     networks: [ 'default', 'database', 'redis', 'worker' ]
     depends_on: [ 'overview-database', 'overview-redis', 'overview-worker' ]
+    environment:
+      - REDIS_HOST=overview-redis
+      - DATABASE_SERVER_NAME=overview-database
+      - BLOB_STORAGE_FILE_BASE_DIRECTORY=/var/lib/overview/blob-storage
+      - MESSAGE_BROKER_HOSTNAME=overview-worker
+      - MESSAGE_BROKER_CLIENT_HOSTNAME=overview-web
     volumes:
       - blob-storage:/var/lib/overview/blob-storage
 
@@ -14,6 +20,10 @@ services:
     depends_on: [ 'overview-database' ]
     volumes:
       - blob-storage:/var/lib/overview/blob-storage
+    environment:
+      - DATABASE_SERVER_NAME=overview-database
+      - BLOB_STORAGE_FILE_BASE_DIRECTORY=/var/lib/overview/blob-storage
+      - MESSAGE_BROKER_HOSTNAME=overview-worker
 
   overview-database:
     image: overview-database:${OVERVIEW_VERSION}
@@ -27,13 +37,13 @@ services:
     image: overview-db-evolution-applier:${OVERVIEW_VERSION}
     networks: [ 'database' ]
     depends_on: [ 'overview-database' ]
+    environment:
+      - DATABASE_SERVER_NAME=overview-database
 
   overview-integration-test:
     image: overview-integration-test:${OVERVIEW_VERSION}
     volumes:
       - '../integration-test/test-results.xml:/integration-test/test-results.xml'
-    environment:
-      - 'OVERVIEW_URL=http://overview-web'
     depends_on: [ 'overview-web' ]
 
 networks:
