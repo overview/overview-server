@@ -22,9 +22,9 @@ services:
   dev:
     build: ./docker/overview-dev
     stdin_open: true
-    network:
+    networks:
       default:
-        alias:
+        aliases:
           - overview-web # so integration tests can see it
     volumes:
       - search-data:/var/lib/overview/search
