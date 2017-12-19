@@ -71,7 +71,11 @@ trait PdfSplitter {
         }))
         .flatMap(_ match {
           case (result, 0) => Future.successful(result)
-          case (result, n) => ???
+          case (result, n) => {
+            for {
+              _ <- result.cleanup
+            } yield Reader.ReadAllResult.Error("split-pdf-and-extract-text failed with exit code " + n, result.tempDir)
+          }
         })
     }
 
