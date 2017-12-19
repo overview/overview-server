@@ -60,6 +60,9 @@ define [
     setViewFilter: (viewFilter) ->
       @view.save({ filter: viewFilter }, { patch: true })
 
+    setTitle: (title) ->
+      @view.save({ title: title }, { patch: true })
+
     setViewFilterChoices: (choices) ->
       existingViewFilter = @view.get('filter')
       if existingViewFilter

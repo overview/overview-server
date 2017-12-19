@@ -75,6 +75,20 @@ define [
         @viewApp.setDocumentDetailLink({ foo: 'bar' })
         expect(@view.save).to.have.been.calledWith({ documentDetailLink: { foo: 'bar' } }, { patch: true })
 
+    describe 'setTitle', ->
+      it 'should change attributes.title', ->
+        @createViewApp()
+        @sandbox.stub(Backbone, 'sync')
+        @view.on('change:title', onChange = sinon.spy())
+        @viewApp.setTitle('bar')
+        expect(onChange).to.have.been.calledWith(@view, 'bar')
+
+      it 'should PATCH the title to the server', ->
+        @createViewApp()
+        @view.save = sinon.spy()
+        @viewApp.setTitle('bar')
+        expect(@view.save).to.have.been.calledWith({ title: 'bar' }, { patch: true })
+
     describe 'setViewFilter', ->
       it 'should change attributes.filter', ->
         @createViewApp()

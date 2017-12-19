@@ -57,6 +57,7 @@ define [
           setDocumentDetailLink: sinon.spy()
           setViewFilter: sinon.spy()
           setViewFilterChoices: sinon.spy()
+          setTitle: sinon.spy()
           onTag: sinon.spy()
           onUntag: sinon.spy()
           remove: sinon.spy()
@@ -140,6 +141,10 @@ define [
       it 'should setModalDialog', ->
         @subject._onMessage(origin: '', data: { call: 'setModalDialog', args: [ { url: 'http://example.com' } ] })
         expect(@viewApp.setModalDialog).to.have.been.calledWith({ url: 'http://example.com' })
+
+      it 'should setViewTitle', ->
+        @subject._onMessage(origin: '', data: { call: 'setViewTitle', args: [ { title: 'bar' } ] })
+        expect(@viewApp.setTitle).to.have.been.calledWith('bar')
 
       it 'should setDocumentDetailLink', ->
         @subject._onMessage(origin: '', data: { call: 'setDocumentDetailLink', args: [ { foo: 'bar' } ] })

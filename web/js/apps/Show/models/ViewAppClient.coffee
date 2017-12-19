@@ -117,6 +117,7 @@ define [
         when 'setViewFilter' then @viewApp.setViewFilter?(e.data.args...)
         when 'setViewFilterChoices' then @viewApp.setViewFilterChoices?(e.data.args...)
         when 'setViewFilterSelection' then @setViewFilterSelection(e.data.args...)
+        when 'setViewTitle' then @viewApp.setTitle?(e.data.args[0]?.title)
         when 'openMetadataSchemaEditor' then @globalActions.openMetadataSchemaEditor()
         when 'goToNextDocument' then @globalActions.goToNextDocument()
         when 'goToPreviousDocument' then @globalActions.goToPreviousDocument()

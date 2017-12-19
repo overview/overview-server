@@ -263,5 +263,41 @@ describe('Plugins', function() {
         expect(url).to.match(/&foo=foo/)
       })
     })
+
+    describe('with a plugin that calls setViewTitle', function() {
+      beforeEach(async function() {
+        this.server = await this.documentSet.createViewAndServer('set-view-title')
+        this.clickViewButton = async function(name) {
+          const b = this.browser
+          await b.switchToFrame('view-app-iframe')
+          await b.assertExists({ css: 'body.loaded', wait: 'pageLoad' })
+          await b.click({ button: name })
+          await b.switchToFrame(null)
+        }
+      })
+
+      afterEach(async function() {
+        await this.server.close()
+        await this.documentSet.destroyView('new-title')
+      })
+
+      it('should set the view title', async function() {
+        const b = this.browser
+
+        await this.clickViewButton("Set title to new-title")
+        await b.assertExists({ tag: 'li', className: 'view', contains: 'new-title', wait: 'fast' })
+      })
+
+      it('should preserve the view title across page refresh', async function() {
+        const b = this.browser
+
+        await this.clickViewButton("Set title to new-title")
+        await b.assertExists({ tag: 'li', className: 'view', contains: 'new-title', wait: 'fast' })
+
+        await b.refresh()
+        await this.documentSet.waitUntilStable()
+        await b.assertExists({ tag: 'li', className: 'view', contains: 'new-title', wait: 'fast' })
+      })
+    })
   })
 })
