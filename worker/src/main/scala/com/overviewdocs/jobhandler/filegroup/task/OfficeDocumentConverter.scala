@@ -2,6 +2,7 @@ package com.overviewdocs.jobhandler.filegroup.task
 
 import java.nio.file.{Files,Path}
 import java.util.concurrent.TimeUnit
+import scala.collection.mutable
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext,Future,blocking}
 
@@ -18,10 +19,76 @@ import com.overviewdocs.util.{Configuration,Logger}
   * on the same system, the conversion will fail.
   */
 trait OfficeDocumentConverter {
-  protected val libreOfficeLocation: String
+  private val libreOfficeLocation = "/usr/lib/libreoffice/program/soffice.bin"
   protected val timeout: FiniteDuration
   protected val taskIdPool: TaskIdPool
   protected val logger: Logger
+
+  private lazy val initializedTempProfileDirs: mutable.Set[Path] = mutable.Set.empty[Path]
+
+  private def rm_rf(path: Path)(implicit ec: ExecutionContext): Future[Unit] = Future(blocking {
+    if (Files.exists(path)) {
+      logger.info("Clearing directory: {}", path)
+      val paths = Files.walk(path).toArray(n => Array.fill[Path](n)(null)).toVector.reverse
+      paths.foreach(Files.delete _)
+    }
+  })
+
+  /** Ensures there's a valid profile directory.
+    *
+    * LibreOffice's "soffice.bin" fails with exit code 81 if the given directory
+    * does not exist -- _and_ it creates it. We want to run this once per
+    * directory per invocation of Overview, before any conversions.
+    *
+    * This method isn't thread-safe: it assumes nobody else uses taskId until
+    * it finishes.
+    */
+  private def getTempProfileDir(taskId: Int)(implicit ec: ExecutionContext): Future[Path] = {
+    val ret: Path = TempDirectory.path.resolve(s"soffice-profile-${taskId}")
+    if (initializedTempProfileDirs.contains(ret)) {
+      Future.successful(ret)
+    } else {
+      for {
+        _ <- initTempProfileDir(ret)
+      } yield {
+        initializedTempProfileDirs.+=(ret)
+        ret
+      }
+    }
+  }
+
+  private def initTempProfileDir(path: Path)(implicit ec: ExecutionContext): Future[Unit] = {
+    // To be consistent across restarts, dev and unit test, we `rm -rf` the
+    // directory before returning it. That means that when getTempProfileDir
+    for {
+      _ <- rm_rf(path)
+      _ <- runLibreOfficeToInitializeProfileDirectory(path)
+    } yield ()
+  }
+
+  /** Deletes a profile directory and un-caches it.
+    *
+    * Call this after LibreOffice fails: otherwise it will be locked and/or try
+    * to recover.
+    */
+  private def resetTempProfileDir(path: Path)(implicit ec: ExecutionContext): Future[Unit] = {
+    for {
+      _ <- rm_rf(path)
+      _ <- runLibreOfficeToInitializeProfileDirectory(path)
+    } yield ()
+  }
+
+  private def runLibreOfficeToInitializeProfileDirectory(path: Path)(implicit ec: ExecutionContext): Future[Unit] = {
+    val cmd = command(path)
+    logger.info("Initializing Office directory: {}", cmd.mkString(" "))
+    Future(blocking {
+      val process = new ProcessBuilder(cmd: _*).inheritIO.start
+      process.waitFor match {
+        case 81 => () // this is what we want on empty profile dir: https://bugs.documentfoundation.org/show_bug.cgi?id=107912
+        case retval: Int => throw new OfficeDocumentConverter.LibreOfficeFailedException(s"$libreOfficeLocation returned exit code $retval while initializing profile directory. (We expected 81.)")
+      }
+    })
+  }
 
   /** Runs the actual conversion, writing to a temporary file.
     *
@@ -46,61 +113,43 @@ trait OfficeDocumentConverter {
     // Predict where LibreOffice will place the output file.
     val outputPath = TempDirectory.path.resolve(basename(in.getFileName.toString) + ".pdf")
 
-    Future(blocking {
-      outputPath.toFile.delete // Probably a no-op
+    val taskId: Int = taskIdPool.acquireId
 
-      val taskId: Int = taskIdPool.acquireId
-      val tmpProfileDir: Path = TempDirectory.path.resolve(s"soffice-profile-${taskId}")
-      val cmd: Seq[String] = command(in, tmpProfileDir)
+    getTempProfileDir(taskId)
+      .flatMap(tmpProfileDir => Future(blocking {
+        outputPath.toFile.delete // Probably a no-op
+        val cmd: Seq[String] = command(tmpProfileDir) ++ Seq(in.toString)
 
-      logger.info("Running Office command: {}", cmd.mkString(" "))
+        logger.info("Running Office command: {}", cmd.mkString(" "))
 
-      val process = new ProcessBuilder(cmd: _*).inheritIO.start
+        val process = new ProcessBuilder(cmd: _*).inheritIO.start
 
-      if (!process.waitFor(timeout.length, timeout.unit)) {
-        process.destroyForcibly.waitFor // blocking -- laziness!
+        if (!process.waitFor(timeout.length, timeout.unit)) {
+          process.destroyForcibly.waitFor // blocking -- laziness!
 
-        outputPath.toFile.delete // if it exists
+          outputPath.toFile.delete // if it exists
 
-        // After we kill LibreOffice, its profile directory is wrecked. Delete
-        // it; otherwise future invocations will time out. (This might be as
-        // simple as a lockfile, I dunno ... but who cares?)
-        rm_rf_sync(tmpProfileDir)
+          // After we kill LibreOffice, its profile directory is wrecked. Delete
+          // it; otherwise future invocations will time out. (This might be as
+          // simple as a lockfile, I dunno ... but who cares?)
+          resetTempProfileDir(tmpProfileDir).onComplete(_ => taskIdPool.releaseId(taskId))
+          throw new OfficeDocumentConverter.LibreOfficeTimedOutException
+        }
 
+        val retval = process.exitValue
         taskIdPool.releaseId(taskId)
-        throw new OfficeDocumentConverter.LibreOfficeTimedOutException
-      }
 
-      val retval = process.exitValue
-      taskIdPool.releaseId(taskId)
+        if (retval != 0) {
+          outputPath.toFile.delete // if it exists
+          throw new OfficeDocumentConverter.LibreOfficeFailedException(s"$libreOfficeLocation returned exit code $retval")
+        }
 
-      if (retval != 0) {
-        outputPath.toFile.delete // if it exists
-        throw new OfficeDocumentConverter.LibreOfficeFailedException(s"$libreOfficeLocation returned exit code $retval")
-      }
+        if (!outputPath.toFile.exists) {
+          throw new OfficeDocumentConverter.LibreOfficeFailedException(s"$libreOfficeLocation didn't write to $outputPath")
+        }
 
-      if (!outputPath.toFile.exists) {
-        throw new OfficeDocumentConverter.LibreOfficeFailedException(s"$libreOfficeLocation didn't write to $outputPath")
-      }
-
-      outputPath
-    })
-  }
-
-  /** Like "rm -rf": delete a file/directory and all sub-files/directories.
-    *
-    * This is synchronous, because we're lazy.
-    */
-  private def rm_rf_sync(path: Path): Unit = {
-    import scala.collection.JavaConverters.iterableAsScalaIterableConverter
-
-    if (Files.isDirectory(path)) {
-      iterableAsScalaIterableConverter(Files.newDirectoryStream(path)).asScala
-        .toSeq // [adamhooper 2016-03-23] I _think_ if we don't do this, iteration misses stuff on Linux
-        .foreach(rm_rf_sync _)
-    }
-
-    Files.deleteIfExists(path)
+        outputPath
+      }))
   }
 
   /** Removes the last ".xxx" from a filename.
@@ -119,8 +168,9 @@ trait OfficeDocumentConverter {
     }
   }
 
-  private def command(in: Path, profileDir: Path): Seq[String] = Seq(
+  private def command(profileDir: Path): Seq[String] = Seq(
     libreOfficeLocation,
+    "--quickstart=no",
     "--headless",
     "--nologo",
     "--invisible",
@@ -128,13 +178,11 @@ trait OfficeDocumentConverter {
     "--nolockcheck",
     "--convert-to", "pdf",
     "--outdir", TempDirectory.path.toString,
-    s"-env:UserInstallation=file://${profileDir.toString}",
-    in.toString
+    s"-env:UserInstallation=file://${profileDir.toString}"
   )
 }
 
 object OfficeDocumentConverter extends OfficeDocumentConverter {
-  override protected val libreOfficeLocation = Configuration.getString("libre_office_path")
   override protected val timeout = FiniteDuration(Configuration.getInt("document_conversion_timeout"), TimeUnit.MILLISECONDS)
   override protected val logger = Logger.forClass(getClass)
   override protected val taskIdPool = TaskIdPool()
