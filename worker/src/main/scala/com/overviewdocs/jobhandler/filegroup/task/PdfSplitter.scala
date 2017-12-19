@@ -52,12 +52,17 @@ trait PdfSplitter {
       val parser = new SplitPdfAndExtractTextParser(child.getInputStream)
       val reader = new Reader(parser, tempDir)
 
-      reader.readAll(onProgress)
+      var lastOnProgressResponse = true
+      def onProgressInner(i1: Int, i2: Int): Boolean = {
+        lastOnProgressResponse = onProgress(i1, i2)
+        lastOnProgressResponse
+      }
+
+      reader.readAll(onProgressInner)
         .flatMap(result => Future(blocking {
-          // readAll will return an early error if onProgress returns false.
-          // There may be other errors we don't expect, too. Make sure the child
-          // is dead.
-          child.destroyForcibly
+          if (lastOnProgressResponse == false) {
+            child.destroyForcibly
+          }
 
           // Does child.waitFor block if the input stream buffer never
           // empties? Let's play it safe and empty the buffer.
@@ -67,11 +72,17 @@ trait PdfSplitter {
             case _: java.io.IOException => {} // This error would not surprise us: the child is dead
           }
 
-          (result, child.waitFor)
+          (result, lastOnProgressResponse, child.waitFor)
         }))
         .flatMap(_ match {
-          case (result, 0) => Future.successful(result)
-          case (result, n) => {
+          // Job completed
+          case (result, true, 0) => Future.successful(result)
+
+          // Job cancelled; we called child.destroyForcibly, so child.waitFor _may_ return non-zero
+          case (result, false, _) => Future.successful(result)
+
+          // Unexpected error (not even "out of memory" -- that should complete successfully)
+          case (result, _, n) => {
             for {
               _ <- result.cleanup
             } yield Reader.ReadAllResult.Error("split-pdf-and-extract-text failed with exit code " + n, result.tempDir)
