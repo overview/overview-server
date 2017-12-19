@@ -3,8 +3,10 @@ package controllers
 import org.specs2.specification.Scope
 import org.specs2.matcher.JsonMatchers
 import play.api.libs.json.{Json,JsObject,JsNull}
+import play.api.mvc.AnyContent
 import scala.concurrent.Future
 
+import controllers.auth.AuthorizedRequest
 import controllers.backend.{ApiTokenBackend,StoreBackend,ViewBackend}
 import com.overviewdocs.models.{ApiToken,Tree,View,ViewDocumentDetailLink,ViewFilter}
 import com.overviewdocs.test.factories.PodoFactory
@@ -175,12 +177,18 @@ class ViewControllerSpec extends ControllerSpecification with JsonMatchers {
         val documentSetId = 1L
         val viewId = 2L
         mockViewBackend.update(any, any) returns Future.successful(Some(PodoFactory.view(title="updated title")))
-        val request = fakeAuthorizedRequest.withFormUrlEncodedBody("title" -> "submitted title")
+        val request: AuthorizedRequest[_ <: AnyContent] = fakeAuthorizedRequest.withFormUrlEncodedBody("title" -> "submitted title")
         lazy val result = controller.update(documentSetId, viewId)(request)
       }
 
       "call ViewBackend#update" in new UpdateScope {
         h.status(result)
+        there was one(mockViewBackend).update(viewId, View.UpdateAttributes(title="submitted title"))
+      }
+
+      "call ViewBackend#update when input is JSON" in new UpdateScope {
+        override val request = fakeAuthorizedRequest.withJsonBody(Json.obj("title" -> "submitted title"))
+        h.status(result) must beEqualTo(h.OK)
         there was one(mockViewBackend).update(viewId, View.UpdateAttributes(title="submitted title"))
       }
 

@@ -53,6 +53,20 @@ class ViewController @Inject() (
     }
   }
 
+  private def updateView(viewId: Long, jsTitle: JsValue) = {
+    def err(message: String) = Future.successful(BadRequest(jsonError("illegal-arguments", message)))
+
+    jsTitle match {
+      case JsString(title) => {
+        viewBackend.update(viewId, View.UpdateAttributes(title=title)).map(_ match {
+          case Some(view) => Ok(views.json.View.show(view))
+          case None => NotFound
+        })
+      }
+      case _ => err("Please pass a JSON Object with a 'title' property, a String")
+    }
+  }
+
   private def updateViewFilter(viewId: Long, filterJson: JsValue) = {
     def err(message: String) = Future.successful(BadRequest(jsonError("illegal-arguments", message)))
 
@@ -117,12 +131,12 @@ class ViewController @Inject() (
 
         requestJsValue match {
           case JsObject(requestJson) => {
-            (requestJson.get("filter"), requestJson.get("documentDetailLink")) match {
-              case (Some(jsValue), None) => updateViewFilter(viewId, jsValue)
-              case (None, Some(jsValue)) => updateDocumentDetailLink(viewId, jsValue)
-              // We don't support both at once. No real reason; just that there's no spec.
-              case (Some(_), Some(_)) => err("Please do not set both a 'filter' and a 'documentDetailLink'")
-              case _ => err("Please include a 'filter' property or a 'documentDetailLink' property")
+            (requestJson.get("filter"), requestJson.get("documentDetailLink"), requestJson.get("title")) match {
+              case (Some(jsValue), None, None) => updateViewFilter(viewId, jsValue)
+              case (None, Some(jsValue), None) => updateDocumentDetailLink(viewId, jsValue)
+              case (None, None, Some(jsTitle)) => updateView(viewId, jsTitle)
+              // We don't support zero or several at once. No real reason; just that there's no spec.
+              case _ => err("Please set exactly one of 'filter', 'documentDetailLink' or 'title'")
             }
           }
           case _ => err("If you're going to send JSON, please send a JSON Object. You sent something else.")
