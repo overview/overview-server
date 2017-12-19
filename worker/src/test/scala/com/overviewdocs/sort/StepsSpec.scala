@@ -3,8 +3,8 @@ package com.overviewdocs.sort
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Flow,Sink,Source}
 import java.nio.file.{Files,Path}
-import org.specs2.mutable.Specification
-import org.specs2.specification.{After,Scope}
+import org.specs2.mutable.{After,Specification}
+import org.specs2.specification.Scope
 import scala.collection.{immutable,mutable}
 import scala.concurrent.{ExecutionContext,Future}
 
