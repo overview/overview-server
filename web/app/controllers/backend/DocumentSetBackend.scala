@@ -10,6 +10,7 @@ import com.overviewdocs.metadata.MetadataSchema
 import com.overviewdocs.models.{ApiToken,DocumentSet,DocumentSetUser,View}
 import com.overviewdocs.models.tables.{ApiTokens,DocumentSetUsers,DocumentSets,Plugins,Views}
 import models.pagination.{Page,PageRequest}
+import models.tables.Users
 
 @ImplementedBy(classOf[DbDocumentSetBackend])
 trait DocumentSetBackend {
@@ -159,7 +160,8 @@ class DbDocumentSetBackend @Inject() (
     DocumentSets
       .filter(_.isPublic)
       .join(DocumentSetUsers).on((ds, dsu) => ds.id === dsu.documentSetId && dsu.role === DocumentSetUser.Role(true))
-      .map(t => t._1 -> t._2.userEmail)
+      .join(Users).on((dsAndDsu, users) => dsAndDsu._2.userEmail === users.email)
+      .map(t => t._1._1 -> t._1._2.userEmail)
       .sortBy(_._1.createdAt.desc)
   }
 

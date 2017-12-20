@@ -2,10 +2,12 @@ package controllers.backend
 
 import scala.collection.immutable
 
-import models.pagination.PageRequest
 import com.overviewdocs.metadata.{MetadataField,MetadataFieldDisplay,MetadataFieldType,MetadataSchema}
 import com.overviewdocs.models.tables.{ApiTokens,DocumentSetUsers,DocumentSets,Views}
-import com.overviewdocs.models.{ApiToken,DocumentSet,DocumentSetUser,View}
+import com.overviewdocs.models.{ApiToken,DocumentSet,DocumentSetUser,UserRole,View}
+import models.pagination.PageRequest
+import models.User
+import models.tables.Users
 
 class DbDocumentSetBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbBackendScope {
@@ -180,28 +182,48 @@ class DbDocumentSetBackendSpec extends DbBackendSpecification {
   }
 
   "#indexPublic" should {
-    trait IndexPublicScope extends BaseScope
+    trait IndexPublicScope extends BaseScope {
+      def createUser(email: String): Unit = {
+        import database.api._
+        val cols = Users.map(u => (u.email, u.passwordHash, u.role, u.emailSubscriber, u.treeTooltipsEnabled))
+        val task = cols.+=((email, "", UserRole.NormalUser, false, false))
+        blockingDatabase.run(task)
+      }
+    }
 
     "not find a non-public DocumentSet" in new IndexPublicScope {
       val documentSet = factory.documentSet(isPublic=false)
+      createUser("owner@example.org")
       factory.documentSetUser(documentSet.id, "owner@example.org", DocumentSetUser.Role(true))
       await(backend.indexPublic) must beEqualTo(Vector())
     }
 
     "not find a DocumentSet with no owner" in new IndexPublicScope {
       val documentSet = factory.documentSet(isPublic=true)
+      createUser("viewer@example.org")
       factory.documentSetUser(documentSet.id, "viewer@example.org", DocumentSetUser.Role(false))
+      await(backend.indexPublic) must beEqualTo(Vector())
+    }
+
+    "not find a DocumentSet with a deleted owner" in new IndexPublicScope {
+      val documentSet = factory.documentSet(isPublic=true)
+      factory.documentSetUser(documentSet.id, "deleted-owner@example.org", DocumentSetUser.Role(true))
       await(backend.indexPublic) must beEqualTo(Vector())
     }
 
     "find a DocumentSet and its owner" in new IndexPublicScope {
       val documentSet = factory.documentSet(isPublic=true)
+      createUser("user@example.org")
+      createUser("owner@example.org")
       factory.documentSetUser(documentSet.id, "user@example.org", DocumentSetUser.Role(false))
       factory.documentSetUser(documentSet.id, "owner@example.org", DocumentSetUser.Role(true))
       await(backend.indexPublic) must beEqualTo(Vector((documentSet, "owner@example.org")))
     }
 
     "work with multiple results" in new IndexPublicScope {
+      createUser("user@example.org")
+      createUser("owner1@example.org")
+      createUser("owner2@example.org")
       val documentSet1 = factory.documentSet(isPublic=true)
       factory.documentSetUser(documentSet1.id, "user@example.org", DocumentSetUser.Role(false))
       factory.documentSetUser(documentSet1.id, "owner1@example.org", DocumentSetUser.Role(true))
@@ -215,6 +237,8 @@ class DbDocumentSetBackendSpec extends DbBackendSpecification {
     }
 
     "sort by createdAt" in new IndexPublicScope {
+      createUser("owner1@example.org")
+      createUser("owner2@example.org")
       val documentSet1 = factory.documentSet(isPublic=true, createdAt=new java.sql.Timestamp(12345L))
       factory.documentSetUser(documentSet1.id, "owner1@example.org", DocumentSetUser.Role(true))
       val documentSet2 = factory.documentSet(isPublic=true, createdAt=new java.sql.Timestamp(23456L))
