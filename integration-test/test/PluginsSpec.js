@@ -37,26 +37,44 @@ describe('Plugins', function() {
       })
 
       it('should create a right pane', async function() {
-        await this.browser.assertNotExists({ id: 'tree-app-vertical-split-2' }) // it's invisible
+        const b = this.browser
+
+        await b.assertNotExists({ id: 'tree-app-vertical-split-2' }) // it's invisible
 
         // wait for load
-        await this.browser.switchToFrame('view-app-iframe')
-        await this.browser.assertExists({ css: 'body.loaded', wait: 'pageLoad' })
-        await this.browser.click({ button: 'Set Right Pane' })
-        await this.browser.switchToFrame(null)
+        await b.inFrame('view-app-iframe', async () => {
+          await b.assertExists({ css: 'body.loaded', wait: 'pageLoad' })
+          await b.click({ button: 'Set Right Pane' })
+        })
 
-        await this.browser.assertExists({ id: 'tree-app-vertical-split-2', wait: true }) // wait for animation
-        await this.browser.click({ css: '#tree-app-vertical-split-2 button' })
-        await browser.sleep(1000) // for animation
-        await this.browser.assertExists({ id: 'view-app-right-pane-iframe' })
-        await this.browser.switchToFrame('view-app-right-pane-iframe')
-        const url = await this.browser.execute(function() { return window.location.href })
+        await b.assertExists({ id: 'tree-app-vertical-split-2', wait: true }) // wait for animation
+        await b.click({ css: '#tree-app-vertical-split-2 button' })
+        await b.sleep(1000) // for animation
+        await b.assertExists({ id: 'view-app-right-pane-iframe' })
+
+        const url = await b.inFrame('view-app-right-pane-iframe', async () => {
+          return await b.execute(function() { return window.location.href })
+        })
         expect(url).to.contain('?placement=right-pane')
-        await this.browser.switchToFrame(null)
+      })
 
-        // Move back to left
-        await this.browser.click({ css: '#tree-app-vertical-split button' })
-        await browser.sleep(1000) // for animation
+      it('should delete the right pane when deleting the view', async function() {
+        const b = this.browser
+
+        // 1. create the right pane
+        await b.inFrame('view-app-iframe', async () => {
+          await b.assertExists({ css: 'body.loaded', wait: 'pageLoad' })
+          await b.click({ button: 'Set Right Pane' })
+        })
+
+        await b.assertExists({ css: '#tree-app-vertical-split-2 button', wait: true }) // wait for animation
+
+        // 2. delete the view
+        await b.shortcuts.documentSet.destroyView('right-pane')
+
+        // Check the pane is gone
+        await b.assertNotExists({ css: '#tree-app-vertical-split-2 button', wait: true })
+        await b.assertNotExists({ id: 'view-app-right-pane-iframe', wait: true })
       })
     })
 
@@ -146,6 +164,11 @@ describe('Plugins', function() {
         await b.click({ tag: 'span', contains: 'VF-Foo2' }) // assert it exists, really
       })
 
+      it('should remove the ViewFilter when deleting the plugin', async function() {
+        await this.browser.shortcuts.documentSet.destroyView('view-filter')
+        await this.browser.assertNotExists({ tag: 'a', contains: 'view-filter placeholder' })
+      })
+
       it('should allow setViewFilterSelection', async function() {
         const b = this.browser
 
@@ -223,8 +246,6 @@ describe('Plugins', function() {
         // and rendering is definitely finished. But since the URL is the same,
         // we expect nothing else to be rendered
         await b.assertNotExists({ link: 'foo with different text' })
-
-        await this.documentSet.destroyView('another view') // cleanup
       })
 
       it('should open the popup', async function() {
@@ -239,6 +260,14 @@ describe('Plugins', function() {
         })
         expect(url).to.match(/\?documentId=\d+/)
         expect(url).to.match(/&foo=foo/)
+      })
+
+      it('should remove the link when deleting the View', async function() {
+        const b = this.browser
+        await this.clickViewButton('setUrl(foo)')
+        await b.assertExists({ link: 'Text foo', wait: true })
+        await b.shortcuts.documentSet.destroyView('view-document-detail-links')
+        await b.assertNotExists({ link: 'Text foo', wait: 'pageLoad' })
       })
     })
 

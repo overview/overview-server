@@ -15,6 +15,6 @@
 module.exports = {
   true: 1000,     // default
   fast: 1000,     // everyday operations (worst case)
-  pageLoad: 5000, // not _fast_, but nothing should hold it up
-  slow: 60000,    // a progress bar is visible
+  pageLoad: 3000, // not _fast_, but nothing should hold it up
+  slow: 40000,    // a progress bar is visible
 }

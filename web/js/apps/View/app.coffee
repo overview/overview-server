@@ -45,6 +45,7 @@ define [
 
     remove: ->
       @setModalDialog(null)
+      @setRightPane({ url: null })
       Backbone.View.prototype.remove.call(@)
 
     getServerUrl: ->
