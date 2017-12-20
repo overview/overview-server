@@ -80,6 +80,11 @@ describe('PdfAnnotations', function() {
 
       await b.click('.document-nav .next')
       await b.click('.document-nav .previous')
+
+      // The old iframe will go away, and the new iframe will come. We need to
+      // find the _new_ iframe, so let's wait a few ms for so we're sure the
+      // old one goes away.
+      await b.sleep(200)
       await b.find('iframe#document-contents', { wait: 'fast' })
 
       await b.inFrame('document-contents', async () => {
