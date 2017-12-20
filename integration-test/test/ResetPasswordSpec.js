@@ -61,7 +61,7 @@ class ResetPasswordShortcuts {
 // Even after they forget their passwords
 describe('ResetPassword', function() {
   asUser.usingTemporaryUser(function() {
-    before(async function() {
+    beforeEach(async function() {
       this.browser.loadShortcuts('jquery')
 
       this.jquery = this.browser.shortcuts.jquery

@@ -32,7 +32,7 @@ function waitFor(poll, condition, timeout) {
 
 describe('FileUploadApi', function() {
   asUser.usingTemporaryUser(function() {
-    before(async function() {
+    beforeEach(async function() {
       const b = this.browser
 
       await b.get('/api-tokens')

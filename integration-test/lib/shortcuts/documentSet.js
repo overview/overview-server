@@ -47,29 +47,30 @@ class DocumentSetShortcuts {
     await this.b.click({ css: 'nav .dropdown-toggle a' })
     await this.b.click({ css: 'a.show-sharing-settings' })
 
-    await this.b.switchToFrame(0) // ick -- we use an iframe here.
-    await this.s.jquery.waitUntilReady()
+    await this.b.inFrame(0, async () => { // ick -- we use an iframe here
+      await this.s.jquery.waitUntilReady()
 
-    // Within the iframe is a JS app. We need to wait for it to finish loading:
-    const checked = await this.b.isSelected({ css: '[name=public]', wait: true })
+      // Within the iframe is a JS app. We need to wait for it to finish loading:
+      const checked = await this.b.isSelected({ css: '[name=public]', wait: true })
 
-    if (checked != bool) {
-      // hack because this is an iframe. Even after jquery.isReady, we don't
-      // know that the CSS has loaded. That's important, because the modal
-      // dialog will resize once the CSS loads, which will move the checkbox,
-      // meaning we won't be able to click the checkbox.
-      //
-      // There's no easy way to know when the CSS loads. So we'll just wait 1s,
-      // assuming it's really, really fast.
-      await this.b.sleep(1000)
+      if (checked != bool) {
+        // hack because this is an iframe. Even after jquery.isReady, we don't
+        // know that the CSS has loaded. That's important, because the modal
+        // dialog will resize once the CSS loads, which will move the checkbox,
+        // meaning we won't be able to click the checkbox.
+        //
+        // There's no easy way to know when the CSS loads. So we'll just wait 1s,
+        // assuming it's really, really fast.
+        await this.b.sleep(1000)
 
-      await this.s.jquery.listenForAjaxComplete()
-      await this.b.click('[name=public]')
-      await this.s.jquery.waitUntilAjaxComplete()
-    }
+        await this.s.jquery.listenForAjaxComplete()
+        await this.b.click('[name=public]')
+        await this.s.jquery.waitUntilAjaxComplete()
+      }
+    })
 
-    await this.b.switchToFrame(null)
     await this.b.click('#sharing-options-modal button.close')
+    await this.b.assertNotExists('#sharing-options-modal', { wait: 'fast' })
   }
 
   // Hides the "Tour" dialog forevermore for this user

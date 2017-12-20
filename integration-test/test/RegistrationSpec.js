@@ -44,7 +44,7 @@ class RegistrationShortcuts {
 }
 
 describe('Registration', function() {
-  before(async function() {
+  beforeEach(async function() {
     this.userEmail = faker.internet.email()
     this.validPassword = 'icrucGofbap4'
 
@@ -54,8 +54,8 @@ describe('Registration', function() {
     this.registration = new RegistrationShortcuts(this.browser)
   })
 
-  after(async function() {
-    await this.browser.close()
+  afterEach(async function() {
+    if (this.browser) await this.browser.close()
   })
 
   it('should not register a bad email format', async function() {
@@ -85,7 +85,7 @@ describe('Registration', function() {
   })
 
   describe('when the user already exists', function() {
-    before(async function() {
+    beforeEach(async function() {
       await this.adminSession.createUser({
         email: this.userEmail,
         password: this.validPassword,
@@ -96,7 +96,7 @@ describe('Registration', function() {
       await this.b.assertExists({ tag: 'h1', contains: 'Check your email', wait: 'pageLoad' })
     })
 
-    after(async function() {
+    afterEach(async function() {
       await this.adminSession.deleteUser({ email: this.userEmail })
     })
 
@@ -119,7 +119,7 @@ describe('Registration', function() {
   })
 
   describe('when the user tries to register', function() {
-    before(/* beware -- not async */ function () {
+    beforeEach(/* beware -- not async */ function () {
       this.getConfirmationToken = async () => {
         const json = await this.adminSession.showUser({ email: this.userEmail })
         return JSON.parse(json).confirmation_token
@@ -160,10 +160,6 @@ describe('Registration', function() {
       beforeEach(async function() {
         const token = await this.getConfirmationToken()
         await this.browser.get(Url.confirm(token))
-      })
-
-      afterEach(async function() {
-        await this.registration.logOut()
       })
 
       it('should log you in and tell you all is well', async function() {

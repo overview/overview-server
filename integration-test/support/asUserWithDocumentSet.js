@@ -10,7 +10,7 @@ module.exports = function asUserWithDocumentSet(csvFilename, options, body) {
 
   asUser.usingTemporaryUser(function() {
     describe(`with imported document set ${csvFilename}`, function() {
-      before(async function() {
+      beforeEach(async function() {
         const b = this.browser
         const s = this.browser.shortcuts
 
@@ -26,10 +26,6 @@ module.exports = function asUserWithDocumentSet(csvFilename, options, body) {
         if (options.dismissTour !== false) {
           await b.click([ { class: 'popover' }, { link: '×' } ])
         }
-      })
-
-      after(async function() {
-        await this.browser.shortcuts.documentSets.destroy(csvFilename.split('/').pop())
       })
 
       body()

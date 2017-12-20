@@ -289,6 +289,29 @@ module.exports = class Browser {
     return this.driver.switchTo().frame(frame)
   }
 
+  // Calls the given function inside the given frame and waits for it to return
+  inFrame(frame, fn) {
+    debug(`inFrame(${JSON.stringify(frame)})`)
+
+    const onComplete = async () => {
+      await this.driver.switchTo().frame(null)
+    }
+
+    const onSuccess = async (value) => {
+      await onComplete()
+      return value
+    }
+
+    const onFailure = async  (err) => {
+      await onComplete()
+      throw err
+    }
+
+    return this.driver.switchTo().frame(frame)
+      .then(() => fn())
+      .then(onSuccess, onFailure)
+  }
+
   // Returns the "alert" interface. Usage:
   //
   // browser.alert().exists(): Promise of boolean

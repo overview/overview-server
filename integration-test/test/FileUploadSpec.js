@@ -5,7 +5,7 @@ const shouldBehaveLikeATree = require('../support/behave/likeATree')
 
 describe('FileUpload', function() {
   asUser.usingTemporaryUser(function() {
-    before(function() {
+    beforeEach(function() {
       this.browser.loadShortcuts('documentSets')
       this.browser.loadShortcuts('importFiles')
 
@@ -15,7 +15,7 @@ describe('FileUpload', function() {
     })
 
     describe('after creating a file with metadata', function() {
-      before(async function() {
+      beforeEach(async function() {
         // Add a file, with metadata 'foo': 'bar'
         await this.importFiles.open()
         await this.importFiles.addFiles(['FileUpload/Cat1.docx'])
@@ -84,14 +84,10 @@ describe('FileUpload', function() {
         const value4 = await this.b.getAttribute({ css: 'tr[data-field-name=moo] input', wait: true }, 'value')
         expect(value4).to.eq('mar')
       })
-
-      after(async function() {
-        await this.documentSets.destroy('metadata-test')
-      })
     })
 
     describe('after uploading files', function() {
-      before(async function() {
+      beforeEach(async function() {
         await this.importFiles.open()
         await this.importFiles.addFiles([
           'FileUpload/Cat0.pdf',
@@ -104,10 +100,6 @@ describe('FileUpload', function() {
           'FileUpload/Jules3.xlsx',
         ])
         await this.importFiles.finish({ name: 'FileUpload' })
-      })
-
-      after(async function() {
-        await this.documentSets.destroy('FileUpload')
       })
 
       shouldBehaveLikeATree({
@@ -128,14 +120,10 @@ describe('FileUpload', function() {
     })
 
     describe('after splitting a file into pages', function() {
-      before(async function() {
+      beforeEach(async function() {
         await this.importFiles.open()
         await this.importFiles.addFiles([ 'FileUpload/Cat1.docx' ])
         await this.importFiles.finish({ name: 'Split FileUpload', splitByPage: true })
-      })
-
-      after(async function() {
-        await this.documentSets.destroy('Split FileUpload')
       })
 
       shouldBehaveLikeATree({
