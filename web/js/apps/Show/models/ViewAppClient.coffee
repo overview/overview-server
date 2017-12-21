@@ -121,6 +121,7 @@ define [
         when 'openMetadataSchemaEditor' then @globalActions.openMetadataSchemaEditor()
         when 'goToNextDocument' then @globalActions.goToNextDocument()
         when 'goToPreviousDocument' then @globalActions.goToPreviousDocument()
+        when 'beginCreatePdfNote' then @globalActions.beginCreatePdfNote()
         when 'patchDocument'
           attrs = e.data.args[0]
           if attrs.id != @document?.id

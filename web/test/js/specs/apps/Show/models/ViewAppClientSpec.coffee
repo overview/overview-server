@@ -27,6 +27,7 @@ define [
         openMetadataSchemaEditor: sinon.spy()
         goToNextDocument: sinon.spy()
         goToPreviousDocument: sinon.spy()
+        beginCreatePdfNote: sinon.spy()
 
       @anInterestingDocument = new Backbone.Model({
         id: 123,
@@ -198,7 +199,7 @@ define [
           expect(@viewApp.onTag).not.to.have.been.called
           expect(@viewApp.onUntag).not.to.have.been.called
 
-        [ 'openMetadataSchemaEditor', 'goToNextDocument', 'goToPreviousDocument' ].forEach (action) =>
+        [ 'openMetadataSchemaEditor', 'goToNextDocument', 'goToPreviousDocument', 'beginCreatePdfNote' ].forEach (action) =>
           it "should invoke globalActions.#{action}()", ->
             @subject._onMessage(origin: '', data: { call: action })
             expect(@globalActions[action]).to.have.been.called

@@ -3,6 +3,7 @@
 const TIMEOUTS = require('../TIMEOUTS')
 const Until = require('selenium-webdriver').until
 const debug = require('debug')('shortcuts/importFiles')
+const glob = require('glob')
 
 class ImportFilesShortcuts {
   constructor(browser) {
@@ -35,6 +36,16 @@ class ImportFilesShortcuts {
           .length              // If the file input is missing, the app isn't loaded; run this whole block again
       }
     )
+  }
+
+  async addAllFilesInDir(dir, globPattern) {
+    if (!globPattern) globPattern = '*.*'
+
+    debug(`addAllFilesInDir(${JSON.stringify(dir)})`)
+    const fullDir = `${__dirname}/../../files/${dir}`
+    const basenames = glob.sync(globPattern, { cwd: fullDir, strict: true })
+    const paths = basenames.map(s => `${dir}/${s}`)
+    await this.addFiles(paths)
   }
 
   // Chooses files and uploads them.

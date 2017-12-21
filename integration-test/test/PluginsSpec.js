@@ -1,6 +1,7 @@
 'use strict'
 
 const asUserWithDocumentSet = require('../support/asUserWithDocumentSet')
+const asUserWithPdfDocumentSet = require('../support/asUserWithPdfDocumentSet')
 
 describe('Plugins', function() {
   asUserWithDocumentSet('Metadata/basic.csv', function() {
@@ -307,6 +308,42 @@ describe('Plugins', function() {
         await b.refresh()
         await this.documentSet.waitUntilStable()
         await b.assertExists({ tag: 'li', className: 'view', contains: 'new-title', wait: 'fast' })
+      })
+    })
+  })
+
+  asUserWithPdfDocumentSet('PdfAnnotations', function() {
+    beforeEach(function() {
+      this.browser.loadShortcuts('documentSet')
+      this.browser.loadShortcuts('jquery')
+      this.documentSet = this.browser.shortcuts.documentSet
+    })
+
+    describe('with a plugin that interacts with PdfNotes', function() {
+      beforeEach(async function() {
+        this.server = await this.documentSet.createViewAndServer('pdf-notes')
+        this.clickViewButton = async function(name) {
+          const b = this.browser
+          await b.inFrame('view-app-iframe', async () => {
+            await b.assertExists({ css: 'body.loaded', wait: 'pageLoad' })
+            await b.click({ button: name })
+          })
+        }
+      })
+
+      afterEach(async function() {
+        if (this.server) await this.server.close()
+      })
+
+      it('should begin PdfNote creation', async function() {
+        const b = this.browser
+
+        await b.shortcuts.documentSet.openDocumentFromList('doc1.pdf')
+        await this.clickViewButton('Create PDF Note')
+
+        await b.inFrame('document-contents', async () => {
+          await b.assertExists({ css: 'button.addNote.toggled', wait: true })
+        })
       })
     })
   })

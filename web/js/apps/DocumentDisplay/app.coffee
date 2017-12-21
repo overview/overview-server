@@ -56,6 +56,9 @@ define [
       @document = json
       @render()
 
+    # If there's a PDF window open, tell it to begin creating a Note
+    beginCreatePdfNote: -> @documentView?.beginCreatePdfNote()
+
     # Highlight a new search phrase
     #
     # The search phrase may be a String or <tt>null</tt>.

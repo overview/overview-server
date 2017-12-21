@@ -76,7 +76,17 @@ class DocumentSetShortcuts {
   // Hides the "Tour" dialog forevermore for this user
   async hideTour() {
     debug('hideTour()')
-    browser.click('.popover-title a.skip')
+    await browser.click('.popover-title a.skip')
+  }
+
+  // Assuming the document list is visible and no CSS transitions are ongoing,
+  // opens the specified document and waits for CSS transitions to stop.
+  async openDocumentFromList(title) {
+    const NTransitionsWhenSelectingDocument = 1
+    await browser.awaitingCssTransitions(NTransitionsWhenSelectingDocument, async () => {
+      await browser.click({ tag: 'h3', contains: title })
+    })
+    await browser.assertExists({ css: 'iframe#document-contents', wait: true })
   }
 
   // Creates a new Tree view with the given name.
