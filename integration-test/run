@@ -18,6 +18,7 @@ flags="$([ -t 0 ] && echo "-it" || echo "-i")"
 exec docker run $flags --rm \
   --volume "$ABSOLUTE_DIR"/test-results.xml:/integration-test/test-results.xml \
   --volume "$ABSOLUTE_DIR"/screenshots:/integration-test/screenshots/ \
+  --env DEBUG="${DEBUG}" \
   --name "${PROJECT}_integration_tests" \
   --network "${PROJECT}_default" \
   --hostname "${PROJECT}_integration_tests" \
