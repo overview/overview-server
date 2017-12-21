@@ -140,7 +140,8 @@ describe('Plugins', function() {
       it('should allow filtering by view', async function() {
         const b = this.browser
 
-        await b.click({ tag: 'a', contains: 'view-filter placeholder' })
+        // Wait for iframe contents to load and call setViewFilter
+        await b.click({ tag: 'a', contains: 'view-filter placeholder', wait: 'pageLoad' })
         await b.click({ tag: 'span', contains: 'VF-Foo' })
         await this.documentSet.waitUntilDocumentListLoaded()
         expect(this.server.lastRequestUrl.path).to.match(/^\/filter\/01010101\?/)
@@ -157,7 +158,9 @@ describe('Plugins', function() {
         const b = this.browser
 
         await b.inFrame('view-app-iframe', async () => {
-          await b.click({ button: 'setViewFilterChoices' })
+          // Wait for iframe contents to load
+          await b.click({ button: 'setViewFilterChoices', wait: 'pageLoad' })
+          await b.sleep(100) // make sure postMessage() goes through. TODO notify from plugin?
         })
 
         await b.click({ tag: 'a', contains: 'view-filter placeholder' })
@@ -166,14 +169,15 @@ describe('Plugins', function() {
 
       it('should remove the ViewFilter when deleting the plugin', async function() {
         await this.browser.shortcuts.documentSet.destroyView('view-filter')
-        await this.browser.assertNotExists({ tag: 'a', contains: 'view-filter placeholder' })
+        await this.browser.assertNotExists({ tag: 'a', contains: 'view-filter placeholder', wait: true })
       })
 
       it('should allow setViewFilterSelection', async function() {
         const b = this.browser
 
         await b.inFrame('view-app-iframe', async () => {
-          await b.click({ button: 'setViewFilterChoices' })
+          // Wait for iframe contents to load
+          await b.click({ button: 'setViewFilterChoices', wait: 'pageLoad' })
           await b.click({ button: 'setViewFilterSelection' })
           await b.sleep(100) // make sure postMessage() goes through. TODO notify from plugin?
         })
