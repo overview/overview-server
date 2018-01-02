@@ -28,6 +28,31 @@ describe('Plugins', function() {
       await this.documentSet.destroyView('show-query-string')
     })
 
+    describe('with a plugin that calls notifyApi', async function() {
+      beforeEach(async function() {
+        this.server = await this.documentSet.createViewAndServer('notify-api')
+      })
+
+      afterEach(async function() {
+        if (this.server) await this.server.close()
+      })
+
+      it('should respond with serverUrlFromClient and serverUrlFromPlugin', async function() {
+        const b = this.browser
+        const preText = await b.inFrame('view-app-iframe', async () => {
+          await b.assertExists({ css: 'body.loaded', wait: 'pageLoad' })
+          return await b.getText('pre')
+        })
+        const preJson = JSON.parse(preText)
+        // TODO integration-test what happens when these are different
+        //
+        // To do that we'd need an "advanced" plugin-creation UI, so users could
+        // set serverUrlFromPlugin.
+        expect(preJson.serverUrlFromClient).to.deep.eq(process.env.OVERVIEW_URL)
+        expect(preJson.serverUrlFromPlugin).to.deep.eq(process.env.OVERVIEW_URL)
+      })
+    })
+
     describe('with a plugin that calls setRightPane', async function() {
       beforeEach(async function() {
         this.server = await this.documentSet.createViewAndServer('right-pane')

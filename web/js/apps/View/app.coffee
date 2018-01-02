@@ -49,11 +49,7 @@ define [
       Backbone.View.prototype.remove.call(@)
 
     getServerUrl: ->
-      serverUrl = @view.get('serverUrlFromPlugin')
-      if !serverUrl?
-        loc = window.location
-        serverUrl = "#{loc.protocol}//#{loc.host}"
-      serverUrl
+      @view.get('serverUrlFromPlugin') || window.location.origin
 
     setDocumentDetailLink: (link) ->
       @view.save({ documentDetailLink: link }, { patch: true })
@@ -93,6 +89,14 @@ define [
     onDocumentListChanged: (params) -> @notifyDocumentList(params)
     onDocumentSetChanged: (documentSet) -> @notifyDocumentSet(documentSet)
     onDocumentChanged: (document) -> @notifyDocument(document)
+
+    notifyApi: (params) ->
+      @_postMessage
+        event: 'notify:api',
+        args: [ {
+          serverUrlFromClient: window.location.origin,
+          serverUrlFromPlugin: @getServerUrl(),
+        } ]
 
     notifyDocumentListParams: (params) ->
       @_postMessage
