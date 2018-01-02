@@ -193,9 +193,7 @@ describe('Plugins', function() {
       beforeEach(async function() {
         this.server = await this.documentSet.createViewAndServer('view-document-detail-links')
 
-        // open a document
-        await this.browser.click({ tag: 'h3', contains: 'First' })
-        await this.browser.sleep(1000) // wait for document to animate in
+        await this.browser.shortcuts.documentSet.openDocumentFromList('First')
 
         this.clickViewButton = async function(name) {
           const b = this.browser
@@ -226,8 +224,7 @@ describe('Plugins', function() {
         await b.refresh()
         await this.documentSet.waitUntilStable()
         // again, open a document
-        await b.click({ tag: 'h3', contains: 'First' })
-        await b.sleep(1000) // wait for document to animate in
+        await this.documentSet.openDocumentFromList('First')
         await b.assertExists({ link: 'Text foo', wait: true })
       })
 

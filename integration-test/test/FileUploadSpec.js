@@ -7,10 +7,12 @@ describe('FileUpload', function() {
   asUser.usingTemporaryUser(function() {
     beforeEach(function() {
       this.browser.loadShortcuts('documentSets')
+      this.browser.loadShortcuts('documentSet')
       this.browser.loadShortcuts('importFiles')
 
       this.b = this.browser
       this.documentSets = this.b.shortcuts.documentSets
+      this.documentSet = this.b.shortcuts.documentSet
       this.importFiles = this.b.shortcuts.importFiles
     })
 
@@ -32,9 +34,7 @@ describe('FileUpload', function() {
       })
 
       it('should add metadata to the imported file', async function() {
-        await this.b.click({ tag: 'h3', contains: 'Cat1.docx' })
-
-        await this.b.sleep(1000) // wait for document to appear
+        await this.documentSet.openDocumentFromList('Cat1.docx')
         await this.b.click({ link: 'Fields', wait: true })
 
         // wait for metadata to appear
@@ -59,8 +59,7 @@ describe('FileUpload', function() {
         await this.importFiles.waitUntilRedirectToDocumentSet('metadata-test')
 
         // Check the first document still has 'foo':'bar'
-        await this.b.click({ tag: 'h3', contains: 'Cat1.docx' })
-        await this.b.sleep(1000) // wait for document to animate in
+        await this.documentSet.openDocumentFromList('Cat1.docx')
         await this.b.click({ link: 'Fields', wait: true })
         // wait for metadata to appear
         const value1 = await this.b.getAttribute({ css: 'tr[data-field-name=foo] input', wait: true }, 'value')
@@ -73,10 +72,8 @@ describe('FileUpload', function() {
         // Avoid a race: how do we detect the second document has loaded? By
         // navigating away from the first document, waiting for it to disappear,
         // navigating to the second, and waiting for it to load.
-        await this.b.click({ link: 'Back to list' })
-        await this.b.sleep(1000) // FIXME debug, figure out why we need this, then remove it
-        await this.b.click({ tag: 'h3', contains: 'Cat2.txt', wait: 'fast' })
-        await this.b.sleep(1000) // FIXME debug, figure out why we need this, then remove it
+        await this.documentSet.goBackToDocumentList()
+        await this.documentSet.openDocumentFromList('Cat2.txt')
         // wait for metadata to appear
         const value3 = await this.b.getAttribute({ css: 'tr[data-field-name=foo] input', wait: true }, 'value')
         expect(value3).to.eq('')

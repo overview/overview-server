@@ -1,3 +1,5 @@
+'use strict'
+
 const debug = require('debug')('Browser')
 const fs = require('fs')
 
@@ -320,8 +322,9 @@ module.exports = class Browser {
     await this.driver.sleep(50)
     await this.waitUntilFunctionReturnsTrue('CSS transitions to finish', 'cssTransition', async () => {
       return await this.execute(`
-        if (window.${trackerVar}.nTransitions < 0) {
-          throw new Error("You called awaitingCssTransitions while transitions were ongoing")
+        var n = window.${trackerVar}.nTransitions
+        if (n < 0) {
+          throw new Error('You called awaitingCssTransitions while ' + -n + ' transitions were ongoing')
         } else if (window.${trackerVar}.nTransitions === 0) {
           //document.removeEventListener('transitionrun', window.${trackerVar}.increment)
           document.removeEventListener('transitionend', window.${trackerVar}.decrement)

@@ -25,10 +25,15 @@ class PdfAnnotationsShortcuts {
       await b.sleep(1000)
 
       await b.click('button#addNote')
-      await b.assertExists({ css: '#viewerContainer.addingNote' }, { wait: 'fast' }) // wait for it to listen to mouse events
+      await b.assertExists({ css: '#viewerContainer.addingNote', wait: 'fast' }) // wait for it to listen to mouse events
+
+      // [adamhooper, 2018-01-02] TODO does this sleep() call help? We were getting
+      // errors with the `#viewer .noteLayer section` selector earlier: sometimes it
+      // wasn't appearing. If this line makes those errors go away, that means there's
+      // a race and we're failing to wait for something -- but I don't know what.
+      await b.sleep(500)
 
       const el = (await b.find({ css: '#viewer .textLayer div' })).driverElement
-
       await b.driver.actions()
         .mouseDown(el)
         .mouseMove({ x: 200, y: 100 })
@@ -62,8 +67,7 @@ describe('PdfAnnotations', function() {
       await s.importFiles.finish({ name: 'annotations' })
       await s.documentSet.waitUntilStable()
 
-      await b.click({ tag: 'h3', contains: 'doc1.pdf' })
-      await b.sleep(1000)                      // animate document selection
+      await b.shortcuts.documentSet.openDocumentFromList('doc1.pdf')
       await b.find('iframe#document-contents', { wait: 'fast' }) // wait for PDF to start loading
     })
 
@@ -78,15 +82,11 @@ describe('PdfAnnotations', function() {
 
       await b.pdf.createAnnotation()
 
-      await b.click('.document-nav .next')
-      await b.click('.document-nav .previous')
+      // Reload the page
+      await b.shortcuts.documentSets.open('annotations')
+      await b.shortcuts.documentSet.openDocumentFromList('doc1.pdf')
 
-      // The old iframe will go away, and the new iframe will come. We need to
-      // find the _new_ iframe, so let's wait a few ms for so we're sure the
-      // old one goes away.
-      await b.sleep(200)
       await b.find('iframe#document-contents', { wait: 'fast' })
-
       await b.inFrame('document-contents', async () => {
         await b.assertExists({ css: '#viewer .noteLayer section' }, { wait: 'pageLoad' })
 
@@ -100,10 +100,10 @@ describe('PdfAnnotations', function() {
       const b = this.browser
 
       await b.pdf.createAnnotation()
+      await b.shortcuts.documentSet.goBackToDocumentList()
 
       await b.sendKeys('notes:Hello, world!', '#document-list-params .search input[name=query]')
       await b.click('#document-list-params .search button')
-      await b.sleep(1000) // de-select animation
 
       const text = await(b.getText({ css: '#document-list ul.documents li', wait: 'pageLoad' }))
       expect(text).to.match(/doc1\.pdf/)

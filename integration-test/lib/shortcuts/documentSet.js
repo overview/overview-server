@@ -86,7 +86,16 @@ class DocumentSetShortcuts {
     await browser.awaitingCssTransitions(NTransitionsWhenSelectingDocument, async () => {
       await browser.click({ tag: 'h3', contains: title })
     })
-    await browser.assertExists({ css: 'iframe#document-contents', wait: true })
+    await browser.assertExists({ css: '#document-current article .document:not(.empty), #document-current article .text-view:not(.empty)', wait: true })
+  }
+
+  // Assuming a single document is visible and no CSS transitions are ongoing,
+  // returns to the document list and waits for CSS transitions to stop.
+  async goBackToDocumentList() {
+    const NTransitionsWhenDeselectinDocument = 1
+    await browser.awaitingCssTransitions(NTransitionsWhenDeselectinDocument, async () => {
+      await browser.click({ link: 'Back to list' })
+    })
   }
 
   // Creates a new Tree view with the given name.
