@@ -177,21 +177,27 @@ class DocumentSetShortcuts {
     await this.b.waitUntilBlockReturnsTrue('plugin data to load', 'pageLoad', clientTests.pluginDataLoaded)
   }
 
-  async createCustomView(name, url) {
+  async createCustomView(name, url, serverUrlFromPlugin) {
     await this.b.click({ link: 'Add view' })
     await this.b.click({ link: 'Custom…', wait: 'fast' })
-    // Enter URL first, then name. Entering name will blur URL. Blurring URL
-    // makes the browser test the endpoint.
-    await this.b.sendKeys(url, { css: '#new-view-dialog-url', wait: 'fast' })
-    await this.b.sendKeys(name, { css: '#new-view-dialog-title' })
-    await this.b.click({ link: 'use it anyway' , wait: true }) // dismiss not-HTTPS warning
-    await this.b.assertExists({ css: '#new-view-dialog .state .ok', wait: 'slow' })
-    await this.b.click({ css: 'input[value="Create visualization"]', wait: 'fast' })
+    await this.b.sendKeys(name, { css: '#new-view-dialog-title', wait: true }) // wait for dialog to open
+    await this.b.sendKeys(url, { css: '#new-view-dialog-url' })
+    if (serverUrlFromPlugin) {
+      await this.b.sendKeys(serverUrlFromPlugin, { css: '#new-view-dialog-server-url-from-plugin' })
+    }
+    await this.b.click({ css: 'input[value="Create visualization"]' })
+
+    // Psych! We got a "not HTTPS warning". Wait for it to appear and dismiss it.
+    await this.b.click({ link: 'use it anyway' , wait: true })
+    await this.b.click({ css: 'input[value="Create visualization"]' })
+
+    // Wait for dialog to disappear (which means HTTP check worked)
+    await this.b.assertNotExists({ css: '#new-view-dialog', wait: 'pageLoad' })
 
     // Wait for the plugin to _begin_ loading. (Let's not assume it _will_ end:
     // that's hard to do, and we might want to test that some things happen _before_
     // load ends, anyway.)
-    await this.b.find('#view-app-iframe', { wait: 'fast' })
+    await this.b.find({ css: '#view-app-iframe', wait: 'fast' })
   }
 
   /**

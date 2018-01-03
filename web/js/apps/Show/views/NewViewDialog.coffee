@@ -10,18 +10,17 @@ define [
     constructor: (options) ->
       throw 'Must pass options.success, a function that accepts a { title: ..., url: ... }' if !options?.success
 
-      @url = options.url # if set, we know exactly which URL we want.
-      # XXX @url is a bit of a hack. We'll probably want an entirely separate dialog soon
-
       @_success = options.success
       @$container = $(options.container ? 'body')
 
-      @secure ||= {}
-      @statuses ||= {}
-      @xhrs ||= {}
+      @secure = {}
+      @statuses = {}
+      @xhrs = {}
+      @xhr = null # XHR for currently-entered URL
 
       html = _.template("""
-        <form method="get" action="#" id="new-view-dialog" class="modal" role="dialog">
+        <form method="get" action="#" id="new-view-dialog" class="modal" role="dialog" novalidate>
+          <!-- "novalidate" because we call reportValidity() manually on submit -->
           <div class="modal-dialog">
             <div class="modal-content">
               <div class="modal-header">
@@ -36,27 +35,23 @@ define [
                     name="title"
                     placeholder="<%- t('title.placeholder') %>"
                     class="form-control"
-                    required="required"
+                    required
                     />
                 </div>
-                <div class="form-group <%- url ? 'hide' : '' %>">
+                <div class="form-group">
                   <label for="new-view-dialog-url"><%- t('url.label') %></label>
-                  <!-- We can't use type="url" because "//example.org" isn't an absolute URL.
-                       No biggie: we're actually trying to reach the URLs, so they'll be valid. -->
                   <input
                     id="new-view-dialog-url"
                     name="url"
-                    type="text"
+                    type="url"
                     pattern="(https?:)?//.*"
                     placeholder="<%- t('url.placeholder') %>"
-                    value="<%- url %>"
                     class="form-control"
-                    required="required"
+                    required
                     />
                   <div class="state">
                     <div class="checking"><%- t('url.checking') %></div>
                     <div class="ok"><%- t('url.ok') %></div>
-                    <div class="invalid"><%- t('url.invalid') %></div>
                     <div class="unavailable">
                       <span class="message"></span>
                       <a href="#" class="retry"><%- t('url.unavailable.retry') %></a>
@@ -67,6 +62,17 @@ define [
                     </div>
                   </div>
                 </div>
+                <div class="form-group">
+                  <label for="new-view-dialog-server-url-from-plugin"><%- t('serverUrlFromPlugin.label') %></label>
+                  <input
+                    id="new-view-dialog-server-url-from-plugin"
+                    name="serverUrlFromPlugin"
+                    type="url"
+                    pattern="https?://.*"
+                    class="form-control"
+                    />
+                  <p class="help-block"><%- t('serverUrlFromPlugin.help') %></p>
+                </div>
               </div>
               <div class="modal-footer">
                 <input type="reset" class="btn" data-dismiss="modal" value="<%- t('cancel') %>" />
@@ -75,7 +81,7 @@ define [
             </div>
           </div>
         </form>
-      """)(t: t, url: @url)
+      """)(t: t)
       @$el = $(html)
       @$container.append(@$el)
 
@@ -83,13 +89,17 @@ define [
       @$el.on('click', 'input[type=submit]', @onSubmit.bind(@))
       @$el.on('click', 'a.retry', @onRetry.bind(@))
       @$el.on('click', 'a.dismiss', @onDismiss.bind(@))
-      @$el.on('change input', 'input[name=title]', @onChangeName.bind(@))
-      @$el.on('change', 'input[name=url]', @onChangeUrl.bind(@))
+
+      # [adamhooper, 2018-01-02] we now call onChangeUrl() only during submit:
+      # otherwise, the change event will alter HTML, moving the submit button
+      # mid-click and altering the user's target.
+      #@$el.on('change', 'input[name=url]', @onChangeUrl.bind(@))
 
       $state = @$el.find('.state')
       @$els =
         title: @$el.find('[name=title]')
         url: @$el.find('[name=url]')
+        serverUrlFromPlugin: @$el.find('[name=serverUrlFromPlugin]')
         submit: @$el.find('[type=submit]')
 
         state:
@@ -113,6 +123,7 @@ define [
     attrs: ->
       title: @$els.title.val()
       url: @$els.url.val()
+      serverUrlFromPlugin: @$els.serverUrlFromPlugin.val()
 
     refreshState: ->
       @state = ''
@@ -129,7 +140,35 @@ define [
     onSubmit: (e) ->
       e.preventDefault()
 
-      if @validate()
+      # Only validate URL on submit. That helps during editing: if we edit an
+      # invalid URL and then try to click "Create visualization", the button
+      # will move as our validation code alters HTML. Better to alter the HTML
+      # _after_ clicking the button
+      @onChangeUrl()
+
+      # We get here always on click, because we set "novalidate" on the HTML
+      # element. So now we'll call reportValidity() and then submit the data
+      # via AJAX on success.
+      #
+      # Why "novalidate"? Because URL validation is asynchronous. That means
+      # this function would never be called when the user clicks "submit"
+      # while checking the URL. But we _want_ this code to be called when the
+      # user hits "submit" while checking the URL: it means to us, "wait until
+      # validation succeeds, then re-click this button"
+      #
+      # [adamhooper, 2018-01-02] novalidate+reportValidity() should emulate HTML
+      # perfectly, from my reading of
+      # https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#statically-validate-the-constraints
+
+      if @state == 'checking'
+        throw new Error('Expected @xhr to be set') if !@xhr?
+        @xhr.addEventListener('loadend', => @onSubmit(e))
+        return
+
+      if e.target.form.reportValidity()
+        return if @submitted # Paranoid: avoid double-submit
+        @submitted = true
+
         @_success(@attrs())
         @remove()
 
@@ -148,13 +187,11 @@ define [
     onChangeUrl: ->
       $url = @$els.url
       url = $url.val()
+      $url[0].setCustomValidity('') # so we can call checkValidity()
       if $url[0].checkValidity()
         @checkUrl(url)
       else
         @setUrlState(url, 'invalid')
-
-    onChangeName: ->
-      @validate()
 
     setUrlState: (url, state, statusCode) ->
       if url == @attrs().url
@@ -166,12 +203,13 @@ define [
           @$els.state.unavailable.children('.message')
             .html(t('url.unavailable_html', "#{url}/metadata", statusCode))
 
-        @validate()
-
-    validate: ->
-      valid = (@state == 'ok' && @$el[0].checkValidity())
-      @$els.submit.prop('disabled', !valid)
-      valid
+        # We setCustomValidity, but that doesn't disable the submit button
+        # because we use novalidate. That lets the user click submit while we're
+        # checking the URL.
+        if @state == 'ok'
+          @$els.url[0].setCustomValidity('')
+        else
+          @$els.url[0].setCustomValidity(t('url.readHtmlMessage'))
 
     # Checks if the URL is okay, synchronously. If not, runs stuff in the
     # background and calls itself in the background.
@@ -203,10 +241,16 @@ define [
         @statuses[url]
       else
         if url not of @xhrs
-          xhr = $.ajax
-            url: "#{url}/metadata"
-            complete: =>
-              delete @xhrs[url]
-              @statuses[url] = xhr.status
-              @checkUrl(url)
+          # Avoid $.ajax(), which uses TransactionQueue. We don't want _any_
+          # of TransactionQueue's features.
+          @xhr = @xhrs[url] = new XMLHttpRequest()
+          @xhr.timeout = 30000
+          @xhr.addEventListener('loadend', =>
+            @statuses[url] = @xhr.status
+            delete @xhrs[url]
+            @xhr = null if @xhr == @xhrs[url]
+            @checkUrl(url)
+          )
+          @xhr.open('GET', "#{url}/metadata")
+          @xhr.send()
         null

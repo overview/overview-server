@@ -39,6 +39,7 @@ describe('Plugins', function() {
 
       it('should respond with serverUrlFromClient and serverUrlFromPlugin', async function() {
         const b = this.browser
+        await b.shortcuts.documentSet.createCustomView('two urls', `http://${this.server.hostname}:3333`, 'https://success')
         const preText = await b.inFrame('view-app-iframe', async () => {
           await b.assertExists({ css: 'body.loaded', wait: 'pageLoad' })
           return await b.getText('pre')
@@ -49,7 +50,7 @@ describe('Plugins', function() {
         // To do that we'd need an "advanced" plugin-creation UI, so users could
         // set serverUrlFromPlugin.
         expect(preJson.serverUrlFromClient).to.deep.eq(process.env.OVERVIEW_URL)
-        expect(preJson.serverUrlFromPlugin).to.deep.eq(process.env.OVERVIEW_URL)
+        expect(preJson.serverUrlFromPlugin).to.deep.eq('https://success')
       })
     })
 
