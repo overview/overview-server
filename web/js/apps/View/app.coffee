@@ -71,6 +71,7 @@ define [
     render: ->
       params = $.param([
         { name: 'server', value: @getServerUrl() }
+        { name: 'origin', value: window.location.origin }
         { name: 'documentSetId', value: @documentSetId }
         { name: 'apiToken', value: @view.get('apiToken') }
       ])
@@ -89,14 +90,6 @@ define [
     onDocumentListChanged: (params) -> @notifyDocumentList(params)
     onDocumentSetChanged: (documentSet) -> @notifyDocumentSet(documentSet)
     onDocumentChanged: (document) -> @notifyDocument(document)
-
-    notifyApi: (params) ->
-      @_postMessage
-        event: 'notify:api',
-        args: [ {
-          serverUrlFromClient: window.location.origin,
-          serverUrlFromPlugin: @getServerUrl(),
-        } ]
 
     notifyDocumentListParams: (params) ->
       @_postMessage

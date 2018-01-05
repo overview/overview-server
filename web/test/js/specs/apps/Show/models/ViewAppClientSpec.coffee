@@ -48,7 +48,6 @@ define [
           onDocumentListChanged: sinon.spy()
           onDocumentSetChanged: sinon.spy()
           onDocumentChanged: sinon.spy()
-          notifyApi: sinon.spy()
           notifyDocumentListParams: sinon.spy()
           notifyDocumentList: sinon.spy()
           notifyDocumentSet: sinon.spy()
@@ -122,10 +121,6 @@ define [
       it 'should notify documentSet', ->
         @subject._onMessage(origin: '', data: { call: 'notifyDocumentSet' })
         expect(@viewApp.notifyDocumentSet).to.have.been.calledWith(@state.documentSet)
-
-      it 'should notify api', ->
-        @subject._onMessage(origin: '', data: { call: 'notifyApi' })
-        expect(@viewApp.notifyApi).to.have.been.called
 
       it 'should notify document', ->
         @state.set('document', @anInterestingDocument)

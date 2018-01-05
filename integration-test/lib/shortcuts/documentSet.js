@@ -206,14 +206,14 @@ class DocumentSetShortcuts {
    *
    * When you're done, you must `await returnedPlugin.close()`
    */
-  async createViewAndServer(name) { // returns child process
+  async createViewAndServer(name, options) { // returns child process
     debug(`createCustomView(${name})`)
 
     const server = new MockPlugin(name)
     await server.listen()
 
     try {
-      await this.createCustomView(name, `http://${server.hostname}:3333`)
+      await this.createCustomView(name, `http://${server.hostname}:3333`, (options || {}).serverUrlFromPlugin)
     } catch (e) {
       await server.close()
       throw e

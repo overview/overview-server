@@ -108,7 +108,6 @@ define [
         when 'notifyDocumentList' then @viewApp.notifyDocumentList?(length: @documentList?.get?('length') ? null)
         when 'notifyDocumentSet' then @viewApp.notifyDocumentSet?(@state.documentSet)
         when 'notifyDocument' then @viewApp.notifyDocument?(@_currentDocumentJson())
-        when 'notifyApi' then @viewApp.notifyApi?()
         when 'postMessageToPluginIframes' then @viewApp.postMessageToPluginIframes?(e.data.message || null)
         when 'setDocumentListParams' then @setDocumentListParams(e.data.args...)
         when 'refineDocumentListParams' then @refineDocumentListParams(e.data.args...)

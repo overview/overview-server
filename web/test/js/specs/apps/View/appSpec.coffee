@@ -42,13 +42,6 @@ define [
       document.body.removeChild(@main) # we don't want viewApp.remove() to remove this
       @sandbox.restore()
 
-    it 'should use serverUrlFromPlugin when set', ->
-      @view.set(serverUrlFromPlugin: 'http://overview-web')
-      @createViewApp()
-
-      $iframe = @viewApp.$('iframe')
-      expect($iframe).to.have.attr('src', 'http://localhost:9876/base/mock-plugin/show?server=http%3A%2F%2Foverview-web&documentSetId=234&apiToken=api-token')
-
     it 'should clear tree-app-right-pane on start', ->
       pane = @main.querySelector('#tree-app-right-pane')
       pane.innerHTML = 'here is some content'
@@ -59,7 +52,23 @@ define [
       @createViewApp()
       $iframe = @viewApp.$('iframe')
       expect($iframe.length).to.exist
-      expect($iframe).to.have.attr('src', 'http://localhost:9876/base/mock-plugin/show?server=http%3A%2F%2Flocalhost%3A9876&documentSetId=234&apiToken=api-token')
+
+    it 'should use server={origin} by default', ->
+      @createViewApp()
+      $iframe = @viewApp.$('iframe')
+      expect($iframe.attr('src')).to.contain("server=#{encodeURIComponent(window.location.origin)}")
+
+    it 'should use server={serverUrlFromPlugin} when specified', ->
+      @view.set(serverUrlFromPlugin: 'http://server-url')
+      @createViewApp()
+      $iframe = @viewApp.$('iframe')
+      expect($iframe.attr('src')).to.contain("server=#{encodeURIComponent('http://server-url')}")
+
+    it 'should set origin={window.location.origin} even if serverUrlFromPlugin is specified', ->
+      @view.set(serverUrlFromPlugin: 'http://server-url')
+      @createViewApp()
+      $iframe = @viewApp.$('iframe')
+      expect($iframe.attr('src')).to.contain("origin=#{encodeURIComponent(window.location.origin)}")
 
     describe 'setDocumentDetailLink', ->
       it 'should change attributes.filter', ->

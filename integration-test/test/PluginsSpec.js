@@ -11,47 +11,26 @@ describe('Plugins', function() {
       this.documentSet = this.browser.shortcuts.documentSet
     })
 
-    it('should pass server, apiToken and documentSetId in the plugin query string', async function() {
-      const server = await this.documentSet.createViewAndServer('show-query-string')
+    it('should pass server, origin, apiToken and documentSetId in the plugin query string', async function() {
+      const server = await this.documentSet.createViewAndServer('show-query-string', { serverUrlFromPlugin: 'https://server-url-from-plugin' })
 
       try {
-        await this.browser.switchToFrame('view-app-iframe')
-        // Wait for load. This plugin is loaded when the <pre> is non-empty
-        await this.browser.assertExists({ xpath: '//pre[text() and string-length()>0]', wait: true })
-        const text = await this.browser.getText({ css: 'pre' })
-        expect(text).to.match(/^\?server=http%3A%2F%2F[-\w.]+(?:%3A\d+)?&documentSetId=\d+&apiToken=[a-z0-9]+$/)
-        await this.browser.switchToFrame(null)
+        await this.browser.inFrame('view-app-iframe', async () => {
+          // Wait for load. This plugin is loaded when the <pre> is non-empty
+          await this.browser.assertExists({ xpath: '//pre[text() and string-length()>0]', wait: true })
+          const text = await this.browser.getText({ css: 'pre' })
+          const params = text
+            .split(/[?&]/)
+            .filter(s => s.length > 0)
+            .reduce((h, s) => { const [ k, v ] = s.split(/=/).map(decodeURIComponent); h[k] = v; return h }, {})
+          expect(params.server).to.eq('https://server-url-from-plugin')
+          expect(params.origin).to.eq(process.env.OVERVIEW_URL)
+          expect(params.documentSetId).to.match(/\d+/)
+          expect(params.apiToken).to.match(/[a-z0-9A-Z]+/)
+        })
       } finally {
         await server.close()
       }
-
-      await this.documentSet.destroyView('show-query-string')
-    })
-
-    describe('with a plugin that calls notifyApi', async function() {
-      beforeEach(async function() {
-        this.server = await this.documentSet.createViewAndServer('notify-api')
-      })
-
-      afterEach(async function() {
-        if (this.server) await this.server.close()
-      })
-
-      it('should respond with serverUrlFromClient and serverUrlFromPlugin', async function() {
-        const b = this.browser
-        await b.shortcuts.documentSet.createCustomView('two urls', `http://${this.server.hostname}:3333`, 'https://success')
-        const preText = await b.inFrame('view-app-iframe', async () => {
-          await b.assertExists({ css: 'body.loaded', wait: 'pageLoad' })
-          return await b.getText('pre')
-        })
-        const preJson = JSON.parse(preText)
-        // TODO integration-test what happens when these are different
-        //
-        // To do that we'd need an "advanced" plugin-creation UI, so users could
-        // set serverUrlFromPlugin.
-        expect(preJson.serverUrlFromClient).to.deep.eq(process.env.OVERVIEW_URL)
-        expect(preJson.serverUrlFromPlugin).to.deep.eq('https://success')
-      })
     })
 
     describe('with a plugin that calls setRightPane', async function() {
