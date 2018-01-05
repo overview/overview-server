@@ -18,7 +18,7 @@ describe('Search', function() {
       await browser.click('#document-list-params .search button')
 
       // remove focus, so we don't transition in the later test (1)
-      await browser.click('#document-list-params')
+      await browser.click('#document-list-params span.title')
 
       // ... somehow, though, the test actually uses 5.
     })
