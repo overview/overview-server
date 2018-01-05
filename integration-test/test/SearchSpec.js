@@ -7,20 +7,19 @@ describe('Search', function() {
     // CSS transitions to wait for are described inline
     //
     // We need to wait for transitions so we can wait for _other_ transitions later
+    // (e.g., openDocumentFromList's transitions)
+
     await browser.awaitingCssTransitions(5, async () => {
-      // focus input: transition border (1)
+      // focus input: transition border-color-* (4), box-shadow (1)
       await browser.clear('#document-list-params .search input[name=query]')
-
-      // refocus input: transition border twice? (2)
       await browser.sendKeys(query, '#document-list-params .search input[name=query]')
+    })
 
-      // focus button: transition border twice? (2)
-      await browser.click('#document-list-params .search button')
-
-      // remove focus, so we don't transition in the later test (1)
-      await browser.click('#document-list-params span.title')
-
-      // ... somehow, though, the test actually uses 5.
+    // [adamhooper, 2018-01-05] We have to wait for the _focus_ animation to
+    // finish before we can wait for the _blur_ animation, otherwise we get a
+    // race because the one animation ends where it starts.
+    await browser.awaitingCssTransitions(5, async () => {
+      await browser.click('#document-list-params .search button') // this removes focus
     })
   }
 

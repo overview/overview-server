@@ -305,8 +305,14 @@ module.exports = class Browser {
   // for https://bugs.chromium.org/p/chromium/issues/detail?id=439056 and then
   // remove the `nTransitions` parameter from this function and use the
   // `increment` feature that's been commented out.
+  //
+  // In the meantime: to count transitions, open up Developer Tools, click to
+  // the part of the test right before you call this, and then open up the
+  // console and `document.addEventListener('transitionend', console.log);
+  // document.addEventListener('transitioncancel', console.warn)` to see which
+  // transitions you should expect.
   async awaitingCssTransitions(nTransitions, fn) {
-    const trackerVar = `awaitAnimations${Math.round(Math.random() * 9999999)}`
+    const trackerVar = `awaitAnimations`
     await this.execute(`
       window.${trackerVar} = {
         nTransitions: ${nTransitions},
