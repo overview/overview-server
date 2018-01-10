@@ -3,8 +3,8 @@ package com.overviewdocs.pdfocr
 import java.io.ByteArrayInputStream
 import java.nio.file.{Files,Path}
 import org.specs2.mock.Mockito
-import org.specs2.mutable.Specification
-import org.specs2.specification.{After,Scope}
+import org.specs2.mutable.{After,Specification}
+import org.specs2.specification.Scope
 import scala.concurrent.Future
 import scala.collection.mutable.ArrayBuffer
 

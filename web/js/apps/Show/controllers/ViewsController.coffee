@@ -72,6 +72,4 @@ define [
       if options?.url && options?.title
         addView(options)
       else
-        new NewViewDialog
-          url: options?.url
-          success: addView
+        new NewViewDialog(success: addView)

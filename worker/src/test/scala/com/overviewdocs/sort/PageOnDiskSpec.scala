@@ -4,8 +4,8 @@ import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.Sink
 import java.nio.file.{Files,Path}
 import java.nio.{ByteBuffer,ByteOrder}
-import org.specs2.mutable.Specification
-import org.specs2.specification.{After,Scope}
+import org.specs2.mutable.{After,Specification}
+import org.specs2.specification.Scope
 import scala.collection.immutable
 import scala.concurrent.Future
 

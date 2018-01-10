@@ -4,9 +4,6 @@ module.exports = function likeATree(opts) {
   describe('likeATree', function() {
     beforeEach(async function() {
       this.browser.loadShortcuts('documentSet')
-
-      // Start from a fresh page load
-      await this.browser.refresh()
       await this.browser.shortcuts.documentSet.waitUntilStable()
     })
 

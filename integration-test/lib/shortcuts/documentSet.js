@@ -47,35 +47,55 @@ class DocumentSetShortcuts {
     await this.b.click({ css: 'nav .dropdown-toggle a' })
     await this.b.click({ css: 'a.show-sharing-settings' })
 
-    await this.b.switchToFrame(0) // ick -- we use an iframe here.
-    await this.s.jquery.waitUntilReady()
+    await this.b.inFrame(0, async () => { // ick -- we use an iframe here
+      await this.s.jquery.waitUntilReady()
 
-    // Within the iframe is a JS app. We need to wait for it to finish loading:
-    const checked = await this.b.isSelected({ css: '[name=public]', wait: true })
+      // Within the iframe is a JS app. We need to wait for it to finish loading:
+      const checked = await this.b.isSelected({ css: '[name=public]', wait: true })
 
-    if (checked != bool) {
-      // hack because this is an iframe. Even after jquery.isReady, we don't
-      // know that the CSS has loaded. That's important, because the modal
-      // dialog will resize once the CSS loads, which will move the checkbox,
-      // meaning we won't be able to click the checkbox.
-      //
-      // There's no easy way to know when the CSS loads. So we'll just wait 1s,
-      // assuming it's really, really fast.
-      await this.b.sleep(1000)
+      if (checked != bool) {
+        // hack because this is an iframe. Even after jquery.isReady, we don't
+        // know that the CSS has loaded. That's important, because the modal
+        // dialog will resize once the CSS loads, which will move the checkbox,
+        // meaning we won't be able to click the checkbox.
+        //
+        // There's no easy way to know when the CSS loads. So we'll just wait 1s,
+        // assuming it's really, really fast.
+        await this.b.sleep(1000)
 
-      await this.s.jquery.listenForAjaxComplete()
-      await this.b.click('[name=public]')
-      await this.s.jquery.waitUntilAjaxComplete()
-    }
+        await this.s.jquery.listenForAjaxComplete()
+        await this.b.click('[name=public]')
+        await this.s.jquery.waitUntilAjaxComplete()
+      }
+    })
 
-    await this.b.switchToFrame(null)
     await this.b.click('#sharing-options-modal button.close')
+    await this.b.assertNotExists('#sharing-options-modal', { wait: 'fast' })
   }
 
   // Hides the "Tour" dialog forevermore for this user
   async hideTour() {
     debug('hideTour()')
-    browser.click('.popover-title a.skip')
+    await browser.click('.popover-title a.skip')
+  }
+
+  // Assuming the document list is visible and no CSS transitions are ongoing,
+  // opens the specified document and waits for CSS transitions to stop.
+  async openDocumentFromList(title) {
+    const NTransitionsWhenSelectingDocument = 1
+    await browser.awaitingCssTransitions(NTransitionsWhenSelectingDocument, async () => {
+      await browser.click({ tag: 'h3', contains: title })
+    })
+    await browser.assertExists({ css: '#document-current article .document:not(.empty), #document-current article .text-view:not(.empty)', wait: true })
+  }
+
+  // Assuming a single document is visible and no CSS transitions are ongoing,
+  // returns to the document list and waits for CSS transitions to stop.
+  async goBackToDocumentList() {
+    const NTransitionsWhenDeselectinDocument = 1
+    await browser.awaitingCssTransitions(NTransitionsWhenDeselectinDocument, async () => {
+      await browser.click({ link: 'Back to list' })
+    })
   }
 
   // Creates a new Tree view with the given name.
@@ -157,21 +177,27 @@ class DocumentSetShortcuts {
     await this.b.waitUntilBlockReturnsTrue('plugin data to load', 'pageLoad', clientTests.pluginDataLoaded)
   }
 
-  async createCustomView(name, url) {
+  async createCustomView(name, url, serverUrlFromPlugin) {
     await this.b.click({ link: 'Add view' })
     await this.b.click({ link: 'Custom…', wait: 'fast' })
-    // Enter URL first, then name. Entering name will blur URL. Blurring URL
-    // makes the browser test the endpoint.
-    await this.b.sendKeys(url, { css: '#new-view-dialog-url', wait: 'fast' })
-    await this.b.sendKeys(name, { css: '#new-view-dialog-title' })
-    await this.b.click({ link: 'use it anyway' , wait: true }) // dismiss not-HTTPS warning
-    await this.b.assertExists({ css: '#new-view-dialog .state .ok', wait: 'slow' })
-    await this.b.click({ css: 'input[value="Create visualization"]', wait: 'fast' })
+    await this.b.sendKeys(name, { css: '#new-view-dialog-title', wait: true }) // wait for dialog to open
+    await this.b.sendKeys(url, { css: '#new-view-dialog-url' })
+    if (serverUrlFromPlugin) {
+      await this.b.sendKeys(serverUrlFromPlugin, { css: '#new-view-dialog-server-url-from-plugin' })
+    }
+    await this.b.click({ css: 'input[value="Create visualization"]' })
+
+    // Psych! We got a "not HTTPS warning". Wait for it to appear and dismiss it.
+    await this.b.click({ link: 'use it anyway' , wait: true })
+    await this.b.click({ css: 'input[value="Create visualization"]' })
+
+    // Wait for dialog to disappear (which means HTTP check worked)
+    await this.b.assertNotExists({ css: '#new-view-dialog', wait: 'pageLoad' })
 
     // Wait for the plugin to _begin_ loading. (Let's not assume it _will_ end:
     // that's hard to do, and we might want to test that some things happen _before_
     // load ends, anyway.)
-    await this.b.find('#view-app-iframe', { wait: 'fast' })
+    await this.b.find({ css: '#view-app-iframe', wait: 'fast' })
   }
 
   /**
@@ -180,14 +206,14 @@ class DocumentSetShortcuts {
    *
    * When you're done, you must `await returnedPlugin.close()`
    */
-  async createViewAndServer(name) { // returns child process
+  async createViewAndServer(name, options) { // returns child process
     debug(`createCustomView(${name})`)
 
     const server = new MockPlugin(name)
     await server.listen()
 
     try {
-      await this.createCustomView(name, `http://${server.hostname}:3333`)
+      await this.createCustomView(name, `http://${server.hostname}:3333`, (options || {}).serverUrlFromPlugin)
     } catch (e) {
       await server.close()
       throw e

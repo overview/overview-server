@@ -97,6 +97,17 @@ define [
             .then(onCreate)
             .catch((err) -> console.log('Error from Twitter', error))
 
+    beginCreatePdfNote: ->
+      iframe = @$('iframe')[0]
+      return if !iframe
+      iWindow = iframe.contentWindow
+      return if !iWindow
+      pdfViewer = iWindow.PDFViewerApplication
+      return if !pdfViewer
+      eventBus = pdfViewer.eventBus
+      return if !eventBus
+      eventBus.dispatch('toggleaddingnote')
+
     _renderPdf: ->
       # After rendering a PDF, search automatically.
       #

@@ -1,3 +1,5 @@
+'use strict'
+
 const debug = require('debug')('Browser')
 const fs = require('fs')
 
@@ -287,6 +289,82 @@ module.exports = class Browser {
   async switchToFrame(frame) {
     debug(`setFrame(${JSON.stringify(frame)})`)
     return this.driver.switchTo().frame(frame)
+  }
+
+  // Runs fn(), waits 50ms, and waits for every transitionrun event to end or
+  // be cancelled.
+  //
+  // Assumptions:
+  //
+  // * All transitions will always begun within 50ms of calling fn()
+  // * No transitions were in progress before fn() was called
+  // * transition-delay is <50ms for all transitions
+  //
+  // Google Chrome 63 doesn't suport transitionrun events, so we hack it: we
+  // force the caller to guess how many transitions it must wait for. Wait
+  // for https://bugs.chromium.org/p/chromium/issues/detail?id=439056 and then
+  // remove the `nTransitions` parameter from this function and use the
+  // `increment` feature that's been commented out.
+  //
+  // In the meantime: to count transitions, open up Developer Tools, click to
+  // the part of the test right before you call this, and then open up the
+  // console and `document.addEventListener('transitionend', console.log);
+  // document.addEventListener('transitioncancel', console.warn)` to see which
+  // transitions you should expect.
+  async awaitingCssTransitions(nTransitions, fn) {
+    const trackerVar = `awaitAnimations`
+    await this.execute(`
+      window.${trackerVar} = {
+        nTransitions: ${nTransitions},
+        //increment: function() { window.${trackerVar}.nTransitions++ },
+        decrement: function() { window.${trackerVar}.nTransitions-- },
+      }
+      //document.addEventListener('transitionrun', window.${trackerVar}.increment)
+      document.addEventListener('transitionend', window.${trackerVar}.decrement)
+      document.addEventListener('transitioncancel', window.${trackerVar}.decrement)
+    `)
+
+    await fn()
+    await this.driver.sleep(50)
+    await this.waitUntilFunctionReturnsTrue('CSS transitions to finish', 'cssTransition', async () => {
+      return await this.execute(`
+        var n = window.${trackerVar}.nTransitions
+        if (n < 0) {
+          throw new Error('You called awaitingCssTransitions while ' + -n + ' transitions were ongoing')
+        } else if (window.${trackerVar}.nTransitions === 0) {
+          //document.removeEventListener('transitionrun', window.${trackerVar}.increment)
+          document.removeEventListener('transitionend', window.${trackerVar}.decrement)
+          document.removeEventListener('transitioncancel', window.${trackerVar}.decrement)
+          delete window.${trackerVar}
+          return true
+        } else {
+          return false
+        }
+      `)
+    })
+  }
+
+  // Calls the given function inside the given frame and waits for it to return
+  inFrame(frame, fn) {
+    debug(`inFrame(${JSON.stringify(frame)})`)
+
+    const onComplete = async () => {
+      await this.driver.switchTo().frame(null)
+    }
+
+    const onSuccess = async (value) => {
+      await onComplete()
+      return value
+    }
+
+    const onFailure = async  (err) => {
+      await onComplete()
+      throw err
+    }
+
+    return this.driver.switchTo().frame(frame)
+      .then(() => fn())
+      .then(onSuccess, onFailure)
   }
 
   // Returns the "alert" interface. Usage:

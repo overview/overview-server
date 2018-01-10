@@ -1,3 +1,4 @@
 --slow 3s
 --reporter spec
 --timeout 300s
+--exit

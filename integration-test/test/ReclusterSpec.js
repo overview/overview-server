@@ -9,7 +9,7 @@ const Url = {
 
 describe('Recluster', function() {
   asUserWithDocumentSet('Recluster/documents.csv', function() {
-    before(function() {
+    beforeEach(function() {
       this.browser.loadShortcuts('documentSet')
       this.browser.loadShortcuts('documentSets')
       this.documentSet = this.browser.shortcuts.documentSet
@@ -17,13 +17,8 @@ describe('Recluster', function() {
     })
 
     describe('after a recluster', function() {
-      before(async function() {
-        await this.documentSet.hideTour()
+      beforeEach(async function() {
         await this.documentSet.recluster('view1')
-      })
-
-      after(async function() {
-        await this.documentSet.destroyView('view1')
       })
 
       it('should rename properly', async function() {
@@ -36,9 +31,6 @@ describe('Recluster', function() {
         await this.browser.refresh()
         await this.documentSet.waitUntilStable()
         await this.browser.assertExists({ link: 'view3' })
-
-        // revert
-        await this.documentSet.renameView('view3', 'view1')
       })
 
       shouldBehaveLikeATree({
@@ -52,13 +44,9 @@ describe('Recluster', function() {
     })
 
     describe('when reclustering just a tag', function() {
-      before(async function() {
+      beforeEach(async function() {
         await this.documentSets.open('documents.csv')
         await this.documentSet.recluster('view2', { tag: 'foo' })
-      })
-
-      after(async function() {
-        await this.documentSet.destroyView('view2')
       })
 
       shouldBehaveLikeATree({

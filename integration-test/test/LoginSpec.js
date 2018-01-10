@@ -28,7 +28,7 @@ class LoginShortcuts {
 
   async logOut() {
     await this.b.click({ link: 'Log out' })
-    await this.b.assertExists({ class: 'session-form', wait: 'pageLoad' })
+    await this.assertLoggedOut()
   }
 }
 
@@ -36,9 +36,8 @@ class LoginShortcuts {
 // We need to let users identify themselves
 describe('Login', function() {
   asUser.usingTemporaryUser(function() {
-    before(async function() {
+    beforeEach(async function() {
       this.login = new LoginShortcuts(this.browser)
-      this.b = this.browser
 
       // We'll start this test suite logged out.
       await this.login.logOut()
@@ -51,7 +50,7 @@ describe('Login', function() {
     })
 
     it('should log out', async function() {
-      // This is easy -- we logged out in the before hook ;)
+      // This is easy -- we logged out in the beforeEach hook ;)
       await this.login.assertLoggedOut()
     })
 
@@ -61,7 +60,7 @@ describe('Login', function() {
     })
 
     it('should not log in with the wrong username', async function() {
-      await this.login.tryLogIn("x-#{this.userEmail}", this.userEmail)
+      await this.login.tryLogIn(`x-${this.userEmail}`, this.userEmail)
       await this.login.assertLogInFailed()
     })
   })

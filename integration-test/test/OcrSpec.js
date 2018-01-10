@@ -6,7 +6,7 @@ const asUser = require('../support/asUser')
 // We need to read text that comes from images
 describe('Ocr', function() {
   asUser.usingTemporaryUser(function() {
-    before(async function() {
+    beforeEach(async function() {
       const b = this.browser
       b.loadShortcuts('documentSets')
       b.loadShortcuts('importFiles')
@@ -14,7 +14,7 @@ describe('Ocr', function() {
     })
 
     describe('when the user uploads with OCR', function() {
-      before(async function() {
+      beforeEach(async function() {
         const b = this.browser
         const s = this.browser.shortcuts
 
@@ -29,10 +29,6 @@ describe('Ocr', function() {
         await s.importFiles.waitUntilRedirectToDocumentSet('with ocr')
       })
 
-      after(async function() {
-        await this.browser.shortcuts.documentSets.destroy('with ocr')
-      })
-
       it('should have text', async function() {
         const b = this.browser
         await b.click({ tag: 'h3', contains: 'image.pdf' })
@@ -41,7 +37,7 @@ describe('Ocr', function() {
     })
 
     describe('when the user uploads without OCR', function() {
-      before(async function() {
+      beforeEach(async function() {
         const b = this.browser
         const s = b.shortcuts
 
@@ -54,10 +50,6 @@ describe('Ocr', function() {
         await b.click({ tag: 'label', contains: 'Assume documents are already text' })
         await b.click({ button: 'Import documents' })
         await s.importFiles.waitUntilRedirectToDocumentSet('with ocr')
-      })
-
-      after(async function() {
-        await this.browser.shortcuts.documentSets.destroy('with ocr')
       })
 
       it('should have no text', async function() {

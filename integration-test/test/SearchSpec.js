@@ -4,31 +4,43 @@ const asUserWithDocumentSet = require('../support/asUserWithDocumentSet')
 
 describe('Search', function() {
   async function search(browser, query) {
-    await browser.clear('#document-list-params .search input[name=query]')
-    await browser.sendKeys(query, '#document-list-params .search input[name=query]')
-    await browser.click('#document-list-params .search button')
+    // CSS transitions to wait for are described inline
+    //
+    // We need to wait for transitions so we can wait for _other_ transitions later
+    // (e.g., openDocumentFromList's transitions)
+
+    await browser.awaitingCssTransitions(5, async () => {
+      // focus input: transition border-color-* (4), box-shadow (1)
+      await browser.clear('#document-list-params .search input[name=query]')
+      await browser.sendKeys(query, '#document-list-params .search input[name=query]')
+    })
+
+    // [adamhooper, 2018-01-05] We have to wait for the _focus_ animation to
+    // finish before we can wait for the _blur_ animation, otherwise we get a
+    // race because the one animation ends where it starts.
+    await browser.awaitingCssTransitions(5, async () => {
+      await browser.click('#document-list-params .search button') // this removes focus
+    })
   }
 
   asUserWithDocumentSet('Search/documents1.csv', function() {
     it('should highlight all instances of the search term', async function() {
       await search(this.browser, 'word')
-      await this.browser.click({ css: 'li.document h3', wait: 'pageLoad' })
+      await this.browser.assertExists({ css: 'li.document h3', wait: 'pageLoad' })
 
-      await this.browser.sleep(1000) // Wait for document to animate into existence
+      await this.browser.shortcuts.documentSet.openDocumentFromList('First')
 
-      // The document slides over; wait for all highlights to be visible
-      await this.browser.assertExists({ tag: 'em', class: 'highlight', index: 1, wait: 'fast' })
-      await this.browser.assertExists({ tag: 'em', class: 'highlight', index: 2, wait: 'fast' })
-      await this.browser.assertExists({ tag: 'em', class: 'highlight', index: 3, wait: 'fast' })
+      // Wait for the highlights to be loaded
+      await this.browser.assertExists({ tag: 'em', class: 'highlight', index: 1, wait: 'pageLoad' })
+      await this.browser.assertExists({ tag: 'em', class: 'highlight', index: 2 })
+      await this.browser.assertExists({ tag: 'em', class: 'highlight', index: 3 })
 
-      const text1 = await this.browser.getText({ tag: 'em', class: 'highlight', index: 1, wait: 'fast' })
+      const text1 = await this.browser.getText({ tag: 'em', class: 'highlight', index: 1 })
       expect(text1).to.eq('word')
-      const text2 = await this.browser.getText({ tag: 'em', class: 'highlight', index: 2, wait: 'fast' })
+      const text2 = await this.browser.getText({ tag: 'em', class: 'highlight', index: 2 })
       expect(text2).to.eq('word')
-      const text3 = await this.browser.getText({ tag: 'em', class: 'highlight', index: 3, wait: 'fast' })
+      const text3 = await this.browser.getText({ tag: 'em', class: 'highlight', index: 3 })
       expect(text3).to.eq('word')
-
-      await this.browser.click('a.back-to-list')
     })
 
     it('should regex search', async function() {

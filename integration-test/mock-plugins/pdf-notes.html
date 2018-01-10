@@ -1,0 +1,23 @@
+<html>
+  <head>
+    <title>Test Plugin</title>
+    <meta charset="utf-8">
+  </head>
+  <body>
+    <main></main>
+    <pre></pre>
+    <button onclick="beginCreatePdfNote()">Create PDF Note</button>
+    <script>
+var main = document.querySelector('main')
+
+function beginCreatePdfNote() {
+  window.parent.postMessage({
+    call: 'beginCreatePdfNote',
+    args: [],
+  }, '*')
+}
+
+document.body.className = 'loaded'
+    </script>
+  </body>
+</html>

@@ -27,6 +27,7 @@ define [
         openMetadataSchemaEditor: sinon.spy()
         goToNextDocument: sinon.spy()
         goToPreviousDocument: sinon.spy()
+        beginCreatePdfNote: sinon.spy()
 
       @anInterestingDocument = new Backbone.Model({
         id: 123,
@@ -57,6 +58,7 @@ define [
           setDocumentDetailLink: sinon.spy()
           setViewFilter: sinon.spy()
           setViewFilterChoices: sinon.spy()
+          setTitle: sinon.spy()
           onTag: sinon.spy()
           onUntag: sinon.spy()
           remove: sinon.spy()
@@ -141,6 +143,10 @@ define [
         @subject._onMessage(origin: '', data: { call: 'setModalDialog', args: [ { url: 'http://example.com' } ] })
         expect(@viewApp.setModalDialog).to.have.been.calledWith({ url: 'http://example.com' })
 
+      it 'should setViewTitle', ->
+        @subject._onMessage(origin: '', data: { call: 'setViewTitle', args: [ { title: 'bar' } ] })
+        expect(@viewApp.setTitle).to.have.been.calledWith('bar')
+
       it 'should setDocumentDetailLink', ->
         @subject._onMessage(origin: '', data: { call: 'setDocumentDetailLink', args: [ { foo: 'bar' } ] })
         expect(@viewApp.setDocumentDetailLink).to.have.been.calledWith({ foo: 'bar' })
@@ -193,7 +199,7 @@ define [
           expect(@viewApp.onTag).not.to.have.been.called
           expect(@viewApp.onUntag).not.to.have.been.called
 
-        [ 'openMetadataSchemaEditor', 'goToNextDocument', 'goToPreviousDocument' ].forEach (action) =>
+        [ 'openMetadataSchemaEditor', 'goToNextDocument', 'goToPreviousDocument', 'beginCreatePdfNote' ].forEach (action) =>
           it "should invoke globalActions.#{action}()", ->
             @subject._onMessage(origin: '', data: { call: action })
             expect(@globalActions[action]).to.have.been.called

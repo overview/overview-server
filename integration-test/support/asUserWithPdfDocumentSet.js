@@ -2,25 +2,25 @@
 
 const asUser = require('./asUser')
 
-module.exports = function asUserWithDocumentSet(csvFilename, options, body) {
+module.exports = function asUserWithPdfDocumentSet(dir, options, body) {
   if (body === undefined) {
     body = options
     options = {}
   }
 
   asUser.usingTemporaryUser(function() {
-    describe(`with imported document set ${csvFilename}`, function() {
+    describe(`with imported PDF document set ${dir}`, function() {
       beforeEach(async function() {
+        this.browser.loadShortcuts('documentSets')
+        this.browser.loadShortcuts('documentSet')
+        this.browser.loadShortcuts('importFiles')
+
         const b = this.browser
         const s = this.browser.shortcuts
 
-        await b.loadShortcuts('importCsv')
-        await b.loadShortcuts('documentSet')
-        await b.loadShortcuts('documentSets')
-
-        await s.importCsv.open()
-        await s.importCsv.startUpload(csvFilename)
-        await s.importCsv.waitUntilRedirectToDocumentSet(csvFilename)
+        await s.importFiles.open()
+        await s.importFiles.addAllFilesInDir(dir, '*.pdf')
+        await s.importFiles.finish({ name: dir })
         await s.documentSet.waitUntilStable()
 
         if (options.dismissTour !== false) {

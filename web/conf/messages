@@ -402,6 +402,9 @@ views.DocumentSet.show.NewViewDialog.url.unavailable.retry=retry
 views.DocumentSet.show.NewViewDialog.url.insecure_html=This URL does not start with <strong>https://</strong>. If you use this URL, an attacker may read and write all documents in this document set. Your web browser may also show warnings to this effect.
 views.DocumentSet.show.NewViewDialog.url.insecure.dismiss=use it anyway
 views.DocumentSet.show.NewViewDialog.url.invalid=This is not a valid URL
+views.DocumentSet.show.NewViewDialog.url.readHtmlMessage=Cannot submit this URL
+views.DocumentSet.show.NewViewDialog.serverUrlFromPlugin.label=Overview’s URL from App server
+views.DocumentSet.show.NewViewDialog.serverUrlFromPlugin.help=Overview’s URL as seen from the App. Only set this if you are hosting this App on a private computer or intranet. For an overview-local App, use http://overview-web.
 
 views.DocumentSet.show.DocumentDisplayPreferences.sidebar=Show sidebar next to document
 views.DocumentSet.show.DocumentDisplayPreferences.text.disabled=Overview can only show this document as plain text

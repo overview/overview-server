@@ -28,6 +28,7 @@ module.exports = class UserAdminSession {
 
   GET(url) { return this.r({ method: 'GET', url: url }) }
   POST(url, json) { return this.r({ method: 'POST', url: url, json: json }) }
+  PUT(url, json) { return this.r({ method: 'PUT', url: url, json: json }) }
   DELETE(url) { return this.r({ method: 'DELETE', url: url }) }
 
   _login() {
@@ -43,6 +44,11 @@ module.exports = class UserAdminSession {
   async createUser(user) {
     await this.loginPromise
     return this.POST('/admin/users', user)
+  }
+
+  async setUserIsAdmin(email, isAdmin) {
+    await this.loginPromise
+    return this.PUT(`/admin/users/${encodeURIComponent(email)}`, { is_admin: isAdmin })
   }
 
   async deleteUser(user) {

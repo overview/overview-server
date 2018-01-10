@@ -1,89 +1,96 @@
 'use strict'
 
-const browser = require('../lib/BrowserBuilder')
+const BrowserBuilder = require('../lib/BrowserBuilder')
 
 module.exports = {
-  // Returns a browser logged in as the administrator.
-  //
-  // Usage:
-  //
-  //     describe 'my test suite', ->
-  //       asUser.usingTemporaryUser ->
-  //         asUser.usingAdminBrowser ->
-  //           it 'should be logged in', ->
-  //             @browser.find(css: '.logged-in').getText().should.eventually.eq(@userEmail)
-  //
-  //           it 'should have admin browser', ->
-  //             @adminBrowser.find(css: '.logged-in').getText().should.eventually.eq(@adminEmail)
-  //
-  // Tests can make use of @adminBrowser and @adminEmail.
-  usingAdminBrowser: function(body) {
-    describe('with an administrator logged in', function() {
-      before(async function() {
-        if (!this.adminSession) {
-          throw new Error("You must call usingAdminBrowser() within a usingTemporaryUser() block")
-        }
-
-        this.adminEmail = this.adminSession.options.login.email
-        const ab = this.adminBrowser = await browser.createBrowser()
-
-        await ab.get('/login')
-        await ab.sendKeys(this.adminEmail, '.session-form [name=email]')
-        await ab.sendKeys(this.adminSession.options.login.password, '.session-form [name=password]')
-        await ab.click('.session-form [type=submit]')
-      })
-
-      after(async function() {
-        const ab = this.adminBrowser
-        await ab.driver.manage().deleteAllCookies()
-        await ab.close()
-      })
-
-      body()
-    })
-  },
-
   // Registers a temporary user and logs in as that user for the duration of
   // this describe block.
   //
   // Usage:
   //
-  //     describe 'my test suite', ->
-  //       asUser.usingTemporaryUser ->
-  //         it 'should have an email', ->
-  //           @userEmail.should.not.be.null
+  //     describe('my test suite', function() {
+  //       asUser.usingTemporaryUser({ isAdmin: false, propertyName: 'alice' }, function() {
+  //         it('should have an email', function() {
+  //           expect(this.aliceUser).to.exist
+  //           expect(this.aliceEmail).to.exist
+  //         })
   //
-  //         it 'should have a browser', ->
-  //           @browser.should.not.be.null
+  //         it('should have a browser', function() {
+  //           expect(this.aliceBrowser).to.exist
+  //         })
   //
-  //         it 'should be logged in', ->
-  //           @browser.find(css: '.logged-in').getText().should.eventually.eq(@userEmail)
+  //         it('should be logged in', async function() {
+  //           const text = await this.aliceBrowser.find({ css: '.logged-in' }).getText()
+  //           expect(text).to.eq(this.aliceEmail)
+  //         })
+  //       })
+  //     })
   //
-  // Tests should make use of @browser and @userEmail. The password and email are
-  // the same.
-  usingTemporaryUser: function(body) {
-    describe('with a temporary user', function() {
-      before(async function() {
-        this.adminSession = browser.createUserAdminSession('asUser.usingTemporaryUser')
-        const user = await this.adminSession.createTemporaryUser()
+  // In other words, we set:
+  //
+  // * this[`${propertyName}User`]: { email, ... } Object. `password == email`.
+  // * this[`${propertyName}Email`]: String
+  // * this[`${propertyName}Browser`]: Browser
+  //
+  // If you omit options or set propertyName to `null`, then the properties
+  // will be:
+  //
+  // * this.user: { email, ... }
+  // * this.userEmail: String
+  // * this.browser: Browser
+  usingTemporaryUser(options, body) {
+    // Default: options={}
+    if (typeof(options) === 'function') {
+      body = options
+      options = {}
+    }
 
-        this.user = user
-        this.userEmail = user.email
-        const b = this.browser = await browser.createBrowser()
-        await b.get('/login')
-        await b.sendKeys(this.userEmail, { css: '.session-form [name=email]' })
-        await b.sendKeys(this.userEmail, { css: '.session-form [name=password]' })
-        await b.click({ css: '.session-form [type=submit]' })
+    describe('with a temporary user', function() {
+      let user = null
+      let browser = null
+
+      beforeEach(async function() {
+        if (!this.adminSession) {
+          this.adminSession = BrowserBuilder.createUserAdminSession('asUser.usingTemporaryUser')
+        }
+
+        user = await this.adminSession.createTemporaryUser()
+        if (options.isAdmin) await this.adminSession.setUserIsAdmin(user.email, true)
+
+        browser = await BrowserBuilder.createBrowser()
+        await browser.get('/login')
+        await browser.sendKeys(user.email, { css: '.session-form [name=email]' })
+        await browser.sendKeys(user.email, { css: '.session-form [name=password]' })
+        await browser.click({ css: '.session-form [type=submit]' })
+
+        // Set this.user, this.userEmail, this.browser
+        // or this.alice, this.aliceEmail, this.aliceBrowser
+        let userProp = 'user'
+        let userEmailProp = 'userEmail'
+        let browserProp = 'browser'
+        if (options.propertyName) {
+          const p = options.propertyName
+          userProp = p + 'User'
+          userEmailProp = p + 'Email'
+          browserProp = p + 'Browser'
+        }
+        this[userProp] = user
+        this[userEmailProp] = user.email
+        this[browserProp] = browser
       })
 
-      after(async function() {
-        await this.adminSession.deleteUser(this.user)
-        const b = this.browser
-        await b.driver.manage().deleteAllCookies()
-        await b.close()
+      afterEach(async function() {
+        if (this.adminSession && user) {
+          await this.adminSession.deleteUser(user)
+        }
+
+        if (browser) {
+          await browser.driver.manage().deleteAllCookies()
+          await browser.close()
+        }
       })
 
       body()
     })
-  },
+  }
 }

@@ -5,7 +5,7 @@ const shouldBehaveLikeATree = require('../support/behave/likeATree')
 
 describe('CsvUpload', function() {
   asUser.usingTemporaryUser(function() {
-    before(function() {
+    beforeEach(function() {
       this.b = this.browser
 
       this.browser
@@ -52,14 +52,10 @@ describe('CsvUpload', function() {
     })
 
     describe('after uploading a document set', function() {
-      before(async function() {
+      beforeEach(async function() {
         await this.importCsv.startUpload('CsvUpload/basic.csv')
         await this.importCsv.waitUntilRedirectToDocumentSet('CsvUpload/basic.csv')
         await this.documentSet.waitUntilStable()
-      })
-
-      after(async function() {
-        await this.documentSets.destroy('basic.csv')
       })
 
       it('should show the document set', async function() {

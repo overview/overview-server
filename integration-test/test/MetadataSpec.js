@@ -11,12 +11,12 @@ function findInput(fieldName, wait) {
 
 describe('Metadata', function() {
   asUserWithDocumentSet('Metadata/basic.csv', function() {
-    before(async function() {
+    beforeEach(async function() {
       this.browser.loadShortcuts('api')
     })
 
     describe('the Show page', function() {
-      before(async function() {
+      beforeEach(async function() {
         this.locator = findInput('foo')
         this.locatorWithWait = findInput('foo', 'fast')
 
@@ -35,10 +35,6 @@ describe('Metadata', function() {
         await this.browser.click('.document-nav a.next')
         const value = await this.browser.getAttribute(this.locatorWithWait, 'value')
         expect(value).to.eq('foo1')
-
-        // Reset state
-        await this.browser.click('.document-nav a.previous')
-        await this.browser.find(this.locatorWithWait)
       })
 
       it('should modify metadata', async function() {
@@ -50,14 +46,6 @@ describe('Metadata', function() {
 
         const value = await this.browser.getAttribute(this.locatorWithWait, 'value')
         expect(value).to.eq('newFoo')
-
-        // Reset state
-        await this.browser.clear(this.locator)
-        await this.browser.sendKeys('foo0', this.locator)
-
-        // Browse away and back, to ensure we've saved the value
-        await this.browser.click('.document-nav a.next')
-        await this.browser.click('.document-nav a.previous')
       })
 
       it('should add and remove metadata fields', async function() {
@@ -96,7 +84,6 @@ describe('Metadata', function() {
       })
 
       it('should warn when searching invalid metadata columns', async function() {
-        await this.browser.click('.search a.nix')
         await this.browser.sendKeys("foo2:x", '.search input[name=query]')
         await this.browser.click('.search button')
 

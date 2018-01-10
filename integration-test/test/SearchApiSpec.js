@@ -5,7 +5,7 @@ const ApiBrowser = require('../lib/ApiBrowser')
 
 describe('SearchApi', function() {
   asUserWithDocumentSet('Search/documents1.csv', function() {
-    before(async function() {
+    beforeEach(async function() {
       this.browser.loadShortcuts('api')
 
       const url = await this.browser.getUrl()

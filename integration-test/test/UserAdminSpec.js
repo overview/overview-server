@@ -32,7 +32,7 @@ class UserAdminShortcuts {
 }
 
 describe('UserAdmin', function() {
-  before(async function() {
+  beforeEach(async function() {
     this.adminSession = await browser.createUserAdminSession()
     this.adminBrowser = await browser.createBrowser()
     this.adminBrowser.loadShortcuts('jquery')
@@ -45,10 +45,6 @@ describe('UserAdmin', function() {
     await this.adminBrowser.sendKeys(this.adminSession.options.login.password, '.session-form [name=password]')
     await this.adminBrowser.click('.session-form [type=submit]')
     await this.userAdmin.waitForUserLoaded(browser.adminLogin.email)
-  })
-
-  after(async function() {
-    await this.adminBrowser.close()
   })
 
   describe('index', function() {

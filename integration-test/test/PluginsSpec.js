@@ -1,74 +1,96 @@
 'use strict'
 
 const asUserWithDocumentSet = require('../support/asUserWithDocumentSet')
+const asUserWithPdfDocumentSet = require('../support/asUserWithPdfDocumentSet')
 
 describe('Plugins', function() {
   asUserWithDocumentSet('Metadata/basic.csv', function() {
-    before(function() {
+    beforeEach(function() {
       this.browser.loadShortcuts('documentSet')
       this.browser.loadShortcuts('jquery')
       this.documentSet = this.browser.shortcuts.documentSet
     })
 
-    it('should pass server, apiToken and documentSetId in the plugin query string', async function() {
-      const server = await this.documentSet.createViewAndServer('show-query-string')
+    it('should pass server, origin, apiToken and documentSetId in the plugin query string', async function() {
+      const server = await this.documentSet.createViewAndServer('show-query-string', { serverUrlFromPlugin: 'https://server-url-from-plugin' })
 
       try {
-        await this.browser.switchToFrame('view-app-iframe')
-        // Wait for load. This plugin is loaded when the <pre> is non-empty
-        await this.browser.assertExists({ xpath: '//pre[text() and string-length()>0]', wait: true })
-        const text = await this.browser.getText({ css: 'pre' })
-        expect(text).to.match(/^\?server=http%3A%2F%2F[-\w.]+(?:%3A\d+)?&documentSetId=\d+&apiToken=[a-z0-9]+$/)
-        await this.browser.switchToFrame(null)
+        await this.browser.inFrame('view-app-iframe', async () => {
+          // Wait for load. This plugin is loaded when the <pre> is non-empty
+          await this.browser.assertExists({ xpath: '//pre[text() and string-length()>0]', wait: true })
+          const text = await this.browser.getText({ css: 'pre' })
+          const params = text
+            .split(/[?&]/)
+            .filter(s => s.length > 0)
+            .reduce((h, s) => { const [ k, v ] = s.split(/=/).map(decodeURIComponent); h[k] = v; return h }, {})
+          expect(params.server).to.eq('https://server-url-from-plugin')
+          expect(params.origin).to.eq(process.env.OVERVIEW_URL)
+          expect(params.documentSetId).to.match(/\d+/)
+          expect(params.apiToken).to.match(/[a-z0-9A-Z]+/)
+        })
       } finally {
         await server.close()
       }
-
-      await this.documentSet.destroyView('show-query-string')
     })
 
     describe('with a plugin that calls setRightPane', async function() {
-      before(async function() {
+      beforeEach(async function() {
         this.server = await this.documentSet.createViewAndServer('right-pane')
       })
 
-      after(async function() {
-        await this.server.close()
-        await this.documentSet.destroyView('right-pane')
+      afterEach(async function() {
+        if (this.server) await this.server.close()
       })
 
       it('should create a right pane', async function() {
-        await this.browser.assertNotExists({ id: 'tree-app-vertical-split-2' }) // it's invisible
+        const b = this.browser
+
+        await b.assertNotExists({ id: 'tree-app-vertical-split-2' }) // it's invisible
 
         // wait for load
-        await this.browser.switchToFrame('view-app-iframe')
-        await this.browser.assertExists({ css: 'body.loaded', wait: 'pageLoad' })
-        await this.browser.click({ button: 'Set Right Pane' })
-        await this.browser.switchToFrame(null)
+        await b.inFrame('view-app-iframe', async () => {
+          await b.assertExists({ css: 'body.loaded', wait: 'pageLoad' })
+          await b.click({ button: 'Set Right Pane' })
+        })
 
-        await this.browser.assertExists({ id: 'tree-app-vertical-split-2', wait: true }) // wait for animation
-        await this.browser.click({ css: '#tree-app-vertical-split-2 button' })
-        await browser.sleep(1000) // for animation
-        await this.browser.assertExists({ id: 'view-app-right-pane-iframe' })
-        await this.browser.switchToFrame('view-app-right-pane-iframe')
-        const url = await this.browser.execute(function() { return window.location.href })
+        await b.assertExists({ id: 'tree-app-vertical-split-2', wait: true }) // wait for animation
+        await b.click({ css: '#tree-app-vertical-split-2 button' })
+        await b.sleep(1000) // for animation
+        await b.assertExists({ id: 'view-app-right-pane-iframe' })
+
+        const url = await b.inFrame('view-app-right-pane-iframe', async () => {
+          return await b.execute(function() { return window.location.href })
+        })
         expect(url).to.contain('?placement=right-pane')
-        await this.browser.switchToFrame(null)
+      })
 
-        // Move back to left
-        await this.browser.click({ css: '#tree-app-vertical-split button' })
-        await browser.sleep(1000) // for animation
+      it('should delete the right pane when deleting the view', async function() {
+        const b = this.browser
+
+        // 1. create the right pane
+        await b.inFrame('view-app-iframe', async () => {
+          await b.assertExists({ css: 'body.loaded', wait: 'pageLoad' })
+          await b.click({ button: 'Set Right Pane' })
+        })
+
+        await b.assertExists({ css: '#tree-app-vertical-split-2 button', wait: true }) // wait for animation
+
+        // 2. delete the view
+        await b.shortcuts.documentSet.destroyView('right-pane')
+
+        // Check the pane is gone
+        await b.assertNotExists({ css: '#tree-app-vertical-split-2 button', wait: true })
+        await b.assertNotExists({ id: 'view-app-right-pane-iframe', wait: true })
       })
     })
 
     describe('with a plugin that calls setModalDialog', async function() {
-      before(async function() {
+      beforeEach(async function() {
         this.server = await this.documentSet.createViewAndServer('modal-dialog')
       })
 
-      after(async function() {
-        await this.server.close()
-        await this.documentSet.destroyView('modal-dialog')
+      afterEach(async function() {
+        if (this.server) await this.server.close()
       })
 
       it('should create and close a modal dialog', async function() {
@@ -76,17 +98,17 @@ describe('Plugins', function() {
 
         await b.assertNotExists({ id: 'view-app-modal-dialog' })
 
-        // wait for load
-        await b.switchToFrame('view-app-iframe')
-        await b.assertExists({ css: 'body.loaded', wait: 'pageLoad' })
-        await b.click({ button: 'Set Modal Dialog' })
-        await b.switchToFrame(null)
+        await b.inFrame('view-app-iframe', async () => {
+          // wait for load
+          await b.assertExists({ css: 'body.loaded', wait: 'pageLoad' })
+          await b.click({ button: 'Set Modal Dialog' })
+        })
 
         await b.assertExists({ id: 'view-app-modal-dialog', wait: true })
 
-        await b.switchToFrame('view-app-modal-dialog-iframe')
-        await b.click({ button: 'Set Modal Dialog to Null', wait: 'pageLoad' })
-        await b.switchToFrame(null)
+        await b.inFrame('view-app-modal-dialog-iframe', async () => {
+          await b.click({ button: 'Set Modal Dialog to Null', wait: 'pageLoad' })
+        })
 
         await b.assertNotExists({ id: 'view-app-modal-dialog' })
       })
@@ -94,41 +116,38 @@ describe('Plugins', function() {
       it('should send messages from one plugin to another', async function() {
         const b = this.browser
 
-        // wait for load
-        await b.switchToFrame('view-app-iframe')
-        await b.assertExists({ css: 'body.loaded', wait: 'pageLoad' })
-        await b.click({ button: 'Set Modal Dialog' })
-        await b.switchToFrame(null)
+        await b.inFrame('view-app-iframe', async () => {
+          // wait for load
+          await b.assertExists({ css: 'body.loaded', wait: 'pageLoad' })
+          await b.click({ button: 'Set Modal Dialog' })
+        })
 
         await b.assertExists({ id: 'view-app-modal-dialog', wait: true })
 
-        await b.switchToFrame('view-app-modal-dialog-iframe')
-        await b.click({ button: 'Send Message', wait: 'pageLoad' })
-        await b.click({ button: 'Set Modal Dialog to Null' })
-        await b.switchToFrame(null)
+        await b.inFrame('view-app-modal-dialog-iframe', async () => {
+          await b.click({ button: 'Send Message', wait: 'pageLoad' })
+        })
 
-        await b.switchToFrame('view-app-iframe')
-        await b.assertExists({ tag: 'pre', contains: '{"This is":"a message"}', wait: true })
-        await b.switchToFrame(null)
-
-        await b.assertNotExists({ id: 'view-app-modal-dialog' })
+        await b.inFrame('view-app-iframe', async () => {
+          await b.assertExists({ tag: 'pre', contains: '{"This is":"a message"}', wait: true })
+        })
       })
     })
 
     describe('with a plugin that calls setViewFilter', async function() {
-      before(async function() {
+      beforeEach(async function() {
         this.server = await this.documentSet.createViewAndServer('view-filter')
       })
 
-      after(async function() {
-        await this.server.close()
-        await this.documentSet.destroyView('view-filter')
+      afterEach(async function() {
+        if (this.server) await this.server.close()
       })
 
       it('should allow filtering by view', async function() {
         const b = this.browser
 
-        await b.click({ tag: 'a', contains: 'view-filter placeholder' })
+        // Wait for iframe contents to load and call setViewFilter
+        await b.click({ tag: 'a', contains: 'view-filter placeholder', wait: 'pageLoad' })
         await b.click({ tag: 'span', contains: 'VF-Foo' })
         await this.documentSet.waitUntilDocumentListLoaded()
         expect(this.server.lastRequestUrl.path).to.match(/^\/filter\/01010101\?/)
@@ -139,69 +158,59 @@ describe('Plugins', function() {
         expect(text).not.to.match(/First/)
         expect(text).to.match(/Second/)
         expect(text).not.to.match(/Third/)
-
-        // reset
-        await b.click('.view-filters a.nix')
-        await this.documentSet.waitUntilDocumentListLoaded()
-        const text2 = await(b.getText('#document-list ul.documents'))
-        expect(text2).to.match(/First/)
       })
 
       it('should allow setViewFilterChoices', async function() {
         const b = this.browser
 
-        await b.switchToFrame('view-app-iframe')
-        await b.click({ button: 'setViewFilterChoices' })
-        await b.switchToFrame(null)
+        await b.inFrame('view-app-iframe', async () => {
+          // Wait for iframe contents to load
+          await b.click({ button: 'setViewFilterChoices', wait: 'pageLoad' })
+          await b.sleep(100) // make sure postMessage() goes through. TODO notify from plugin?
+        })
 
         await b.click({ tag: 'a', contains: 'view-filter placeholder' })
         await b.click({ tag: 'span', contains: 'VF-Foo2' }) // assert it exists, really
+      })
 
-        // reset
-        await b.click('.view-filters a.nix')
-        await this.documentSet.waitUntilDocumentListLoaded()
+      it('should remove the ViewFilter when deleting the plugin', async function() {
+        await this.browser.shortcuts.documentSet.destroyView('view-filter')
+        await this.browser.assertNotExists({ tag: 'a', contains: 'view-filter placeholder', wait: true })
       })
 
       it('should allow setViewFilterSelection', async function() {
         const b = this.browser
 
-        await b.switchToFrame('view-app-iframe')
-        await b.click({ button: 'setViewFilterChoices' })
-        await b.click({ button: 'setViewFilterSelection' })
-        await b.sleep(100) // make sure postMessage() goes through. TODO notify from plugin?
-        await b.switchToFrame(null)
+        await b.inFrame('view-app-iframe', async () => {
+          // Wait for iframe contents to load
+          await b.click({ button: 'setViewFilterChoices', wait: 'pageLoad' })
+          await b.click({ button: 'setViewFilterSelection' })
+          await b.sleep(100) // make sure postMessage() goes through. TODO notify from plugin?
+        })
 
         await this.documentSet.waitUntilDocumentListLoaded()
         expect(this.server.lastRequestUrl.path).to.match(/^\/filter\/01010101\?/) // the document list reloaded
         await b.assertExists({ tag: 'a', contains: 'VF-Foo2' }) // the tag was selected in the ViewFilter
-
-        // reset
-        await b.click('.view-filters a.nix')
-        await this.documentSet.waitUntilDocumentListLoaded()
       })
     })
 
     describe('with a plugin that calls setDocumentDetailLink', function() {
-      before(async function() {
-        // open a document
-        await this.browser.click({ tag: 'h3', contains: 'First' })
-        await this.browser.sleep(1000) // wait for document to animate in
-      })
-
       beforeEach(async function() {
         this.server = await this.documentSet.createViewAndServer('view-document-detail-links')
+
+        await this.browser.shortcuts.documentSet.openDocumentFromList('First')
+
         this.clickViewButton = async function(name) {
           const b = this.browser
-          await b.switchToFrame('view-app-iframe')
-          await b.assertExists({ css: 'body.loaded', wait: 'pageLoad' })
-          await b.click({ button: name })
-          await b.switchToFrame(null)
+          await b.inFrame('view-app-iframe', async () => {
+            await b.assertExists({ css: 'body.loaded', wait: 'pageLoad' })
+            await b.click({ button: name })
+          })
         }
       })
 
       afterEach(async function() {
-        await this.server.close()
-        await this.documentSet.destroyView('document-detail-link')
+        if (this.server) await this.server.close()
       })
 
       it('should add the given link', async function() {
@@ -220,8 +229,7 @@ describe('Plugins', function() {
         await b.refresh()
         await this.documentSet.waitUntilStable()
         // again, open a document
-        await b.click({ tag: 'h3', contains: 'First' })
-        await b.sleep(1000) // wait for document to animate in
+        await this.documentSet.openDocumentFromList('First')
         await b.assertExists({ link: 'Text foo', wait: true })
       })
 
@@ -245,8 +253,6 @@ describe('Plugins', function() {
         // and rendering is definitely finished. But since the URL is the same,
         // we expect nothing else to be rendered
         await b.assertNotExists({ link: 'foo with different text' })
-
-        await this.documentSet.destroyView('another view') // cleanup
       })
 
       it('should open the popup', async function() {
@@ -256,11 +262,90 @@ describe('Plugins', function() {
         await b.click({ link: 'Text foo', wait: true }) // wait for it to appear
 
         await b.assertExists({ css: 'iframe#view-document-detail', wait: 'fast' }) // wait for iframe
-        await b.switchToFrame('view-document-detail')
-        const url = await this.browser.execute(function() { return window.location.href })
-        await b.switchToFrame(null)
+        const url = await b.inFrame('view-document-detail', async () => {
+          return await this.browser.execute(function() { return window.location.href })
+        })
         expect(url).to.match(/\?documentId=\d+/)
         expect(url).to.match(/&foo=foo/)
+      })
+
+      it('should remove the link when deleting the View', async function() {
+        const b = this.browser
+        await this.clickViewButton('setUrl(foo)')
+        await b.assertExists({ link: 'Text foo', wait: true })
+        await b.shortcuts.documentSet.destroyView('view-document-detail-links')
+        await b.assertNotExists({ link: 'Text foo', wait: 'pageLoad' })
+      })
+    })
+
+    describe('with a plugin that calls setViewTitle', function() {
+      beforeEach(async function() {
+        this.server = await this.documentSet.createViewAndServer('set-view-title')
+        this.clickViewButton = async function(name) {
+          const b = this.browser
+          await b.inFrame('view-app-iframe', async () => {
+            await b.assertExists({ css: 'body.loaded', wait: 'pageLoad' })
+            await b.click({ button: name })
+          })
+        }
+      })
+
+      afterEach(async function() {
+        if (this.server) await this.server.close()
+      })
+
+      it('should set the view title', async function() {
+        const b = this.browser
+
+        await this.clickViewButton("Set title to new-title")
+        await b.assertExists({ tag: 'li', className: 'view', contains: 'new-title', wait: 'fast' })
+      })
+
+      it('should preserve the view title across page refresh', async function() {
+        const b = this.browser
+
+        await this.clickViewButton("Set title to new-title")
+        await b.assertExists({ tag: 'li', className: 'view', contains: 'new-title', wait: 'fast' })
+
+        await b.refresh()
+        await this.documentSet.waitUntilStable()
+        await b.assertExists({ tag: 'li', className: 'view', contains: 'new-title', wait: 'fast' })
+      })
+    })
+  })
+
+  asUserWithPdfDocumentSet('PdfAnnotations', function() {
+    beforeEach(function() {
+      this.browser.loadShortcuts('documentSet')
+      this.browser.loadShortcuts('jquery')
+      this.documentSet = this.browser.shortcuts.documentSet
+    })
+
+    describe('with a plugin that interacts with PdfNotes', function() {
+      beforeEach(async function() {
+        this.server = await this.documentSet.createViewAndServer('pdf-notes')
+        this.clickViewButton = async function(name) {
+          const b = this.browser
+          await b.inFrame('view-app-iframe', async () => {
+            await b.assertExists({ css: 'body.loaded', wait: 'pageLoad' })
+            await b.click({ button: name })
+          })
+        }
+      })
+
+      afterEach(async function() {
+        if (this.server) await this.server.close()
+      })
+
+      it('should begin PdfNote creation', async function() {
+        const b = this.browser
+
+        await b.shortcuts.documentSet.openDocumentFromList('doc1.pdf')
+        await this.clickViewButton('Create PDF Note')
+
+        await b.inFrame('document-contents', async () => {
+          await b.assertExists({ css: 'button.addNote.toggled', wait: true })
+        })
       })
     })
   })

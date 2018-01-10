@@ -45,20 +45,20 @@ define [
 
     remove: ->
       @setModalDialog(null)
+      @setRightPane({ url: null })
       Backbone.View.prototype.remove.call(@)
 
     getServerUrl: ->
-      serverUrl = @view.get('serverUrlFromPlugin')
-      if !serverUrl?
-        loc = window.location
-        serverUrl = "#{loc.protocol}//#{loc.host}"
-      serverUrl
+      @view.get('serverUrlFromPlugin') || window.location.origin
 
     setDocumentDetailLink: (link) ->
       @view.save({ documentDetailLink: link }, { patch: true })
 
     setViewFilter: (viewFilter) ->
       @view.save({ filter: viewFilter }, { patch: true })
+
+    setTitle: (title) ->
+      @view.save({ title: title }, { patch: true })
 
     setViewFilterChoices: (choices) ->
       existingViewFilter = @view.get('filter')
@@ -71,6 +71,7 @@ define [
     render: ->
       params = $.param([
         { name: 'server', value: @getServerUrl() }
+        { name: 'origin', value: window.location.origin }
         { name: 'documentSetId', value: @documentSetId }
         { name: 'apiToken', value: @view.get('apiToken') }
       ])
