@@ -2,18 +2,19 @@ define [
   'underscore'
   'backbone'
 ], (_, Backbone) ->
+  DefaultAttrs = {
+    type: 'view' # 'tree' or 'view'
+    title: '' # What the user calls this View
+    creationData: [] # View-dependent [key,value] strings
+  }
+
   # A View is an iframe served by a plugin.
   #
   # The id is an ID on the server; everything else is for displaying
   # in the UI.
   class View extends Backbone.Model
-    defaults:
-      type: 'view' # 'tree' or 'view'
-      title: '' # What the user calls this View
-      creationData: [] # View-dependent [key,value] strings
-
     constructor: (attrs, options) ->
-      attrs = _.extend({}, @defaults, attrs ? {})
+      attrs = _.extend({}, DefaultAttrs, attrs ? {})
 
       if 'createdAt' of attrs
         attrs.createdAt = new Date(attrs.createdAt)
