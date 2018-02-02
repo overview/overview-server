@@ -1,17 +1,19 @@
 package views.json.DocumentList
 
 import java.util.UUID
-import play.api.libs.json.{JsString, JsValue, Json}
+import play.api.libs.json.{JsString,JsValue,Json,Writes}
 import play.twirl.api.{Html,HtmlFormat}
 import scala.collection.immutable
 
 import models.pagination.Page
 import models.{Selection,SelectionWarning}
 import views.json.api.selectionWarnings
-import com.overviewdocs.models.DocumentHeader
+import com.overviewdocs.models.{DocumentHeader,PdfNote,PdfNoteCollection}
 import com.overviewdocs.searchindex.{Highlight,Snippet}
 
 object show {
+  private implicit def pdfNoteWrites: Writes[PdfNote] = Json.writes[PdfNote]
+
   private def documentToJson(document: DocumentHeader, thumbnailUrl: Option[String], nodeIds: Seq[Long], tagIds: Seq[Long], snippets: Seq[Snippet]) : JsValue = {
     Json.obj(
       "id" -> document.id,
@@ -20,6 +22,7 @@ object show {
       "page_number" -> document.pageNumber,
       "url" -> document.viewUrl,
       "metadata" -> document.metadataJson,
+      "pdfNotes" -> document.pdfNotes.pdfNotes,
       "nodeids" -> nodeIds,
       "tagids" -> tagIds,
       "snippet" -> snippetsToHtml(snippets, document.text),

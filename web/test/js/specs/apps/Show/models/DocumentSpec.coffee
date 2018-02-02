@@ -25,6 +25,13 @@ define [
         document = new Document({ id: 1, metadata: { foo: 'bar' } }, parse: true)
         expect(document.get('metadata')).to.deep.eq(foo: 'bar')
 
+      it 'should parse pdfNotes', ->
+        note1 = { pageIndex: 1, x: 12, y: 13, width: 14, height: 15, text: 'Here is my note' }
+        note2 = { pageIndex: 2, x: 22, y: 23, width: 14, height: 15, text: 'Second note' }
+        notes = [ note1, note2 ]
+        document = new Document({ id: 1, pdfNotes: notes }, parse: true)
+        expect(document.get('pdfNotes')).to.deep.eq(notes)
+
     describe 'with a typical document', ->
       beforeEach ->
         @document = new Document({

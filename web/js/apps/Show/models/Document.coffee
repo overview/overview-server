@@ -28,6 +28,7 @@ define [
       pageNumber: null
       url: null
       metadata: {}
+      pdfNotes: []
 
     url: -> "/documentsets/#{@get('documentSetId')}/documents/#{@id}"
 
@@ -45,6 +46,7 @@ define [
       tagids: json.tagids || []
       nodeids: json.nodeids || []
       metadata: json.metadata || {}
+      pdfNotes: json.pdfNotes || []
       thumbnailUrl: json.thumbnailUrl || null
 
     initialize: (attributes, options) ->
