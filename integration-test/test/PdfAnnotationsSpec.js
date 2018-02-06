@@ -31,7 +31,7 @@ class PdfAnnotationsShortcuts {
       // errors with the `#viewer .noteLayer section` selector earlier: sometimes it
       // wasn't appearing. If this line makes those errors go away, that means there's
       // a race and we're failing to wait for something -- but I don't know what.
-      await b.sleep(500)
+      await b.sleep(1000)
 
       const el = (await b.find({ css: '#viewer .textLayer div' })).driverElement
       await b.driver.actions()

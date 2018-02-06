@@ -2,13 +2,15 @@ package views.json.DocumentList
 
 import java.util.UUID
 
-import com.overviewdocs.query.Field
-import com.overviewdocs.searchindex.{SearchWarning,Utf16Highlight,Utf16Snippet}
-import com.overviewdocs.test.factories.{PodoFactory => factory}
 import org.specs2.matcher.{JsonMatchers,Matcher}
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
-import play.api.libs.json.Json
+import play.api.libs.json.{Json,Writes}
+
+import com.overviewdocs.models.{PdfNote,PdfNoteCollection}
+import com.overviewdocs.query.Field
+import com.overviewdocs.searchindex.{SearchWarning,Utf16Highlight,Utf16Snippet}
+import com.overviewdocs.test.factories.{PodoFactory => factory}
 import models.{InMemorySelection,SelectionWarning}
 import models.pagination.Page
 
@@ -122,6 +124,17 @@ class showSpec extends Specification with JsonMatchers {
     "set isFromOcr" in new BaseScope {
       override def doc1 = factory.document(isFromOcr=true)
       result must /("documents") /#(0) /("isFromOcr" -> true)
+    }
+
+    "set pdfNotes" in new BaseScope {
+      override def doc1 = factory.document(pdfNotes=PdfNoteCollection(Array(
+        PdfNote(1, 12.0, 13.0, 14.0, 15.0, "Note One"),
+        PdfNote(2, 22.0, 23.0, 24.0, 25.0, "Note Two"),
+      )))
+      result must /("documents") /#(0) /("pdfNotes") /#(0) /("pageIndex" -> 1)
+      result must /("documents") /#(0) /("pdfNotes") /#(0) /("x" -> 12.0)
+      result must /("documents") /#(0) /("pdfNotes") /#(0) /("text" -> "Note One")
+      result must /("documents") /#(0) /("pdfNotes") /#(1) /("y" -> 23.0)
     }
   }
 }

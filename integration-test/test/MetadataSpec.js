@@ -50,7 +50,7 @@ describe('Metadata', function() {
 
       it('should add and remove metadata fields', async function() {
         await this.browser.click({ link: 'Organize fields' })
-        await this.browser.click({ button: 'Add Field' })
+        await this.browser.click({ button: 'Add Field', wait: true })
         await this.browser.sendKeys('baz', '.metadata-schema-editor tbody tr:last-child input')
         await this.browser.click({ button: 'Close' })
         await this.browser.sendKeys('a baz value', findInput('baz'))

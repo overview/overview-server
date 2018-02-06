@@ -34,10 +34,10 @@
     "css-loader": "^0.28.9",
     "dot": "^1.1.2",
     "escape-html": "^1.0.3",
-    "extract-text-webpack-plugin": "^3.0.2",
-    "file-loader": "^1.1.6",
+    "extract-text-webpack-plugin": "^3.0.0",
+    "file-loader": "^0.11.2",
     "jssha": "^2.3.1",
-    "less": "^2.7.3",
+    "less": "^2.7.2",
     "less-loader": "^4.0.5",
     "loader-utils": "^1.1.0",
     "source-map": "^0.7.0",
@@ -49,16 +49,16 @@
   },
   "devDependencies": {
     "chai-jquery": "^2.0.0",
-    "electron": "^1.7.12",
-    "jquery": "^3.3.1",
-    "karma": "^2.0.0",
+    "electron": "^1.6.11",
+    "jquery": "^3.2.1",
+    "karma": "^1.7.0",
     "karma-chai-plugins": "^0.9.0",
     "karma-electron-launcher": "^0.2.0",
     "karma-jquery": "^0.2.2",
     "karma-junit-reporter": "^1.2.0",
     "karma-mocha": "^1.3.0",
     "karma-sourcemap-loader": "^0.3.7",
-    "karma-webpack": "^2.0.9",
-    "mocha": "^5.0.0"
+    "karma-webpack": "^2.0.4",
+    "mocha": "^3.5.0"
   }
 }
