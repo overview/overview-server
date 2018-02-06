@@ -99,8 +99,14 @@ define [
     _onMessage: (e) ->
       viewUrl = @viewApp?.view?.attributes?.url || '' # _any_ iframe, e.g. Twitter, can post a message
       viewUrl = "#{window.location.protocol}#{viewUrl}" if viewUrl.substring(0, 2) == '//'
+
       if e.origin != viewUrl.substring(0, e.origin.length)
-        console.log("Dropped message from #{e.origin}: expected #{viewUrl}", e)
+        if e.origin != window.origin
+          # We _expect_ messages from window.origin: PdfViewer, for instance,
+          # sends them. But if we have some third origin, that's something we'll
+          # want to display in the logs, because it may have some significance
+          # when debugging.
+          console.log("Dropped message from #{e.origin}: expected #{viewUrl}", e)
         return
 
       switch e.data.call

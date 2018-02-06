@@ -4,10 +4,6 @@
 
 // The preview-a-single-document view
 #document-current article {
-  .document[data-document-type=twitter] {
-    overflow: auto;
-  }
-
   iframe:not(.twitter-tweet) {
     position: absolute;
     top: 0;
@@ -20,7 +16,7 @@
     margin: 0;
   }
 
-  div.document, div.text-view {
+  div.document, div.text {
     display: none;
     position: absolute;
     top: 0;
@@ -29,48 +25,54 @@
     bottom: 0;
   }
 
-  &.showing-document div.document { display: block; }
-  &.showing-text div.text-view { .display-flex(); .flex-direction-column(); }
+  .showing-document>div.document { display: block; }
+  .showing-text>div.text { .display-flex(); .flex-direction-column(); }
 
-  div.text-view div.text {
-    .flex(1 1 auto);
-  }
+  div.text {
+    div.find {
+      padding: 10px;
+      text-align: center;
+      background-color: @body-bg-dark;
+      border-top: 1px solid @table-border-color;
 
-  div.find {
-    .flex(0 0 auto);
-    padding: 10px;
-    text-align: center;
-    background-color: @body-bg-dark;
-    border-top: 1px solid @table-border-color;
+      * {
+        display: inline;
+      }
 
-    * {
-      display: inline;
-    }
+      i {
+        font-size: 1em;
+      }
 
-    i {
-      font-size: 1em;
-    }
-
-    a {
-      padding: 0 .5em;
+      a {
+        padding: 0 .5em;
+      }
     }
   }
 
-  .twitter-tweet-container {
-    margin: 10px auto;
-    width: 500px; /* Twitter default */
+  .document-view-unknown {
+    background: @body-bg;
+    padding: 1rem;
+    height: 100%;
+    overflow: auto;
+
+    p.link {
+      word-break: break-all;
+    }
   }
 
-  blockquote.twitter-tweet {
-    /* This should hide until either Twitter replaces it, or Twitter *fails* to replace it. */
-    display: none;
+  .document-view-twitter {
+    background: @body-bg;
+    padding: 1rem;
+    height: 100%;
+    overflow: auto;
+
+    .loading { display: none; }
+    .twitter-tweet-container:empty + .loading {
+      display: block;
+    }
   }
 
-  p.source + pre, p.source + iframe {
-    border-bottom: 34px solid white; /* p.source padding + 1 line */
-  }
-
-  .text-view .text {
+  .text {
     .display-flex();
     .flex-direction-column();
     background: #f8f8f8;
@@ -108,7 +110,7 @@
     }
   }
 
-  em.highlight {
+  em {
     font-style: normal;
     font-weight: bold;
     background: @highlight;
@@ -116,16 +118,6 @@
     &.current {
       box-shadow: 0 0 5px 1px @brand-primary;
       border-radius: @border-radius-small;
-    }
-  }
-
-  div.missing-plugin {
-    text-align: center;
-    margin-top: 3em;
-
-    i {
-      font-size: 10em;
-      text-decoration: none;
     }
   }
 }

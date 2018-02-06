@@ -427,6 +427,10 @@ module.exports = class Browser {
       if (retval) return
     } while (new Date() - start < timeout)
 
+    const filename = `wait-failed-${(Math.random() * 9999999).toFixed(0)}.png`
+    console.log(`Saving failure screenshot to ${filename}`)
+    await this.saveScreenshot(filename)
+
     throw new Error(`Timed out waiting for ${message}`)
   }
 

@@ -1,131 +1,49 @@
-define [
-  'backbone'
-  './models/TextDocument'
-  './models/UrlPropertiesExtractor'
-  './models/CurrentCapabilities'
-  './views/DocumentView'
-  './views/TextView'
-  './views/FindView'
-], (Backbone, TextDocument, UrlPropertiesExtractor, CurrentCapabilities, DocumentView, TextView, FindView) ->
-  DocumentSetId = /\/documentsets\/(\d+)/.exec(window.location.pathname)[1]
+import Backbone from 'backbone'
+import AppView from './views/AppView'
+import DocumentWrapper from './models/DocumentWrapper'
+import UrlPropertiesExtractor from './models/UrlPropertiesExtractor'
 
-  ViewableDocumentTypes =
-    documentCloud: null
-    https: null
-    pdf: null
-    twitter: null
+export default class App extends Backbone.View
+  # Creates a new DocumentDisplay.
+  #
+  # Callers should access the "el" property to insert it into
+  # the page. Then they can call setDocument() to show a document.
+  initialize: (options) ->
+    throw 'Must pass options.preferences, a DocumentDisplayPreferences' if !options.preferences
 
-  class App extends Backbone.View
-    # Creates a new DocumentDisplay.
-    #
-    # Callers should access the "el" property to insert it into
-    # the page. Then they can call setDocument() to show a document.
-    initialize: (options) ->
-      throw 'Must pass options.preferences, a DocumentDisplayPreferences' if !options.preferences
+    @urlPropertiesExtractor = new UrlPropertiesExtractor(documentCloudUrl: window.documentCloudUrl)
+    @preferences = options.preferences
 
-      @urlPropertiesExtractor = new UrlPropertiesExtractor(documentCloudUrl: window.documentCloudUrl)
-      @preferences = options.preferences
-      @currentCapabilities = new CurrentCapabilities()
+    @appView = new AppView({
+      target: @el,
+      data: {
+        document: null,
+        highlightQ: null,
+        preferences: @preferences.attributes,
+        transactionQueue: Backbone, # HACK -- "Backbone.ajax" is actually the same as transactionQueue.ajax
+      },
+    })
 
-      @listenTo(@preferences, 'change:text', @render)
+    @listenTo(@preferences, 'change', (preferences) => @appView.set({ preferences: preferences.attributes }))
 
-      @_initialRender()
+  # Show a new document.
+  #
+  # The document may be:
+  #
+  # * A JSON object with id and url properties (in our database)
+  # * A JSON object with an id property (in our database)
+  # * null
+  setDocument: (json) ->
+    document = DocumentWrapper.wrap(json, @urlPropertiesExtractor)
 
-      @q = null
-      @setDocument(null)
+    @appView.set({ document: document })
 
-    _initialRender: ->
-      @documentView = new DocumentView(preferences: @preferences)
-      @listenTo(@documentView, 'tweet-deleted', @_onTweetDeleted)
-      @$textViewEl = Backbone.$('<div class="text-view"></div>')
+  # If there's a PDF window open, tell it to begin creating a Note
+  beginCreatePdfNote: ->
+    @appView?.beginCreatePdfNote()
 
-      @documentView.render()
-
-      @$el.append(@documentView.el)
-      @$el.append(@$textViewEl)
-
-    # Show a new document.
-    #
-    # The document may be:
-    #
-    # * A JSON object with id and url properties (in our database)
-    # * A JSON object with an id property (in our database)
-    # * null
-    setDocument: (json) ->
-      return if json?.id == @document?.id
-      @document = json
-      @render()
-
-    # If there's a PDF window open, tell it to begin creating a Note
-    beginCreatePdfNote: -> @documentView?.beginCreatePdfNote()
-
-    # Highlight a new search phrase
-    #
-    # The search phrase may be a String or <tt>null</tt>.
-    setSearch: (q) ->
-      return if @q == q
-      @q = q
-      @textDocument?.fetchHighlights(q)
-      @$el.toggleClass('highlighting', @q?)
-
-    render: ->
-      id = @document?.id
-      url = @document?.url
-
-      if url
-        urlProperties = @urlPropertiesExtractor.urlToProperties(url)
-        urlProperties.id = id     # needed as not captured from url for local://
-
-      if !id?
-        @_removeTextViews()
-        @textDocument = null
-        @documentView.setUrlProperties(null)
-        @$el.attr(class: '')
-      else
-        @currentCapabilities.set
-          canShowDocument: urlProperties?.type of ViewableDocumentTypes
-        if @currentCapabilities.get('canShowDocument') && !@preferences.get('text')
-          @_renderDocument(urlProperties)
-        else
-          @_renderText()
-
-      @preferences.set(documentUrl: urlProperties?.url)
-
-      @
-
-    _onTweetDeleted: ->
-      @currentCapabilities.set(canShowDocument: false)
-      @_renderText()
-
-    _removeTextViews: ->
-      @textView?.remove()
-      @findView?.remove()
-      @textView = null
-      @findView = null
-
-    _renderDocument: (urlProperties) ->
-      @$el.attr(class: 'showing-document')
-      @_removeTextViews()
-      @textDocument = null
-      @documentView.setUrlPropertiesAndHighlightSearch(urlProperties, @q)
-
-    _renderText: ->
-      @$el.attr(class: 'showing-text')
-      @$el.toggleClass('highlighting', @q?)
-      @_removeTextViews()
-      if @document?
-        @textDocument = new TextDocument
-          id: @document.id
-          url: @document.url
-          documentSetId: DocumentSetId
-        @textDocument.fetchText()
-        @textDocument.fetchHighlights(@q)
-        @textView = new TextView
-          model: @textDocument
-          currentCapabilities: @currentCapabilities
-          preferences: @preferences
-        @findView = new FindView(model: @textDocument)
-        @$textViewEl.append(@textView.el)
-        @$textViewEl.append(@findView.el)
-      else
-        @textDocument = null
+  # Highlight a new search phrase
+  #
+  # The search phrase may be a String or <tt>null</tt>.
+  setSearch: (q) ->
+    @appView.set({ highlightQ: q })

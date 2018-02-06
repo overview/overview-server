@@ -20,7 +20,7 @@ module.exports = function likeATree(opts) {
           },
 
           pdf: async () => {
-            await this.browser.assertExists('.document[data-document-type=pdf] iframe')
+            await this.browser.assertExists('.pdf-document-view iframe')
           }
         }[document.type]
 

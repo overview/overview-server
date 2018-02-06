@@ -23,7 +23,8 @@ object show {
       "nodeids" -> nodeIds,
       "tagids" -> tagIds,
       "snippet" -> snippetsToHtml(snippets, document.text),
-      "thumbnailUrl" -> thumbnailUrl
+      "thumbnailUrl" -> thumbnailUrl,
+      "isFromOcr" -> document.isFromOcr,
     )
   }
 

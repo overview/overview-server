@@ -118,5 +118,10 @@ class showSpec extends Specification with JsonMatchers {
       result must /("documents") /#(0) /("metadata") /("foo" -> "bar")
       result must /("documents") /#(0) /("metadata") /("bar" -> "baz")
     }
+
+    "set isFromOcr" in new BaseScope {
+      override def doc1 = factory.document(isFromOcr=true)
+      result must /("documents") /#(0) /("isFromOcr" -> true)
+    }
   }
 }

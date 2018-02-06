@@ -1,19 +1,22 @@
+const webpack = require('webpack')
 const webpackConfig = require('../../webpack.config.js')
 webpackConfig.plugins = webpackConfig.plugins.filter(plugin => plugin.constructor.name === 'ProvidePlugin')
-webpackConfig.module.loaders = webpackConfig.module.loaders
-  .map(loader => {
-    return Object.assign({}, loader, { use: (
-      Array.isArray(loader.use) ? loader.use.filter(u => !/uglify-es-loader/.test(u.loader)) : loader.use
-    )})
-  })
-webpackConfig.devtool = 'inline-source-map'
+webpackConfig.module.rules = webpackConfig.module.rules.map(rule => {
+  const ret = Object.assign({}, rule)
+  if (Array.isArray(ret.use)) {
+    ret.use = ret.use.filter(u => !/uglify-es-loader|cache-loader/.test(u.loader))
+  }
+  return ret
+})
 delete webpackConfig.entry
 
 module.exports = function(config) {
   config.set({
     files: [
       'test_index.js',
+      { pattern: './mock-js/**/*', included: false },
       { pattern: './mock-plugin/**/*', included: false },
+      { pattern: './mock-pdf-viewer/**/*', included: false },
     ],
     preprocessors: {
       'test_index.js': [ 'webpack', 'sourcemap' ],

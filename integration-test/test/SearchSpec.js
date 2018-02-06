@@ -30,17 +30,8 @@ describe('Search', function() {
 
       await this.browser.shortcuts.documentSet.openDocumentFromList('First')
 
-      // Wait for the highlights to be loaded
-      await this.browser.assertExists({ tag: 'em', class: 'highlight', index: 1, wait: 'pageLoad' })
-      await this.browser.assertExists({ tag: 'em', class: 'highlight', index: 2 })
-      await this.browser.assertExists({ tag: 'em', class: 'highlight', index: 3 })
-
-      const text1 = await this.browser.getText({ tag: 'em', class: 'highlight', index: 1 })
-      expect(text1).to.eq('word')
-      const text2 = await this.browser.getText({ tag: 'em', class: 'highlight', index: 2 })
-      expect(text2).to.eq('word')
-      const text3 = await this.browser.getText({ tag: 'em', class: 'highlight', index: 3 })
-      expect(text3).to.eq('word')
+      // Wait for three highlights of "word" to load
+      await this.browser.assertExists({ xpath: '//pre/em[text()="word"][position()=3]', wait: 'pageLoad' })
     })
 
     it('should regex search', async function() {

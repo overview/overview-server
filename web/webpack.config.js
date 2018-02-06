@@ -1,10 +1,9 @@
 'use strict'
 
-const os = require('os')
-
+const path = require('path')
+const webpack = require('webpack')
 const ExtractTextPlugin = require('extract-text-webpack-plugin')
 const WebpackCleanupPlugin = require('webpack-cleanup-plugin')
-const webpack = require('webpack')
 
 const jsEntryPoints = [
   'admin/Job/index',
@@ -19,6 +18,7 @@ const jsEntryPoints = [
   'DocumentSet/show-progress',
   'DocumentSetUser/index',
   'FileImport/new',
+  'PdfViewer/show',
   'PublicDocumentSet/index',
   'SharedDocumentSet/index',
   'Welcome/show',
@@ -100,15 +100,39 @@ for (const entryPoint of cssEntryPoints) {
 }
 entryPointsMap['tracking'] = 'tracking'
 
-const UglifyESOptions = {
-  sourceMap: true, // slow, but necessary
-  compress: false, // save 5s: compression is slow and barely affects file size
-  mangle: true,    // costs 1.5s, but saves 25% or so in file sizes
-}
-
 const extractLess = new ExtractTextPlugin({
   filename: '[contenthash]-[name].css',
 })
+
+const uglifyLoader = {
+  loader: './node/uglify-es-loader',
+  options: {
+    sourceMap: true, // slow, but necessary
+    compress: false, // save 5s: compression is slow and barely affects file size
+    mangle: true,    // costs 1.5s, but saves 25% or so in file sizes
+  },
+}
+
+const babelLoader = {
+  loader: 'babel-loader',
+  options: {
+    presets: [
+      [ '@babel/preset-env', {
+        target: {
+          browsers: [ 'last 2 Chrome versions', 'last 2 Firefox versions', 'last 2 Edge versions', ],
+        },
+      } ],
+    ],
+    plugins: ['@babel/transform-runtime'],
+  },
+}
+
+const cacheLoader = {
+  loader: 'cache-loader',
+  options: {
+    cacheDirectory: path.resolve('node_modules', '.cache', 'cache-loader'),
+  },
+}
 
 module.exports = {
   context: `${__dirname}`,
@@ -127,14 +151,12 @@ module.exports = {
     libraryTarget: 'window',
   },
   module: {
-    loaders: [
+    rules: [
       {
         test: /\.coffee$/,
         use: [
-          {
-            loader: './node/uglify-es-loader',
-            options: UglifyESOptions,
-          },
+          cacheLoader,
+          uglifyLoader,
           {
             loader: 'coffee-loader',
             options: { sourceMap: true },
@@ -142,17 +164,36 @@ module.exports = {
         ],
       },
       {
-        test: /\.js$/,
+        test: /\.svelte$/,
         use: [
+          cacheLoader,
+          uglifyLoader,
+          babelLoader,
           {
-            loader: './node/uglify-es-loader',
-            options: UglifyESOptions,
+            loader: 'svelte-loader',
           },
+        ],
+      },
+      {
+        test: /node_modules\/.*\.js$/,
+        use: [
+          cacheLoader,
+          uglifyLoader,
+        ],
+      },
+      {
+        test: /\.js$/,
+        exclude: /node_modules/,
+        use: [
+          cacheLoader,
+          uglifyLoader,
+          babelLoader,
         ],
       },
       {
         test: /\.less$/,
         use: extractLess.extract({use: [
+          cacheLoader,
           {
             loader: 'css-loader',
             options: { sourceMap: true },
@@ -188,7 +229,7 @@ module.exports = {
     new RedirectPlayFrameworkUsingDummyMd5Files(),
   ],
   resolve: {
-    extensions: [ '.js', '.coffee' ],
+    extensions: [ '.js', '.coffee', '.svelte' ],
     modules: [ '.', 'js', 'node_modules' ],
     alias: {
       // for our code:

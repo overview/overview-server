@@ -122,7 +122,7 @@ define [
       view = new DocumentListCursorView
         selection: @listSelection
         documentList: @state.get('documentList')
-        documentDisplayApp: DocumentDisplayApp
+        documentDisplayApp: DocumentDisplayApp.default # TODO when switching to ES6 modules, nix ".default"
         documentMetadataApp: CurrentDocumentMetadataApp.create(state: @state, globalActions: @globalActions)
         tags: @tags
         views: @state.documentSet.views

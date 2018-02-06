@@ -1,29 +1,27 @@
-define [
-  'underscore'
-  'backbone'
-], (_, Backbone) ->
-  DefaultAttrs = {
-    type: 'view' # 'tree' or 'view'
-    title: '' # What the user calls this View
-    creationData: [] # View-dependent [key,value] strings
-  }
+import Backbone from 'backbone'
 
-  # A View is an iframe served by a plugin.
-  #
-  # The id is an ID on the server; everything else is for displaying
-  # in the UI.
-  class View extends Backbone.Model
-    constructor: (attrs, options) ->
-      attrs = _.extend({}, DefaultAttrs, attrs ? {})
+DefaultAttrs = {
+  type: 'view' # 'tree' or 'view'
+  title: '' # What the user calls this View
+  creationData: [] # View-dependent [key,value] strings
+}
 
-      if 'createdAt' of attrs
-        attrs.createdAt = new Date(attrs.createdAt)
+# A View is an iframe served by a plugin.
+#
+# The id is an ID on the server; everything else is for displaying
+# in the UI.
+export default class View extends Backbone.Model
+  constructor: (attrs, options) ->
+    attrs = Object.assign({}, DefaultAttrs, attrs ? {})
 
-      attrs.clientId = "#{attrs.type}-#{attrs.id}"
+    if 'createdAt' of attrs
+      attrs.createdAt = new Date(attrs.createdAt)
 
-      super(attrs, options)
+    attrs.clientId = "#{attrs.type}-#{attrs.id}"
 
-    idAttribute: 'clientId'
+    super(attrs, options)
 
-    url: ->
-      "#{@collection.url.replace(/views$/, @attributes.type + 's')}/#{@attributes.id}"
+  idAttribute: 'clientId'
+
+  url: ->
+    "#{@collection.url.replace(/views$/, @attributes.type + 's')}/#{@attributes.id}"

@@ -3,6 +3,8 @@ define [
   'apps/MassUploadForm/app'
   'apps/Show/models/DocumentSet'
 ], ($, MassUploadApp, DocumentSet) ->
+  DocumentSet = DocumentSet.default # TODO s/define/import and nix this
+
   $ ->
     $form = $('form.file-import')
 

@@ -210,13 +210,13 @@ views.CsvUpload.new.progress.prompt=Meanwhile, you can open Overview in another 
 views.CsvUpload.new.progress.cancel=Cancel upload
 views.CsvUpload.new.leavePageWarning=The upload will stop if you leave this page.
 
-views.Document.show.DocumentView.missingPlugin=Your browser cannot display this document as a PDF file. Click above to download, or try the <a href="http://get.adobe.com/reader/" target="_blank">Acrobat Reader</a> plugin.
-views.Document.show.DocumentView.twitter.loading.text=Loading tweet…
-views.Document.show.DocumentView.twitter.loading.url=
+views.Document.show.DocumentView.twitter.loading=Loading tweet…
+views.Document.show.DocumentView.twitter.deleted=This tweet has been deleted from Twitter. Try viewing “Text” to see Overview’s local copy.
+views.Document.show.DocumentView.unknown=Overview cannot display this page. Try viewing “Text” or clicking this link:
 views.Document.show.FindView.label=Highlighting match {1,number,integer} of {2,number,integer} for “{0}”
 views.Document.show.FindView.nextHighlight=Highlight next match
 views.Document.show.FindView.previousHighlight=Highlight previous match
-views.Document.show.TextView.error=We could not load the document text. Try refreshing the page.
+views.Document.show.TextView.error=We could not load the document text. Try refreshing the page. (Message: {0})
 views.Document.show.TextView.loading=Loading text…
 views.Document.show.TextView.onlyTextAvailable=Only text view is available for this document.
 views.Document.show.TextView.isFromOcr_html=Overview used image analysis to produce this text. <a href="https://blog.overviewdocs.com/2015/10/13/overview-and-optical-character-recognition/">Learn more</a>

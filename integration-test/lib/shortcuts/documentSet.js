@@ -86,7 +86,7 @@ class DocumentSetShortcuts {
     await browser.awaitingCssTransitions(NTransitionsWhenSelectingDocument, async () => {
       await browser.click({ tag: 'h3', contains: title })
     })
-    await browser.assertExists({ css: '#document-current article .document:not(.empty), #document-current article .text-view:not(.empty)', wait: true })
+    await browser.assertExists({ css: '#document-current article .document:not(.empty), #document-current article .text:not(.empty)', wait: true })
   }
 
   // Assuming a single document is visible and no CSS transitions are ongoing,

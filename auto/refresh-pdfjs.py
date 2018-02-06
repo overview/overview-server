@@ -57,7 +57,7 @@ def copy(source_dir, glob, destination_dir):
     for source in Path(source_dir).glob(glob):
         shutil.copy(str(source), destination_dir)
 
-def copy_document_show_scala(source, destination):
+def copy_viewer_html_scala(source, destination):
     debug('cp %s %s (modifying as we go)' % (source, destination))
 
     data = Path(source).read_bytes()
@@ -66,7 +66,7 @@ def copy_document_show_scala(source, destination):
     data = re.sub(rb'^.*?-->', '', data)
 
     # Add Scala method signature
-    data = b'@this(assets: AssetsFinder)\n@(document: com.overviewdocs.models.Document)' + data
+    data = b'@this(assets: AssetsFinder)\n@()' + data
 
     # Add <base>
     data = data.replace(b'<head>', b'<head><base href="/assets/pdfjs/web/x">')
@@ -77,7 +77,7 @@ def copy_document_show_scala(source, destination):
     data = data.replace(b'"viewer.js"', b'"@assets.path("pdfjs/web/viewer.js")"', 1)
 
     # Add onload
-    data = data.replace(b'</body>', b"""<script>document.addEventListener('DOMContentLoaded', function() { PDFViewerApplication.open("@document.viewUrl", null); }, true);</script></body>""")
+    data = data.replace(b'</body>', b"""<script src="@assets.path("javascript-bundles/PdfViewer-show.js")"></script></body>""")
 
     Path(destination).write_bytes(data)
 
@@ -109,9 +109,9 @@ def run(pdfjs_dirname):
             '%s/public/pdfjs/%s' % (overview_dirname, destination_dir)
         )
 
-    copy_document_show_scala(
-        '%s/build/minified/web/viewer.html' % pdfjs_dirname,
-        '%s/app/views/Document/show.scala.html' % overview_dirname
+    copy_viewer_html_scala(
+        '%s/build/generic/web/viewer.html' % pdfjs_dirname,
+        '%s/app/views/PdfViewer/show.scala.html' % overview_dirname
     )
 
 def main():

@@ -32,6 +32,9 @@ define [
     DocumentListTitleView, \
     TreeApp, ViewApp, MetadataSchemaEditorApp, DocumentListParamsSelectorApp) ->
 
+  DocumentSet = DocumentSet.default
+  State = State.default
+
   class App
     constructor: (options) ->
       throw 'need options.mainEl' if !options.mainEl

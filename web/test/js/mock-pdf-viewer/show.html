@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Mock PDF Viewer</title>
+  </head>
+  <body>
+    <pre class="last-message"></pre>
+    <script>
+
+var lastMessage = document.querySelector('.last-message')
+
+window.addEventListener('message', function(ev) {
+  const message = ev.data
+  switch (message.call) {
+    case 'setState':
+      lastMessage.textContent = JSON.stringify(message.state)
+      break
+    default:
+      lastMessage.textContent = 'error'
+  }
+})
+
+window.parent.postMessage({
+  call: 'fromPdfViewer:getState',
+}, document.origin)
+
+    </script>
+  </body>
+</html>
