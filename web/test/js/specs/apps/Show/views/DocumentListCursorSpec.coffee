@@ -126,12 +126,12 @@ define [
 
       it 'should call documentDisplayApp.setDocument with a document', ->
         selection.set({ cursorIndex: 2 })
-        expect(displayApp.setDocument).to.have.been.calledWith(documentList.documents.at(2).attributes)
+        expect(displayApp.setDocument).to.have.been.calledWith(documentList.documents.at(2))
 
-      it 'should call documentDisplayApp.setDocument with undefined', ->
+      it 'should call documentDisplayApp.setDocument with null', ->
         selection.set({ cursorIndex: 2 }) # defined
         selection.set({ cursorIndex: 7 }) # undefined
-        expect(displayApp.setDocument).to.have.been.calledWith(undefined)
+        expect(displayApp.setDocument).to.have.been.calledWith(null)
 
       it 'should add the documentMetadataApp el', ->
         expect(view.el.querySelector('.document-metadata-app')).not.to.be.null

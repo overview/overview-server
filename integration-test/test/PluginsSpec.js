@@ -314,7 +314,7 @@ describe('Plugins', function() {
     })
   })
 
-  asUserWithPdfDocumentSet('PdfAnnotations', function() {
+  asUserWithPdfDocumentSet('PdfNotes', function() {
     beforeEach(function() {
       this.browser.loadShortcuts('documentSet')
       this.browser.loadShortcuts('jquery')

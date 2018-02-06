@@ -166,7 +166,7 @@ define [
       cursorIndex? && @documentList?.documents?.at(cursorIndex) || undefined
 
     _renderDocument: (maybeDocument) ->
-      @documentDisplayApp.setDocument(maybeDocument?.attributes)
+      @documentDisplayApp.setDocument(maybeDocument || null)
 
     renderHeader: ->
       maybeDocument = @_getDocument()

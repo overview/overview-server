@@ -2,6 +2,24 @@ import PdfDocumentView from 'apps/DocumentDisplay/views/PdfDocumentView'
 
 const iframeSrc = 'http://localhost:9876/base/mock-pdf-viewer/show.html'
 
+// Will wait for the predicate to return true, or for 1s to elapse:
+// whichever comes first
+function waitForPredicateOrNoOp(predicate) {
+  return new Promise((resolve, reject) => {
+    const startDate = new Date()
+
+    function testOrLoop() {
+      if (predicate() || (new Date() - startDate) > 1000) {
+        resolve(null)
+      } else {
+        setTimeout(testOrLoop, 4)
+      }
+    }
+
+    testOrLoop()
+  })
+}
+
 describe('PdfDocumentView', function() {
   beforeEach(function() {
     this.div = document.createElement('div')
@@ -23,30 +41,21 @@ describe('PdfDocumentView', function() {
     //   const json = this.waitForLastMessageEqualling(sinon.match({ foo: 'bar' }))
     //   expect(json).to.deep.eq({ foo: 'bar', bar: 'baz' })
     this.waitForMessageMatching = async (sinonMatcher) => {
-      return new Promise((resolve, reject) => {
-        const startDate = new Date()
+      const getMessage = () => {
+        const iframeDocument = this.iframe.contentDocument
+        if (!iframeDocument) return null
+        const lastMessageEl = iframeDocument.querySelector('.last-message')
+        if (!lastMessageEl) return null
+        const lastMessageText = lastMessageEl.textContent
+        if (!lastMessageText) return null
+        return JSON.parse(lastMessageText)
+      }
 
-        const getLastMessage = () => {
-          const iframeDocument = this.iframe.contentDocument
-          if (!iframeDocument) return null
-          const lastMessageEl = iframeDocument.querySelector('.last-message')
-          if (!lastMessageEl) return null
-          const lastMessageText = lastMessageEl.textContent
-          if (!lastMessageText) return null
-          return JSON.parse(lastMessageText)
-        }
-
-        function testOrLoop() {
-          const lastMessage = getLastMessage()
-          if (sinonMatcher.test(lastMessage) || (new Date() - startDate) > 1000) {
-            resolve(lastMessage)
-          } else {
-            setTimeout(testOrLoop, 4)
-          }
-        }
-
-        testOrLoop()
+      return waitForPredicateOrNoOp(() => {
+        const json = getMessage()
+        return json !== null && sinonMatcher.test(json)
       })
+        .then(() => getMessage())
     }
   })
 
@@ -103,6 +112,32 @@ describe('PdfDocumentView', function() {
         pdfUrl: displayUrl,
       })
       expect(message.pdfNotes).to.deep.eq(pdfNotes)
+    })
+
+    it('should fire changePdfNotes', async function() {
+      const pdfNotes = [
+        { pageIndex: 0, x: 1, y: 2, width: 3, height: 4, text: 'text', },
+      ]
+
+      // Wait for load. After this, we know we can use callPostMessage() from iframe
+      const message = await this.waitForMessageMatching(sinon.match.has('documentId'))
+      expect(message).to.have.property('documentId')
+
+      const spy = sinon.spy()
+      this.view.on('changePdfNotes', spy)
+
+      this.iframe.contentWindow.callPostMessage({
+        call: 'fromPdfViewer:savePdfNotes',
+        documentId: 123,
+        pdfNotes: pdfNotes,
+      })
+
+      const matcher = sinon.match({
+        documentId: 123,
+        pdfNotes: pdfNotes,
+      })
+      await waitForPredicateOrNoOp(() => spy.called)
+      expect(spy).to.have.been.calledWith(matcher)
     })
 
     it('should update highlightQ', async function() {

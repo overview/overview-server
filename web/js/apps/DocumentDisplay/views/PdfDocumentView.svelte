@@ -30,7 +30,7 @@
         this.refs.iframe.contentWindow.postMessage({
           call: 'beginCreatePdfNote',
         }, document.origin)
-      }
+      },
     },
 
     oncreate() {
@@ -68,11 +68,21 @@
         updateIframeProps({ showSidebar })
       })
 
-      this.messageListener = function(ev) {
+      this.messageListener = (ev) => {
         if (ev.origin === document.origin && ev.source === iframe.contentWindow) {
           const message = ev.data
-          if (message.call === 'fromPdfViewer:getState') {
-            sendStateToIframe(iframeProps)
+          switch (message.call) {
+            case 'fromPdfViewer:getState':
+              sendStateToIframe(iframeProps)
+              break
+            case 'fromPdfViewer:savePdfNotes':
+              this.fire('changePdfNotes', {
+                documentId: message.documentId,
+                pdfNotes: message.pdfNotes,
+              })
+              break
+            default:
+              console.warn('Unhandled message from PDF Viewer iframe', ev)
           }
         }
       }

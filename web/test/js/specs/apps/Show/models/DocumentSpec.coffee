@@ -116,3 +116,14 @@ define [
         @document.rename('foo')
         Backbone.ajax.getCall(0).args[0].success()
         expect(@document.get('title')).to.eq('foo')
+
+      it 'should set pdfNotes immediately and then patch via AJAX', ->
+        pdfNotes = [
+          { pageIndex: 0, x: 1, y: 2, width: 3, height: 4, text: 'text' },
+        ]
+        @document.savePdfNotes(pdfNotes)
+        expect(@document.get('pdfNotes')).to.deep.eq(pdfNotes)
+        expect(Backbone.ajax).to.have.been.calledWith(sinon.match({
+          type: 'PATCH',
+          data: JSON.stringify({ pdfNotes }),
+        }))

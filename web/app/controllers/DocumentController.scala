@@ -118,47 +118,28 @@ class DocumentController @Inject() (
     val maybeMetadataJson: Option[JsObject] = maybeJson.flatMap(_.value.get("metadata")).flatMap(_.asOpt[JsObject])
     val maybeTitle: Option[String] = maybeJson.flatMap(_.value.get("title")).flatMap(_.asOpt[JsString]).map(_.value)
 
-    (maybeMetadataJson, maybeTitle) match {
-      case (Some(metadataJson), None) => {
+    implicit val pdfNoteReads = Json.reads[PdfNote]
+    val pdfNoteSeqFormat = Reads.seq[PdfNote]
+    val maybePdfNotes: Option[PdfNoteCollection] = maybeJson
+      .flatMap(_.value.get("pdfNotes"))
+      .flatMap(_.asOpt(pdfNoteSeqFormat))
+      .map(notes => PdfNoteCollection(notes.toArray))
+
+    (maybeMetadataJson, maybeTitle, maybePdfNotes) match {
+      case (Some(metadataJson), None, None) => {
         documentBackend.updateMetadataJson(documentSetId, documentId, metadataJson).map(_ => NoContent)
       }
-      case (None, Some(title)) => {
+      case (None, Some(title), None) => {
         documentBackend.updateTitle(documentSetId, documentId, title).map(_ => NoContent)
+      }
+      case (None, None, Some(pdfNotes)) => {
+        documentBackend.updatePdfNotes(documentSetId, documentId, pdfNotes).map(_ => NoContent)
       }
       case _ => {
         Future.successful(BadRequest(jsonError(
           "illegal-arguments",
-          "You must pass a JSON Object with a \"metadata\" property or a \"title\" property"
+          "You must pass a JSON Object with a \"metadata\" property, a \"title\" property, or a \"pdfNotes\" property which is an Array of [ { pageIndex, x, y, width, height, text } ]"
         )))
-      }
-    }
-  }
-
-  def showPdfNotes(documentId: Long) = authorizedAction(userOwningDocument(documentId)).async { implicit request =>
-    val pdfNoteWrites = Json.writes[PdfNote]
-    val pdfNoteSeqWrites = Writes.seq(pdfNoteWrites)
-
-    documentBackend.show(documentId).map(_ match {
-      case None => NotFound
-      case Some(document) => {
-        Ok(pdfNoteSeqWrites.writes(document.pdfNotes.pdfNotes.toSeq))
-      }
-    })
-  }
-
-  def updatePdfNotes(documentId: Long) = authorizedAction(userOwningDocument(documentId)).async { implicit request =>
-    val pdfNoteReads = Json.reads[PdfNote]
-    val pdfNoteSeqFormat = Reads.seq(pdfNoteReads)
-
-    request.body.asJson.flatMap(_.asOpt(pdfNoteSeqFormat)) match {
-      case None => Future.successful(BadRequest(jsonError(
-        "illegal-arguments",
-        "You must pass a JSON Array of {pageIndex,x,y,width,height,text} Objects"
-      )))
-      case Some(notes) => {
-        val pdfNotes = PdfNoteCollection(notes.toArray)
-        documentBackend.updatePdfNotes(documentId, pdfNotes)
-          .map(_ => NoContent)
       }
     }
   }

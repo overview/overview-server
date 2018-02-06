@@ -1,3 +1,5 @@
+import NoteStore from 'apps/PdfViewer/NoteStore'
+
 const DefaultProps = {
   documentId: null,
   pdfUrl: null,
@@ -42,8 +44,9 @@ function toggleSidebar(want) {
   PDFViewerApplication.pdfSidebar[want ? 'open' : 'close']()
 }
 
-function setNotes(pdfNotes) {
-  PDFViewerApplication.noteStore.reset(pdfNotes)
+function setNotes(documentId, pdfNotes) {
+  // Uses our custom NoteStore
+  PDFViewerApplication.noteStore.setDocumentIdAndPdfNotes({ documentId, pdfNotes })
 }
 
 function setState({ documentId, pdfUrl, pdfNotes, showSidebar, highlightQ}) {
@@ -56,7 +59,7 @@ function setState({ documentId, pdfUrl, pdfNotes, showSidebar, highlightQ}) {
   }
   if (pdfNotes !== undefined && pdfNotes !== state.pdfNotes) {
     state.pdfNotes = pdfNotes
-    setNotes(state.pdfNotes)
+    setNotes(state.documentId, state.pdfNotes)
   }
   if (showSidebar !== undefined && showSidebar !== state.showSidebar) {
     state.showSidebar = showSidebar
@@ -113,6 +116,16 @@ function monkeyPatchPdfSidebarSetInitialViewToFollowOverviewSidebarPreference() 
 
 window.addEventListener('load', function() {
   monkeyPatchPdfSidebarSetInitialViewToFollowOverviewSidebarPreference()
+  PDFViewerApplication.noteStore = PDFViewerApplication.pdfViewer.noteStore = new NoteStore({
+    eventBus: PDFViewerApplication.eventBus,
+    savePdfNotes: ({ documentId, pdfNotes }) => {
+      window.parent.postMessage({
+        call: 'fromPdfViewer:savePdfNotes',
+        documentId: documentId,
+        pdfNotes: pdfNotes,
+      }, document.origin)
+    }
+  })
 
   // Load document once PDFJS has loaded
   window.parent.postMessage({

@@ -4,7 +4,7 @@
   {{elseif displayType === 'https'}}
     <HttpDocumentView :document />
   {{elseif displayType === 'pdf'}}
-    <PdfDocumentView ref:pdfDocumentView :document :preferences :highlightQ />
+    <PdfDocumentView on:changePdfNotes="fire('changePdfNotes', event)" ref:pdfDocumentView :document :preferences :highlightQ />
   {{elseif displayType === 'twitter'}}
     <TwitterDocumentView :document />
   {{elseif document && document.displayUrl}}

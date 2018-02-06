@@ -1,6 +1,18 @@
 <div class={{`showing-${visibleDisplay}${highlightQ && ' highlighting' || ''}`}}>
-  <DocumentView ref:documentView document={{documentViewDocument}} preferences={{preferences}} highlightQ={{highlightQ}} />
-  <TextView document={{document}} highlightQ={{highlightQ}} transactionQueue={{transactionQueue}} isOnlyTextAvailable={{isOnlyTextAvailable}} preferences={{preferences}} />
+  <DocumentView
+    on:changePdfNotes="fire('changePdfNotes', event)"
+    ref:documentView
+    document={{documentViewDocument}}
+    preferences={{preferences}}
+    highlightQ={{highlightQ}}
+    />
+  <TextView
+    document={{document}}
+    highlightQ={{highlightQ}}
+    transactionQueue={{transactionQueue}}
+    isOnlyTextAvailable={{isOnlyTextAvailable}}
+    preferences={{preferences}}
+    />
 </div>
 
 <script>

@@ -2,7 +2,7 @@
 
 const asUser = require('../support/asUser')
 
-class PdfAnnotationsShortcuts {
+class PdfNotesShortcuts {
   constructor(browser) {
     this.browser = browser
   }
@@ -52,7 +52,7 @@ class PdfAnnotationsShortcuts {
 
 // In order to let users analyze document text
 // We need to let them highlight and take notes
-describe('PdfAnnotations', function() {
+describe('PdfNotes', function() {
   asUser.usingTemporaryUser(function() {
     beforeEach(async function() {
       const b = this.browser
@@ -60,10 +60,10 @@ describe('PdfAnnotations', function() {
       b.loadShortcuts('documentSet')
       b.loadShortcuts('documentSets')
       b.loadShortcuts('importFiles')
-      b.pdf = new PdfAnnotationsShortcuts(b)
+      b.pdf = new PdfNotesShortcuts(b)
 
       await s.importFiles.open()
-      await s.importFiles.addFiles([ 'PdfAnnotations/doc1.pdf', 'PdfAnnotations/doc2.pdf' ])
+      await s.importFiles.addFiles([ 'PdfNotes/doc1.pdf', 'PdfNotes/doc2.pdf' ])
       await s.importFiles.finish({ name: 'annotations' })
       await s.documentSet.waitUntilStable()
 

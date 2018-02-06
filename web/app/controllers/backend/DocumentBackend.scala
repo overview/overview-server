@@ -66,7 +66,7 @@ trait DocumentBackend {
    *
    * Is a no-op if the Document does not exist.
    */
-  def updatePdfNotes(documentId: Long, pdfNotes: PdfNoteCollection): Future[Unit]
+  def updatePdfNotes(documentSetId: Long, documentId: Long, pdfNotes: PdfNoteCollection): Future[Unit]
 }
 
 class DbDocumentBackend @Inject() (
@@ -152,11 +152,11 @@ class DbDocumentBackend @Inject() (
     } yield ()
   }
 
-  override def updatePdfNotes(documentId: Long, pdfNotes: PdfNoteCollection) = {
+  override def updatePdfNotes(documentSetId: Long, documentId: Long, pdfNotes: PdfNoteCollection) = {
     // Assume documentSetId is the top 32 bits of documentId.
     val documentSetId = documentId >> 32
     for {
-      _ <- database.runUnit(updatePdfNotesCompiled(documentId).update(Some(pdfNotes)))
+      _ <- database.runUnit(updatePdfNotesCompiled(documentSetId, documentId).update(Some(pdfNotes)))
       _ <- searchBackend.refreshDocument(documentSetId, documentId)
     } yield ()
   }
@@ -208,10 +208,11 @@ class DbDocumentBackend @Inject() (
       .map(_.metadataJson)
   }
 
-  private lazy val updatePdfNotesCompiled = Compiled { (documentId: Rep[Long]) =>
+  private lazy val updatePdfNotesCompiled = Compiled { (documentSetId: Rep[Long], documentId: Rep[Long]) =>
     import DocumentsImpl._
 
     Documents
+      .filter(_.documentSetId === documentSetId)
       .filter(_.id === documentId)
       .map(_.pdfNotes)
   }

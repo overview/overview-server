@@ -113,3 +113,7 @@ define [
         success: =>
           @set('title', newTitle)
           @trigger('document-renamed', @, newTitle, options)
+
+    # Sets pdfNotes, then propagates that change to the server.
+    savePdfNotes: (pdfNotes) ->
+      @save({ pdfNotes: pdfNotes, }, { patch: true })

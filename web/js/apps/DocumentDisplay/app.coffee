@@ -24,19 +24,26 @@ export default class App extends Backbone.View
       },
     })
 
+    @appView.on('changePdfNotes', (ev) =>
+      if @document?.id == ev.documentId
+        @document.savePdfNotes(ev.pdfNotes)
+    )
+
     @listenTo(@preferences, 'change', (preferences) => @appView.set({ preferences: preferences.attributes }))
 
-  # Show a new document.
+  # Present a new document and stop presenting the old one.
   #
-  # The document may be:
-  #
-  # * A JSON object with id and url properties (in our database)
-  # * A JSON object with an id property (in our database)
-  # * null
-  setDocument: (json) ->
-    document = DocumentWrapper.wrap(json, @urlPropertiesExtractor)
+  # The document must be a Backbone.Model or `null`
+  setDocument: (document) ->
+    update = () =>
+      json = document && DocumentWrapper.wrap(document.attributes, @urlPropertiesExtractor) || null
+      @appView.set({ document: json })
 
-    @appView.set({ document: document })
+    @stopListening(@document) if @document
+    @document = document
+    @listenTo(@document, 'change:pdfNotes', update)
+
+    update()
 
   # If there's a PDF window open, tell it to begin creating a Note
   beginCreatePdfNote: ->

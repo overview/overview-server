@@ -253,12 +253,12 @@ class DbDocumentBackendSpec extends DbBackendSpecification with Mockito {
       }
 
       "update pdfNotes" in new UpdatePdfNotesScope {
-        await(backend.updatePdfNotes(document.id, pdfNotes2))
+        await(backend.updatePdfNotes(document.documentSetId, document.id, pdfNotes2))
         findDocument(document.id).map(_.pdfNotes) must beSome(pdfNotes2)
       }
 
       "refresh in searchBackend" in new UpdatePdfNotesScope {
-        await(backend.updatePdfNotes(document.id, pdfNotes2))
+        await(backend.updatePdfNotes(document.documentSetId, document.id, pdfNotes2))
         there was one(searchBackend).refreshDocument(documentSet.id, document.id)
       }
     }
