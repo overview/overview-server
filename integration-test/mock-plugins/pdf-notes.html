@@ -5,10 +5,14 @@
   </head>
   <body>
     <main></main>
-    <pre></pre>
+    <pre class="last-message"></pre>
     <button onclick="beginCreatePdfNote()">Create PDF Note</button>
     <script>
 var main = document.querySelector('main')
+
+window.addEventListener('message', function(ev) {
+  document.querySelector('pre').textContent = JSON.stringify(ev.data)
+})
 
 function beginCreatePdfNote() {
   window.parent.postMessage({

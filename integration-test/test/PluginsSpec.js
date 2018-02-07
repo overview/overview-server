@@ -318,6 +318,7 @@ describe('Plugins', function() {
     beforeEach(function() {
       this.browser.loadShortcuts('documentSet')
       this.browser.loadShortcuts('jquery')
+      this.browser.loadShortcuts('pdfNotes')
       this.documentSet = this.browser.shortcuts.documentSet
     })
 
@@ -341,10 +342,27 @@ describe('Plugins', function() {
         const b = this.browser
 
         await b.shortcuts.documentSet.openDocumentFromList('doc1.pdf')
-        await this.clickViewButton('Create PDF Note')
+        // opening document takes 1s to animate: assume that quells all races
 
+        await this.clickViewButton('Create PDF Note')
         await b.inFrame('document-contents', async () => {
-          await b.assertExists({ css: 'button.addNote.toggled', wait: true })
+          await b.assertExists({ css: 'button.addNote.toggled', wait: 'pageLoad' })
+        })
+      })
+
+      it('should send document.pdfNotes to the plugin', async function() {
+        const b = this.browser
+
+        await b.shortcuts.documentSet.openDocumentFromList('doc1.pdf')
+        // opening document takes 1s to animate: assume that quells all races
+
+        await b.shortcuts.pdfNotes.createNote('PluginsSpec note test')
+
+        await b.inFrame('view-app-iframe', async () => {
+          // Wait for notify:document message to reach iframe.
+          // Iframe JS will set pre.last-message to JSON.stringify(document)
+          // We'll just look for a slice of the JSON
+          await b.assertExists({ tag: 'pre', contains: 'PluginsSpec note test', wait: true })
         })
       })
     })
