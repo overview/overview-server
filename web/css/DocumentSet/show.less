@@ -27,6 +27,13 @@ body.document-set-show {
     height: 100%;
     width: 100%;
     overflow: visible; // never show scrollbar
+  }
+
+  .main-region {
+    position: absolute;
+    height: 100%;
+    width: 100%;
+    overflow: visible; // never show scrollbar
     .display-flex();
   }
 
@@ -46,6 +53,7 @@ body.document-set-show {
   @import "show/document-metadata.less";
   @import "show/document-detail-links.less";
   @import "show/tag-this.less";
+  @import "show/transaction-queue-monitor.less";
   @import "show/document.less";
   @import "show/vertical-tag-list.less";
   @import "show/tour.less";

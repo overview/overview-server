@@ -463,12 +463,13 @@ views.DocumentSet.show.TagThis.placeholder=
 views.DocumentSet.show.TagThis.organize=Organize tags…
 views.DocumentSet.show.TagThis.create_html=Create tag “{0}”
 
-views.DocumentSet.show.TransactionQueueErrorMonitor.error.title=Please refresh the page
-views.DocumentSet.show.TransactionQueueErrorMonitor.error.description=Overview has encountered an unusual error. Some of your work from the last few seconds may have been lost.
-views.DocumentSet.show.TransactionQueueErrorMonitor.networkError.title=Network problems
-views.DocumentSet.show.TransactionQueueErrorMonitor.networkError.description=Overview failed to communicate with the server. Some of your work from the last few seconds may be lost unless you reconnect.
-views.DocumentSet.show.TransactionQueueErrorMonitor.reload=Reload this page
-views.DocumentSet.show.TransactionQueueErrorMonitor.retry=Reconnect
+views.DocumentSet.show.TransactionQueueMonitor.communicating=Communicating with Overview…
+views.DocumentSet.show.TransactionQueueMonitor.error.title=Please refresh the page
+views.DocumentSet.show.TransactionQueueMonitor.error.description=Overview has encountered an unusual error. Some of your work from the last few seconds may have been lost.
+views.DocumentSet.show.TransactionQueueMonitor.networkError.title=Network problems
+views.DocumentSet.show.TransactionQueueMonitor.networkError.description=Overview failed to communicate with the server. Some of your work from the last few seconds may be lost unless you reconnect.
+views.DocumentSet.show.TransactionQueueMonitor.reload=Reload this page
+views.DocumentSet.show.TransactionQueueMonitor.retry=Reconnect
 
 views.DocumentSet.show.ViewTabs.newView=Add view
 views.DocumentSet.show.ViewTabs.newView.custom=Custom…

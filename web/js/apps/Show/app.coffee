@@ -11,7 +11,7 @@ define [
   './controllers/document_list_controller'
   './controllers/ViewAppController'
   './controllers/TourController'
-  './views/TransactionQueueErrorMonitor'
+  './views/TransactionQueueMonitor'
   './views/ExportDialog'
   './views/Mode'
   './views/VerticalSplit'
@@ -26,13 +26,15 @@ define [
     ViewsController, tag_list_controller, document_list_controller, \
     ViewAppController, \
     TourController, \
-    TransactionQueueErrorMonitor, \
+    TransactionQueueMonitor, \
     ExportDialog, \
     ModeView, VerticalSplitView, \
     DocumentListTitleView, \
     TreeApp, ViewApp, MetadataSchemaEditorApp, DocumentListParamsSelectorApp) ->
 
   DocumentSet = DocumentSet.default
+  TransactionQueue = TransactionQueue.default
+  TransactionQueueMonitor = TransactionQueueMonitor.default
   State = State.default
 
   class App
@@ -109,34 +111,37 @@ define [
       refreshWidth()
 
     _buildHtml: ->
-      html = """
-        <div id="tree-app-left"
-          ><div id="document-list-params"></div
-          ><div id="tree-app-views"></div
-          ><div id="tree-app-view"></div
-        ></div
-        ><div id="tree-app-vertical-split"><button class="toggle-right-pane"></button></div
-        ><div id="tree-app-right"
-          ><div id="document-list-container"
-            ><div class="header"
-              ><div id="document-list-title"></div
-              ><div id="tree-app-tag-this"></div
-            ></div
-            ><div id="document-list"></div
-          ></div
-          ><div id="document-current"></div
-        ></div
-        ><div id="tree-app-vertical-split-2"><button class="toggle-right-pane"></button></div
-        ><div id="tree-app-right-pane"></div
-        ><div id="transaction-queue-error-monitor"></div
-        ><div id="metadata-schema-editor-app"></div
-      """
+      html = [
+        '<div class="main-region">',
+          '<div id="tree-app-left">',
+            '<div id="document-list-params"></div>',
+            '<div id="tree-app-views"></div>',
+            '<div id="tree-app-view"></div>',
+          '</div>',
+          '<div id="tree-app-vertical-split"><button class="toggle-right-pane"></button></div>',
+          '<div id="tree-app-right">',
+            '<div id="document-list-container">',
+              '<div class="header">',
+                '<div id="document-list-title"></div>',
+                '<div id="tree-app-tag-this"></div>',
+              '</div>',
+              '<div id="document-list"></div>',
+            '</div>',
+            '<div id="document-current"></div>',
+          '</div>',
+          '<div id="tree-app-vertical-split-2"><button class="toggle-right-pane"></button></div>',
+          '<div id="tree-app-right-pane"></div>',
+        '</div>',
+        '<div id="transaction-queue-monitor"></div>',
+        '<div id="metadata-schema-editor-app"></div>',
+      ].join('')
 
       $(@el).html(html)
 
       el = (id) -> document.getElementById(id)
 
       main: @el
+      mainRegion: @el.childNodes[0]
       views: el('tree-app-views')
       view: el('tree-app-view')
       tags: el('tree-app-tags')
@@ -147,7 +152,7 @@ define [
       tagThis: el('tree-app-tag-this')
       documentCursor: el('document-current')
       document: el('tree-app-document')
-      transactionQueueErrorMonitor: el('transaction-queue-error-monitor')
+      transactionQueueMonitor: el('transaction-queue-monitor')
       metadataSchemaEditorApp: el('metadata-schema-editor-app')
 
     _initializeTransactionQueue: ->
@@ -183,7 +188,7 @@ define [
       els.views.appendChild(controller.el)
 
       new ModeView(el: @el, state: @state)
-      new VerticalSplitView(el: @el, storage: window.localStorage, storageKey: 'ui.vertical-split.w1')
+      new VerticalSplitView(el: els.mainRegion, storage: window.localStorage, storageKey: 'ui.vertical-split.w1')
 
       @_listenForRefocus()
       @_listenForResize(els.document)
@@ -214,7 +219,7 @@ define [
 
       new ViewAppController
         el: els.view
-        main: els.main
+        main: els.mainRegion
         state: @state
         transactionQueue: @transactionQueue
         keyboardController: keyboardController
@@ -223,9 +228,12 @@ define [
           tree: TreeApp
           view: ViewApp
 
-      new TransactionQueueErrorMonitor
-        model: @transactionQueue
-        el: els.transactionQueueErrorMonitor
+      transactionQueueMonitor = new TransactionQueueMonitor
+        target: els.transactionQueueMonitor
+        data: @transactionQueue.toJSON()
+      @transactionQueue.on('change', (tq) => transactionQueueMonitor.set(tq.toJSON()))
+      transactionQueueMonitor.on('reload', () => window.location.reload())
+      transactionQueueMonitor.on('retry', () => @transactionQueue.retry())
 
       if @tourEnabled
         TourController()

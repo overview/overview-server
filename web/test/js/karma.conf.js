@@ -36,7 +36,7 @@ module.exports = function(config) {
     client: {
       mocha: {
         globals: 'sinon,expect',
-        timeout: 5000, // some unit tests stub the clock and advance 2000ms+
+        timeout: 3000, // some unit tests stub the clock and advance 2000ms+
       },
     },
   })

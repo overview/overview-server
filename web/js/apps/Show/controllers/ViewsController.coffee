@@ -67,7 +67,6 @@ define [
           success: (json) =>
             view = @views.add(json)[0]
             @state.setView(view) if view?
-          error: console.log.bind(console, 'Server error creating view')
 
       if options?.url && options?.title
         addView(options)

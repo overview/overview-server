@@ -19,7 +19,7 @@ export default class App extends Backbone.View
       data: {
         document: null,
         highlightQ: null,
-        preferences: @preferences.attributes,
+        preferences: @preferences.toJSON(),
         transactionQueue: Backbone, # HACK -- "Backbone.ajax" is actually the same as transactionQueue.ajax
       },
     })
@@ -29,14 +29,14 @@ export default class App extends Backbone.View
         @document.savePdfNotes(ev.pdfNotes)
     )
 
-    @listenTo(@preferences, 'change', (preferences) => @appView.set({ preferences: preferences.attributes }))
+    @listenTo(@preferences, 'change', (preferences) => @appView.set({ preferences: preferences.toJSON() }))
 
   # Present a new document and stop presenting the old one.
   #
   # The document must be a Backbone.Model or `null`
   setDocument: (document) ->
     update = () =>
-      json = document && DocumentWrapper.wrap(document.attributes, @urlPropertiesExtractor) || null
+      json = document && DocumentWrapper.wrap(document.toJSON(), @urlPropertiesExtractor) || null
       @appView.set({ document: json })
 
     @stopListening(@document) if @document
