@@ -1,18 +1,22 @@
 <div class={{`showing-${visibleDisplay}${highlightQ && ' highlighting' || ''}`}}>
-  <DocumentView
-    on:changePdfNotes="fire('changePdfNotes', event)"
-    ref:documentView
-    document={{documentViewDocument}}
-    preferences={{preferences}}
-    highlightQ={{highlightQ}}
-    />
-  <TextView
-    document={{document}}
-    highlightQ={{highlightQ}}
-    transactionQueue={{transactionQueue}}
-    isOnlyTextAvailable={{isOnlyTextAvailable}}
-    preferences={{preferences}}
-    />
+  {{#if documentViewDocument}}
+    <DocumentView
+      on:changePdfNotes="fire('changePdfNotes', event)"
+      ref:documentView
+      document={{documentViewDocument}}
+      preferences={{preferences}}
+      highlightQ={{highlightQ}}
+      />
+  {{/if}}
+  {{#if textViewDocument}}
+    <TextView
+      document={{textViewDocument}}
+      highlightQ={{highlightQ}}
+      transactionQueue={{transactionQueue}}
+      isOnlyTextAvailable={{isOnlyTextAvailable}}
+      preferences={{preferences}}
+      />
+  {{/if}}
 </div>
 
 <script>
@@ -46,11 +50,21 @@
       // We assume DocumentView is resource-intensive: if we're only showing
       // text we get huge network, CPU and memory savings here.
       documentViewDocument: (document, visibleDisplay) => visibleDisplay === 'document' ? document : null,
+
+      // The document ... or null if we're only showing document.
+      //
+      // We assume TextView is resource-intensive: if we're only showing
+      // document we get huge network, CPU and memory savings here.
+      textViewDocument: (document, visibleDisplay) => visibleDisplay === 'text' ? document : null,
     },
 
     methods: {
       beginCreatePdfNote() {
         this.refs.documentView.beginCreatePdfNote()
+      },
+
+      goToPdfNote(note) {
+        this.refs.documentView.goToPdfNote(note)
       },
     },
 
