@@ -177,9 +177,9 @@ module.exports = class Browser {
     try {
       await this.find(locator, Object.assign({}, options, { throwOnNull: true }))
     } catch (e) {
-      const filename = `assertExists-failed-${(Math.random() * 9999999).toFixed(0)}.png`
-      console.log(`Saving failure screenshot to ${filename}`)
-      await this.saveScreenshot(filename)
+      //const filename = `assertExists-failed-${(Math.random() * 9999999).toFixed(0)}.png`
+      //console.log(`Saving failure screenshot to ${filename}`)
+      //await this.saveScreenshot(filename)
       throw e
     }
   }
@@ -216,9 +216,9 @@ module.exports = class Browser {
         }
       }
     } catch (e) {
-      const filename = `assertNotExists-failed-${(Math.random() * 9999999).toFixed(0)}.png`
-      console.log(`Saving failure screenshot to ${filename}`)
-      await this.saveScreenshot(filename)
+      //const filename = `assertNotExists-failed-${(Math.random() * 9999999).toFixed(0)}.png`
+      //console.log(`Saving failure screenshot to ${filename}`)
+      //await this.saveScreenshot(filename)
       throw e
     }
   }
@@ -441,9 +441,9 @@ module.exports = class Browser {
       if (retval) return
     } while (new Date() - start < timeout)
 
-    const filename = `wait-failed-${(Math.random() * 9999999).toFixed(0)}.png`
-    console.log(`Saving failure screenshot to ${filename}`)
-    await this.saveScreenshot(filename)
+    //const filename = `wait-failed-${(Math.random() * 9999999).toFixed(0)}.png`
+    //console.log(`Saving failure screenshot to ${filename}`)
+    //await this.saveScreenshot(filename)
 
     throw new Error(`Timed out waiting for ${message}`)
   }
