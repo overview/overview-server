@@ -49,6 +49,9 @@ export default class App extends Backbone.View
   beginCreatePdfNote: ->
     @appView?.beginCreatePdfNote()
 
+  goToPdfNote: (note) ->
+    @appView?.goToPdfNote(note)
+
   # Highlight a new search phrase
   #
   # The search phrase may be a String or <tt>null</tt>.

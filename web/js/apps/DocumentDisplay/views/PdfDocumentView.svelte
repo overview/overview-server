@@ -31,6 +31,13 @@
           call: 'beginCreatePdfNote',
         }, document.origin)
       },
+
+      goToPdfNote(pdfNote) {
+        this.refs.iframe.contentWindow.postMessage({
+          call: 'goToPdfNote',
+          pdfNote: pdfNote,
+        }, document.origin)
+      }
     },
 
     oncreate() {

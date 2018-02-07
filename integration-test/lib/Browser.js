@@ -174,7 +174,14 @@ module.exports = class Browser {
   // This is just like find(..., { throwOnNull: true }).
   async assertExists(locator, options) {
     debug(`assertExists(${JSON.stringify(locator)}, ${JSON.stringify(options)})`)
-    await this.find(locator, Object.assign({}, options, { throwOnNull: true }))
+    try {
+      await this.find(locator, Object.assign({}, options, { throwOnNull: true }))
+    } catch (e) {
+      const filename = `assertExists-failed-${(Math.random() * 9999999).toFixed(0)}.png`
+      console.log(`Saving failure screenshot to ${filename}`)
+      await this.saveScreenshot(filename)
+      throw e
+    }
   }
 
   // Tests that the element does _not_ exist.
@@ -183,29 +190,36 @@ module.exports = class Browser {
   async assertNotExists(locator) {
     debug(`assertNotExists(${JSON.stringify(locator)}})`)
 
-    const wait = locator.wait
-    if (wait) {
-      locator = Object.assign({}, locator)
-      delete locator.wait
+    try {
+      const wait = locator.wait
+      if (wait) {
+        locator = Object.assign({}, locator)
+        delete locator.wait
 
-      const timeout = TIMEOUTS[wait]
-      if (!timeout) {
-        throw new Error(`wait option must be ${Object.keys(TIMEOUTS).join(' or ')}`)
-      }
+        const timeout = TIMEOUTS[wait]
+        if (!timeout) {
+          throw new Error(`wait option must be ${Object.keys(TIMEOUTS).join(' or ')}`)
+        }
 
-      const start = new Date()
-      while (true) {
-        const element = await this.find(locator, { throwOnNull: false })
-        if (!element) {
-          return null
-        } else if (new Date() - start > timeout) {
-          throw new Error(`Element matching ${JSON.stringify(locator)} was found; expected it to leave over time`)
+        const start = new Date()
+        while (true) {
+          const element = await this.find(locator, { throwOnNull: false })
+          if (!element) {
+            return null
+          } else if (new Date() - start > timeout) {
+            throw new Error(`Element matching ${JSON.stringify(locator)} was found; expected it to leave over time`)
+          }
+        }
+      } else {
+        if (await this.find(locator, { throwOnNull: false })) {
+          throw new Error(`Element matching ${JSON.stringify(locator)} was found; expected not to find it`)
         }
       }
-    } else {
-      if (await this.find(locator, { throwOnNull: false })) {
-        throw new Error(`Element matching ${JSON.stringify(locator)} was found; expected not to find it`)
-      }
+    } catch (e) {
+      const filename = `assertNotExists-failed-${(Math.random() * 9999999).toFixed(0)}.png`
+      console.log(`Saving failure screenshot to ${filename}`)
+      await this.saveScreenshot(filename)
+      throw e
     }
   }
 

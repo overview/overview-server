@@ -130,6 +130,7 @@ define [
         when 'goToNextDocument' then @globalActions.goToNextDocument()
         when 'goToPreviousDocument' then @globalActions.goToPreviousDocument()
         when 'beginCreatePdfNote' then @globalActions.beginCreatePdfNote()
+        when 'goToPdfNote' then @globalActions.goToPdfNote(e.data.args[0]?.pdfNote || null)
         when 'patchDocument'
           attrs = e.data.args[0]
           if attrs.id != @document?.id

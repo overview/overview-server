@@ -48,7 +48,12 @@
       beginCreatePdfNote() {
         const child = this.refs.pdfDocumentView
         if (child) child.beginCreatePdfNote()
-      }
+      },
+
+      goToPdfNote(note) {
+        const child = this.refs.pdfDocumentView
+        if (child) child.goToPdfNote(note)
+      },
     },
   }
 </script>

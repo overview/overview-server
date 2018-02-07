@@ -75,6 +75,10 @@ function beginCreatePdfNote() {
   PDFViewerApplication.eventBus.dispatch('toggleaddingnote')
 }
 
+function goToPdfNote(pdfNote) {
+  PDFViewerApplication.editNoteTool.setNote(pdfNote)
+}
+
 window.addEventListener('message', function(ev) {
   if (ev.origin !== window.origin) {
     console.log('Ignoring message with wrong origin', ev)
@@ -89,6 +93,9 @@ window.addEventListener('message', function(ev) {
       break
     case 'beginCreatePdfNote':
       beginCreatePdfNote()
+      break
+    case 'goToPdfNote':
+      goToPdfNote(message.pdfNote)
       break
     default:
       console.warn('Ignoring unhandled message', message)
