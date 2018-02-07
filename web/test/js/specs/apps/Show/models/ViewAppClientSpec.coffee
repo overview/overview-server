@@ -202,10 +202,14 @@ define [
           expect(@viewApp.onTag).not.to.have.been.called
           expect(@viewApp.onUntag).not.to.have.been.called
 
-        [ 'openMetadataSchemaEditor', 'goToNextDocument', 'goToPreviousDocument', 'beginCreatePdfNote', 'goToPdfNote' ].forEach (action) =>
+        [ 'openMetadataSchemaEditor', 'goToNextDocument', 'goToPreviousDocument', 'beginCreatePdfNote' ].forEach (action) =>
           it "should invoke globalActions.#{action}()", ->
             @subject._onMessage(origin: '', data: { call: action })
             expect(@globalActions[action]).to.have.been.called
+
+        it 'should invoke globalActions.goToPdfNote', ->
+          @subject._onMessage(origin: '', data: { call: 'goToPdfNote', args: [ { pdfNote: 'TEST' } ] })
+          expect(@globalActions.goToPdfNote).to.have.been.calledWith('TEST')
 
     describe 'with an viewApp missing methods', ->
       beforeEach ->
