@@ -26,6 +26,7 @@ define [
       title: ''
       snippet: ''
       pageNumber: null
+      isFromOcr: false
       url: null
       metadata: {}
       pdfNotes: []
@@ -47,6 +48,7 @@ define [
       nodeids: json.nodeids || []
       metadata: json.metadata || {}
       pdfNotes: json.pdfNotes || []
+      isFromOcr: json.isFromOcr || false
       thumbnailUrl: json.thumbnailUrl || null
 
     initialize: (attributes, options) ->

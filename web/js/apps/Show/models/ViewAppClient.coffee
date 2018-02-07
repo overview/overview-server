@@ -77,6 +77,8 @@ define [
         url: @document.get('url') || null,
         metadata: @document.get('metadata') || {},
         indexInDocumentList: indexInDocumentList,
+        isFromOcr: @document.get('isFromOcr') || false,
+        pdfNotes: @document.get('pdfNotes') || [],
       }
 
     onDocumentChanged: (__, value) ->
