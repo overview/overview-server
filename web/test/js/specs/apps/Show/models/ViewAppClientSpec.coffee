@@ -36,6 +36,8 @@ define [
         pageNumber: null,
         url: 'http://example.org',
         metadata: { foo: 'bar' },
+        pdfNotes: [],
+        isFromOcr: true,
       })
 
     afterEach ->
