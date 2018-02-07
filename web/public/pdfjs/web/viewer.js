@@ -6885,6 +6885,9 @@ var EditNoteTool = function () {
       var container = this.container;
       var note = this.currentNote;
       var pageView = this.pdfViewer.getPageView(note.pageIndex);
+      if (!pageView) {
+        return;
+      }
       var viewport = pageView.viewport;
       var pageDiv = pageView.div;
       var noteRect = _util.Util.normalizeRect(viewport.convertToViewportRectangle([note.x, note.y, note.x + note.width, note.y + note.height]));

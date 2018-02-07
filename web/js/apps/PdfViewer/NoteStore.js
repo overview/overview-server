@@ -43,7 +43,7 @@ export default class NoteStore {
   // If `note === null`, returns the first note.
   // If there are no notes, returns `null`.
   getNextNote(note) {
-    const i = this.pdfNotes.findIndex(n => compareNotes(n, note) === 0) // -1 if not found
+    const i = this.pdfNotes.findIndex(n => note === null || compareNotes(n, note) === 0) // -1 if not found
     return this.pdfNotes[(i + 1) % this.pdfNotes.length] || null
   }
 
@@ -52,7 +52,7 @@ export default class NoteStore {
   // If `note === null`, returns the last note.
   // If there are no notes, returns `null`.
   getPreviousNote(note) {
-    const i = this.pdfNotes.findIndex(n => compareNotes(n, note) === 0) // -1 if not found
+    const i = this.pdfNotes.findIndex(n => note === null || compareNotes(n, note) === 0) // -1 if not found
     return this.pdfNotes[i <= 0 ? (this.pdfNotes.length - 1) : (i - 1)] || null
   }
 
