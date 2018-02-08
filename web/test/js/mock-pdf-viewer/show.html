@@ -22,12 +22,12 @@ window.addEventListener('message', function(ev) {
 })
 
 window.callPostMessage = function(message) {
-  window.parent.postMessage(message, document.origin)
+  window.parent.postMessage(message, document.location.origin)
 }
 
 window.parent.postMessage({
   call: 'fromPdfViewer:getState',
-}, document.origin)
+}, document.location.origin)
 
     </script>
   </body>

@@ -130,7 +130,7 @@ window.addEventListener('load', function() {
         call: 'fromPdfViewer:savePdfNotes',
         documentId: documentId,
         pdfNotes: pdfNotes,
-      }, document.origin)
+      }, document.location.origin)
     }
   })
 

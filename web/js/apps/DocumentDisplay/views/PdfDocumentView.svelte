@@ -29,14 +29,14 @@
       beginCreatePdfNote() {
         this.refs.iframe.contentWindow.postMessage({
           call: 'beginCreatePdfNote',
-        }, document.origin)
+        }, document.location.origin)
       },
 
       goToPdfNote(pdfNote) {
         this.refs.iframe.contentWindow.postMessage({
           call: 'goToPdfNote',
           pdfNote: pdfNote,
-        }, document.origin)
+        }, document.location.origin)
       }
     },
 
@@ -55,7 +55,7 @@
         iframe.contentWindow.postMessage({
           call: 'setState',
           state: state,
-        }, document.origin)
+        }, document.location.origin)
       }
 
       function updateIframeProps(state) {
@@ -76,7 +76,7 @@
       })
 
       this.messageListener = (ev) => {
-        if (ev.origin === document.origin && ev.source === iframe.contentWindow) {
+        if (ev.origin === document.location.origin && ev.source === iframe.contentWindow) {
           const message = ev.data
           switch (message.call) {
             case 'fromPdfViewer:getState':
