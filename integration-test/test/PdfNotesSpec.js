@@ -16,29 +16,29 @@ describe('PdfNotes', function() {
 
       await s.importFiles.open()
       await s.importFiles.addFiles([ 'PdfNotes/doc1.pdf', 'PdfNotes/doc2.pdf' ])
-      await s.importFiles.finish({ name: 'annotations' })
+      await s.importFiles.finish({ name: 'PdfNotes' })
       await s.documentSet.waitUntilStable()
 
       await b.shortcuts.documentSet.openDocumentFromList('doc1.pdf')
       await b.find('iframe#document-contents', { wait: 'fast' }) // wait for PDF to start loading
     })
 
-    it('should let the user create an annotation', async function() {
+    it('should let the user create a pdfNote', async function() {
       const b = this.browser
 
       await b.shortcuts.pdfNotes.createNote() // No error? Then it worked
     })
 
-    it('should save and load annotations on the server', async function() {
+    it('should save and load pdfNotes on the server', async function() {
       const b = this.browser
 
       await b.shortcuts.pdfNotes.createNote()
 
       // Reload the page
-      await b.shortcuts.documentSets.open('annotations')
+      await b.shortcuts.documentSets.open('PdfNotes')
       await b.shortcuts.documentSet.openDocumentFromList('doc1.pdf')
 
-      await b.find('iframe#document-contents', { wait: 'fast' })
+      await b.find('iframe#document-contents[src="/pdf-viewer"]', { wait: 'fast' })
       await b.inFrame('document-contents', async () => {
         await b.assertExists({ css: '#viewer .noteLayer section' }, { wait: 'pageLoad' })
 
@@ -48,7 +48,7 @@ describe('PdfNotes', function() {
       })
     })
 
-    it('should search for annotations', async function() {
+    it('should search for pdfNotes', async function() {
       const b = this.browser
 
       await b.shortcuts.pdfNotes.createNote()
@@ -61,7 +61,7 @@ describe('PdfNotes', function() {
       expect(text).to.match(/doc1\.pdf/)
     })
 
-    it('should delete annotations', async function() {
+    it('should delete pdfNotes', async function() {
       const b = this.browser
 
       await b.shortcuts.pdfNotes.createNote()
