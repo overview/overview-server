@@ -7,6 +7,8 @@ const Element = require('./Element')
 const Locator = require('./Locator')
 const TIMEOUTS = require('./TIMEOUTS')
 
+const WAIT_RETRY_TIMEOUT = 20 // ms
+
 class LocateError extends Error {}
 class WaitingLocateError extends Error {}
 
@@ -165,6 +167,8 @@ module.exports = class Browser {
         return new Element(element)
       } else if (new Date() - start > timeout) {
         return null
+      } else {
+        await this.sleep(WAIT_RETRY_TIMEOUT)
       }
     }
   }
@@ -210,6 +214,8 @@ module.exports = class Browser {
             return null
           } else if (new Date() - start > timeout) {
             throw new Error(`Element matching ${JSON.stringify(locator)} was found; expected it to leave over time`)
+          } else {
+            await this.sleep(WAIT_RETRY_TIMEOUT)
           }
         }
       } else {
@@ -343,7 +349,7 @@ module.exports = class Browser {
     `)
 
     await fn()
-    await this.driver.sleep(50)
+    await this.sleep(50)
     await this.waitUntilFunctionReturnsTrue('CSS transitions to finish', 'cssTransition', async () => {
       return await this.execute(`
         var n = window.${trackerVar}.nTransitions
@@ -443,6 +449,8 @@ module.exports = class Browser {
       }
 
       if (retval) return
+
+      await this.sleep(WAIT_RETRY_TIMEOUT)
     } while (new Date() - start < timeout)
 
     if (process.env.SCREENSHOT_ERRORS === 'true') {
@@ -502,8 +510,10 @@ module.exports = class Browser {
   // Returns a Promise that resolves after a bit of nothing.
   //
   // Useful for debugging.
-  async sleep(ms) {
+  sleep(ms) {
     debug(`sleep(${ms})`)
-    await this.driver.sleep(ms)
+    return new Promise((resolve, reject) => {
+      setTimeout(resolve, ms)
+    })
   }
 }
