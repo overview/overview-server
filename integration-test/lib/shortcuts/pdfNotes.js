@@ -45,6 +45,9 @@ class PdfNotesShortcuts {
       await b.assertExists('.editNoteTool button.editNoteSave[disabled]', { wait: true })
       await b.click('.editNoteTool button.editNoteClose')
     })
+
+    // Wait for note to finish saving
+    await b.assertNotExists({ css: '.transaction-queue-communicating', wait: true })
   }
 }
 
