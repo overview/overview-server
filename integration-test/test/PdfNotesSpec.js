@@ -40,7 +40,11 @@ describe('PdfNotes', function() {
 
       await b.find('iframe#document-contents[src="/pdf-viewer"]', { wait: 'fast' })
       await b.inFrame('document-contents', async () => {
-        await b.assertExists({ css: '#viewer .noteLayer section' }, { wait: 'pageLoad' })
+        // Three-part assertExists() to try and recover from:
+        // Error: Could not find visible element matching {"using":"css selector","value":"#viewer .noteLayer section"}
+        await b.assertExists({ id: 'viewer', wait: 'pageLoad' })
+        await b.assertExists({ css: '#viewer .noteLayer', wait: 'pageLoad' })
+        await b.assertExists({ css: '#viewer .noteLayer section', wait: 'pageLoad' })
 
         await b.click('#viewer .noteLayer section')
         let text = await b.getAttribute({ css: '.editNoteTool textarea', wait: true }, 'value')
