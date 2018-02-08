@@ -18,7 +18,7 @@ RUN set -x \
       && apt-get install -y ca-certificates curl gnupg \
       && curl -sL https://deb.nodesource.com/setup_9.x | bash - \
       && apt-get install -y nodejs chromium libgconf2.0 unzip \
-      && (cd /tmp && curl "http://chromedriver.storage.googleapis.com/2.33/chromedriver_linux64.zip" -o chromedriver_linux64.zip && unzip chromedriver_linux64.zip && rm -f chromedriver_linux64.zip && mv chromedriver /usr/bin/)
+      && (cd /tmp && curl "https://chromedriver.storage.googleapis.com/2.35/chromedriver_linux64.zip" -o chromedriver_linux64.zip && unzip chromedriver_linux64.zip && rm -f chromedriver_linux64.zip && mv chromedriver /usr/bin/)
 
 # Expose remote debugging port. Browse to http://docker-container-ip:9222
 # to see what's going on inside Chromium.
