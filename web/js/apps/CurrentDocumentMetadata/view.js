@@ -5,6 +5,7 @@
 const escapeHtml = require('escape-html')
 
 function buildFieldValueHtml(field, documentValue) {
+  const nameHtml = escapeHtml(field.name)
   const valueHtml = escapeHtml(documentValue)
 
   switch (field.display) {
@@ -12,7 +13,7 @@ function buildFieldValueHtml(field, documentValue) {
     case 'Pre': return `<pre class="field-value">${valueHtml}</pre>`
     case 'TextInput':
     default:
-      return `<input type="text" class="field-value" value="${valueHtml}">`
+      return `<input type="text" class="field-value" name="${nameHtml}" value="${valueHtml}">`
   }
 }
 

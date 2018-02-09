@@ -1,0 +1,49 @@
+#!/bin/sh
+#
+# Runs tests using pristene containers. Writes to ./reports/**/*.xml`.
+
+set -e
+set -x
+
+DIR="$(dirname "$0")"
+
+. "$DIR"/config
+
+docker_compose() {
+  OVERVIEW_VERSION="$OVERVIEW_VERSION" \
+  OVERVIEW_INTEGRATION_TESTER_VERSION="$OVERVIEW_INTEGRATION_TESTER_VERSION" \
+  WAIT_FOR_URLS="$WAIT_FOR_URLS" \
+  docker-compose \
+    --project-name "$DOCKER_COMPOSE_PROJECT_NAME" \
+    -f "$DIR"/docker-compose.yml \
+    "$@"
+}
+
+docker_compose down -v # in case a previous run errored out
+docker_compose pull
+docker_compose build --pull
+
+# Run oververview-db-evolution-applier first, so we don't request from
+# overview-web too early.
+docker_compose up -d overview-database
+docker_compose run overview-db-evolution-applier # upon exit, DB is up-to-date
+
+find "$DIR"/reports -name '*.xml' -exec rm -f {} \;
+
+# integration-test will end, and one of three things will have happened:
+#
+# 1. It succeeded -- and wrote to reports/*.xml
+# 2. Some tests failed -- they're in reports/*.xml and Jenkins will see them
+# 3. There was a catastrophic failure -- there are no reports/*.xml and Jenkins will complain
+#
+# We'll report the exit code after we `docker-compose down -v`.
+set +e
+docker_compose up \
+  --abort-on-container-exit \
+  integration-test
+EXIT_CODE=$?
+set -e
+
+docker_compose down -v
+
+exit $EXIT_CODE

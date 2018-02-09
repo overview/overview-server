@@ -1,4 +1,1 @@
-/node_modules/
-/npm-debug.log
-/test-results.xml
-/screenshots/
+reports/*.xml

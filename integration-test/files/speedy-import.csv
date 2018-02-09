@@ -1,0 +1,6 @@
+title,text
+First,This CSV file contains documents that are very fast to import.
+Second,They are fast to import because they are in CSV format.
+Third,This product is not designed to work with text-only files because they have no PDF format.
+Fourth,So if the tests start failing, maybe switch to regular PDF import.
+Fifth,Another option: make Overview's PDF import way faster by skipping the PDFBox step.

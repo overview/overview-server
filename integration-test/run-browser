@@ -1,0 +1,65 @@
+#!/bin/sh
+
+DIR="$(dirname "$0")"
+ABSDIR="$(realpath "$DIR")"
+
+set -e
+
+. "$DIR"/config
+
+IMAGE_NAME=overview/overview-integration-tester:$OVERVIEW_INTEGRATION_TESTER_VERSION
+docker image ls -q $IMAGE_NAME >/dev/null || docker pull $IMAGE_NAME
+
+if [ -z "$1" ]; then
+  SCRIPT="chromium --no-sandbox"
+else
+  SCRIPT="$(printf " %q" "$@")"
+fi
+
+COMMANDS="$(cat <<-EOT
+export DISPLAY=:1
+
+Xvnc \
+  -Log='*:stderr:0' \
+  -geometry 1200x900 \
+  -SecurityTypes None \
+  \$DISPLAY \
+  &
+XPID=\$!
+
+HEADLESS=false \
+$SCRIPT
+kill -9 \$XPID
+wait
+EOT
+)"
+
+echo "$COMMANDS" | docker run \
+  -i \
+  --rm \
+  --privileged \
+  --env-file "$DIR"/config \
+  --publish-all \
+  --network ${DEVELOPMENT_PROJECT_NAME}_default \
+  --shm-size=2g \
+  --name overview-integration-tester-chromium \
+  -v "$ABSDIR"/files:/app/files \
+  -v "$ABSDIR"/helpers:/app/helpers \
+  -v "$ABSDIR"/reports:/app/reports \
+  -v "$ABSDIR"/spec:/app/spec \
+  "$IMAGE_NAME" \
+  sh -s \
+  &
+
+echo 'Waiting for Chromium to start...'
+sleep 2
+
+IP_AND_PORT="$(docker port overview-integration-tester-chromium 5901/tcp)"
+
+vncviewer '-Log=*:stderr:0' $IP_AND_PORT RemoteResize=0
+# vncviewer will die when container dies.
+
+# If we get here, then either:
+# 1. The container died; or
+# 2. The user closed vncviewer. We want to kill the Docker container, then.
+docker rm -f overview-integration-tester-chromium

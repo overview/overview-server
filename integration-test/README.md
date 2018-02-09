@@ -1,3 +1,1 @@
-To run the tests:
-
-`./run`
+See documentation at https://github.com/overview/overview-integration-tester

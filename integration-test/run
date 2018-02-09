@@ -1,27 +1,35 @@
-#!/bin/bash
+#!/bin/sh
+
+DIR="$(dirname "$0")"
+ABSDIR="$(realpath "$DIR")"
 
 set -e
 
-PROJECT="${PROJECT:=overviewserver}"
+. "$DIR"/config
 
-ABSOLUTE_DIR="$(cd "$(dirname "$0")" && pwd)"
+IMAGE_NAME=overview/overview-integration-tester:$OVERVIEW_INTEGRATION_TESTER_VERSION
+docker image ls -q $IMAGE_NAME >/dev/null || docker pull $IMAGE_NAME
 
-cp "$ABSOLUTE_DIR"/files/initial-test-results-xml "$ABSOLUTE_DIR"/test-results.xml
-
-echo "Building integration-test Docker image. This may take a while...." >&2
-docker build "$ABSOLUTE_DIR"
-
-image_id=$(docker build --quiet "$ABSOLUTE_DIR") # this will be fast
-
-flags="$([ -t 0 ] && echo "-it" || echo "-i")"
-
-exec docker run $flags --rm \
-  --volume "$ABSOLUTE_DIR"/test-results.xml:/integration-test/test-results.xml \
-  --volume "$ABSOLUTE_DIR"/screenshots:/integration-test/screenshots/ \
-  --env DEBUG="${DEBUG}" \
-  --env SCREENSHOT_ERRORS="${SCREENSHOT_ERRORS}" \
-  --name "${PROJECT}_integration_tests" \
-  --network "${PROJECT}_default" \
-  --hostname "${PROJECT}_integration_tests" \
-  --publish-all \
-  $image_id "$@"
+# [adamhooper, 2018-01-23] HEADLESS=true seems to break within_frame()
+# sporadically with Chrome 63 and Chromedriver 2.35. The closest report I can
+# find is https://github.com/teamcapybara/capybara/issues/1860
+#
+# Another issue with headless is that it has no folder uploads. Overview treats
+# folder uploads specially, including slashes in their filenames, and some
+# plugins (e.g., "Folders" plugin) require that test.
+#
+# If you have any problems with headless, use Xvfb instead. Set
+# -e HEADLESS=false. Then, instead of "$@", use:
+# xvfb-run --server-args='-screen 0 1200x900x24' "$@"
+exec docker run --rm -it \
+  --network ${DEVELOPMENT_PROJECT_NAME}_default \
+  -e OVERVIEW_URL=http://overview-web \
+  -e WAIT_FOR_URLS="$WAIT_FOR_URLS" \
+  -e HEADLESS=false \
+  -v "$ABSDIR"/files:/app/files \
+  -v "$ABSDIR"/helpers:/app/helpers \
+  -v "$ABSDIR"/reports:/app/reports \
+  -v "$ABSDIR"/spec:/app/spec \
+  --shm-size=2g \
+  "$IMAGE_NAME" \
+  sh -c "xvfb-run --server-args='-screen 0 1200x900x24' -a ${*:-./all-tests}"

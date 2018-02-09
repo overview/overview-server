@@ -1,0 +1,68 @@
+version: '3.4'
+
+services:
+  # === Overview: the product under test ===
+  #
+  # It would normally be bad form to test the ":latest" version of each project.
+  # But here, our integration tests are different. We assume you just ran
+  # ./docker/build, which _wrote_ these ":latest" versions.
+  #
+  # ./docker/build is complex, which is why we don't just use "build:" clauses
+  # in this file.
+  #
+  # To make `run-in-docker-compose` work:
+  # 1. ./docker/build
+  # 2. ./integration-test/run-in-docker-compose
+  # ... and read output from ./integration-test/reports
+  overview-web:
+    image: overview-web:latest
+    networks: [ 'default', 'database', 'redis', 'worker' ]
+    depends_on: [ 'overview-database', 'overview-redis', 'overview-worker' ]
+    volumes:
+      - blob-storage:/var/lib/overview/blob-storage
+
+  overview-worker:
+    image: overview-worker:latest
+    networks: [ 'database', 'worker' ]
+    depends_on: [ 'overview-database' ]
+    volumes:
+      - blob-storage:/var/lib/overview/blob-storage
+
+  overview-database:
+    image: overview-database:latest
+    networks: [ 'database' ]
+
+  overview-redis:
+    image: overview-redis:latest
+    networks: [ 'redis' ]
+
+  overview-db-evolution-applier:
+    image: overview-db-evolution-applier:latest
+    networks: [ 'database' ]
+    depends_on: [ 'overview-database' ]
+
+  # === The integration-test runner ===
+  integration-test:
+    image: overview/overview-integration-tester:${OVERVIEW_INTEGRATION_TESTER_VERSION}
+    command: sh -c "xvfb-run -a -s '-screen 0 1200x900x24' ./all-tests"
+    shm_size: 2g
+    depends_on: [ 'overview-web' ]
+    environment:
+      OVERVIEW_URL: http://overview-web
+      WAIT_FOR_URLS: ${WAIT_FOR_URLS}
+      HEADLESS: 'false'
+    volumes:
+      - ./files:/app/files
+      - ./helpers:/app/helpers
+      - ./spec:/app/spec
+      - ./reports:/app/reports
+
+networks:
+  default:
+  database:
+  redis:
+  worker:
+
+# Most data is transient. only one directory is shared.
+volumes:
+  blob-storage:
