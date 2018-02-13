@@ -59,6 +59,23 @@ module SessionHelpers
       assert_selector("iframe#view-app-iframe[src^=\"#{options[:url]}\"]", wait: WAIT_FAST)
     end
 
+    def rename_view(old_name, new_name)
+      within('#tree-app-views') do
+        find('a', text: old_name).find('.toggle-popover').click
+        within('.popover') do
+          click_link('rename')
+          fill_in('New Title', with: new_name)
+          click_button('Save')
+        end
+      end
+
+      assert_selector('#tree-app-views a', text: new_name, wait: WAIT_LOAD)
+      within('.popover') do
+        click_link('Close')
+      end
+      assert_no_selector('.popover')
+    end
+
     # Assumes you are browsed to a document set and have not changed Views.
     #
     # Creates an API token, and leaves the session on the API-tokens page.
@@ -108,7 +125,13 @@ module SessionHelpers
 
     def creating_document_set(options=nil, &block)
       yield
+      finish_creating_document_set(options)
+    end
 
+    # * wait for import to complete
+    # * wait for document-set page to load
+    # * hide the tour (unless options[:hide_tour] == false)
+    def finish_creating_document_set(options=nil)
       assert_selector('body.document-set-show', wait: WAIT_SLOW) # wait for import to complete
       assert_selector('#document-list:not(.loading) li.document', wait: WAIT_LOAD) # wait for document list to load
       # There are no plugins, so we don't need to wait for them
