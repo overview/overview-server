@@ -26,7 +26,7 @@ trait S3Strategy extends BlobStorageStrategy {
   protected val logger: Logger
 
   private case class Location(bucket: String, key: String)
-  private val LocationRegex = """^s3:([-\w]+):([-\w]+)$""".r
+  private val LocationRegex = """^s3:([-.\w]+):([-\w]+)$""".r
   private def stringToLocation(s: String) = s match {
     case LocationRegex(bucket, key) => Location(bucket, key)
     case _ => throw new IllegalArgumentException("Invalid location string: '" + s + "'")

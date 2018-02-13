@@ -97,9 +97,9 @@ class S3StrategySpec extends StrategySpecification {
 
     "call generatePresignedUrl" in new S3BaseScope { 
       mockS3.generatePresignedUrl(any) returns new URL("https://yay.com")
-      await(TestStrategy.getUrl("s3:foo:bar", "image/png")) must beEqualTo("https://yay.com")
+      await(TestStrategy.getUrl("s3:foo.bar.com:bar", "image/png")) must beEqualTo("https://yay.com")
       there was one(mockS3).generatePresignedUrl(argThat(beLike[GeneratePresignedUrlRequest] { case actual: GeneratePresignedUrlRequest =>
-        actual.getBucketName must beEqualTo("foo")
+        actual.getBucketName must beEqualTo("foo.bar.com")
         actual.getKey must beEqualTo("bar")
         actual.getRequestParameters.get("response-content-type") must beEqualTo("image/png")
       }))
@@ -205,10 +205,10 @@ class S3StrategySpec extends StrategySpecification {
     }
 
     "create random UUID filenames" in new S3BaseScope {
-      val LocationRegex = "^s3:foo:[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$".r
-      val name1Future = TestStrategy.create("s3:foo", tempFile("content 1"))
+      val LocationRegex = "^s3:foo.bar.com:[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$".r
+      val name1Future = TestStrategy.create("s3:foo.bar.com", tempFile("content 1"))
       mockTransferManager.succeed
-      val name2Future = TestStrategy.create("s3:foo", tempFile("content 1"))
+      val name2Future = TestStrategy.create("s3:foo.bar.com", tempFile("content 1"))
       mockTransferManager.succeed
       await(name1Future) must beMatching(LocationRegex)
       await(name2Future) must beMatching(LocationRegex)
@@ -219,23 +219,23 @@ class S3StrategySpec extends StrategySpecification {
       val UuidRegex = "^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$".r
 
       val toCreate = tempFile("content 1")
-      val future = TestStrategy.create("s3:foo", toCreate)
+      val future = TestStrategy.create("s3:foo.bar.com", toCreate)
       mockTransferManager.lastUpload must beSome
-      mockTransferManager.lastUpload.get.bucket must beEqualTo("foo")
+      mockTransferManager.lastUpload.get.bucket must beEqualTo("foo.bar.com")
       mockTransferManager.lastUpload.get.key must beMatching(UuidRegex)
       mockTransferManager.lastUpload.get.file must beEqualTo(toCreate.toFile)
     }
 
     "succeed when the upload succeeds" in new S3BaseScope {
-      val LocationRegex = "^s3:foo:[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$".r
-      val future = TestStrategy.create("s3:foo", tempFile("content 1"))
+      val LocationRegex = "^s3:foo.bar.com:[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$".r
+      val future = TestStrategy.create("s3:foo.bar.com", tempFile("content 1"))
       mockTransferManager.succeed
       await(future) must beMatching(LocationRegex)
     }
 
     "fail when the upload fails" in new S3BaseScope {
-      val ex = new AmazonS3Exception("boo")
-      val future = TestStrategy.create("s3:foo", tempFile("content 1"))
+      val ex = new AmazonS3Exception("boo.bar.com")
+      val future = TestStrategy.create("s3:foo.bar.com", tempFile("content 1"))
       mockTransferManager.fail(ex)
       await(future) must throwA(ex)
     }
