@@ -33,7 +33,7 @@ trait S3Strategy extends BlobStorageStrategy {
   }
 
   private case class LocationPrefix(bucket: String)
-  private val LocationPrefixRegex = """^s3:([-\w]+)$""".r
+  private val LocationPrefixRegex = """^s3:([-.\w]+)$""".r
   private def stringToLocationPrefix(s: String) = s match {
     case LocationPrefixRegex(bucket) => LocationPrefix(bucket)
     case _ => throw new IllegalArgumentException("Invalid location prefix: '" + s + '"')
