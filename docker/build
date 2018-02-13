@@ -31,4 +31,3 @@ for subdir in overview-web overview-worker overview-db-evolution-applier; do
   # Do not --pull: we want to use the overview-java we built in step 3
   docker build "$DIR"/$subdir --tag $subdir:$OVERVIEW_VERSION --tag $subdir:latest
 done
-docker build --pull "$DIR"/../integration-test --tag overview-integration-test:$OVERVIEW_VERSION --tag overview-integration-test:latest
