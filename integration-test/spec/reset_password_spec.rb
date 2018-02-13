@@ -47,7 +47,7 @@ describe 'Login' do
   end
 
   def try_log_in(email, password)
-    page.visit('/')
+    page.visit('/login')
     page.within('.session-form') do
       page.fill_in('email', with: email)
       page.fill_in('password', with: password)

@@ -72,7 +72,7 @@ module FeatureHelpers
         tr = find('tr', text: user[:email], wait: WAIT_LOAD) # wait for users to load
 
         # 3. Grab the HTML attribute
-        tr.find("[#{attr_name}]")[attr_name.to_sym] # return attribute in question
+        tr.find("td.confirmed-at")[attr_name.to_sym] # return attribute in question
       end
     end
   end
