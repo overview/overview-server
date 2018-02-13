@@ -52,6 +52,28 @@ module FeatureHelpers
         # (<tr> will have class=updating, then it will disappear after the user is gone)
         assert_no_selector('td.email', text: user[:email], wait: WAIT_LOAD)
       end
+
+      # Grabs the requested token (reset-password or confirmation) for the given
+      # user. Assumes the user and token exist.
+      #
+      # Steps to grab the token:
+      #
+      # 1. Refresh the page
+      # 2. Find the user
+      # 3. Grab the HTML attribute that UserAdminApp adds for this very purpose
+      def get_user_token(user, token)
+        attr_name = "data-#{token}-token"
+
+        # 1. Refresh the page
+        refresh
+        assert_selector('.new-user', wait: WAIT_LOAD) # wait for page to reload
+
+        # 2. Find the user
+        tr = find('tr', text: user[:email], wait: WAIT_LOAD) # wait for users to load
+
+        # 3. Grab the HTML attribute
+        tr.find("[#{attr_name}]")[attr_name.to_sym] # return attribute in question
+      end
     end
   end
 end
