@@ -1,0 +1,4 @@
+id,title,text,url,foo,bar
+1,First,This is the first document,http://example.org,foo0,bar0
+2,Second,This is the second document,,foo1,bar1
+3,Third,This is the third document,,foo2,bar2

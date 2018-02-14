@@ -1,5 +1,11 @@
 module SessionHelpers
   module PdfNotesHelper
+    def wait_for_pdf_load(text)
+      within_frame('document-contents') do
+        assert_selector('.textLayer', text: text, wait: WAIT_LOAD) # wait for text to load
+      end
+    end
+
     # Creates a PDF note over the PDF specified PDF text
     def create_pdf_note(text_to_highlight, note_text)
       # Wait for PDF iframe to become available

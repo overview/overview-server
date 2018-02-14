@@ -1,0 +1,7 @@
+#!/usr/bin/env ruby
+
+require_relative '../../helpers/mock_plugin'
+
+server = MockPlugin.create_server(ARGV[0], 3333)
+trap('INT') { server.shutdown }
+server.start

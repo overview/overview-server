@@ -32,6 +32,19 @@ module SessionHelpers
       end
     end
 
+    def with_mock_plugin_and_view(slug, view_options={}, &block)
+      mock_plugin = MockPlugin.new(slug)
+      mock_plugin.with_server_on_port(3333) do
+        create_custom_view({
+          name: 'mock plugin',
+          url: 'http://localhost:3333'
+        }.merge(view_options))
+        block.call
+        # We don't delete the view after the block is done. There aren't many
+        # tests that would need that. But tests shouldn't rely on this behavior.
+      end
+    end
+
     def create_custom_view(options)
       raise ArgumentError.new('missing options[:name]') if !options[:name]
       raise ArgumentError.new('missing options[:url]') if !options[:url]
@@ -41,7 +54,7 @@ module SessionHelpers
       wait_for_javascript_to_return_true('document.querySelector("#new-view-dialog-title") === document.activeElement', wait: WAIT_FAST)
       fill_in('Name', with: options[:name])
       fill_in('App URL', with: options[:url])
-      fill_in('Overview’s URL from App server', with: OVERVIEW_URL)
+      fill_in('Overview’s URL from App server', with: options[:server] || OVERVIEW_URL)
       if options[:url] =~ /^http:/
         # dismiss HTTPS warning
         click_on('Create visualization')
