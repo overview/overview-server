@@ -1,5 +1,9 @@
 # Adds universal methods: available in every "describe" block
 module FeatureHelper
-  include FeatureHelpers::AdminSessionHelper
-  include FeatureHelpers::SessionHelper
+  def self.included(base)
+    base.class_eval do
+      include FeatureHelpers::AdminSessionHelper
+      include FeatureHelpers::SessionHelper # adds "before" and "after" hooks
+    end
+  end
 end

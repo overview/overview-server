@@ -1,11 +1,27 @@
+require 'json'
+require 'fileutils'
+
 module FeatureHelpers
   module SessionHelper
+    def self.included(base)
+      base.class_eval do
+        before do
+          @sessions = []
+        end
+
+        after do
+          quit_sessions
+        end
+      end
+    end
+
     # Launches a new web browser. Called by `page`.
     #
     # You can optionally define an `extra_session_helpers` method (returning an
     # Array of Modules) to add methods to every returned Capybara session.
     def new_session
       ret = Capybara::Session.new(Capybara.default_driver)
+      @sessions << ret
       for mod in session_helpers
         ret.extend(mod)
       end
@@ -38,6 +54,22 @@ module FeatureHelpers
     # Launches a memoized web browser
     def page
       @page ||= new_session
+    end
+
+    def quit_sessions
+      for session in @sessions
+        session.driver.quit
+
+        # Delete user-data-dir to free space (or, more importantly on ramdisk, memory)
+        capabilities_json = session.driver.options[:desired_capabilities].to_json # quasi-private API
+        capabilities = JSON.load(capabilities_json)
+        data_dir = capabilities['chromeOptions']['args']
+          .select { |o| o =~ /^user-data-dir=/ }
+          .first
+          .split('=', 2).last
+        FileUtils.rm_rf(data_dir)
+      end
+      @sessions = []
     end
   end
 end
