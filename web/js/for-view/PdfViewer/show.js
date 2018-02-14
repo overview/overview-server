@@ -22,7 +22,7 @@ function search(q) {
     findBar.findField.value = q
 
     // Now -- and this is the only important part, really -- search!
-    findController = PDFViewerApplication.findController
+    const findController = PDFViewerApplication.findController
     findController.executeCommand('find', {
       query: q,
       phraseSearch: false, // AND and OR queries break with phrase search
