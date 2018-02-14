@@ -14,7 +14,7 @@ describe 'File-upload API' do
     page.visit('/api-tokens')
     page.fill_in('App name', with: 'FileUploadApiSpec', wait: WAIT_LOAD) # wait for form to load
     page.click_button('Generate token')
-    global_token = page.find('td.token', wait: WAIT_LOAD).text # wait for AJAX request to complete
+    global_token = page.find('td.token', text: /[a-z0-9]+/, wait: WAIT_LOAD).text # wait for AJAX request to complete
     @global_api = ApiBrowser.new(base_url: OVERVIEW_URL, api_token: global_token)
 
     # Create @document_set_id and @api API browser for a new document set
