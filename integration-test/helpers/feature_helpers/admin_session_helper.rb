@@ -74,6 +74,18 @@ module FeatureHelpers
         # 3. Grab the HTML attribute
         tr.find("td.confirmed-at")[attr_name.to_sym] # return attribute in question
       end
+
+      def promote_user(user)
+        within(find('tr', text: user[:email])) do
+          click_link('promote')
+        end
+      end
+
+      def demote_user(user)
+        within(find('tr', text: user[:email])) do
+          click_link('demote')
+        end
+      end
     end
   end
 end
