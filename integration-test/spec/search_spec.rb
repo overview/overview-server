@@ -101,6 +101,39 @@ describe 'Search' do
       page.search_for_q('"and" OR /\\bth.*/')
       page.assert_selector('#document-list .warnings', text: /Overview assumed all documents match your regular expression, “\\bth\.\*”, because the surrounding search is too complex\. Rewrite your search so the regular expression is outside any OR or NOT\(AND\(\.\.\.\)\) clauses\./)
     end
+
+    describe 'the API' do
+      before do
+        document_set_id = page.current_url.split('/').last
+        @api = page.create_api_browser
+        @path = "/document-sets/#{document_set_id}/documents"
+      end
+
+      it 'should search by Q' do
+        res = @api.GET(@path + '?q=mot&fields=title')
+        assert_equal(
+          [ 'Third' ],
+          JSON.load(res.body)['items'].map{ |i| i['title'] }
+        )
+      end
+
+      it 'should search by documentIdsBitSetBase64' do
+        # b101000000000 => (40, 0) => oA
+        res = @api.GET(@path + '?documentIdsBitSetBase64=oA')
+        assert_equal(
+          [ 'First', 'Third' ],
+          JSON.load(res.body)['items'].map{ |i| i['title'] }
+        )
+      end
+
+      it 'should return just an Array if fields=ids' do
+        res = @api.GET(@path + '?fields=id')
+        assert_equal(
+          [ 0, 1, 2 ],
+          JSON.load(res.body).map { |id| id & 0xffffffff }
+        )
+      end
+    end
   end
 
   it 'should search within a PDF' do
