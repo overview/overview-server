@@ -31,7 +31,7 @@
         const highlightIndex = this.get('highlightIndex') || 0
         const nHighlights = this.get('nHighlights') || 1
         const newHighlightIndex = (highlightIndex + nHighlights - 1) % nHighlights
-        this.fire('changeHighlightIndex', { highlightIdnex: newHighlightIndex })
+        this.fire('changeHighlightIndex', { highlightIndex: newHighlightIndex })
       },
     },
   }
