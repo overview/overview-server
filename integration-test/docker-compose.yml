@@ -25,6 +25,8 @@ services:
     image: overview-worker:latest
     networks: [ 'database', 'worker' ]
     depends_on: [ 'overview-database' ]
+    environment:
+      OV_N_DOCUMENT_CONVERTERS: '2'
     volumes:
       - blob-storage:/var/lib/overview/blob-storage
 
