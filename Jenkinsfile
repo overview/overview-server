@@ -32,7 +32,7 @@ node('test-slave') {
 
     stage('Integration test') {
       sh 'integration-test/run-in-docker-compose'
-      junit 'integration-test/results/**/*.xml'
+      junit 'integration-test/reports/**/*.xml'
     }
 
     stage('Publish') {
