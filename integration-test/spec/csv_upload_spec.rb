@@ -63,8 +63,11 @@ describe 'CSV Upload' do
     before do
       choose_file('basic.csv')
       page.click_button('Upload', match: :first)
-      page.assert_selector('body.document-set-show', wait: WAIT_LOAD) # wait for worker and then redirect
-      page.assert_selector('#document-list-title h3', text: 'Found 7 documents')
+      # wait for:
+      # 1. Worker to process document
+      # 2. Browser to redirect to Show page
+      # 3. Document list to load
+      page.assert_selector('#document-list-title h3', text: 'Found 7 documents', wait: WAIT_SLOW)
     end
 
     it 'should show the document set' do
