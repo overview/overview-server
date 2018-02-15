@@ -26,14 +26,14 @@ trait S3Strategy extends BlobStorageStrategy {
   protected val logger: Logger
 
   private case class Location(bucket: String, key: String)
-  private val LocationRegex = """^s3:([-\w]+):([-\w]+)$""".r
+  private val LocationRegex = """^s3:([-.\w]+):([-\w]+)$""".r
   private def stringToLocation(s: String) = s match {
     case LocationRegex(bucket, key) => Location(bucket, key)
     case _ => throw new IllegalArgumentException("Invalid location string: '" + s + "'")
   }
 
   private case class LocationPrefix(bucket: String)
-  private val LocationPrefixRegex = """^s3:([-\w]+)$""".r
+  private val LocationPrefixRegex = """^s3:([-.\w]+)$""".r
   private def stringToLocationPrefix(s: String) = s match {
     case LocationPrefixRegex(bucket) => LocationPrefix(bucket)
     case _ => throw new IllegalArgumentException("Invalid location prefix: '" + s + '"')
@@ -147,7 +147,15 @@ trait S3Strategy extends BlobStorageStrategy {
 }
 
 object S3Strategy extends S3Strategy {
-  override lazy val s3 = AmazonS3ClientBuilder.defaultClient
+  override lazy val s3 = AmazonS3ClientBuilder.standard
+    // if a bucket name contains dots, AWS's presigned URLs will contain dots:
+    // that's a bug, because "foo.bar.s3.amazonaws.com" has the wrong SSL
+    // certificate. Instead, generate "path-style" URLs, which won't have
+    // that problem.
+    .withPathStyleAccessEnabled(true)
+    .build
+
   override lazy val transferManager = TransferManagerBuilder.standard.withS3Client(s3).build
+
   override val logger = Logger.forClass(getClass)
 }
