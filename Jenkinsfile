@@ -31,7 +31,7 @@ node('test-slave') {
     }
 
     stage('Integration test') {
-      sh 'docker/integration-test'
+      sh 'integration-test/run-in-docker-compose'
       junit 'integration-test/results/**/*.xml'
     }
 
