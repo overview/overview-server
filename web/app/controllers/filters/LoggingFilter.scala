@@ -11,18 +11,12 @@ class LoggingFilter @Inject() (implicit ec: ExecutionContext) extends EssentialF
   // Copy/paste of http://www.playframework.com/documentation/2.2.1/ScalaHttpFilters
   def apply(nextFilter: EssentialAction) = new EssentialAction {
     def apply(requestHeader: RequestHeader) = {
-      val shouldLog = !requestHeader.path.startsWith("/assets/")
-
-      if (shouldLog) {
-        val startTime = System.currentTimeMillis
-        nextFilter(requestHeader).map { result =>
-          val endTime = System.currentTimeMillis
-          val requestTime = endTime - startTime
-          Logger.info(f"${requestTime}%3sms ${requestHeader.method}%s ${requestHeader.uri}%s -> ${result.header.status}%d")
-          result.withHeaders("Request-Time" -> requestTime.toString)
-        }
-      } else {
-        nextFilter(requestHeader)
+      val startTime = System.currentTimeMillis
+      nextFilter(requestHeader).map { result =>
+        val endTime = System.currentTimeMillis
+        val requestTime = endTime - startTime
+        Logger.info(f"${requestTime}%3sms ${requestHeader.method}%s ${requestHeader.uri}%s -> ${result.header.status}%d")
+        result.withHeaders("Request-Time" -> requestTime.toString)
       }
     }
   }
