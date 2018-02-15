@@ -20,8 +20,9 @@ docker_compose() {
 }
 
 docker_compose down -v # in case a previous run errored out
-docker_compose pull
-docker_compose build --pull
+# Assume overview-*:latest is already tagged by ../docker/build. The only
+# prep we need to do is pull the integration-tester image.
+docker_compose pull integration-test
 
 # Run oververview-db-evolution-applier first, so we don't request from
 # overview-web too early.
