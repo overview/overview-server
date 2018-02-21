@@ -3,6 +3,7 @@ package com.overviewdocs.models
 case class DocumentProcessingError(
   id: Long,
   documentSetId: Long,
+  file2Id: Option[Long],
   textUrl: String,
   message: String,
   statusCode: Option[Int],
@@ -79,6 +80,7 @@ case class DocumentProcessingError(
 object DocumentProcessingError {
   case class CreateAttributes(
     documentSetId: Long,
+    file2Id: Option[Long],
     textUrl: String,
     message: String,
     statusCode: Option[Int],

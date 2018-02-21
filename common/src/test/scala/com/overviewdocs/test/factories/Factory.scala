@@ -177,7 +177,8 @@ trait Factory {
     documentMetadataJson: Option[JsObject] = None,
     size: Long = 1024L,
     uploadedSize: Long = 1024L,
-    contentsOid: Long = 0L
+    contentsOid: Long = 0L,
+    file2Id: Option[Long] = None
   ): GroupedFileUpload
 
   def node(
@@ -288,6 +289,7 @@ trait Factory {
   def documentProcessingError(
     id: Long = 0L,
     documentSetId: Long = 0L,
+    file2Id: Option[Long] = None,
     textUrl: String = "http://example.com",
     message: String = "error message",
     statusCode: Option[Int] = None,

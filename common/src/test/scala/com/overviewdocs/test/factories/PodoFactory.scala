@@ -309,7 +309,8 @@ object PodoFactory extends Factory {
     documentMetadataJson: Option[JsObject],
     size: Long,
     uploadedSize: Long,
-    contentsOid: Long
+    contentsOid: Long,
+    file2Id: Option[Long]
   ) = GroupedFileUpload(
     getId(id),
     getId(fileGroupId),
@@ -319,7 +320,8 @@ object PodoFactory extends Factory {
     documentMetadataJson,
     size,
     uploadedSize,
-    contentsOid
+    contentsOid,
+    file2Id
   )
 
   override def node(
@@ -512,9 +514,10 @@ object PodoFactory extends Factory {
   override def documentProcessingError(
     id: Long,
     documentSetId: Long,
+    file2Id: Option[Long],
     textUrl: String,
     message: String,
     statusCode: Option[Int],
     headers: Option[String]
-  ) = DocumentProcessingError(getId(id), documentSetId, textUrl, message, statusCode, headers)
+  ) = DocumentProcessingError(getId(id), documentSetId, file2Id, textUrl, message, statusCode, headers)
 }

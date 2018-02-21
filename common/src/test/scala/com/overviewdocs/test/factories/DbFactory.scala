@@ -275,7 +275,8 @@ object DbFactory extends Factory with HasBlockingDatabase {
     documentMetadataJson: Option[JsObject],
     size: Long,
     uploadedSize: Long,
-    contentsOid: Long
+    contentsOid: Long,
+    file2Id: Option[Long]
   ) = run(q.insertGroupedFileUpload += podoFactory.groupedFileUpload(
     id,
     fileGroupId,
@@ -285,7 +286,8 @@ object DbFactory extends Factory with HasBlockingDatabase {
     documentMetadataJson,
     size,
     uploadedSize,
-    contentsOid
+    contentsOid,
+    file2Id
   ))
 
   override def node(
@@ -464,6 +466,7 @@ object DbFactory extends Factory with HasBlockingDatabase {
   override def documentProcessingError(
     id: Long,
     documentSetId: Long,
+    file2Id: Option[Long],
     textUrl: String,
     message: String,
     statusCode: Option[Int],
@@ -471,6 +474,7 @@ object DbFactory extends Factory with HasBlockingDatabase {
   ) = run(q.insertDocumentProcessingError += podoFactory.documentProcessingError(
     id,
     documentSetId,
+    file2Id,
     textUrl,
     message,
     statusCode,

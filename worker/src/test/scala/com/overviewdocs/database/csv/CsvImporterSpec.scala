@@ -209,6 +209,7 @@ class CsvImporterSpec extends DbSpecification with Mockito {
     blockingDatabase.option(DocumentProcessingErrors.map(_.createAttributes)) must beSome(
       DocumentProcessingError.CreateAttributes(
         documentSet.id,
+        None,
         "foo.csv",
         "Overview stopped adding documents because you cancelled processing this CSV",
         None,
@@ -230,6 +231,7 @@ class CsvImporterSpec extends DbSpecification with Mockito {
     blockingDatabase.option(DocumentProcessingErrors.map(_.createAttributes)) must beSome(
       DocumentProcessingError.CreateAttributes(
         ci.documentSetId,
+        None,
         "foo.csv",
         "Overview stopped adding documents because this is not a valid CSV",
         None,

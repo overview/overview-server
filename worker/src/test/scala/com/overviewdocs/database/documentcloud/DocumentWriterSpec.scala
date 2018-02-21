@@ -43,7 +43,7 @@ class DocumentWriterSpec extends DbSpecification with Mockito {
 
       import database.api._
       blockingDatabase.seq(DocumentProcessingErrors.map(_.createAttributes)) must beEqualTo(Seq(
-        DocumentProcessingError.CreateAttributes(documentSet.id, "dc1", "some problem", None, None)
+        DocumentProcessingError.CreateAttributes(documentSet.id, None, "dc1", "some problem", None, None)
       ))
     }
 

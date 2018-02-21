@@ -17,28 +17,31 @@ class AddDocumentsImpl(documentIdSupplier: ActorRef)(implicit system: ActorRefFa
 
   /** Processes one GroupedFileUpload.
     *
-    * By the time this Future succeeds, one of several side effects *may* have
-    * occurred:
+    * By the time this Future succeeds, several side effects will have occured:
     *
-    * * One File may have been written.
-    * * One or more Pages may have been written.
-    * * One or more Documents may have been written.
-    * * One or more DocumentProcessingErrors may have been written.
-    *
-    * And one side-effect will certainly have occurred:
-    *
+    * * A _root_ File2 will have been written.
+    * * Derived _leaf_ File2s will have been written.
+    * * Documents and DocumentProcessingErrors will have been written.
     * * The GroupedFileUpload will be deleted, if it still exists.
     *
-    * This method is resilient to every runtime error we expect. In particular:
+    * These side effects are contingent on the DocumentSet and GroupedFileUpload
+    * _not_ being deleted during its run. That makes this method resilient to
+    * every runtime error we expect. In particular:
     *
     * * If the DocumentSet gets deleted in a race, it will succeed.
     * * If the GroupedFileUpload gets deleted in a race, it will succeed.
-    * * If the File gets deleted in a race, it will succeed.
-    * * If the file cannot be parsed (e.g., it's an invalid PDF), it will write
-    *   a DocumentProcessingError and succeed.
+    * * If a File2 gets deleted in a race, it will succeed.
+    * * For each input file we can't process (e.g., an invalid PDF), it will
+    *   write a DocumentProcessingError and succeed.
     *
     * If there's an error we *don't* expect (e.g., out of disk space), it will
-    * return that error in the Future.
+    * return that error in the Future. Callers are encouraged to crash at that
+    * point.
+    *
+    * All writes maintain a record of how they were generated. To resume an
+    * incomplete processUpload() when the worker restarts, we _could_ simply
+    * delete all the derived data and re-generate it. Instead, we take a more
+    * fine-grained approach.
     *
     * @param fileGroup FileGroup that contains the upload.
     * @param upload GroupedFileUpload that needs to be processed.

@@ -150,6 +150,7 @@ class DocumentWriter(
 
       val createAttributesList = errors.map(t => DocumentProcessingError.CreateAttributes(
         documentSetId=dcImport.documentSetId,
+        file2Id=None,
         textUrl=t._1,
         message=t._2,
         statusCode=None,
