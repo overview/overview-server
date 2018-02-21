@@ -16,8 +16,10 @@ class GroupedFileUploadsImpl(tag: Tag) extends Table[GroupedFileUpload](tag, "gr
   def size = column[Long]("size")
   def uploadedSize = column[Long]("uploaded_size")
   def contentsOid = column[Long]("contents_oid")
+  def file2Id = column[Option[Long]]("file2_id")
   
-  def * = (id, fileGroupId, guid, contentType, name, documentMetadataJson, size, uploadedSize, contentsOid) <> ((GroupedFileUpload.apply _).tupled, GroupedFileUpload.unapply)
+  def * = (id, fileGroupId, guid, contentType, name, documentMetadataJson, size, uploadedSize, contentsOid, file2Id) <>
+    ((GroupedFileUpload.apply _).tupled, GroupedFileUpload.unapply)
 }
 
 object GroupedFileUploads extends TableQuery(new GroupedFileUploadsImpl(_))

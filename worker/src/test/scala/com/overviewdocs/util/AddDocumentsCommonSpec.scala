@@ -135,7 +135,7 @@ class AddDocumentsCommonSpec extends DbSpecification with Mockito {
     }
 
     def createDocumentProcessingError(documentSetId: Long) : Unit = {
-      val ret =  DocumentProcessingError(10L, documentSetId, "made up file", "made up error", None, None)
+      val ret =  DocumentProcessingError(10L, documentSetId, None, "made up file", "made up error", None, None)
       blockingDatabase.run((DocumentProcessingErrors returning DocumentProcessingErrors).+=(ret))
     }
 

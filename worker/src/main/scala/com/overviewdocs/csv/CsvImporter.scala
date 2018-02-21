@@ -205,6 +205,7 @@ class CsvImporter(
     DocumentProcessingErrors.map(_.createAttributes) ++= maybeError.toSeq.map { error =>
       DocumentProcessingError.CreateAttributes(
         csvImport.documentSetId,
+        None,
         csvImport.filename,
         error,
         None,
