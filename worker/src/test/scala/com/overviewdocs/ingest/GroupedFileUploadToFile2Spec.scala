@@ -1,4 +1,4 @@
-package com.overviewdocs.processing
+package com.overviewdocs.ingest
 
 import java.nio.file.Path
 import org.specs2.mock.Mockito

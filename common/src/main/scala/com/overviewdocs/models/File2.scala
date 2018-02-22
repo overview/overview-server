@@ -5,11 +5,25 @@ import play.api.libs.json.JsObject
 
 /** A file derived (or copied) from a user upload.
   *
-  * In Overview, each Document is the leaf of a tree of File2 objects. The root
-  * is the file the user uploaded.
+  * In Overview, each Document points to the leaf of a tree of File2 objects.
+  * Each root is the file the user uploaded to the document set.
   *
-  * A _leaf_ File2 (which holds Document data) is never a _root_ File2. Such a
-  * case would mean Overview never examined the file contents.
+  * File2s are shared among DocumentSets, to make cloning cheap. (File2s are
+  * immutable, once INGESTED.)
+  *
+  * == File2 State During Ingestion ==
+  *
+  * During ingest, a File2 is a state machine:
+  *
+  * 1. CREATED means we have partial data about the File2. We know it exists,
+  *    and we know what file type it should have.
+  * 2. WRITTEN means the File2's contents are finalized, but they have not
+  *    been converted to a format Overview understands.
+  * 3. PROCESSED means the File2 has been inspected by Overview. It has produced
+  *    one or more File2s, or it is a leaf. Processing may have produced a
+  *    `processingError`, which is a natural part of the ingesting process.
+  * 4. INGESTED means all File2Errors and Documents have been produced from this
+  *    File2: there is nothing more to process.
   */
 case class File2(
   /** Unique ID. */
@@ -93,21 +107,55 @@ case class File2(
     *
     * Only after a File2 becomes immutable do we begin creating documents from
     * it.
+    *
+    * Resuming ingestion of a WRITTEN File2 means processing it.
     */
   writtenAt: Option[Instant],
 
-  /** When processing of this File2 ended.
+  /** When pipeline steps were done with the data in this File2.
     *
     * This means:
     *
-    * * If this is a leaf, a Document or DocumentProcessingError refers to it.
-    * * If this is a parent, all File2 children that are not leaves are WRITTEN.
-    * * If this is a parent, all File2 children that are leaves are PROCESSED.
+    * * If this is a leaf, it is WRITTEN.
+    * * If this is a parent, all File2 children are WRITTEN.
+    *
+    * Resuming ingestion of a PROCESSED File2 means processing its children.
     */
-  processedAt: Option[Instant]
+  processedAt: Option[Instant],
+
+  /** Error produced during processing, if there was one.
+    *
+    * This serves a different purpose than File2Error. File2Error is displayed
+    * during DocumentSet viewing, and the user sees it; File2Error is _derived_
+    * data created when converting from PROCESSED to INGESTED.
+    * File2.processError is written when converting from WRITTEN to PROCESSED:
+    * it simply captures pipeline output.
+    *
+    * To be absolutely clear: if a child has a `processingError`, that does
+    * _not_ bubble up to a `processingError` on the _parent_. Processing is
+    * done as soon as children are WRITTEN. By definition, the children have
+    * no errors at that point.
+    */
+  processingError: Option[String],
+
+  /** When pipeline steps were done with the children of this File2.
+    *
+    * This means:
+    *
+    * * If this is a leaf, a Document or File2Error points to it.
+    * * If this is a parent, all File2 children are INGESTED.
+    *
+    * Notice the recursion. If a root node is INGESTED, all Documents and
+    * File2Errors that refer to it are built.
+    *
+    * Resuming ingestion of an INGESTED File2 is a no-op.
+    */
+  ingestedAt: Option[Instant]
 ) {
   def toStatefulFile2: StatefulFile2 = {
-    if (processedAt.nonEmpty) {
+    if (ingestedAt.nonEmpty) {
+      StatefulFile2.Ingested(this)
+    } else if (processedAt.nonEmpty) {
       StatefulFile2.Processed(this)
     } else if (writtenAt.nonEmpty) {
       StatefulFile2.Written(this)
@@ -149,5 +197,15 @@ object StatefulFile2 {
     def text: Option[String] = file2.text
     def writtenAt: java.time.Instant = file2.writtenAt.get
     def processedAt: java.time.Instant = file2.processedAt.get
+  }
+
+  case class Ingested(override val file2: File2) extends StatefulFile2 {
+    def blob: BlobStorageRef = file2.blob.get
+    def blobSha1: Array[Byte] = file2.blobSha1
+    def thumbnailBlob: Option[BlobStorageRef] = file2.thumbnailBlob
+    def text: Option[String] = file2.text
+    def writtenAt: java.time.Instant = file2.writtenAt.get
+    def processedAt: java.time.Instant = file2.processedAt.get
+    def ingestedAt: java.time.Instant = file2.ingestedAt.get
   }
 }
