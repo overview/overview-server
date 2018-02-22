@@ -17,7 +17,10 @@ CREATE TABLE file2 (
   created_at TIMESTAMP WITH TIME ZONE NOT NULL,
   written_at TIMESTAMP WITH TIME ZONE,
   processed_at TIMESTAMP WITH TIME ZONE,
-  CONSTRAINT state_written CHECK (written_at IS NULL OR (blob_location IS NOT NULL AND blob_n_bytes IS NOT NULL))
+  processing_error VARCHAR,
+  ingested_at TIMESTAMP WITH TIME ZONE,
+  CONSTRAINT state_written CHECK (written_at IS NULL OR (blob_location IS NOT NULL AND blob_n_bytes IS NOT NULL)),
+  CONSTRAINT dedup UNIQUE (parent_file2_id, index_in_parent)
 );
 
 CREATE INDEX ON file2 (root_file2_id);

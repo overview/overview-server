@@ -30,6 +30,8 @@ class File2sImpl(tag: Tag) extends Table[File2](tag, "file2") {
   def createdAt = column[Instant]("created_at")
   def writtenAt = column[Option[Instant]]("written_at")
   def processedAt = column[Option[Instant]]("processed_at")
+  def processingError = column[Option[String]]("processing_error")
+  def ingestedAt = column[Option[Instant]]("ingested_at")
 
   def * = (
     id,
@@ -49,7 +51,9 @@ class File2sImpl(tag: Tag) extends Table[File2](tag, "file2") {
     text,
     createdAt,
     writtenAt,
-    processedAt
+    processedAt,
+    processingError,
+    ingestedAt
   ) <> ((File2s.build _).tupled, File2s.unbuild)
 }
 
@@ -72,7 +76,9 @@ object File2s extends TableQuery(new File2sImpl(_)) {
     text: Option[String],
     createdAt: Instant,
     writtenAt: Option[Instant],
-    processedAt: Option[Instant]
+    processedAt: Option[Instant],
+    processingError: Option[String],
+    ingestedAt: Option[Instant]
   ) = File2(
     id,
     rootFile2Id,
@@ -95,7 +101,9 @@ object File2s extends TableQuery(new File2sImpl(_)) {
     text,
     createdAt,
     writtenAt,
-    processedAt
+    processedAt,
+    processingError,
+    ingestedAt
   )
 
   def unbuild(f: File2) = Some((
@@ -116,6 +124,8 @@ object File2s extends TableQuery(new File2sImpl(_)) {
     f.text,
     f.createdAt,
     f.writtenAt,
-    f.processedAt
+    f.processedAt,
+    f.processingError,
+    f.ingestedAt
   ))
 }

@@ -1,4 +1,4 @@
-package com.overviewdocs.processing
+package com.overviewdocs.ingest
 
 import java.nio.ByteBuffer
 import java.nio.channels.FileChannel
@@ -48,6 +48,7 @@ class GroupedFileUploadToFile2(database: Database, blobStorage: BlobStorage) {
     }
 
     maybeStatefulFile2Future.flatMap(_ match {
+      case Some(StatefulFile2.Ingested(file2)) => Future.successful(file2)
       case Some(StatefulFile2.Processed(file2)) => Future.successful(file2)
       case Some(StatefulFile2.Written(file2)) => Future.successful(file2)
       case Some(StatefulFile2.Created(file2)) => writeFile2(groupedFileUpload, file2)
