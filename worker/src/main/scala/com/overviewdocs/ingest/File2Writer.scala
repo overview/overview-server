@@ -19,9 +19,16 @@ class File2Writer(database: Database, blobStorage: BlobStorage) {
     pipelineOptions: JsObject
   )(implicit ec: ExecutionContext): Future[File2] = ???
 
-  def writeData(
+  def deleteFile2(file2: File2)(implicit ec: ExecutionContext): Future[File2] = ???
+
+  def writeBlob(
     file2: File2,
-    data: Source[ByteString, _]
+    blob: Source[ByteString, _]
+  )(implicit ec: ExecutionContext): Future[File2] = ???
+
+  def writeInheritBlobFromParent(
+    file2: File2,
+    parentFile2: File2
   )(implicit ec: ExecutionContext): Future[File2] = ???
 
   def writeThumbnail(
@@ -41,7 +48,8 @@ class File2Writer(database: Database, blobStorage: BlobStorage) {
 
   def setProcessed(
     file2: File2,
-    maybeError: Option[String]
+    nChildren: Int,
+    processingError: Option[String]
   )(implicit ec: ExecutionContext): Future[File2] = ???
 
   def setIngested(

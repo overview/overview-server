@@ -173,7 +173,7 @@ class DbHttpViewFilterBackend @Inject() (
     import actorSystem.dispatcher
 
     logger.logExecutionTimeAsync("finding document IDs at URL {}", url) {
-      http.singleRequest(HttpRequest(uri=uri), settings=connectionPoolSettings)(materializer).transformWith(_ match {
+      http.singleRequest(HttpRequest(uri=uri), settings=connectionPoolSettings).transformWith(_ match {
         case Success(httpResponse) => httpResponseToResult(url, documentSetId, httpResponse)
         case Failure(ex: StreamTcpException) => {
           Future.successful(Left(ResolveError.PluginError(url, ex.getMessage)))

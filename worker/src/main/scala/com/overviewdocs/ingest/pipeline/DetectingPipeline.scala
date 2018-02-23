@@ -20,9 +20,9 @@ class DetectingPipeline(
   handlers: Map[String, Pipeline],
   file2Writer: File2Writer
 ) extends Pipeline {
-  override def processDepthFirst(file2: File2)(implicit ec: ExecutionContext): Source[Pipeline.Output, akka.NotUsed] = {
+  override def process(file2: File2)(implicit ec: ExecutionContext): Source[File2, akka.NotUsed] = {
     val futureSource = detectContentType(file2).map(handlers.get _).map(_ match {
-      case Some(pipeline) => pipeline.processDepthFirst(file2)
+      case Some(pipeline) => pipeline.process(file2)
       case None => processUnhandled(file2)
     })
 
@@ -32,11 +32,8 @@ class DetectingPipeline(
 
   private def detectContentType(file2: File2)(implicit ec: ExecutionContext): Future[String] = ???
 
-  private def processUnhandled(file2: File2)(implicit ec: ExecutionContext): Source[Pipeline.Output, akka.NotUsed] = {
-    val futureOutput = for {
-      processed <- file2Writer.setProcessed(file2, Some("unhandled"))
-    } yield Pipeline.Output.Parent(processed)
-
+  private def processUnhandled(file2: File2)(implicit ec: ExecutionContext): Source[File2, akka.NotUsed] = {
+    val futureOutput = file2Writer.setProcessed(file2, 0, Some("unhandled"))
     Source.fromFuture(futureOutput)
   }
 }
@@ -64,6 +61,12 @@ object DetectingPipeline {
         Steps.Office2Pdf, // Convert to PDF
         Steps.Pdf2Pdf          // Split pages and extract text
       ))
+
+      // TODO:
+      //val Zip = new StepsPipeline(Vector(
+      //  Steps.Zip,
+      //  Steps.Recurse
+      //))
     }
 
     val handlers = Map(

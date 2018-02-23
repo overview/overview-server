@@ -32,6 +32,15 @@ object ActorSystemContext {
         remote {
           enabled-transports: []
         }
+
+        default-dispatcher {
+          type = Dispatcher
+          executor = "fork-join-executor"
+          fork-join-executor {
+            paralellism-min = 2
+            paralellism-max = 3
+          }
+        }
       }
     """)
   )
