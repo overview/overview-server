@@ -10,5 +10,5 @@ import com.overviewdocs.models.File2
   * For instance, a ".doc" pipeline could be `[ "doc2pdf", "thumbnailer" ]`.
   */
 class StepsPipeline(steps: Vector[Step]) extends Pipeline {
-  override def processDepthFirst(file2: File2)(implicit ec: ExecutionContext): Source[Pipeline.Output, akka.NotUsed] = ???
+  override def process(file2: File2)(implicit ec: ExecutionContext): Source[File2, akka.NotUsed] = ???
 }

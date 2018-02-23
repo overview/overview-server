@@ -13,5 +13,8 @@ import com.overviewdocs.models.File2
 trait StepLogic {
   /** Streams the data needed to convert a WRITTEN File2 to a PROCESSED one.
     */
-  def processIntoFragments(file2: File2)(implicit ec: ExecutionContext): Source[StepOutputFragment, Future[StepOutputEnd]]
+  def processIntoFragments(
+    file2: File2,
+    canceled: Future[akka.Done]
+  )(implicit ec: ExecutionContext): Source[StepOutputFragment, akka.NotUsed]
 }

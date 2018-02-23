@@ -123,6 +123,14 @@ case class File2(
     */
   processedAt: Option[Instant],
 
+  /** Number of WRITTEN, PROCESSED or INGESTED children of this File2.
+    *
+    * For a leaf File2, this is Some(0). For a garbage File2, this is Some(0)
+    * and processingError is set. For a half-garbage File2, this is the number
+    * of children emitted before error and processingError is set.
+    */
+  nChildren: Option[Int],
+
   /** Error produced during processing, if there was one.
     *
     * This serves a different purpose than File2Error. File2Error is displayed
@@ -180,9 +188,9 @@ sealed trait StatefulFile2 {
   def createdAt: Instant = file2.createdAt
 }
 object StatefulFile2 {
-  case class Created(override val file2: File2) extends StatefulFile2
-
-  case class Written(override val file2: File2) extends StatefulFile2 {
+  trait NotWritten
+  trait IsWritten { // WRITTEN, PROCESSED or INGESTED
+    val file2: File2
     def blob: BlobStorageRef = file2.blob.get
     def blobSha1: Array[Byte] = file2.blobSha1
     def thumbnailBlob: Option[BlobStorageRef] = file2.thumbnailBlob
@@ -190,22 +198,29 @@ object StatefulFile2 {
     def writtenAt: java.time.Instant = file2.writtenAt.get
   }
 
-  case class Processed(override val file2: File2) extends StatefulFile2 {
-    def blob: BlobStorageRef = file2.blob.get
-    def blobSha1: Array[Byte] = file2.blobSha1
-    def thumbnailBlob: Option[BlobStorageRef] = file2.thumbnailBlob
-    def text: Option[String] = file2.text
-    def writtenAt: java.time.Instant = file2.writtenAt.get
+  trait NotProcessed
+  trait IsProcessed { // PROCESSED or INGESTED
+    val file2: File2
     def processedAt: java.time.Instant = file2.processedAt.get
+    def nChildren: Int = file2.nChildren.get
+    def processingError: Option[String] = file2.processingError
   }
 
-  case class Ingested(override val file2: File2) extends StatefulFile2 {
-    def blob: BlobStorageRef = file2.blob.get
-    def blobSha1: Array[Byte] = file2.blobSha1
-    def thumbnailBlob: Option[BlobStorageRef] = file2.thumbnailBlob
-    def text: Option[String] = file2.text
-    def writtenAt: java.time.Instant = file2.writtenAt.get
-    def processedAt: java.time.Instant = file2.processedAt.get
+  trait IsIngested { // only INGESTED
+    val file2: File2
     def ingestedAt: java.time.Instant = file2.ingestedAt.get
   }
+  trait NotIngested
+
+  case class Created(override val file2: File2)
+    extends StatefulFile2 with NotWritten with NotProcessed with NotIngested
+
+  case class Written(override val file2: File2)
+    extends StatefulFile2 with IsWritten with NotProcessed with NotIngested
+
+  case class Processed(override val file2: File2)
+    extends StatefulFile2 with IsWritten with IsProcessed with NotIngested
+
+  case class Ingested(override val file2: File2)
+    extends StatefulFile2 with IsWritten with IsProcessed with IsIngested
 }
