@@ -6,8 +6,7 @@ import java.time.Instant
 import play.api.libs.json.{ JsObject, Json }
 
 import com.overviewdocs.metadata.MetadataSchema
-import com.overviewdocs.models.{DocumentSetUser,UserRole}
-import com.overviewdocs.models.DocumentDisplayMethod
+import com.overviewdocs.models.{DocumentDisplayMethod,DocumentSetUser,File2,UserRole}
 
 trait MyPostgresProfile extends ExPostgresProfile
   with PgArraySupport
@@ -42,6 +41,17 @@ trait MyPostgresProfile extends ExPostgresProfile
     implicit val documentSetUserRoleColumnType = MappedColumnType.base[DocumentSetUser.Role, Int](
       _.isOwner match { case true => 1; case false => 2 },
       DocumentSetUser.Role.apply
+    )
+
+    implicit val file2MetadataColumnType = MappedColumnType.base[File2.Metadata, Array[Byte]](
+      m => Json.toBytes(m.jsObject),
+      v => File2.Metadata(Json.parse(v).as[JsObject])
+    )
+
+    implicit val file2PipelineOptionsFormat = Json.format[File2.PipelineOptions]
+    implicit val file2PipelineOptionsColumnType = MappedColumnType.base[File2.PipelineOptions, Array[Byte]](
+      v => Json.toBytes(Json.toJsObject(v)),
+      b => Json.parse(b).asOpt[File2.PipelineOptions].getOrElse(File2.PipelineOptions(false, false))
     )
 
     implicit val metadataSchemaTypeMapper = MappedColumnType.base[MetadataSchema, String](

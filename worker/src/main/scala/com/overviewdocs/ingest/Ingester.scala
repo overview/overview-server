@@ -7,6 +7,7 @@ import scala.concurrent.{ExecutionContext,Future}
 import com.overviewdocs.models.File2
 
 class Ingester(file2Writer: File2Writer) {
+
   /** Converts a File2 into one or more File2 instances.
     *
     * This will PROCESS the File2 using the given Pipeline, ensuring all

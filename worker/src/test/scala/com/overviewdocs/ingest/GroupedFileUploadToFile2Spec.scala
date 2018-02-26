@@ -9,7 +9,7 @@ import scala.concurrent.Future
 
 import com.overviewdocs.blobstorage.{BlobStorage,BlobBucketId}
 import com.overviewdocs.database.LargeObject
-import com.overviewdocs.models.{BlobStorageRef,FileGroup,GroupedFileUpload}
+import com.overviewdocs.models.{BlobStorageRef,File2,FileGroup,GroupedFileUpload}
 import com.overviewdocs.models.tables.{File2s,GroupedFileUploads}
 import com.overviewdocs.test.DbSpecification
 
@@ -57,22 +57,22 @@ class GroupedFileUploadToFile2Spec extends DbSpecification with Mockito {
 
   "GroupedFileUploadToFile2" should {
     "return a File2 with FileGroup metadata" in new BaseScope {
-      val metadata = JsObject(Seq("foo" -> JsString("bar")))
-      override val fileGroup = factory.fileGroup(metadataJson=metadata)
+      val metadata = File2.Metadata(JsObject(Seq("foo" -> JsString("bar"))))
+      override val fileGroup = factory.fileGroup(metadataJson=metadata.jsObject)
       override val groupedFileUpload = factory.groupedFileUpload(fileGroupId=fileGroup.id, contentsOid=oid, documentMetadataJson=None)
       stubBlobStorage returns Future.successful("loc")
-      result.metadataJson must beEqualTo(metadata)
+      result.metadata must beEqualTo(metadata)
     }
 
     "return a File2 with GroupedFileUpload metadata, which overrides FileGroup metadata" in new BaseScope {
-      val metadata1 = JsObject(Seq("foo" -> JsString("bar")))
-      val metadata2 = JsObject(Seq("foo2" -> JsString("bar2")))
+      val metadata1 = File2.Metadata(JsObject(Seq("foo" -> JsString("bar"))))
+      val metadata2 = File2.Metadata(JsObject(Seq("foo2" -> JsString("bar2"))))
 
-      override val fileGroup = factory.fileGroup(metadataJson=metadata1)
-      override val groupedFileUpload = factory.groupedFileUpload(fileGroupId=fileGroup.id, contentsOid=oid, documentMetadataJson=Some(metadata2))
+      override val fileGroup = factory.fileGroup(metadataJson=metadata1.jsObject)
+      override val groupedFileUpload = factory.groupedFileUpload(fileGroupId=fileGroup.id, contentsOid=oid, documentMetadataJson=Some(metadata2.jsObject))
       stubBlobStorage returns Future.successful("loc")
 
-      result.metadataJson must beEqualTo(metadata2)
+      result.metadata must beEqualTo(metadata2)
     }
 
     "save a File2 to the database during create, before write" in new BaseScope {

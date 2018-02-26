@@ -62,10 +62,10 @@ case class File2(
   languageCode: String,
 
   /** Metadata supplied by user, augmented by pipeline. */
-  metadataJson: JsObject,
+  metadata: File2.Metadata,
 
   /** Options supplied by user, augmented by pipeline. */
-  pipelineOptions: JsObject,
+  pipelineOptions: File2.PipelineOptions,
 
   /** Reference to "main" file data.
     *
@@ -173,6 +173,15 @@ case class File2(
   }
 }
 
+object File2 {
+  case class Metadata(jsObject: JsObject) // indirection fools Slick into treating this like a separate type
+
+  case class PipelineOptions(
+    ocr: Boolean,        // user has requested OCR, and we have not done it yet
+    splitByPage: Boolean // user has requested split-by-page, and we have not done it yet
+  )
+}
+
 sealed trait StatefulFile2 {
   val file2: File2
 
@@ -183,8 +192,8 @@ sealed trait StatefulFile2 {
   def filename: String = file2.filename
   def contentType: String = file2.contentType
   def languageCode: String = file2.languageCode
-  def metadataJson: JsObject = file2.metadataJson
-  def pipelineOptions: JsObject = file2.pipelineOptions
+  def metadata: File2.Metadata = file2.metadata
+  def pipelineOptions: File2.PipelineOptions = file2.pipelineOptions
   def createdAt: Instant = file2.createdAt
 }
 object StatefulFile2 {

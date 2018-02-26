@@ -1,17 +1,11 @@
 package com.overviewdocs.models.tables
 
 import java.time.Instant
-import play.api.libs.json.{JsObject,Json}
 
 import com.overviewdocs.database.Slick.api._
 import com.overviewdocs.models.{BlobStorageRef,File2}
 
 class File2sImpl(tag: Tag) extends Table[File2](tag, "file2") {
-  val jsonByteaColumnType = MappedColumnType.base[JsObject, Array[Byte]](
-    Json.toBytes,
-    Json.parse(_).as[JsObject]
-  )
-
   def id = column[Long]("id", O.AutoInc, O.PrimaryKey)
   def rootFile2Id = column[Option[Long]]("root_file2_id")
   def parentFile2Id = column[Option[Long]]("parent_file2_id")
@@ -19,8 +13,8 @@ class File2sImpl(tag: Tag) extends Table[File2](tag, "file2") {
   def filename = column[String]("filename")
   def contentType = column[String]("content_type")
   def languageCode = column[String]("language_code")
-  def metadataJson = column[JsObject]("metadata_json_utf8")(jsonByteaColumnType)
-  def pipelineOptions = column[JsObject]("pipeline_options_json_utf8")(jsonByteaColumnType)
+  def metadata = column[File2.Metadata]("metadata_json_utf8")(file2MetadataColumnType)
+  def pipelineOptions = column[File2.PipelineOptions]("pipeline_options_json_utf8")
   def blobLocation = column[Option[String]]("blob_location")
   def blobNBytes = column[Option[Int]]("blob_n_bytes")
   def blobSha1 = column[Array[Byte]]("blob_sha1")
@@ -42,7 +36,7 @@ class File2sImpl(tag: Tag) extends Table[File2](tag, "file2") {
     filename,
     contentType,
     languageCode,
-    metadataJson,
+    metadata,
     pipelineOptions,
     blobLocation,
     blobNBytes,
@@ -68,8 +62,8 @@ object File2s extends TableQuery(new File2sImpl(_)) {
     filename: String,
     contentType: String,
     languageCode: String,
-    metadataJson: JsObject,
-    pipelineOptions: JsObject,
+    metadata: File2.Metadata,
+    pipelineOptions: File2.PipelineOptions,
     blobLocation: Option[String],
     blobNBytes: Option[Int],
     blobSha1: Array[Byte],
@@ -90,7 +84,7 @@ object File2s extends TableQuery(new File2sImpl(_)) {
     filename,
     contentType,
     languageCode,
-    metadataJson,
+    metadata,
     pipelineOptions,
     (blobLocation, blobNBytes) match {
       case (Some(location), Some(nBytes)) => Some(BlobStorageRef(location, nBytes))
@@ -118,7 +112,7 @@ object File2s extends TableQuery(new File2sImpl(_)) {
     f.filename,
     f.contentType,
     f.languageCode,
-    f.metadataJson,
+    f.metadata,
     f.pipelineOptions,
     f.blob.map(_.location),
     f.blob.map(_.nBytes),
