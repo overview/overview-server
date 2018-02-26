@@ -20,6 +20,7 @@ class File2sImpl(tag: Tag) extends Table[File2](tag, "file2") {
   def blobSha1 = column[Array[Byte]]("blob_sha1")
   def thumbnailBlobLocation = column[Option[String]]("thumbnail_blob_location")
   def thumbnailBlobNBytes = column[Option[Int]]("thumbnail_blob_n_bytes")
+  def thumbnailContentType = column[Option[String]]("thumbnail_content_type")
   def text = column[Option[String]]("text")
   def createdAt = column[Instant]("created_at")
   def writtenAt = column[Option[Instant]]("written_at")
@@ -43,6 +44,7 @@ class File2sImpl(tag: Tag) extends Table[File2](tag, "file2") {
     blobSha1,
     thumbnailBlobLocation,
     thumbnailBlobNBytes,
+    thumbnailContentType,
     text,
     createdAt,
     writtenAt,
@@ -69,6 +71,7 @@ object File2s extends TableQuery(new File2sImpl(_)) {
     blobSha1: Array[Byte],
     thumbnailBlobLocation: Option[String],
     thumbnailBlobNBytes: Option[Int],
+    thumbnailContentType: Option[String],
     text: Option[String],
     createdAt: Instant,
     writtenAt: Option[Instant],
@@ -95,6 +98,7 @@ object File2s extends TableQuery(new File2sImpl(_)) {
       case (Some(location), Some(nBytes)) => Some(BlobStorageRef(location, nBytes))
       case _ => None
     },
+    thumbnailContentType,
     text,
     createdAt,
     writtenAt,
@@ -119,6 +123,7 @@ object File2s extends TableQuery(new File2sImpl(_)) {
     f.blobSha1,
     f.thumbnailBlob.map(_.location),
     f.thumbnailBlob.map(_.nBytes),
+    f.thumbnailContentType,
     f.text,
     f.createdAt,
     f.writtenAt,
