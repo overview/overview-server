@@ -1,5 +1,6 @@
 package com.overviewdocs.ingest.pipeline
 
+import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import scala.concurrent.{ExecutionContext,Future,Promise}
@@ -26,7 +27,7 @@ class Step(logic: StepLogic, file2Writer: File2Writer) {
     parentFile2: WrittenFile2,
     onProgress: Double => Unit,
     canceled: Future[akka.Done]
-  )(implicit ec: ExecutionContext): Source[WrittenFile2, Future[ProcessedFile2]] = {
+  )(implicit ec: ExecutionContext, mat: Materializer): Source[WrittenFile2, Future[ProcessedFile2]] = {
     // The retval's materialized value
     val writtenParentPromise = Promise[ProcessedFile2]()
 
@@ -114,6 +115,7 @@ class Step(logic: StepLogic, file2Writer: File2Writer) {
             lastChild.map(_.indexInParent + 1).getOrElse(0),
             header.filename,
             header.contentType,
+            header.languageCode,
             header.metadata,
             header.pipelineOptions
           )

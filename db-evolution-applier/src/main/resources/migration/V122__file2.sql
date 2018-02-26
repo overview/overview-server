@@ -13,6 +13,7 @@ CREATE TABLE file2 (
   blob_sha1 BYTEA,
   thumbnail_blob_location VARCHAR,
   thumbnail_blob_n_bytes INT,
+  thumbnail_content_type VARCHAR,
   text CHAR,
   created_at TIMESTAMP WITH TIME ZONE NOT NULL,
   written_at TIMESTAMP WITH TIME ZONE,

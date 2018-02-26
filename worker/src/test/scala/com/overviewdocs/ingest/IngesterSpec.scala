@@ -43,7 +43,7 @@ class IngesterSpec extends Specification with Mockito {
       override val input = Vector(input1)
 
       val output1 = IngestedRootFile2(1L, 2L)
-      mockFile2Writer.ingestBatch(input)(ec) returns Future.successful(Vector(output1))
+      mockFile2Writer.ingestBatch(input)(ec) returns Future.unit
       result must beEqualTo(Vector(output1))
     }
 
@@ -53,7 +53,7 @@ class IngesterSpec extends Specification with Mockito {
       override val input = Vector(input1, input2)
 
       val output1 = IngestedRootFile2(1L, 2L)
-      mockFile2Writer.ingestBatch(Vector(input2, input1.copy(nIngestedChildren=1)))(ec) returns Future.successful(Vector(output1))
+      mockFile2Writer.ingestBatch(Vector(input2, input1.copy(nIngestedChildren=1)))(ec) returns Future.unit
       result must beEqualTo(Vector(output1))
     }
 
@@ -62,7 +62,7 @@ class IngesterSpec extends Specification with Mockito {
       val input2 = ProcessedFile2(2L, 2L, Some(1L), 0, 0)
       override val input = Vector(input1, input2)
 
-      mockFile2Writer.ingestBatch(Vector(input2))(ec) returns Future.successful(Vector())
+      mockFile2Writer.ingestBatch(Vector(input2))(ec) returns Future.unit
       result must beEqualTo(Vector())
     }
 
@@ -75,9 +75,9 @@ class IngesterSpec extends Specification with Mockito {
 
       val output1 = IngestedRootFile2(1L, 2L)
       val output3 = IngestedRootFile2(3L, 2L)
-      mockFile2Writer.ingestBatch(Vector(input2))(ec) returns Future.successful(Vector())
-      mockFile2Writer.ingestBatch(Vector(input3))(ec) returns Future.successful(Vector(output3))
-      mockFile2Writer.ingestBatch(Vector(input4, input1.copy(nIngestedChildren=2)))(ec) returns Future.successful(Vector(output1))
+      mockFile2Writer.ingestBatch(Vector(input2))(ec) returns Future.unit
+      mockFile2Writer.ingestBatch(Vector(input3))(ec) returns Future.unit
+      mockFile2Writer.ingestBatch(Vector(input4, input1.copy(nIngestedChildren=2)))(ec) returns Future.unit
       result must beEqualTo(Vector(output3, output1))
     }
 
@@ -92,8 +92,8 @@ class IngesterSpec extends Specification with Mockito {
 
       val output1 = IngestedRootFile2(1L, 2L)
       val output3 = IngestedRootFile2(3L, 2L)
-      mockFile2Writer.ingestBatch(Vector(input2, input3))(ec) returns Future.successful(Vector(output3))
-      mockFile2Writer.ingestBatch(Vector(input4, input1.copy(nIngestedChildren=2)))(ec) returns Future.successful(Vector(output1))
+      mockFile2Writer.ingestBatch(Vector(input2, input3))(ec) returns Future.unit
+      mockFile2Writer.ingestBatch(Vector(input4, input1.copy(nIngestedChildren=2)))(ec) returns Future.unit
       result must beEqualTo(Vector(output3, output1))
     }
   }

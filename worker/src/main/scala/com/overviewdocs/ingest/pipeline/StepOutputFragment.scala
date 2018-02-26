@@ -79,6 +79,7 @@ object StepOutputFragment {
   case class File2Header(
     filename: String,
     contentType: String,
+    languageCode: String,
     metadata: File2.Metadata,
     pipelineOptions: File2.PipelineOptions
   ) extends File2Fragment

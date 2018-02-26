@@ -101,10 +101,11 @@ object Ingester {
 
       unwrittenParents = toHold // for next time
 
-      if (toWrite.nonEmpty) {
-        file2Writer.ingestBatch(toWrite)
-      } else {
-        Future.successful(Vector.empty)
+      for {
+        _ <- if (toWrite.nonEmpty) { file2Writer.ingestBatch(toWrite) } else { Future.unit }
+      } yield {
+        val roots = toWrite.filter(_.parentId.isEmpty)
+        roots.map(root => IngestedRootFile2(root.id, root.documentSetId))
       }
     }
 

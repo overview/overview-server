@@ -32,6 +32,8 @@ case class File2(
   /** File2 that the user uploaded to generate this File2. `None` if this is
     * the root.
     *
+    * This makes DELETE easier: we can delete all children with one query.
+    *
     * (Why not rootFile2Id == id when this is the root? Because that makes it
     * hard for SQL to enforce constraints and hard for Slick use the SEQUENCE.)
     */
@@ -85,6 +87,12 @@ case class File2(
     * * For a _head_ File2, this points to image data.
     */
   thumbnailBlob: Option[BlobStorageRef],
+
+  /** Thumbnail content-type.
+    *
+    * In 2018, we want image/jpeg or image/png. Maybe someday, image/webp.
+    */
+  thumbnailContentType: Option[String],
 
   /** Text data.
     *
