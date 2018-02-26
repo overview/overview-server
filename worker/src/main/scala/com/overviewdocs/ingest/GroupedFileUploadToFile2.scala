@@ -5,7 +5,6 @@ import java.nio.channels.FileChannel
 import java.nio.file.{Files,StandardOpenOption,Path}
 import java.security.MessageDigest
 import java.time.Instant
-import play.api.libs.json.{JsObject,JsBoolean,JsString,JsNull}
 import scala.concurrent.{ExecutionContext,Future,blocking}
 
 import com.overviewdocs.blobstorage.{BlobBucketId,BlobStorage}
@@ -72,11 +71,11 @@ class GroupedFileUploadToFile2(database: Database, blobStorage: BlobStorage) {
     val filename = groupedFileUpload.name
     val contentType = groupedFileUpload.contentType
     val languageCode = fileGroup.lang.getOrElse("en")
-    val metadataJson = groupedFileUpload.documentMetadataJson.getOrElse(fileGroup.metadataJson)
-    val pipelineOptions = JsObject(Seq(
-      "ocr" -> JsBoolean(fileGroup.ocr.getOrElse(false)),
-      "splitBy" -> (if (fileGroup.splitDocuments.getOrElse(false)) JsString("page") else JsNull)
-    ))
+    val metadata = File2.Metadata(groupedFileUpload.documentMetadataJson.getOrElse(fileGroup.metadataJson))
+    val pipelineOptions = File2.PipelineOptions(
+      fileGroup.ocr.getOrElse(false),
+      fileGroup.splitDocuments.getOrElse(false)
+    )
     val createdAt=Instant.now()
 
     val action = (for {
@@ -85,7 +84,7 @@ class GroupedFileUploadToFile2(database: Database, blobStorage: BlobStorage) {
         filename,
         contentType,
         languageCode,
-        metadataJson,
+        metadata,
         pipelineOptions,
         Array[Byte](),
         createdAt
@@ -229,7 +228,7 @@ object GroupedFileUploadToFile2 {
     f.filename,
     f.contentType,
     f.languageCode,
-    f.metadataJson,
+    f.metadata,
     f.pipelineOptions,
     f.blobSha1,
     f.createdAt

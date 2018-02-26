@@ -3,7 +3,7 @@ package com.overviewdocs.ingest.pipeline
 import akka.stream.scaladsl.Source
 import scala.concurrent.ExecutionContext
 
-import com.overviewdocs.models.File2
+import com.overviewdocs.ingest.models.{WrittenFile2,ProcessedFile2}
 
 /** Processes a File2.
   *
@@ -50,5 +50,5 @@ trait Pipeline {
     * Ingest these outputs in reverse order: not in parallel. A parent can only
     * be marked ingested if its children are ingested.
     */
-  def process(file2: File2)(implicit ec: ExecutionContext): Source[File2, akka.NotUsed]
+  def process(file2: WrittenFile2)(implicit ec: ExecutionContext): Source[ProcessedFile2, akka.NotUsed]
 }

@@ -6,8 +6,8 @@ import scala.concurrent.{ExecutionContext,Future}
 import com.overviewdocs.blobstorage.BlobStorage
 import com.overviewdocs.ingest.File2Writer
 import com.overviewdocs.ingest.convert.{MinimportBroker,MinimportWorkerType}
+import com.overviewdocs.ingest.models.{WrittenFile2,ProcessedFile2}
 import com.overviewdocs.ingest.pipeline.step.MinimportStepLogic
-import com.overviewdocs.models.File2
 
 /** Chooses and executes a Pipeline based on the given file2's contentType.
   *
@@ -20,7 +20,7 @@ class DetectingPipeline(
   handlers: Map[String, Pipeline],
   file2Writer: File2Writer
 ) extends Pipeline {
-  override def process(file2: File2)(implicit ec: ExecutionContext): Source[File2, akka.NotUsed] = {
+  override def process(file2: WrittenFile2)(implicit ec: ExecutionContext): Source[ProcessedFile2, akka.NotUsed] = {
     val futureSource = detectContentType(file2).map(handlers.get _).map(_ match {
       case Some(pipeline) => pipeline.process(file2)
       case None => processUnhandled(file2)
@@ -30,9 +30,9 @@ class DetectingPipeline(
       .mapMaterializedValue(_ => akka.NotUsed)
   }
 
-  private def detectContentType(file2: File2)(implicit ec: ExecutionContext): Future[String] = ???
+  private def detectContentType(file2: WrittenFile2)(implicit ec: ExecutionContext): Future[String] = ???
 
-  private def processUnhandled(file2: File2)(implicit ec: ExecutionContext): Source[File2, akka.NotUsed] = {
+  private def processUnhandled(file2: WrittenFile2)(implicit ec: ExecutionContext): Source[ProcessedFile2, akka.NotUsed] = {
     val futureOutput = file2Writer.setProcessed(file2, 0, Some("unhandled"))
     Source.fromFuture(futureOutput)
   }

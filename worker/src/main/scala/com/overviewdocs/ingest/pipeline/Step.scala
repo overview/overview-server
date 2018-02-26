@@ -5,7 +5,7 @@ import akka.util.ByteString
 import scala.concurrent.{ExecutionContext,Future,Promise}
 
 import com.overviewdocs.ingest.File2Writer
-import com.overviewdocs.models.File2
+import com.overviewdocs.ingest.models.{CreatedFile2,WrittenFile2,ProcessedFile2}
 
 /** Converts a File2 from WRITTEN to PROCESSED and outputs its WRITTEN
   * children.
@@ -23,12 +23,12 @@ class Step(logic: StepLogic, file2Writer: File2Writer) {
     * `processingError` will become `"canceled"`.
     */
   def process(
-    parentFile2: File2,
+    parentFile2: WrittenFile2,
     onProgress: Double => Unit,
     canceled: Future[akka.Done]
-  )(implicit ec: ExecutionContext): Source[File2, Future[File2]] = {
+  )(implicit ec: ExecutionContext): Source[WrittenFile2, Future[ProcessedFile2]] = {
     // The retval's materialized value
-    val writtenParentPromise = Promise[File2]()
+    val writtenParentPromise = Promise[ProcessedFile2]()
 
     /*
      * We process the incoming stream of StepOutputFragments, passing each to
@@ -46,25 +46,25 @@ class Step(logic: StepLogic, file2Writer: File2Writer) {
 
     sealed trait State
     case object Start extends State
-    case class AtChild(child: File2, isWritable: Boolean) extends State
+    case class AtChild(child: CreatedFile2) extends State
     case object End extends State
 
-    type ScanResult = Tuple2[Option[File2], State]
+    type ScanResult = Tuple2[Option[WrittenFile2], State]
 
     def onFragment(lastEmitAndState: ScanResult, fragment: StepOutputFragment): Future[ScanResult] = {
       val state = lastEmitAndState._2
       (state, fragment) match {
         case (_, p: StepOutputFragment.Progress) => { onProgress(p.fraction); ignore(state) }
         case (End, _) => ignore(state) // we've marked the parent as processed: garbage can't change our minds
-        case (Start, h: StepOutputFragment.File2Header) => createChild(None, false, h)
-        case (Start, e: StepOutputFragment.EndFragment) => end(None, false, e)
+        case (Start, h: StepOutputFragment.File2Header) => createChild(None, h)
+        case (Start, e: StepOutputFragment.EndFragment) => end(None, e)
         case (Start, f) => unexpectedFragment(f, None)
-        case (AtChild(child, _), StepOutputFragment.Blob(stream)) => addBlob(child, stream)
-        case (AtChild(child, _), StepOutputFragment.InheritBlob) => inheritBlob(child)
-        case (AtChild(child, isWritable), StepOutputFragment.Text(stream)) => addText(child, isWritable, stream)
-        case (AtChild(child, isWritable), StepOutputFragment.Thumbnail(ct, stream)) => addThumbnail(child, isWritable, ct, stream)
-        case (AtChild(child, isWritable), h: StepOutputFragment.File2Header) => createChild(Some(child), isWritable, h)
-        case (AtChild(child, isWritable), e: StepOutputFragment.EndFragment) => end(Some(child), isWritable, e)
+        case (AtChild(child), StepOutputFragment.Blob(stream)) => addBlob(child, stream)
+        case (AtChild(child), StepOutputFragment.InheritBlob) => inheritBlob(child)
+        case (AtChild(child), StepOutputFragment.Text(stream)) => addText(child, stream)
+        case (AtChild(child), StepOutputFragment.Thumbnail(ct, stream)) => addThumbnail(child, ct, stream)
+        case (AtChild(child), h: StepOutputFragment.File2Header) => createChild(Some(child), h)
+        case (AtChild(child), e: StepOutputFragment.EndFragment) => end(Some(child), e)
       }
     }
 
@@ -72,7 +72,7 @@ class Step(logic: StepLogic, file2Writer: File2Writer) {
       Future.successful((None, lastState))
     }
 
-    def error(message: String, currentChild: Option[File2]): Future[ScanResult] = {
+    def error(message: String, currentChild: Option[CreatedFile2]): Future[ScanResult] = {
       currentChild match {
         case Some(child) => {
           // We'll delete the current child File2: it isn't WRITTEN
@@ -90,18 +90,18 @@ class Step(logic: StepLogic, file2Writer: File2Writer) {
       }
     }
 
-    def logicError(message: String, currentChild: Option[File2]): Future[ScanResult] = {
+    def logicError(message: String, currentChild: Option[CreatedFile2]): Future[ScanResult] = {
       error("logic error: " + message, currentChild)
     }
 
-    def unexpectedFragment(f: StepOutputFragment, currentChild: Option[File2]): Future[ScanResult] = {
+    def unexpectedFragment(f: StepOutputFragment, currentChild: Option[CreatedFile2]): Future[ScanResult] = {
       logicError("unexpected fragment " + f.getClass.toString, currentChild)
     }
 
-    def createChild(lastChild: Option[File2], lastChildIsWritable: Boolean, header: StepOutputFragment.File2Header): Future[ScanResult] = {
+    def createChild(lastChild: Option[CreatedFile2], header: StepOutputFragment.File2Header): Future[ScanResult] = {
       // If header is invalid (has wrong indexInParent), move to error state
       // Otherwise, emit lastChild (which may be None) and move to AtChild
-      if (lastChild.nonEmpty && !lastChildIsWritable) {
+      if (lastChild.map(_.blobOpt) == Some(None)) {
         unexpectedFragment(header, lastChild)
       } else {
         for {
@@ -114,52 +114,52 @@ class Step(logic: StepLogic, file2Writer: File2Writer) {
             lastChild.map(_.indexInParent + 1).getOrElse(0),
             header.filename,
             header.contentType,
-            header.metadataJson,
+            header.metadata,
             header.pipelineOptions
           )
-        } yield (lastChildWritten, AtChild(nextChild, false))
+        } yield (lastChildWritten, AtChild(nextChild))
       }
     }
 
-    def addBlob(child: File2, data: Source[ByteString, _]): Future[ScanResult] = {
+    def addBlob(child: CreatedFile2, data: Source[ByteString, _]): Future[ScanResult] = {
       for {
         writtenChild <- file2Writer.writeBlob(child, data)
-      } yield (None, AtChild(writtenChild, true))
+      } yield (None, AtChild(writtenChild))
     }
 
-    def addThumbnail(child: File2, isWritable: Boolean, contentType: String, data: Source[ByteString, _]): Future[ScanResult] = {
+    def addThumbnail(child: CreatedFile2, contentType: String, data: Source[ByteString, _]): Future[ScanResult] = {
       for {
         writtenChild <- file2Writer.writeThumbnail(child, contentType, data)
-      } yield (None, AtChild(writtenChild, isWritable))
+      } yield (None, AtChild(writtenChild))
     }
 
-    def addText(child: File2, isWritable: Boolean, data: Source[ByteString, _]): Future[ScanResult] = {
+    def addText(child: CreatedFile2, data: Source[ByteString, _]): Future[ScanResult] = {
       for {
         writtenChild <- file2Writer.writeText(child, data)
-      } yield (None, AtChild(writtenChild, isWritable))
+      } yield (None, AtChild(writtenChild))
     }
 
-    def inheritBlob(child: File2): Future[ScanResult] = {
+    def inheritBlob(child: CreatedFile2): Future[ScanResult] = {
       if (child.indexInParent != 0) {
         logicError("tried to inherit blob when indexInParent!=0", Some(child))
       } else {
         for {
-          writtenChild <- file2Writer.writeInheritBlobFromParent(child, parentFile2)
-        } yield (None, AtChild(writtenChild, true))
+          writtenChild <- file2Writer.writeBlobStorageRef(child, parentFile2.blob)
+        } yield (None, AtChild(writtenChild))
       }
     }
 
-    def end(lastChild: Option[File2], isWritable: Boolean, fragment: StepOutputFragment.EndFragment): Future[ScanResult] = {
-      (lastChild, isWritable, fragment) match {
-        case (_, _, StepOutputFragment.FileError(message)) => error(message, lastChild)
-        case (_, _, StepOutputFragment.StepError(ex)) => error("step error: " + ex.getMessage, lastChild)
-        case (_, _, StepOutputFragment.Canceled) => error("canceled", lastChild)
-        case (Some(child), false, _) => logicError("tried to write child without blob data", lastChild)
-        case (Some(child), true, StepOutputFragment.Done) => for {
+    def end(lastChild: Option[CreatedFile2], fragment: StepOutputFragment.EndFragment): Future[ScanResult] = {
+      (lastChild, fragment) match {
+        case (_, StepOutputFragment.FileError(message)) => error(message, lastChild)
+        case (_, StepOutputFragment.StepError(ex)) => error("step error: " + ex.getMessage, lastChild)
+        case (_, StepOutputFragment.Canceled) => error("canceled", lastChild)
+        case (Some(child), _) if (child.blobOpt.isEmpty) => logicError("tried to write child without blob data", lastChild)
+        case (Some(child), StepOutputFragment.Done) => for {
           lastChildWritten <- file2Writer.setWritten(child)
           _ <- setParentProcessed(child.indexInParent + 1, None)
         } yield (Some(lastChildWritten), End)
-        case (None, _, StepOutputFragment.Done) => for {
+        case (None, StepOutputFragment.Done) => for {
           _ <- setParentProcessed(0, None)
         } yield (None, End)
       }
@@ -173,7 +173,7 @@ class Step(logic: StepLogic, file2Writer: File2Writer) {
       }
     }
 
-    val children: Source[File2, akka.NotUsed] = logic.processIntoFragments(parentFile2, canceled)
+    val children: Source[WrittenFile2, akka.NotUsed] = logic.processIntoFragments(parentFile2, canceled)
       .scanAsync((None, Start): ScanResult)(onFragment)  // (MaybeChild, State) pairs
       .collect(Function.unlift((r: ScanResult) => r._1)) // just Some(child) elements
 

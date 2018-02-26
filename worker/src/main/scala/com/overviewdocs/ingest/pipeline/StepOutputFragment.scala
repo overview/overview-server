@@ -2,7 +2,8 @@ package com.overviewdocs.ingest.pipeline
 
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
-import play.api.libs.json.JsObject
+
+import com.overviewdocs.models.File2
 
 /** Part of the output of a Step: something we should write somewhere.
   *
@@ -78,8 +79,8 @@ object StepOutputFragment {
   case class File2Header(
     filename: String,
     contentType: String,
-    metadataJson: JsObject,
-    pipelineOptions: JsObject
+    metadata: File2.Metadata,
+    pipelineOptions: File2.PipelineOptions
   ) extends File2Fragment
 
   /** Blob data for the current File2. */
