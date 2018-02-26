@@ -13,6 +13,7 @@ import play.api.libs.json.JsObject
 case class ProcessedFile2(
   id: Long,
   documentSetId: Long,
+  parentId: Option[Long],
   nChildren: Int,
   nIngestedChildren: Int
 ) {
