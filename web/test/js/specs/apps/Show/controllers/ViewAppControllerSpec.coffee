@@ -36,6 +36,7 @@ define [
         document: @aDocument
         view: @jobView
       @state.documentSet = @documentSet
+      @state.setViewFilterSelection = sinon.spy()
 
       @transactionQueue = 'transactionQueue'
 

@@ -165,9 +165,9 @@ define [
 
       it 'should setViewFilterSelection', ->
         selection = { ids: [ 'foo', 'bar' ], operation: 'any' }
-        @state.refineDocumentListParams = sinon.spy()
+        @state.setViewFilterSelection = sinon.spy()
         @subject._onMessage(origin: '', data: { call: 'setViewFilterSelection', args: [ selection ] })
-        expect(@state.refineDocumentListParams).to.have.been.calledWith({ filters: { '1234': selection } })
+        expect(@state.setViewFilterSelection).to.have.been.calledWith('view-1234', selection) # TODO make it '1234', not 'view-1234'
 
       it 'should set metadata on document', ->
         document = new Backbone.Model(id: 2, metadata: { foo: 'bar' })

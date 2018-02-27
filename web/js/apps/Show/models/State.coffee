@@ -99,6 +99,19 @@ export default class State extends Backbone.Model
 
     @setDocumentListParams(newParams, reverse)
 
+  # Calls refineDocumentListParams(), only changing the given
+  # ViewFilterSelection.
+  #
+  # Example:
+  #
+  #     state.setViewFilterSelection(view.id, { ids: [ 1, 2 ], operation: 'all' })
+  #     state.setViewFilterSelection(view.id, null)
+  setViewFilterSelection: (viewId, selection) ->
+    viewId = String(viewId).replace(/^\w+-/, '') # "view-1234" => "1234" -- "view-1234" is ugly, but it happens 2011-11-27
+    filters = Object.assign({}, @get('documentList')?.params?.filters || {})
+    filters[viewId] = selection # Hack? refineDocumentListParams treats `null` specially
+    @refineDocumentListParams({ filters: filters })
+
   # Switches to a new View.
   #
   # This is the correct way of calling .set('view', ...). The reason: we
