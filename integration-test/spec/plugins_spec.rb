@@ -164,6 +164,14 @@ describe 'Plugins' do
         assert_equal('/filter/01010101', @last_request.path) # the search happened
         page.assert_selector('a', text: 'selectedOneHtml,VF-Foo') # the tag was selected
       end
+
+      it 'should nix the ViewFilterSelection when deleting the view' do
+        page.search_for_q('title:First')
+        click_view_button('setViewFilterSelection')
+        page.assert_selector('#document-list-title h3', text: 'no documents', wait: WAIT_LOAD) # wait for search
+        page.delete_current_view
+        page.assert_selector('#document-list-title h3', text: 'one document', wait: WAIT_LOAD) # wait for search
+      end
     end
 
     describe 'with a plugin that calls setDocumentDetailLink' do

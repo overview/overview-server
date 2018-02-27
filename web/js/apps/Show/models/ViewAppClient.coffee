@@ -90,13 +90,7 @@ define [
 
     setDocumentListParams: (params) -> @state.setDocumentListParams(params)
     refineDocumentListParams: (params) -> @state.refineDocumentListParams(params)
-
-    setViewFilterSelection: (selection) ->
-      viewId = @viewApp?.view?.id
-      viewId = viewId.replace(/^\w+-/, '') # "view-1234" => "1234" -- "view-1234" is ugly, but it happens 2011-11-27
-      filters = {}
-      filters[viewId] = selection
-      @state.refineDocumentListParams({ filters: filters })
+    setViewFilterSelection: (selection) -> @state.setViewFilterSelection(@viewApp?.view?.id, selection)
 
     _onMessage: (e) ->
       viewUrl = @viewApp?.view?.attributes?.url || '' # _any_ iframe, e.g. Twitter, can post a message

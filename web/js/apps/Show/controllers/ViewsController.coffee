@@ -35,6 +35,7 @@ define [
 
     _onDelete: (view) ->
       view.set(deleting: true)
+      @state.setViewFilterSelection(view.id, null)
       view.destroy
         wait: true
         success: => @state.setView(@views.at(0) || null)
