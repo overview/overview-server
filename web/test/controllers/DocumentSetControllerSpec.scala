@@ -5,7 +5,6 @@ import org.specs2.matcher.{Expectable,JsonMatchers,Matcher}
 import org.specs2.specification.Scope
 import play.api.libs.json.{JsValue,Json}
 import play.api.mvc.AnyContent
-import scala.collection.immutable
 import scala.concurrent.Future
 
 import com.overviewdocs.metadata.{MetadataField,MetadataFieldDisplay,MetadataFieldType,MetadataSchema}
@@ -224,11 +223,11 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
       trait IndexScope extends BaseScope {
         def pageNumber = 1
 
-        def fakeDocumentSets: immutable.Seq[DocumentSet] = Vector(factory.documentSet(id=1L))
+        def fakeDocumentSets: Vector[DocumentSet] = Vector(factory.documentSet(id=1L))
         mockBackend.indexPageByOwner(any, any) answers { _ => Future.successful(Page(fakeDocumentSets)) }
         def fakeNViews: Map[Long,Int] = Map(1L -> 2)
-        mockStorage.findNViewsByDocumentSets(any[immutable.Seq[Long]]) answers { (_) => fakeNViews }
-        def fakeJobs: immutable.Seq[ImportJob] = Vector()
+        mockStorage.findNViewsByDocumentSets(any[Vector[Long]]) answers { (_) => fakeNViews }
+        def fakeJobs: Vector[ImportJob] = Vector()
         mockImportJobBackend.indexByUser(any[String]) answers { _ => Future.successful(fakeJobs) }
 
         def request = fakeAuthorizedRequest

@@ -13,7 +13,7 @@ class File2sImpl(tag: Tag) extends Table[File2](tag, "file2") {
   def filename = column[String]("filename")
   def contentType = column[String]("content_type")
   def languageCode = column[String]("language_code")
-  def metadata = column[File2.Metadata]("metadata_json_utf8")(file2MetadataColumnType)
+  def metadata = column[File2.Metadata]("metadata_json_utf8")
   def pipelineOptions = column[File2.PipelineOptions]("pipeline_options_json_utf8")
   def blobLocation = column[Option[String]]("blob_location")
   def blobNBytes = column[Option[Int]]("blob_n_bytes")

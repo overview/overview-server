@@ -21,8 +21,8 @@ class BlockingDatabase(val database: Database) {
 
   def run[T](action: DBIO[T]) = await(database.run(action))
   def runUnit[T](action: DBIO[T]) = await(database.runUnit(action))
-  def seq[T](query: Rep[Seq[T]]) = await(database.seq(query))
   def seq[T](query: RunnableCompiled[_, Seq[T]]) = await(database.seq(query))
+  def seq[E, U, C[_]](query: Query[E, U, C]) = await(database.seq(query))
   def option[T](action: DBIO[Seq[T]]) = await(database.option(action))
   def option[T](query: Query[_, T, Seq]) = await(database.option(query))
   def option[T](query: RunnableCompiled[_, Seq[T]]) = await(database.option(query))

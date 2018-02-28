@@ -14,7 +14,6 @@ import com.overviewdocs.models.tables.{File2s,GroupedFileUploads}
 import com.overviewdocs.test.DbSpecification
 
 class GroupedFileUploadToFile2Spec extends DbSpecification with Mockito {
-
   trait BaseScope extends DbScope with After {
     val blobStorage = mock[BlobStorage]
     def stubBlobStorage = blobStorage.create(any[BlobBucketId], any[Path])

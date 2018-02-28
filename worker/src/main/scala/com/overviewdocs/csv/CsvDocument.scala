@@ -22,6 +22,7 @@ case class CsvDocument(
     new java.util.Date(),
     None,
     None,
+    None,
     DocumentDisplayMethod.auto,
     false,
     JsObject(metadata.map(t => t._1 -> JsString(t._2))),

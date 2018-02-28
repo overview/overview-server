@@ -229,7 +229,7 @@ class File2Writer(
       .foldLeft(Future.unit)((last, these) => {
         val documentSetId = these._1
         val theseIds = these._2.map(_.id)
-        last.map(_ => ingestBatchWithSameDocumentSetId(documentSetId, theseIds))
+        last.flatMap(_ => ingestBatchWithSameDocumentSetId(documentSetId, theseIds))
       })
   }
 
@@ -237,31 +237,77 @@ class File2Writer(
     documentSetId: Long,
     file2Ids: immutable.Seq[Long]
   )(implicit ec: ExecutionContext): Future[Unit] = {
-    ???
-//    database.runUnit(sqlu"""
-//      DO $$$$
-//      DECLARE
-//        document_set_id BIGINT := ${documentSetId};
-//        file2_ids BIGINT[] := ARRAY[#${file2Ids.mkString(",")}];
-//        created_at TIMESTAMP WITH TIME ZONE := NOW();
-//        last_id BIGINT
-//      BEGIN
-//        SELECT MAX(id) FROM documents WHERE document_set_id = document_set_id INTO last_id;
-//
-//        INSERT INTO documents (
-//          id, document_set_id, text, title, page_number, created_at,
-//          metadata_json_text, is_from_ocr, file2_id
-//        )
-//        SELECT
-//          last_id + row_number(),
-//          document_set_id,
-//          file2.text,
-//          file2.filename,
-//          created_at,
-//          file2.metadata_json_utf8::VARCHAR,
-//          file2.
-//      END$$$$
-//    """)
+    val metadataText: String = {
+      "REPLACE(CONVERT_FROM(file2.metadata_json_utf8, 'utf-8'), '\\u0000', '')"
+    }
+
+    // No transactions needed: we can re-run this SQL during resume, and it'll
+    // no-op.
+    database.runUnit(sqlu"""
+      DO $$$$
+      DECLARE
+        in_document_set_id CONSTANT BIGINT := #${documentSetId};
+        in_file2_ids CONSTANT BIGINT[] := ARRAY[#${file2Ids.mkString(",")}];
+        in_created_at CONSTANT TIMESTAMP WITH TIME ZONE := NOW();
+        last_document_id BIGINT;
+      BEGIN
+        SELECT COALESCE(MAX(id), (in_document_set_id << 32) - 1) FROM document WHERE "document_set_id" = in_document_set_id INTO last_document_id;
+
+        -- Create all un-created documents
+        --
+        -- Any processed file2 with text and no children becomes a document
+        INSERT INTO document (
+          id, document_set_id, text, title, page_number, created_at,
+          metadata_json_text, is_from_ocr, file2_id
+        )
+        SELECT
+          last_document_id + row_number() OVER (ORDER BY id),
+          in_document_set_id,
+          file2.text,
+          file2.filename,
+          CASE json_typeof(#${metadataText}::JSON -> 'pageNumber')
+            WHEN 'number' THEN (#${metadataText}::JSON ->> 'pageNumber')::NUMERIC::INT
+            ELSE NULL
+          END,
+          in_created_at,
+          #${metadataText},
+          CASE json_typeof(#${metadataText}::JSON -> 'isFromOcr')
+            WHEN 'boolean' THEN (#${metadataText}::JSON ->> 'isFromOcr') = 'true'
+            ELSE false
+          END,
+          file2.id
+        FROM file2
+        WHERE file2.id = ANY (in_file2_ids)
+          AND file2.ingested_at IS NULL
+          AND file2.text IS NOT NULL
+          AND file2.n_children = 0
+          AND NOT EXISTS (SELECT 1 FROM document WHERE file2_id = file2.id);
+
+        -- Create all un-created document_processing_errors
+        --
+        -- Any processed file2 with an error becomes a document_processing_error
+        INSERT INTO document_processing_error (
+          document_set_id, text_url, message, file2_id
+        )
+        SELECT
+          in_document_set_id,
+          '',
+          file2.processing_error,
+          file2.id
+        FROM file2
+        WHERE file2.id = ANY (in_file2_ids)
+          AND file2.processing_error IS NOT NULL
+          AND file2.ingested_at IS NULL
+          AND NOT EXISTS (SELECT 1 FROM document_processing_error WHERE file2_id = file2.id);
+
+        -- We've ingested all file2s: even the ones which became neither
+        -- documents nor document_processing_errors. (Those are parents.)
+        UPDATE file2
+        SET ingested_at = in_created_at
+        WHERE file2.id = ANY (in_file2_ids)
+          AND file2.ingested_at IS NULL;
+      END$$$$
+    """)
   }
 }
 

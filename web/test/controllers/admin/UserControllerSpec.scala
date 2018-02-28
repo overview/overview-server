@@ -4,7 +4,6 @@ import com.github.t3hnar.bcrypt._
 import org.specs2.specification.Scope
 import org.specs2.matcher.JsonMatchers
 import play.api.mvc.Result
-import scala.collection.immutable
 import scala.concurrent.Future
 
 import controllers.backend.UserBackend
@@ -42,7 +41,7 @@ class UserControllerSpec extends controllers.ControllerSpecification with JsonMa
       // XXX This is mostly a test of the view...
       trait IndexJsonScope extends BaseScope {
         val page = 1
-        def users : immutable.Seq[User]
+        def users : Vector[User]
         mockBackend.indexPage(any[PageRequest]) answers((_) => Future(Page(users, PageInfo(PageRequest(0, 50, false), 100))))
         override def result = controller.indexJson(page)(fakeAuthorizedRequest)
       }
@@ -99,7 +98,7 @@ class UserControllerSpec extends controllers.ControllerSpecification with JsonMa
       }
 
       "render pagination info" in new IndexJsonScope {
-        override def users = Range(0, 100).map(i => User(id=i, email=s"user${i}@example.org"))
+        override def users = Range(0, 100).map(i => User(id=i, email=s"user${i}@example.org")).toVector
 
         val s = h.contentAsString(result)
 

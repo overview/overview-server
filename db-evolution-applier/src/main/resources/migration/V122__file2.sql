@@ -14,7 +14,7 @@ CREATE TABLE file2 (
   thumbnail_blob_location VARCHAR,
   thumbnail_blob_n_bytes INT,
   thumbnail_content_type VARCHAR,
-  text CHAR,
+  "text" TEXT,
   created_at TIMESTAMP WITH TIME ZONE NOT NULL,
   written_at TIMESTAMP WITH TIME ZONE,
   processed_at TIMESTAMP WITH TIME ZONE,

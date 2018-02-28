@@ -30,6 +30,7 @@ case class DocumentCloudDocumentHeader(
     new java.util.Date(),
     None,
     None,
+    None,
     DocumentDisplayMethod.auto,
     false,
     JsObject(Seq()),
