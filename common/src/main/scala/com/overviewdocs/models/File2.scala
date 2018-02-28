@@ -116,7 +116,8 @@ case class File2(
     * Only after a File2 becomes immutable do we begin creating documents from
     * it.
     *
-    * Resuming ingestion of a WRITTEN File2 means processing it.
+    * Resuming ingestion of a WRITTEN File2 means processing it. It can't be
+    * deleted until it's processed and ingested.
     */
   writtenAt: Option[Instant],
 
@@ -127,7 +128,9 @@ case class File2(
     * * If this is a leaf, it is WRITTEN.
     * * If this is a parent, all File2 children are WRITTEN.
     *
-    * Resuming ingestion of a PROCESSED File2 means processing its children.
+    * Resuming ingestion of a PROCESSED File2 means processing its children and
+    * converting it to Documents and/or a DocumentProcessingError. It can't be
+    * deleted until it's ingested.
     */
   processedAt: Option[Instant],
 
@@ -149,8 +152,8 @@ case class File2(
     *
     * To be absolutely clear: if a child has a `processingError`, that does
     * _not_ bubble up to a `processingError` on the _parent_. Processing is
-    * done as soon as children are WRITTEN. By definition, the children have
-    * no errors at that point.
+    * finished once children are WRITTEN. By definition, the children have no
+    * errors at that point.
     */
   processingError: Option[String],
 

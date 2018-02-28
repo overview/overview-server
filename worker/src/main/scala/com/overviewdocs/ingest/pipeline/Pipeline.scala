@@ -5,7 +5,7 @@ import scala.concurrent.ExecutionContext
 
 import com.overviewdocs.ingest.models.{WrittenFile2,ProcessedFile2}
 
-/** Processes a File2.
+/** Processes a File2, returning itself and its derived files.
   *
   * A pipeline is built from reusable steps. For instance: converting ".doc"
   * might mean 1. run LibreOffice to produce a ".pdf"; and 2. Extract thumbnail.
@@ -18,13 +18,8 @@ import com.overviewdocs.ingest.models.{WrittenFile2,ProcessedFile2}
   * == Caller ==
   *
   * The caller supplies a WRITTEN or PROCESSED File2. This class outputs the
-  * _input_ File2 (as PROCESSED), followed by its children (as PROCESSED),
-  * its grandchildren (as PROCESSED), and so on.
-  *
-  * In essence: this is a depth-first search, pre-ordered. All outputs are
-  * PROCESSED, and they are returned in the order in which tasks are completed.
-  * (Child2 and Grandchild1 may come before Child1, if that's the way the
-  * schedule works out. But parents always come first.)
+  * _input_ File2 (as PROCESSED), its children (as PROCESSED), its grandchildren
+  * (as PROCESSED), and so on. **Ordering is undefined.**
   *
   * The caller will want to finally "ingest" these outputs: create Documents
   * and File2Errors from them. This is where Leaf and Parent outputs differ:
@@ -45,10 +40,10 @@ import com.overviewdocs.ingest.models.{WrittenFile2,ProcessedFile2}
 trait Pipeline {
   /** Resumes or starts transitioning the given File2 and all its children and
     * grandchildren from WRITTEN to PROCESSED. All File2s (including the input
-    * file2) will be emitted PROCESSED, pre-ordered (parents first).
+    * file2) will be emitted PROCESSED, in any order.
     *
-    * Ingest these outputs in reverse order: not in parallel. A parent can only
-    * be marked ingested if its children are ingested.
+    * Be carfeful when ingesting. A parent can only be INGESTED once its
+    * children are INGESTED.
     */
   def process(file2: WrittenFile2)(implicit ec: ExecutionContext): Source[ProcessedFile2, akka.NotUsed]
 }
