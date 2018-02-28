@@ -81,6 +81,17 @@ class IngesterSpec extends Specification with Mockito {
       result must beEqualTo(Vector(output3, output1))
     }
 
+    "ingest child before root appears" in new BaseScope {
+      val input1 = ProcessedFile2(1L, 4L, Some(2L), 0, 0) // child 1: processed before parent
+      val input2 = ProcessedFile2(2L, 4L, None, 2, 0)     // parent: processed
+      val input3 = ProcessedFile2(3L, 4L, Some(2L), 0, 0) // child 2: processed after parent
+      override val input = Vector(input1, input2, input3)
+
+      mockFile2Writer.ingestBatch(Vector(input1))(ec) returns Future.unit
+      mockFile2Writer.ingestBatch(Vector(input3, input2.copy(nIngestedChildren=2)))(ec) returns Future.unit
+      result must beEqualTo(Vector(IngestedRootFile2(2L, 4L)))
+    }
+
     "process in batches" in new BaseScope {
       override val batchSize = 3
 
@@ -97,6 +108,4 @@ class IngesterSpec extends Specification with Mockito {
       result must beEqualTo(Vector(output3, output1))
     }
   }
-
-  // batch
 }

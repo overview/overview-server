@@ -42,7 +42,6 @@ class Step(logic: StepLogic, file2Writer: File2Writer) {
      * anything. scanAsync() is great for emitting, but it _always_ emits.
      *
      * So we compose: onFragment emits an Option[element] _and_ the State.
-     * state.
      */
 
     sealed trait State
