@@ -40,7 +40,7 @@ class StepSpec extends Specification with Mockito {
       nCreates += 1
       Future.successful(createdFile2)
     }
-    mockFile2Writer.deleteFile2(any)(any) returns Future.unit
+    mockFile2Writer.delete(any)(any) returns Future.unit
     mockFile2Writer.writeBlob(any, any)(any, any) answers { _ =>
       createdFile2.blobOpt returns Some(BlobStorageRefWithSha1(BlobStorageRef("written", 10), Array(1, 2, 3).map(_.toByte)))
       Future.successful(createdFile2)
@@ -134,7 +134,7 @@ class StepSpec extends Specification with Mockito {
       )
 
       result must beEqualTo((processedFile2, Vector()))
-      there was one(mockFile2Writer).deleteFile2(createdFile2)
+      there was one(mockFile2Writer).delete(createdFile2)
       there was one(mockFile2Writer).setProcessed(parentFile2, 0, Some("canceled"))
     }
 

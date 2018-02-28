@@ -79,7 +79,7 @@ class Step(logic: StepLogic, file2Writer: File2Writer) {
           // We'll delete the current child File2: it isn't WRITTEN
           val nPreviousChildren = child.indexInParent
           for {
-            _ <- file2Writer.deleteFile2(child)
+            _ <- file2Writer.delete(child)
             _ <- setParentProcessed(nPreviousChildren, Some(message))
           } yield (None, End)
         }

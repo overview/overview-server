@@ -71,18 +71,28 @@ class File2Writer(
       file2.languageCode,
       file2.metadata,
       file2.pipelineOptions,
-      None
+      None,
+      false,
+      None,
+      false
     )
   }
 
-  private val deleteFile2Compiled = Compiled { (id: Rep[Long]) =>
+  private val deleteCompiled = Compiled { (id: Rep[Long]) =>
     File2s.filter(_.id === id)
   }
 
-  def deleteFile2(
+  def delete(
     file2: CreatedFile2
   )(implicit ec: ExecutionContext): Future[Unit] = {
-    database.delete(deleteFile2Compiled(file2.id))
+    // Icky RACE: if we crash mid-delete, then the database will hold on to
+    // BlobStorage references that no longer exist. We should guard against
+    // this by adding a "deleting" flag.
+    for {
+      _ <- if (file2.ownsBlob) { blobStorage.delete(file2.blobOpt.get.location) } else { Future.unit }
+      _ <- if (file2.ownsThumbnail) { blobStorage.delete(file2.thumbnailLocationOpt.get) } else { Future.unit }
+      _ <- database.delete(deleteCompiled(file2.id))
+    } yield ()
   }
 
   private val writeBlobCompiled = Compiled { (id: Rep[Long]) =>
@@ -95,21 +105,41 @@ class File2Writer(
     file2: CreatedFile2,
     blob: Source[ByteString, _]
   )(implicit ec: ExecutionContext, mat: Materializer): Future[CreatedFile2] = {
-    // TODO no-op if already written, to avoid leaking blobs on resume
-    for {
-      ref <- createBlobStorageRef(blob)
-      _ <- database.run(writeBlobCompiled(file2.id).update((Some(ref.location), Some(ref.nBytes), ref.sha1)))
-    } yield file2.copy(blobOpt=Some(ref))
+    file2.blobOpt match {
+      case Some(_) => {
+        // There is already a blob written on this File2. Assume the input
+        // blob is identical -- and ignore it.
+        //
+        // We need to consume it, though: otherwise, the stream will stall.
+        for {
+          _ <- blob.runWith(Sink.ignore)
+        } yield file2
+      }
+      case None => {
+        for {
+          ref <- createBlobStorageRef(blob)
+          _ <- database.run(writeBlobCompiled(file2.id).update((Some(ref.location), Some(ref.nBytes), ref.sha1)))
+        } yield file2.copy(blobOpt=Some(ref), ownsBlob=true)
+      }
+    }
   }
 
   def writeBlobStorageRef(
     file2: CreatedFile2,
     ref: BlobStorageRefWithSha1
   )(implicit ec: ExecutionContext): Future[CreatedFile2] = {
-    // TODO no-op if already written, to avoid leaking blobs on resume
-    for {
-      _ <- database.run(writeBlobCompiled(file2.id).update((Some(ref.location), Some(ref.nBytes), ref.sha1)))
-    } yield file2.copy(blobOpt=Some(ref))
+    file2.blobOpt match {
+      case Some(_) => {
+        // There is already a blob written on this File2. Assume the input
+        // blob is identical -- and ignore it.
+        Future.successful(file2)
+      }
+      case None => {
+        for {
+          _ <- database.run(writeBlobCompiled(file2.id).update((Some(ref.location), Some(ref.nBytes), ref.sha1)))
+        } yield file2.copy(blobOpt=Some(ref), ownsBlob=false)
+      }
+    }
   }
 
   private val writeThumbnailCompiled = Compiled { (id: Rep[Long]) =>
@@ -123,11 +153,23 @@ class File2Writer(
     contentType: String,
     data: Source[ByteString, _]
   )(implicit ec: ExecutionContext, mat: Materializer): Future[CreatedFile2] = {
-    // TODO no-op if already written, to avoid leaking blobs on resume
-    for {
-      ref <- createBlobStorageRef(data)
-      _ <- database.run(writeThumbnailCompiled(file2.id).update((Some(ref.location), Some(ref.nBytes), Some(contentType))))
-    } yield file2
+    file2.thumbnailLocationOpt match {
+      case Some(_) => {
+        // There is already a thumbnail written on this File2. Assume the input
+        // blob is identical -- and ignore it.
+        //
+        // We need to consume it, though: otherwise, the stream will stall.
+        for {
+          _ <- data.runWith(Sink.ignore)
+        } yield file2
+      }
+      case None => {
+        for {
+          ref <- createBlobStorageRef(data)
+          _ <- database.run(writeThumbnailCompiled(file2.id).update((Some(ref.location), Some(ref.nBytes), Some(contentType))))
+        } yield file2.copy(ownsThumbnail=true, thumbnailLocationOpt=Some(ref.location))
+      }
+    }
   }
 
   private val writeTextCompiled = Compiled { (id: Rep[Long]) =>
