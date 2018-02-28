@@ -4,7 +4,6 @@ import akka.stream.scaladsl.{Sink,Source}
 import org.specs2.mock.Mockito
 import play.api.libs.json.{JsObject,Json}
 import play.api.Configuration
-import scala.collection.immutable
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
@@ -111,9 +110,9 @@ class DbDocumentBackendSpec extends DbBackendSpecification with Mockito {
     "#stream" should {
       trait StreamScope extends BaseScope with ActorSystemContext {
         val documentSet = factory.documentSet()
-        def stream(documentIds: immutable.Seq[Long]): immutable.Seq[Document] = {
+        def stream(documentIds: Vector[Long]): Vector[Document] = {
           val source: Source[Document, _] = backend.stream(documentSet.id, documentIds)
-          await(source.runWith(Sink.seq))
+          await(source.runWith(Sink.collection[Document, Vector[Document]]))
         }
       }
 

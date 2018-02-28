@@ -28,6 +28,7 @@ case class IncompleteDocument(
     createdAt=new java.util.Date(createdAt.toEpochMilli),
     fileId=fileId,
     pageId=pageId,
+    file2Id=None,
     displayMethod=displayMethod,
     isFromOcr=isFromOcr,
     metadataJson=metadataJson,

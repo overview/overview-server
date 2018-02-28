@@ -142,7 +142,7 @@ class DbDocumentSelectionBackend @Inject() (
   protected lazy val logger = Logger.forClass(getClass)
 
   /** Returns all a DocumentSet's Document IDs, sorted. */
-  private def getSortedIds(documentSet: DocumentSet, sortByMetadataField: Option[String], onProgress: Double => Unit): Future[(immutable.Seq[Long],List[SelectionWarning])] = {
+  private def getSortedIds(documentSet: DocumentSet, sortByMetadataField: Option[String], onProgress: Double => Unit): Future[(Vector[Long],List[SelectionWarning])] = {
     logger.logExecutionTimeAsync("fetching sorted document IDs [docset {}, field {}]", documentSet.id, sortByMetadataField) {
       sortByMetadataField match {
         case None => getDefaultSortedIds(documentSet.id).map(ids => (ids, Nil))
@@ -163,7 +163,7 @@ class DbDocumentSelectionBackend @Inject() (
     }
   }
 
-  private def getDefaultSortedIds(documentSetId: Long): Future[immutable.Seq[Long]] = {
+  private def getDefaultSortedIds(documentSetId: Long): Future[Vector[Long]] = {
     // The ORM is unaware of DocumentSet.sortedDocumentIds
     val q = sql"SELECT sorted_document_ids FROM document_set WHERE id = ${documentSetId}".as[Seq[Long]]
     database.option(q).map(_.map(_.toVector).getOrElse(Vector.empty))
@@ -367,7 +367,7 @@ class DbDocumentSelectionBackend @Inject() (
     sb.toString
   }
 
-  private def runRegexFilters(documentSetId: Long, ids: immutable.Seq[Long], maybeQ: Option[SearchQuery]): Future[(immutable.Seq[Long], List[SelectionWarning])] = {
+  private def runRegexFilters(documentSetId: Long, ids: Vector[Long], maybeQ: Option[SearchQuery]): Future[(Vector[Long], List[SelectionWarning])] = {
     maybeQ match {
       case None => Future.successful((ids, Nil))
       case Some(q) => {
@@ -381,7 +381,7 @@ class DbDocumentSelectionBackend @Inject() (
     }
   }
 
-  protected[backend] def documentIdsMatchingRegexSearchRules(documentSetId: Long, ids: immutable.Seq[Long], rules: immutable.Seq[DocumentSelectionBackend.RegexSearchRule]): Future[(immutable.Seq[Long], List[SelectionWarning])] = {
+  protected[backend] def documentIdsMatchingRegexSearchRules(documentSetId: Long, ids: Vector[Long], rules: immutable.Seq[DocumentSelectionBackend.RegexSearchRule]): Future[(Vector[Long], List[SelectionWarning])] = {
     if (rules.isEmpty) return Future.successful((ids, Nil))
 
     val (limitedIds, warnings) = if (ids.size > MaxNRegexDocumentsPerSearch) {
@@ -395,6 +395,6 @@ class DbDocumentSelectionBackend @Inject() (
       .map(_.id)
 
     source.runWith(Sink.seq)(materializer)
-      .map(result => (result, warnings))
+      .map(result => (result.toVector, warnings))
   }
 }

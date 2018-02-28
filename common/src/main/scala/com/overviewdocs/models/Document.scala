@@ -25,6 +25,7 @@ case class Document(
   override val createdAt: Date,
   val fileId: Option[Long],
   val pageId: Option[Long],
+  val file2Id: Option[Long],
   override val displayMethod: DocumentDisplayMethod.Value,
   override val isFromOcr: Boolean,
   override val metadataJson: JsObject,
@@ -47,7 +48,7 @@ case class Document(
     createdAt,
     displayMethod,
     isFromOcr,
-    fileId.isDefined,
+    fileId.isDefined || file2Id.isDefined,
     thumbnailLocation
   )
 
@@ -55,13 +56,13 @@ case class Document(
   override def viewUrl: Option[String] = {
     url match {
       case None =>
-        fileId.map(_ => s"/documents/${id}.pdf")    // pdf in blobStorage
+        (fileId.orElse(file2Id)).map(_ => s"/documents/${id}.pdf") // pdf in blobStorage
 
       case url if url.get.startsWith("local://") =>
-        Some("/localfiles/" + url.get.stripPrefix("local://"))   // pdf file in local storage
+        Some("/localfiles/" + url.get.stripPrefix("local://"))     // pdf file in local storage
 
       case _ =>
-        url                                   // something else, e.g. Twitter
+        url // something else, e.g. Twitter
     }
   }
 

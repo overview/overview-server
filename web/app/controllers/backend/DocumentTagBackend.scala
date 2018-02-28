@@ -2,7 +2,6 @@ package controllers.backend
 
 import com.google.inject.ImplementedBy
 import javax.inject.Inject
-import scala.collection.immutable
 import scala.concurrent.Future
 
 import com.overviewdocs.database.Database
@@ -15,7 +14,7 @@ trait DocumentTagBackend extends Backend {
     *
     * The returned lists are not ordered.
     */
-  def indexMany(documentIds: immutable.Seq[Long]): Future[Map[Long,immutable.Seq[Long]]]
+  def indexMany(documentIds: Vector[Long]): Future[Map[Long,Vector[Long]]]
 }
 
 class DbDocumentTagBackend @Inject() (
@@ -24,7 +23,7 @@ class DbDocumentTagBackend @Inject() (
   import database.api._
   import database.executionContext
 
-  override def indexMany(documentIds: immutable.Seq[Long]) = {
+  override def indexMany(documentIds: Vector[Long]) = {
     if (documentIds.isEmpty) {
       Future.successful(Map())
     } else {

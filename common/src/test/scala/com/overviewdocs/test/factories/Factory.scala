@@ -72,12 +72,14 @@ trait Factory {
     pageNumber: Option[Int] = None,
     fileId: Option[Long] = None,
     pageId: Option[Long] = None,
+    file2Id: Option[Long] = None,
     displayMethod: DocumentDisplayMethod.Value = DocumentDisplayMethod.auto,
     isFromOcr: Boolean = false,
     metadataJson: JsObject = JsObject(Seq()),
     thumbnailLocation: Option[String] = None,
     pdfNotes: PdfNoteCollection = PdfNoteCollection(Array()),
-    text: String = ""): Document
+    text: String = ""
+  ): Document
 
   /** Creates a new DocumentIdList with the given parameters. */
   def documentIdList(
@@ -150,6 +152,29 @@ trait Factory {
     storeObjectId: Long = 0L,
     json: Option[JsObject] = None
   ): DocumentStoreObject
+
+  def file2(
+    id: Long = 0L,
+    rootFile2Id: Option[Long] = None,
+    parentFile2Id: Option[Long] = None,
+    indexInParent: Int = 0,
+    filename: String = "file.pdf",
+    contentType: String = "application/pdf",
+    languageCode: String = "en",
+    metadata: File2.Metadata = File2.Metadata(JsObject(Seq())),
+    pipelineOptions: File2.PipelineOptions = File2.PipelineOptions(false, false),
+    blob: Option[BlobStorageRef] = None,
+    blobSha1: Array[Byte] = Array.empty[Byte],
+    thumbnailBlob: Option[BlobStorageRef] = None,
+    thumbnailContentType: Option[String] = None,
+    text: Option[String] = None,
+    createdAt: Instant = Instant.now,
+    writtenAt: Option[Instant] = None,
+    processedAt: Option[Instant] = None,
+    nChildren: Option[Int] = None,
+    processingError: Option[String] = None,
+    ingestedAt: Option[Instant] = None
+  ): File2
 
   def fileGroup(
     id: Long = 0L,

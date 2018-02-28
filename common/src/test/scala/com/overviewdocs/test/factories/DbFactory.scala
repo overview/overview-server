@@ -94,6 +94,7 @@ object DbFactory extends Factory with HasBlockingDatabase {
     pageNumber: Option[Int],
     fileId: Option[Long],
     pageId: Option[Long],
+    file2Id: Option[Long],
     displayMethod: DocumentDisplayMethod.Value,
     isFromOcr: Boolean,
     metadataJson: JsObject,
@@ -110,6 +111,7 @@ object DbFactory extends Factory with HasBlockingDatabase {
     pageNumber,
     fileId,
     pageId,
+    file2Id,
     displayMethod,
     isFromOcr,
     metadataJson,
@@ -232,6 +234,50 @@ object DbFactory extends Factory with HasBlockingDatabase {
     documentId,
     storeObjectId,
     json
+  ))
+
+  override def file2(
+    id: Long,
+    rootFile2Id: Option[Long],
+    parentFile2Id: Option[Long],
+    indexInParent: Int,
+    filename: String,
+    contentType: String,
+    languageCode: String,
+    metadata: File2.Metadata,
+    pipelineOptions: File2.PipelineOptions,
+    blob: Option[BlobStorageRef],
+    blobSha1: Array[Byte],
+    thumbnailBlob: Option[BlobStorageRef],
+    thumbnailContentType: Option[String],
+    text: Option[String],
+    createdAt: Instant,
+    writtenAt: Option[Instant],
+    processedAt: Option[Instant],
+    nChildren: Option[Int],
+    processingError: Option[String],
+    ingestedAt: Option[Instant]
+  ) = run(q.insertFile2 += podoFactory.file2(
+    id,
+    rootFile2Id,
+    parentFile2Id,
+    indexInParent,
+    filename,
+    contentType,
+    languageCode,
+    metadata,
+    pipelineOptions,
+    blob,
+    blobSha1,
+    thumbnailBlob,
+    thumbnailContentType,
+    text,
+    createdAt,
+    writtenAt,
+    processedAt,
+    nChildren,
+    processingError,
+    ingestedAt
   ))
 
   override def fileGroup(
@@ -506,6 +552,7 @@ object DbFactory extends Factory with HasBlockingDatabase {
     val insertView = (Views returning Views)
     val insertPage = (Pages returning Pages)
     val insertFile = (Files returning Files)
+    val insertFile2 = (File2s returning File2s)
     val insertFileGroup = (FileGroups returning FileGroups)
     val insertGroupedFileUpload = (GroupedFileUploads returning GroupedFileUploads)
     val insertUpload = (Uploads returning Uploads)

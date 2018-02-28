@@ -127,6 +127,7 @@ object PodoFactory extends Factory {
     pageNumber: Option[Int],
     fileId: Option[Long],
     pageId: Option[Long],
+    file2Id: Option[Long],
     displayMethod: DocumentDisplayMethod.Value,
     isFromOcr: Boolean,
     metadataJson: JsObject,
@@ -143,6 +144,7 @@ object PodoFactory extends Factory {
     createdAt,
     fileId,
     pageId,
+    file2Id,
     displayMethod,
     isFromOcr,
     metadataJson,
@@ -266,6 +268,50 @@ object PodoFactory extends Factory {
     documentId,
     storeObjectId,
     json
+  )
+
+  override def file2(
+    id: Long,
+    rootFile2Id: Option[Long],
+    parentFile2Id: Option[Long],
+    indexInParent: Int,
+    filename: String,
+    contentType: String,
+    languageCode: String,
+    metadata: File2.Metadata,
+    pipelineOptions: File2.PipelineOptions,
+    blob: Option[BlobStorageRef],
+    blobSha1: Array[Byte],
+    thumbnailBlob: Option[BlobStorageRef],
+    thumbnailContentType: Option[String],
+    text: Option[String],
+    createdAt: Instant,
+    writtenAt: Option[Instant],
+    processedAt: Option[Instant],
+    nChildren: Option[Int],
+    processingError: Option[String],
+    ingestedAt: Option[Instant]
+  ) = File2(
+    getId(id),
+    rootFile2Id,
+    parentFile2Id,
+    indexInParent,
+    filename,
+    contentType,
+    languageCode,
+    metadata,
+    pipelineOptions,
+    blob,
+    blobSha1,
+    thumbnailBlob,
+    thumbnailContentType,
+    text,
+    createdAt,
+    writtenAt,
+    processedAt,
+    nChildren,
+    processingError,
+    ingestedAt
   )
 
   override def fileGroup(

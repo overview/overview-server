@@ -111,7 +111,8 @@ class DbGroupedFileUploadBackendSpec extends DbBackendSpecification {
         None,
         123L,
         0L,
-        returnValue.contentsOid
+        returnValue.contentsOid,
+        None
       ))
       returnValue.contentsOid must beGreaterThan(0L)
     }

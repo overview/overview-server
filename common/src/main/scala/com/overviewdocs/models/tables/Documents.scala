@@ -39,6 +39,7 @@ class DocumentsImpl(tag: Tag) extends Table[Document](tag, "document") {
   def title = column[Option[String]]("title")
   def fileId = column[Option[Long]]("file_id")
   def pageId = column[Option[Long]]("page_id")
+  def file2Id = column[Option[Long]]("file2_id")
   def pageNumber = column[Option[Int]]("page_number")
   def displayMethod = column[Option[DocumentDisplayMethod.Value]]("display_method")
   def isFromOcr = column[Option[Boolean]]("is_from_ocr")
@@ -62,6 +63,7 @@ class DocumentsImpl(tag: Tag) extends Table[Document](tag, "document") {
     createdAt,
     fileId,
     pageId,
+    file2Id,
     displayMethod,
     isFromOcr,
     metadataJson,
@@ -69,7 +71,7 @@ class DocumentsImpl(tag: Tag) extends Table[Document](tag, "document") {
     pdfNotes,
     text
   ).<>(
-    (t: Tuple16[Long,Long,Option[String],Option[String],Option[String],Option[String],Option[Int],Date,Option[Long],Option[Long],Option[DocumentDisplayMethod.Value],Option[Boolean],Option[JsObject],Option[String],Option[PdfNoteCollection],Option[String]]) => Document.apply(
+    (t: Tuple17[Long,Long,Option[String],Option[String],Option[String],Option[String],Option[Int],Date,Option[Long],Option[Long],Option[Long],Option[DocumentDisplayMethod.Value],Option[Boolean],Option[JsObject],Option[String],Option[PdfNoteCollection],Option[String]]) => Document.apply(
       t._1,
       t._2,
       t._3,
@@ -79,12 +81,13 @@ class DocumentsImpl(tag: Tag) extends Table[Document](tag, "document") {
       t._8,
       t._9,
       t._10,
-      t._11.getOrElse(DocumentDisplayMethod.auto),
-      t._12.getOrElse(false),                      // isFromOcr
-      t._13.getOrElse(JsObject(Seq())),            // metadataJson
-      t._14,                                       // thumbnail
-      t._15.getOrElse(PdfNoteCollection(Array())), // pdfNotes
-      t._16.getOrElse("")                          // text
+      t._11,
+      t._12.getOrElse(DocumentDisplayMethod.auto),
+      t._13.getOrElse(false),                      // isFromOcr
+      t._14.getOrElse(JsObject(Seq())),            // metadataJson
+      t._15,                                       // thumbnail
+      t._16.getOrElse(PdfNoteCollection(Array())), // pdfNotes
+      t._17.getOrElse("")                          // text
     ),
     { d: Document => Some(
       d.id,
@@ -97,6 +100,7 @@ class DocumentsImpl(tag: Tag) extends Table[Document](tag, "document") {
       d.createdAt,
       d.fileId,
       d.pageId,
+      d.file2Id,
       Some(d.displayMethod),
       Some(d.isFromOcr),
       Some(d.metadataJson),

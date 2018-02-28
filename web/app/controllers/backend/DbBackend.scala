@@ -1,8 +1,8 @@
 package controllers.backend
 
-import scala.collection.immutable
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import scala.language.higherKinds
 import slick.lifted.RunnableCompiled
 
 import com.overviewdocs.database.Database
@@ -18,12 +18,12 @@ trait DbBackend {
     * This is the only way to handle `WHERE ... IN (...)` queries. It takes
     * more CPU than `RunnableCompiled` queries.
     */
-  def page[T](itemsQ: Rep[Seq[T]], countQ: Rep[Int], pageRequest: PageRequest): Future[Page[T]] = {
+  def page[E, U, C[_]](itemsQ: Query[E, U, C], countQ: Rep[Int], pageRequest: PageRequest): Future[Page[U]] = {
     // Sequential, so Postgres can benefit from a hot cache on the second query
     val action = for {
-      items <- itemsQ.result
+      items <- itemsQ.to[Vector].result
       count <- countQ.result
-    } yield Page(items.toIndexedSeq, PageInfo(pageRequest, count))
+    } yield Page(items, PageInfo(pageRequest, count))
 
     database.run(action)
   }
@@ -39,7 +39,7 @@ trait DbBackend {
     val action = for {
       items <- itemsQ.result
       count <- countQ.result
-    } yield Page(items.toIndexedSeq, PageInfo(pageRequest, count))
+    } yield Page(items.toVector, PageInfo(pageRequest, count))
 
     database.run(action)
   }

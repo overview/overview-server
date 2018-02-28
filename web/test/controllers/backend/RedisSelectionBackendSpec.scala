@@ -3,7 +3,6 @@ package controllers.backend
 import redis.RedisClient
 import java.util.UUID
 import org.specs2.mock.Mockito
-import scala.collection.immutable
 import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.Future
 
@@ -15,7 +14,7 @@ import models.pagination.{Page,PageInfo,PageRequest}
 class RedisSelectionBackendSpec extends RedisBackendSpecification with Mockito {
   trait BaseScope extends RedisScope {
     val KeyExpireS: Int = 10 // last during the test, die soon after
-    def resultIds: immutable.Seq[Long] = Vector.empty
+    def resultIds: Vector[Long] = Vector.empty
     def warnings: List[SelectionWarning] = Nil
     def serializedWarnings: Array[Byte] = {
       val stream = new java.io.ByteArrayOutputStream

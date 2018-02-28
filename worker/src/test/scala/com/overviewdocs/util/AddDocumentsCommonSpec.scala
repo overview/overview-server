@@ -124,6 +124,7 @@ class AddDocumentsCommonSpec extends DbSpecification with Mockito {
         new java.sql.Timestamp(0L),
         None,
         None,
+        None,
         DocumentDisplayMethod.auto,
         false,
         JsObject(Seq()),

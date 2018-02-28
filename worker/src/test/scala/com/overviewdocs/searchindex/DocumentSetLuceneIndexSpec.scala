@@ -31,6 +31,7 @@ class DocumentSetLuceneIndexSpec extends Specification {
       createdAt=new java.util.Date(),
       fileId=None,
       pageId=None,
+      file2Id=None,
       displayMethod=DocumentDisplayMethod.auto,
       isFromOcr=false,
       metadataJson=Json.obj(),

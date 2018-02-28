@@ -122,7 +122,7 @@ class DocumentControllerSpec extends ApiControllerSpecification {
       }
 
       trait IndexFieldsScope extends IndexScope {
-        lazy val documents = List(
+        lazy val documents = Vector(
           factory.document(
             title="foo",
             suppliedId="supplied 1",
@@ -226,7 +226,7 @@ class DocumentControllerSpec extends ApiControllerSpecification {
       }
 
       "ensure returned metadata matches the MetadataSchema" in new IndexFieldsScope {
-        override lazy val documents = List(factory.document(metadataJson=Json.obj("foo" -> 3L, "baz" -> "baz")))
+        override lazy val documents = Vector(factory.document(metadataJson=Json.obj("foo" -> 3L, "baz" -> "baz")))
         override val fields = "id,metadata"
 
         val json = contentAsString(result)
@@ -298,7 +298,7 @@ class DocumentControllerSpec extends ApiControllerSpecification {
 
       "ensure returned metadata matches the MetadataSchema when streaming" in new IndexFieldsScope {
         override lazy val request = fakeRequest("GET", "/?stream=true")
-        override lazy val documents = List(factory.document(metadataJson=Json.obj("foo" -> 3L, "baz" -> "baz")))
+        override lazy val documents = Vector(factory.document(metadataJson=Json.obj("foo" -> 3L, "baz" -> "baz")))
         override val fields = "id,metadata"
 
         val json = contentAsString(result)
