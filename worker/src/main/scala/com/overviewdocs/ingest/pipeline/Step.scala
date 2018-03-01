@@ -49,4 +49,6 @@ object Step {
 //    override val id = "Image"
 //    override val logic = ImageStepLogic
 //  }
+
+  val All: Vector[Step] = Vector()
 }
