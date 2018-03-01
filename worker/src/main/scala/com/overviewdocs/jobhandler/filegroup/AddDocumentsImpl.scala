@@ -95,14 +95,15 @@ class AddDocumentsImpl(documentIdSupplier: ActorRef)(implicit system: ActorRefFa
     lang: String,
     onProgress: Double => Boolean
   )(implicit ec: ExecutionContext): Future[Either[String,File]] = {
-    logger.debug("Creating File for {}", upload)
-    detectDocumentType(upload).flatMap(_ match {
-      case DocumentTypeDetector.PdfDocument => task.CreatePdfFile(upload, ocr, lang, onProgress)
-      case DocumentTypeDetector.OfficeDocument => task.CreateOfficeFile(upload)
-      case DocumentTypeDetector.UnsupportedDocument(mimeType) => Future.successful(Left(
-        s"Overview doesn't support documents of type $mimeType"
-      ))
-    })
+    Future.successful(Left("pipeline disabled"))
+//    logger.debug("Creating File for {}", upload)
+//    detectDocumentType(upload).flatMap(_ match {
+//      case DocumentTypeDetector.PdfDocument => task.CreatePdfFile(upload, ocr, lang, onProgress)
+//      case DocumentTypeDetector.OfficeDocument => task.CreateOfficeFile(upload)
+//      case DocumentTypeDetector.UnsupportedDocument(mimeType) => Future.successful(Left(
+//        s"Overview doesn't support documents of type $mimeType"
+//      ))
+//    })
   }
 
   private def buildDocuments(
