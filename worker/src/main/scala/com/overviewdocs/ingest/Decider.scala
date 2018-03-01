@@ -1,18 +1,18 @@
-//package com.overviewdocs.ingest
-//
-//import scala.concurrent.ExecutionContext
-//
-//object Decider {
-//  /** Augments WrittenFile2, adding pipelineOptions.remainingSteps if it isn't
-//    * set and creating a PendingProcessTask.
-//    */
-//  def decide(
-//    file2Writer: File2Writer,
-//    parallelism: Int = 1
-//  )(implicit ec: ExecutionContext): Flow[WrittenFile2, PendingProcessTask, akka.NotUsed] = {
-//
-//  }
-//
+package com.overviewdocs.ingest
+
+import akka.stream.{Graph,UniformFanOutShape}
+import scala.concurrent.ExecutionContext
+import com.overviewdocs.ingest.models.WrittenFile2
+
+object Decider {
+  /** Augments WrittenFile2, adding pipelineOptions.remainingSteps if it isn't
+    * set and creating a PendingProcessTask.
+    */
+  def decide(
+    file2Writer: File2Writer,
+    parallelism: Int = 1
+  )(implicit ec: ExecutionContext): Graph[UniformFanOutShape[WrittenFile2, WrittenFile2], akka.NotUsed] = ???
+
 //  private def minimportStep(stepId: StepId, workerType: MinimportWorkerType): Step = new Step(
 //    stepId,
 //    new MinimportStepLogic(minimportBroker, workerType),
@@ -138,4 +138,4 @@
 //    "text/html" -> pipelines.Office, // TODO anything else: LibreOffice is uniquely inept with HTML
 //    "text/*" -> pipelines.Office
 //  )
-//}
+}
