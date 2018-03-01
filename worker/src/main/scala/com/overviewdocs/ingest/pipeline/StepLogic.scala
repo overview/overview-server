@@ -1,9 +1,11 @@
 package com.overviewdocs.ingest.pipeline
 
+import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import scala.concurrent.{ExecutionContext,Future}
 
-import com.overviewdocs.ingest.models.WrittenFile2
+import com.overviewdocs.ingest.models.{CreatedFile2,WrittenFile2}
+import com.overviewdocs.models.File2
 
 /** Produces StepOutputFragments from a File2.
   *
@@ -11,10 +13,8 @@ import com.overviewdocs.ingest.models.WrittenFile2
   * conversion implementations.
   */
 trait StepLogic {
-  /** Streams the data needed to convert a WRITTEN File2 to a PROCESSED one.
-    */
-  def processIntoFragments(
-    file2: WrittenFile2,
-    canceled: Future[akka.Done]
-  )(implicit ec: ExecutionContext): Source[StepOutputFragment, akka.NotUsed]
+  /** Streams the data needed to convert a WRITTEN File2 to a PROCESSED one. */
+  def toChildFragments(
+    file2: WrittenFile2
+  )(implicit ec: ExecutionContext, mat: Materializer): Source[StepOutputFragment, akka.NotUsed]
 }

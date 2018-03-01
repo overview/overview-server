@@ -188,8 +188,9 @@ object File2 {
   case class Metadata(jsObject: JsObject) // indirection fools Slick into treating this like a separate type
 
   case class PipelineOptions(
-    ocr: Boolean,        // user has requested OCR, and we have not done it yet
-    splitByPage: Boolean // user has requested split-by-page, and we have not done it yet
+    ocr: Boolean,                  // user has requested OCR, and we have not done it yet
+    splitByPage: Boolean,          // user has requested split-by-page, and we have not done it yet
+    stepsRemaining: Vector[String] // sequence of processing steps that remain
   )
 }
 
