@@ -41,7 +41,10 @@ import com.overviewdocs.ingest.models.{CreatedFile2,WrittenFile2,ProcessedFile2}
   *               +---------------------------------------+
   *
   * About `parallelism`: the parameter is the _maximum_ number of simultaneous
-  * conversions -- even if there are more workers than that.
+  * conversions. If the logic is in-process, you should set `parallelism` low:
+  * nCPUs, perhaps. If the logic is a broker+worker system, set `parallelism` as
+  * high as the maximum expected number of workers: otherwise, the broker will
+  * not be able to queue enough fork for the workers.
   *
   * There is a potential deadlock in buffering: a StepLogic that outputs lots of
   * WrittenFile2s meant for recursion (e.g., zipfiles full of zipfiles) will
