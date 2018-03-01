@@ -23,6 +23,23 @@ import com.overviewdocs.ingest.models.{CreatedFile2,WrittenFile2,ProcessedFile2}
   * `processingError`. Even after cancellation, the StepLogic will complete; in
   * that case, `processingError` will become `"canceled"`.
   *
+  *               +---------------------------------------+
+  *               |         StepLogic substreams          |
+  *               |              +-------+                |
+  *               |              | logic |                |
+  *               |              +-------+                |
+  *               |             /         \               |
+  *               |  +---------o           o-----------+  | WrittenFile2
+  *               |  | process | +-------+ | partition o~~O    ~> out0
+  *     in  ~>    O~~o         o~| logic |~o           |  |
+  * WrittenFile2  |  |         | +-------+ |           o~~O    ~> out1
+  *               |  +---------o           o-----------+  | ProcessedFile2
+  *               |             \         /               |
+  *               |              +-------+                |
+  *               |              | logic |                |
+  *               |              +-------+                |
+  *               +---------------------------------------+
+  *
   * About `parallelism`: the parameter is the _maximum_ number of simultaneous
   * conversions -- even if there are more workers than that.
   *
