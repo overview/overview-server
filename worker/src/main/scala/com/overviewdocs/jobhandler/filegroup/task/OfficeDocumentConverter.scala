@@ -92,7 +92,10 @@ trait OfficeDocumentConverter {
 
   /** Runs the actual conversion, writing to a temporary file.
     *
-    * Will return a Future[Unit], but there are errors you should anticipate:
+    * Will return a Future[Path] of a new file on disk that the caller must
+    * delete.
+    *
+    * Failures you should anticipate:
     *
     * * `LibreOfficeTimedOutException`: LibreOffice ran too long.
     * * `LibreOfficeFailedException`: LibreOffice did not return exit code 0,
