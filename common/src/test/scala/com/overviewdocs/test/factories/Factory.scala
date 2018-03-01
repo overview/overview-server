@@ -162,7 +162,7 @@ trait Factory {
     contentType: String = "application/pdf",
     languageCode: String = "en",
     metadata: File2.Metadata = File2.Metadata(JsObject(Seq())),
-    pipelineOptions: File2.PipelineOptions = File2.PipelineOptions(false, false),
+    pipelineOptions: File2.PipelineOptions = File2.PipelineOptions(false, false, Vector()),
     blob: Option[BlobStorageRef] = None,
     blobSha1: Array[Byte] = Array.empty[Byte],
     thumbnailBlob: Option[BlobStorageRef] = None,

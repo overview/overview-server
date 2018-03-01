@@ -1,5 +1,7 @@
 package com.overviewdocs.ingest.models
 
+import scala.concurrent.Future
+
 import com.overviewdocs.models.{BlobStorageRef,File2}
 
 /** File2: we know it has been Created, but nothing else.
@@ -23,10 +25,16 @@ case class CreatedFile2(
   blobOpt: Option[BlobStorageRefWithSha1], // for processing
   ownsBlob: Boolean,                       // for delete/resume
   thumbnailLocationOpt: Option[String],    // for delete/resume
-  ownsThumbnail: Boolean                   // for delete/resume
+  ownsThumbnail: Boolean,                  // for delete/resume
+  onProgress: Double => Unit,              // for processing
+  canceled: Future[akka.Done]              // for processing
 ) {
   def asWrittenFile2Opt: Option[WrittenFile2] = blobOpt match {
-    case Some(blob) => Some(WrittenFile2(id, documentSetId, rootId, parentId, filename, contentType, languageCode, metadata, pipelineOptions, blob))
+    case Some(blob) => Some(WrittenFile2(id, documentSetId, rootId, parentId, filename, contentType, languageCode, metadata, pipelineOptions, blob, onProgress, canceled))
     case None => None
+  }
+
+  def asProcessedFile2(nChildren: Int, nIngestedChildren: Int): ProcessedFile2 = {
+    ProcessedFile2(id, documentSetId, parentId, nChildren, nIngestedChildren)
   }
 }

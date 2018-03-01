@@ -1,6 +1,7 @@
 package com.overviewdocs.ingest.models
 
 import play.api.libs.json.JsObject
+import scala.concurrent.Future
 
 import com.overviewdocs.models.{BlobStorageRef,File2}
 
@@ -24,5 +25,7 @@ case class WrittenFile2(
   languageCode: String,                   // for processing
   metadata: File2.Metadata,               // to create children while processing
   pipelineOptions: File2.PipelineOptions, // for processing
-  blob: BlobStorageRefWithSha1            // for processing, and to let children inherit
+  blob: BlobStorageRefWithSha1,           // for processing, and to let children inherit
+  onProgress: Double => Unit,             // for processing
+  canceled: Future[akka.Done]             // for processing, to abort
 )

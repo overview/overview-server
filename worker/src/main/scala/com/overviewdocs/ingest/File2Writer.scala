@@ -74,7 +74,9 @@ class File2Writer(
       None,
       false,
       None,
-      false
+      false,
+      parentFile2.onProgress,
+      parentFile2.canceled
     )
   }
 
@@ -118,7 +120,7 @@ class File2Writer(
       case None => {
         for {
           ref <- createBlobStorageRef(blob)
-          _ <- database.run(writeBlobCompiled(file2.id).update((Some(ref.location), Some(ref.nBytes), ref.sha1)))
+          _ <- database.runUnit(writeBlobCompiled(file2.id).update((Some(ref.location), Some(ref.nBytes), ref.sha1)))
         } yield file2.copy(blobOpt=Some(ref), ownsBlob=true)
       }
     }
@@ -136,7 +138,7 @@ class File2Writer(
       }
       case None => {
         for {
-          _ <- database.run(writeBlobCompiled(file2.id).update((Some(ref.location), Some(ref.nBytes), ref.sha1)))
+          _ <- database.runUnit(writeBlobCompiled(file2.id).update((Some(ref.location), Some(ref.nBytes), ref.sha1)))
         } yield file2.copy(blobOpt=Some(ref), ownsBlob=false)
       }
     }
@@ -166,7 +168,7 @@ class File2Writer(
       case None => {
         for {
           ref <- createBlobStorageRef(data)
-          _ <- database.run(writeThumbnailCompiled(file2.id).update((Some(ref.location), Some(ref.nBytes), Some(contentType))))
+          _ <- database.runUnit(writeThumbnailCompiled(file2.id).update((Some(ref.location), Some(ref.nBytes), Some(contentType))))
         } yield file2.copy(ownsThumbnail=true, thumbnailLocationOpt=Some(ref.location))
       }
     }
@@ -184,7 +186,7 @@ class File2Writer(
   )(implicit ec: ExecutionContext, mat: Materializer): Future[CreatedFile2] = {
     for {
       text <- readText(textUtf8)
-      _ <- database.run(writeTextCompiled(file2.id).update(Some(text)))
+      _ <- database.runUnit(writeTextCompiled(file2.id).update(Some(text)))
     } yield file2
   }
 
@@ -200,8 +202,24 @@ class File2Writer(
     val ret = file2.asWrittenFile2Opt.get
 
     for {
-      _ <- database.run(setWrittenAtCompiled(file2.id).update(Some(Instant.now)))
+      _ <- database.runUnit(setWrittenAtCompiled(file2.id).update(Some(Instant.now)))
     } yield ret
+  }
+
+  private val setWrittenAtAndProcessedAtCompiled = Compiled { (id: Rep[Long]) =>
+    File2s
+      .filter(_.id === id)
+      .map(f => (f.writtenAt, f.processedAt, f.nChildren))
+  }
+
+  def setWrittenAndProcessed(
+    file2: CreatedFile2
+  )(implicit ec: ExecutionContext): Future[ProcessedFile2] = {
+    val now = Some(Instant.now)
+
+    for {
+      _ <- database.runUnit(setWrittenAtAndProcessedAtCompiled(file2.id).update((now, now, Some(0))))
+    } yield file2.asProcessedFile2(0, 0)
   }
 
   private val setProcessedCompiled = Compiled { (id: Rep[Long]) =>
@@ -216,7 +234,7 @@ class File2Writer(
     processingError: Option[String]
   )(implicit ec: ExecutionContext): Future[ProcessedFile2] = {
     for {
-      _ <- database.run(setProcessedCompiled(file2.id).update((Some(Instant.now), Some(nChildren), processingError)))
+      _ <- database.runUnit(setProcessedCompiled(file2.id).update((Some(Instant.now), Some(nChildren), processingError)))
     } yield ProcessedFile2(
       file2.id,
       file2.documentSetId,

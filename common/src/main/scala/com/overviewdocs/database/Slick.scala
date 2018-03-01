@@ -51,7 +51,7 @@ trait MyPostgresProfile extends ExPostgresProfile
     implicit val file2PipelineOptionsFormat = Json.format[File2.PipelineOptions]
     implicit val file2PipelineOptionsColumnType = MappedColumnType.base[File2.PipelineOptions, Array[Byte]](
       v => Json.toBytes(Json.toJsObject(v)),
-      b => Json.parse(b).asOpt[File2.PipelineOptions].getOrElse(File2.PipelineOptions(false, false))
+      b => Json.parse(b).asOpt[File2.PipelineOptions].getOrElse(File2.PipelineOptions(false, false, Vector()))
     )
 
     implicit val metadataSchemaTypeMapper = MappedColumnType.base[MetadataSchema, String](

@@ -74,7 +74,8 @@ class GroupedFileUploadToFile2(database: Database, blobStorage: BlobStorage) {
     val metadata = File2.Metadata(groupedFileUpload.documentMetadataJson.getOrElse(fileGroup.metadataJson))
     val pipelineOptions = File2.PipelineOptions(
       fileGroup.ocr.getOrElse(false),
-      fileGroup.splitDocuments.getOrElse(false)
+      fileGroup.splitDocuments.getOrElse(false),
+      Vector()
     )
     val createdAt=Instant.now()
 
