@@ -351,7 +351,7 @@ class File2Writer(
         )
         SELECT
           in_document_set_id,
-          '',
+          file2.filename,
           file2.processing_error,
           file2.id
         FROM file2

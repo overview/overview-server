@@ -9,7 +9,7 @@ import scala.concurrent.{ExecutionContext,Future}
 import com.overviewdocs.models.FileGroup
 
 class ProgressReporter(
-  val addDocumentsImpl: AddDocumentsImpl,
+  //val addDocumentsImpl: AddDocumentsImpl,
 
   /** Delays writing.
     *
@@ -58,8 +58,8 @@ class ProgressReporter(
   private def flush(updates: Iterator[Update]): Future[Unit] = {
     if (updates.hasNext) {
       val u = updates.next
-      addDocumentsImpl.writeProgress(u.fileGroupId, u.nFilesProcessed, u.nBytesProcessed, u.estimatedCompletionTime)
-        .flatMap { _ => flush(updates) }
+      //addDocumentsImpl.writeProgress(u.fileGroupId, u.nFilesProcessed, u.nBytesProcessed, u.estimatedCompletionTime)
+      flush(updates)//  .flatMap { _ => flush(updates) }
     } else {
       Future.unit
     }
@@ -77,7 +77,7 @@ object ProgressReporter {
 
   private val DefaultWriteDelay = FiniteDuration(200, "ms")
 
-  def props(addDocumentsImpl: AddDocumentsImpl): Props = {
-    Props(new ProgressReporter(addDocumentsImpl, DefaultWriteDelay))
+  def props(/*addDocumentsImpl: AddDocumentsImpl*/): Props = {
+    Props(new ProgressReporter(/*addDocumentsImpl, */DefaultWriteDelay))
   }
 }
