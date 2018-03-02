@@ -17,7 +17,7 @@ class SystemGraph(file2Writer: File2Writer, nDeciders: Int, recurseBufferSize: I
       val toDecide = builder.add(MergePreferred[WrittenFile2](1))
 
       // 1..nSteps splitter
-      val decider = builder.add(Decider.decide(file2Writer, nDeciders))
+      val decider = builder.add(new Decider(file2Writer.blobStorage, nDeciders).graph)
 
       // Vector, nSteps long, of 1..1 FanOutShape2s.
       val process = Step.All.map(step => builder.add(step.toGraph(file2Writer)))
@@ -32,9 +32,9 @@ class SystemGraph(file2Writer: File2Writer, nDeciders: Int, recurseBufferSize: I
                 toDecide       ~> decider
 
       Step.All.zipWithIndex.foreach { case (_, i) =>
-                                  decider ~> process(i).in
-                                             process(i).out0 ~> processOutputToDecide
-                                             process(i).out1 ~> processOutputToIngest
+                                  decider.out(i) ~> process(i).in
+                                                    process(i).out0 ~> processOutputToDecide
+                                                    process(i).out1 ~> processOutputToIngest
       }
                 toDecide.in(0)     <~ processOutputBuffer    <~ processOutputToDecide
                                                                 processOutputToIngest ~> ingest

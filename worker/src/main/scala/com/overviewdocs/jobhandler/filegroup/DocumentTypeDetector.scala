@@ -121,7 +121,6 @@ trait DocumentTypeDetector {
   }
 
   private def parentType(mimeType: String): String = mimeType.replaceFirst("/.*$", "/*")
-  private def maximumBytesRead: Int = mimeTypeDetector.getMaxGetBytesLength
 }
 
 object DocumentTypeDetector extends DocumentTypeDetector with HasBlockingDatabase {

@@ -4,6 +4,7 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import scala.concurrent.{ExecutionContext,Future}
 
+import com.overviewdocs.blobstorage.BlobStorage
 import com.overviewdocs.ingest.models.{CreatedFile2,WrittenFile2}
 import com.overviewdocs.models.File2
 
@@ -15,6 +16,7 @@ import com.overviewdocs.models.File2
 trait StepLogic {
   /** Streams the data needed to convert a WRITTEN File2 to a PROCESSED one. */
   def toChildFragments(
+    blobStorage: BlobStorage,
     file2: WrittenFile2
   )(implicit ec: ExecutionContext, mat: Materializer): Source[StepOutputFragment, akka.NotUsed]
 }
