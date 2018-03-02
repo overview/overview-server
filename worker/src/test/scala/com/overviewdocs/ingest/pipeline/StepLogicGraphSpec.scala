@@ -11,6 +11,7 @@ import play.api.libs.json.{Json,JsObject,JsString}
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.{ExecutionContext,Future,Promise,blocking}
 
+import com.overviewdocs.blobstorage.BlobStorage
 import com.overviewdocs.ingest.File2Writer
 import com.overviewdocs.ingest.models.{BlobStorageRefWithSha1,CreatedFile2,WrittenFile2,ProcessedFile2}
 import com.overviewdocs.models.{BlobStorageRef,File2}
@@ -63,6 +64,7 @@ class StepLogicGraphSpec extends Specification with Mockito {
 
     val mockLogic = new StepLogic {
       override def toChildFragments(
+        blobStorage: BlobStorage,
         file2: WrittenFile2,
       )(implicit ec: ExecutionContext, mat: Materializer) = Source(fragments)
     }

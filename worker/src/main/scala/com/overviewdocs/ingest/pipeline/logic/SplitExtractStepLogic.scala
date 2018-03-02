@@ -17,12 +17,12 @@ import com.overviewdocs.pdfocr.{PdfSplitter,SplitPdfAndExtractTextParser}
 import com.overviewdocs.util.Logger
 
 class SplitExtractStepLogic(
-  blobStorage: BlobStorage,
   inputStreamChunkSize: Int = 1024 * 1024 // 1MB
 ) extends StepLogic {
   private val logger = Logger.forClass(getClass)
 
   override def toChildFragments(
+    blobStorage: BlobStorage,
     input: WrittenFile2
   )(implicit ec: ExecutionContext, mat: Materializer): Source[StepOutputFragment, akka.NotUsed] = {
     case class State(

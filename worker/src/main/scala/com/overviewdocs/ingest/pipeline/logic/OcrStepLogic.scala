@@ -32,13 +32,13 @@ import com.overviewdocs.util.Logger
   * 6. When completed, deletes temporary files.
   */
 class OcrStepLogic(
-  blobStorage: BlobStorage,
   inputStreamChunkSize: Int = 1024 * 1024 // 1MB
 ) extends StepLogic {
   private val ProgressRegex = """^(\d+)/(\d+)$""".r
   private val logger = Logger.forClass(getClass)
 
   override def toChildFragments(
+    blobStorage: BlobStorage,
     input: WrittenFile2
   )(implicit ec: ExecutionContext, mat: Materializer): Source[StepOutputFragment, akka.NotUsed] = {
     val futureSource = for {

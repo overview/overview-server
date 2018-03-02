@@ -241,8 +241,8 @@ class StepLogicGraph(logic: StepLogic, file2Writer: File2Writer, parallelism: In
       file2Writer.setProcessed(parentFile2, nChildren, error).map(Right.apply _)
     }
 
-    logic.toChildFragments(parentFile2)                   // StepOutputFragment
-      .scanAsync(ScanResult(Vector(), Start))(onFragment) // ScanResult
-      .mapConcat(_.toEmit)                                // Either[WrittenFile2,ProcessedFile2]
+    logic.toChildFragments(file2Writer.blobStorage, parentFile2) // StepOutputFragment
+      .scanAsync(ScanResult(Vector(), Start))(onFragment)        // ScanResult
+      .mapConcat(_.toEmit)                                       // Either[WrittenFile2,ProcessedFile2]
   }
 }

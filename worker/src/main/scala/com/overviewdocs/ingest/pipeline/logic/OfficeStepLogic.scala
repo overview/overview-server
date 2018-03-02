@@ -28,10 +28,9 @@ import com.overviewdocs.ingest.models.WrittenFile2
   * 4. Return stream
   * 5. On Source complete, delete outputTempfile
   */
-class OfficeStepLogic(
-  blobStorage: BlobStorage
-) extends StepLogic {
+class OfficeStepLogic extends StepLogic {
   override def toChildFragments(
+    blobStorage: BlobStorage,
     input: WrittenFile2
   )(implicit ec: ExecutionContext, mat: Materializer): Source[StepOutputFragment, akka.NotUsed] = {
     // File extension, if the input has one

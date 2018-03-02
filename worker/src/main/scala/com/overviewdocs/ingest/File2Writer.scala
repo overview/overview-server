@@ -19,9 +19,9 @@ import com.overviewdocs.ingest.models.{BlobStorageRefWithSha1,CreatedFile2,Writt
 import com.overviewdocs.util.{TempFiles,Textify}
 
 class File2Writer(
-  database: Database,
-  blobStorage: BlobStorage,
-  maxNTextChars: Int
+  val database: Database,
+  val blobStorage: BlobStorage,
+  val maxNTextChars: Int
 ) {
   import database.api._
 
