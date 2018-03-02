@@ -13,7 +13,7 @@ import com.overviewdocs.clone.Cloner
 import com.overviewdocs.database.DocumentSetDeleter
 import com.overviewdocs.jobhandler.csv.CsvImportWorkBroker
 import com.overviewdocs.jobhandler.documentcloud.DocumentCloudImportWorkBroker
-import com.overviewdocs.jobhandler.filegroup.AddDocumentsWorkBroker
+//import com.overviewdocs.jobhandler.filegroup.AddDocumentsWorkBroker
 import com.overviewdocs.searchindex.Indexer
 import com.overviewdocs.messages.DocumentSetCommands
 import com.overviewdocs.test.ActorSystemContext
@@ -27,7 +27,7 @@ class DocumentSetCommandWorkerSpec extends Specification with Mockito {
   "DocumentSetCommandWorker" should {
     trait BaseScope extends ActorSystemContext {
       val broker = TestProbe()
-      val addDocumentsWorkBroker = TestProbe()
+      //val addDocumentsWorkBroker = TestProbe()
       val csvImportWorkBroker = TestProbe()
       val documentCloudImportWorkBroker = TestProbe()
       val indexer = TestProbe()
@@ -37,7 +37,7 @@ class DocumentSetCommandWorkerSpec extends Specification with Mockito {
       val cloner = smartMock[Cloner]
       val subject = TestActorRef(DocumentSetCommandWorker.props(
         broker.ref,
-        addDocumentsWorkBroker.ref,
+        //addDocumentsWorkBroker.ref,
         csvImportWorkBroker.ref,
         documentCloudImportWorkBroker.ref,
         indexer.ref,
@@ -60,16 +60,16 @@ class DocumentSetCommandWorkerSpec extends Specification with Mockito {
         broker.expectMsg(WorkerReady)
       }
 
-      "queue ack message for when command completes" in new BaseScope {
-        broker.expectMsg(WorkerReady)
+      //"queue ack message for when command completes" in new BaseScope {
+      //  broker.expectMsg(WorkerReady)
 
-        val command = DocumentSetCommands.AddDocumentsFromFileGroup(factory.fileGroup(addToDocumentSetId=Some(2L)))
-        subject ! command
-        // This is one-half of the spec; the other half is in AddDocumentsWorkBroker
-        addDocumentsWorkBroker.expectMsg(
-          AddDocumentsWorkBroker.DoWorkThenAck(command, broker.ref, WorkerDoneDocumentSetCommand(2L))
-        )
-      }
+      //  val command = DocumentSetCommands.AddDocumentsFromFileGroup(factory.fileGroup(addToDocumentSetId=Some(2L)))
+      //  subject ! command
+      //  // This is one-half of the spec; the other half is in AddDocumentsWorkBroker
+      //  addDocumentsWorkBroker.expectMsg(
+      //    AddDocumentsWorkBroker.DoWorkThenAck(command, broker.ref, WorkerDoneDocumentSetCommand(2L))
+      //  )
+      //}
     }
 
     "AddDocumentsFromCsvImport" should {
@@ -173,11 +173,11 @@ class DocumentSetCommandWorkerSpec extends Specification with Mockito {
       }
     }
 
-    "CancelJob" should {
-      "forward to addDocumentsWorkBroker" in new BaseScope {
-        subject ! DocumentSetCommands.CancelAddDocumentsFromFileGroup(1L, 2L)
-        addDocumentsWorkBroker.expectMsg(AddDocumentsWorkBroker.CancelJob(2L))
-      }
-    }
+    //"CancelJob" should {
+    //  "forward to addDocumentsWorkBroker" in new BaseScope {
+    //    subject ! DocumentSetCommands.CancelAddDocumentsFromFileGroup(1L, 2L)
+    //    addDocumentsWorkBroker.expectMsg(AddDocumentsWorkBroker.CancelJob(2L))
+    //  }
+    //}
   }
 }

@@ -46,24 +46,24 @@ class WorkerActorEnvironment(database: Database, tempDirectory: Path) {
   private val deletedFileRemover = system.actorOf(DeletedFileCleaner(fileCleaner), "DeletedFileCleaner")
   private val fileRemovalQueue = system.actorOf(FileRemovalRequestQueue(deletedFileRemover), "FileRemovalQueue")
 
-  private val documentIdSupplier = system.actorOf(DocumentIdSupplier(), "DocumentIdSupplier")
-  private val addDocumentsImpl = new AddDocumentsImpl(documentIdSupplier)(system)
-  private val progressReporter = system.actorOf(ProgressReporter.props(addDocumentsImpl), "ProgressReporter")
+  //private val documentIdSupplier = system.actorOf(DocumentIdSupplier(), "DocumentIdSupplier")
+  //private val addDocumentsImpl = new AddDocumentsImpl(documentIdSupplier)(system)
+  //private val progressReporter = system.actorOf(ProgressReporter.props(addDocumentsImpl), "ProgressReporter")
 
-  private val addDocumentsWorkBroker = system.actorOf(
-    AddDocumentsWorkBroker.props(progressReporter),
-    "AddDocumentsWorkBroker"
-  )
+  //private val addDocumentsWorkBroker = system.actorOf(
+  //  AddDocumentsWorkBroker.props(progressReporter),
+  //  "AddDocumentsWorkBroker"
+  //)
 
   private val csvImportWorkBroker = system.actorOf(CsvImportWorkBroker.props, "CsvImportWorkBroker")
   private val documentCloudImportWorkBroker = system.actorOf(DocumentCloudImportWorkBroker.props, "DocumentCloudImportWorkBroker")
   private val indexer = system.actorOf(Indexer.props, "Indexer")
   private val reindexer = system.actorOf(ReindexActor.props, "ReindexActor")
 
-  Seq.tabulate(Configuration.getInt("n_document_converters")) { i =>
-    val name = "AddDocumentsWorker-" + i
-    system.actorOf(AddDocumentsWorker.props(addDocumentsWorkBroker, addDocumentsImpl), name)
-  }
+  //Seq.tabulate(Configuration.getInt("n_document_converters")) { i =>
+  //  val name = "AddDocumentsWorker-" + i
+  //  system.actorOf(AddDocumentsWorker.props(addDocumentsWorkBroker, addDocumentsImpl), name)
+  //}
 
   system.actorOf(CsvImportWorker.props(csvImportWorkBroker), "CsvImportWorker-1")
   system.actorOf(DocumentCloudImportWorker.props(documentCloudImportWorkBroker), "DocumentCloudWorker-1")
@@ -80,7 +80,7 @@ class WorkerActorEnvironment(database: Database, tempDirectory: Path) {
   system.actorOf(
     DocumentSetCommandWorker.props(
       messageBroker,
-      addDocumentsWorkBroker,
+      //addDocumentsWorkBroker,
       csvImportWorkBroker,
       documentCloudImportWorkBroker,
       indexer,

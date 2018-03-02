@@ -10,7 +10,7 @@ import com.overviewdocs.clone.Cloner
 import com.overviewdocs.database.DocumentSetDeleter
 import com.overviewdocs.jobhandler.csv.CsvImportWorkBroker
 import com.overviewdocs.jobhandler.documentcloud.DocumentCloudImportWorkBroker
-import com.overviewdocs.jobhandler.filegroup.AddDocumentsWorkBroker
+//import com.overviewdocs.jobhandler.filegroup.AddDocumentsWorkBroker
 import com.overviewdocs.searchindex.Indexer
 import com.overviewdocs.messages.{DocumentSetReadCommands,DocumentSetCommands}
 import com.overviewdocs.util.Logger
@@ -31,7 +31,7 @@ import com.overviewdocs.util.Logger
   */
 class DocumentSetCommandWorker(
   val broker: ActorRef,
-  val addDocumentsWorkBroker: ActorRef,
+  //val addDocumentsWorkBroker: ActorRef,
   val csvImportWorkBroker: ActorRef,
   val documentCloudImportWorkBroker: ActorRef,
   val indexer: ActorRef,
@@ -94,8 +94,8 @@ class DocumentSetCommandWorker(
         // downstream AddDocumentsWorkBroker can juggle all import jobs at
         // once, while this DocumentSetCommandWorker can work on other
         // commands.
-        val message = AddDocumentsWorkBroker.DoWorkThenAck(addDocuments, broker, done(addDocuments.documentSetId))
-        addDocumentsWorkBroker ! message
+        //val message = AddDocumentsWorkBroker.DoWorkThenAck(addDocuments, broker, done(addDocuments.documentSetId))
+        //addDocumentsWorkBroker ! message // TODO implement this!
         sendReady
       }
       case command: SortField => {
@@ -126,7 +126,7 @@ class DocumentSetCommandWorker(
         // DocumentSetCommandWorker should not respond to this message;
         // instead, it should pass it to the AddDocumentsWorkBroker and keep
         // going as it always has.
-        addDocumentsWorkBroker ! AddDocumentsWorkBroker.CancelJob(fileGroupId)
+        //addDocumentsWorkBroker ! AddDocumentsWorkBroker.CancelJob(fileGroupId) // TODO handle this
         // Don't send "ready": we don't know or care whether this worker has
         // actually been doing anything.
       }
@@ -164,7 +164,7 @@ class DocumentSetCommandWorker(
 object DocumentSetCommandWorker {
   def props(
     broker: ActorRef,
-    addDocumentsWorkBroker: ActorRef,
+    //addDocumentsWorkBroker: ActorRef,
     csvImportWorkBroker: ActorRef, 
     documentCloudImportWorkBroker: ActorRef,
     indexer: ActorRef,
@@ -175,7 +175,7 @@ object DocumentSetCommandWorker {
   ): Props = {
     Props(new DocumentSetCommandWorker(
       broker,
-      addDocumentsWorkBroker,
+      //addDocumentsWorkBroker,
       csvImportWorkBroker,
       documentCloudImportWorkBroker,
       indexer,
