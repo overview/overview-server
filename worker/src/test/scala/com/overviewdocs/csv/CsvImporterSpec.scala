@@ -97,7 +97,7 @@ class CsvImporterSpec extends DbSpecification with Mockito {
     blockingDatabase.run((for {
       lo <- database.largeObjectManager.open(loid, LargeObject.Mode.Read)
       _ <- lo.read(1)
-    } yield ()).transactionally) must throwA[org.postgresql.util.PSQLException]
+    } yield ()).transactionally) must throwA[com.overviewdocs.database.exceptions.UndefinedObject]
 
     // no cleanup
   }
@@ -194,7 +194,7 @@ class CsvImporterSpec extends DbSpecification with Mockito {
     blockingDatabase.run((for {
       lo <- database.largeObjectManager.open(loids.head, LargeObject.Mode.Read)
       _ <- lo.read(1)
-    } yield ()).transactionally) must throwA[org.postgresql.util.PSQLException]
+    } yield ()).transactionally) must throwA[com.overviewdocs.database.exceptions.UndefinedObject]
   }
 
   "delete CsvImport on cancel" in new BaseScope {

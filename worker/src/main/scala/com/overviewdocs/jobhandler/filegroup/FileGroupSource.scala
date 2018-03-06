@@ -3,11 +3,12 @@ package com.overviewdocs.jobhandler.filegroup
 import akka.actor.ActorRef
 import akka.stream.{Materializer,OverflowStrategy}
 import akka.stream.scaladsl.Source
-import scala.concurrent.{ExecutionContext,Future}
+import java.time.Instant
+import scala.concurrent.{ExecutionContext,Future,Promise}
 
 import com.overviewdocs.database.Database
 import com.overviewdocs.models.FileGroup
-import com.overviewdocs.models.tables.FileGroups
+import com.overviewdocs.models.tables.{File2s,FileGroups,GroupedFileUploads}
 
 /** All the un-ingested FileGroups we have.
   *
@@ -21,26 +22,30 @@ import com.overviewdocs.models.tables.FileGroups
   */
 class FileGroupSource(
   val database: Database,
+  onProgress: FileGroupProgressState => Unit,
   bufferSize: Int = 10000
 )(implicit ec: ExecutionContext, mat: Materializer) {
-  private var sourceActorRef: ActorRef = _
+  @volatile private var sourceActorRef: ActorRef = _
 
   /** Source of FileGroups.
     *
     * This will start with all FileGroups in the database; it will then produce
     * all FileGroups sent to `.enqueue`.
     */
-  val source: Source[FileGroup, akka.NotUsed] = {
+  val source: Source[ResumedFileGroupJob, akka.NotUsed] = {
     val resumeSourceFuture: Future[Source[FileGroup, akka.NotUsed]] = for {
       fileGroups <- toResume
     } yield Source(fileGroups)
 
-    val actorSource = Source.actorRef(bufferSize, OverflowStrategy.fail)
-      .mapMaterializedValue(mat => { sourceActorRef = mat; akka.NotUsed })
+    val actorSource = Source.actorRef[FileGroup](bufferSize, OverflowStrategy.fail)
+      .map { value => System.err.println("Providing value " + value); value }
+      .mapMaterializedValue(mat => { sourceActorRef = mat; System.err.println("sourceActorRef set in thread " + Thread.currentThread.getId); akka.NotUsed })
+      .watchTermination()((_, futureDone) => futureDone.onComplete { case _ => System.err.println("actorSource completed"); akka.NotUsed })
 
     Source.fromFutureSource(resumeSourceFuture)
       .mapMaterializedValue(_ => akka.NotUsed)
       .concat(actorSource)
+      .mapAsync(1)(resumeFileGroupJob _)
   }
 
   /** Actor which accepts FileGroups for emitting.
@@ -57,5 +62,31 @@ class FileGroupSource(
       .filter(_.deleted === false)
       .filter(_.addToDocumentSetId.nonEmpty)
     database.seq(query)
+  }
+
+  private lazy val fileGroupIngestStatsCompiled = {
+    import database.api._
+    Compiled { fileGroupId: Rep[Long] =>
+      for {
+        gfu <- GroupedFileUploads if gfu.fileGroupId === fileGroupId
+        file2 <- File2s if file2.id === gfu.file2Id if file2.ingestedAt.nonEmpty
+      } yield file2.blobNBytes.get
+    }
+  }
+
+  private def resumeFileGroupJob(fileGroup: FileGroup): Future[ResumedFileGroupJob] = {
+    for {
+      nBytesVec: Vector[Int] <- database.seq(fileGroupIngestStatsCompiled(fileGroup.id))
+    } yield ResumedFileGroupJob(
+      fileGroup,
+      new FileGroupProgressState(
+        fileGroup,
+        nBytesVec.size,
+        nBytesVec.fold(0)(_ + _),
+        Instant.now,
+        onProgress,
+        Promise[akka.Done]()
+      )
+    )
   }
 }

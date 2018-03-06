@@ -37,8 +37,8 @@ object ActorSystemContext {
           type = Dispatcher
           executor = "fork-join-executor"
           fork-join-executor {
-            paralellism-min = 3
-            paralellism-max = 10
+            parallelism-min = 3
+            parallelism-max = 10
           }
         }
       }

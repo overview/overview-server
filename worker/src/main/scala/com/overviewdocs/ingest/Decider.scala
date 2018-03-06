@@ -25,7 +25,7 @@ import org.overviewproject.mime_types.MimeTypeDetector
   * * a WrittenFile2s that was output by a Step that already knows what the
   *   next Step should be: `pipelineOptions.stepsRemaining.nonEmpty`.
   *
-  * This Graph has `Step.All.size` outlets: one per (hard-coded) Step. Outputs
+  * This Graph has `steps.size` outlets: one per (hard-coded) Step. Outputs
   * on outlet 0 should connect to `Step.all(0)`'s inlet. Outputs on outlet 1
   * should connect to `Step.all(1)`'s inlet. And so on.
   *
@@ -36,6 +36,7 @@ import org.overviewproject.mime_types.MimeTypeDetector
   * downstream isn't processing files quickly enough.
   */
 class Decider(
+  steps: Vector[Step],
   blobStorage: BlobStorage,
 
   /** Number of magic-number detections to run in parallel.
@@ -64,7 +65,7 @@ class Decider(
 
       val addPipelineStepsRemaining = builder.add(flow)
 
-      val partition = builder.add(Partition[WrittenFile2](Step.All.size, getOutletIndex _))
+      val partition = builder.add(Partition[WrittenFile2](steps.size, getOutletIndex _))
 
       addPipelineStepsRemaining ~> partition
 
@@ -138,7 +139,7 @@ class Decider(
 
   private def getOutletIndex(inputWithPipeline: WrittenFile2): Int = {
     val id = inputWithPipeline.pipelineOptions.stepsRemaining.head
-    Step.All.indexWhere(_.id == id)
+    steps.indexWhere(_.id == id)
   }
 }
 
