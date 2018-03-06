@@ -32,7 +32,11 @@ class GroupedFileUploadToFile2Spec extends DbSpecification with Mockito {
 
     override def after = {
       import database.api._
-      blockingDatabase.run(database.largeObjectManager.unlink(oid).transactionally)
+      try {
+        blockingDatabase.run(database.largeObjectManager.unlink(oid).transactionally)
+      } catch {
+        case _: com.overviewdocs.database.exceptions.UndefinedObject => {}
+      }
     }
 
     val subject = new GroupedFileUploadToFile2(database, blobStorage)
@@ -125,6 +129,18 @@ class GroupedFileUploadToFile2Spec extends DbSpecification with Mockito {
 
       dbFile2s.length must beEqualTo(1)
       dbFile2s.head.blob must beSome(BlobStorageRef("loc", 19))
+    }
+
+    "unlinks the Large Object" in new BaseScope {
+      stubBlobStorage returns Future.successful("loc")
+      result
+
+      import database.api._
+      def openLargeObject = blockingDatabase.runUnit((for {
+        _ <- loManager.open(oid, LargeObject.Mode.Read)
+      } yield ()).transactionally)
+
+      openLargeObject must throwA[com.overviewdocs.database.exceptions.UndefinedObject]
     }
   }
 }

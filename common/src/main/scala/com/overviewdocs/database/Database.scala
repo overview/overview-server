@@ -185,6 +185,7 @@ class Database(val slickDatabase: slick.jdbc.JdbcBackend.Database) {
     case e: SQLException => e.getSQLState() match {
       case "23505" => new exceptions.Conflict(e)
       case "23503" => new exceptions.ParentMissing(e)
+      case "42704" => new exceptions.UndefinedObject(e)
       case _ => e
     }
     case _ => t

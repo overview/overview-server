@@ -97,7 +97,11 @@ class GroupedFileUploadToFile2(database: Database, blobStorage: BlobStorage) {
     database.run(action)
   }
 
-  /** Transfers data from groupedFileUpload to file2's BlobStorage location. */
+  /** Transfers data from groupedFileUpload to file2's BlobStorage location.
+    *
+    * When finished, unlinks the Large Object. We assume nobody will read it
+    * after we have the File2 written, and it takes 
+    */
   private def writeFile2(
     groupedFileUpload: GroupedFileUpload,
     file2: File2
@@ -111,6 +115,7 @@ class GroupedFileUploadToFile2(database: Database, blobStorage: BlobStorage) {
         GroupedFileUploadToFile2.compiledFile2Updater(file2.id)
           .update((Some(location), Some(nBytes), sha1, Some(writtenAt)))
       )
+      _ <- database.run(database.largeObjectManager.unlink(groupedFileUpload.contentsOid).transactionally)
     } yield {
       file2.copy(
         blob=Some(BlobStorageRef(location, nBytes)),

@@ -11,6 +11,7 @@ import scala.concurrent.{ExecutionContext,Future}
 
 import com.overviewdocs.blobstorage.BlobStorage
 import com.overviewdocs.ingest.models.{BlobStorageRefWithSha1,WrittenFile2}
+import com.overviewdocs.ingest.pipeline.Step
 import com.overviewdocs.models.{BlobStorageRef,File2}
 import com.overviewdocs.test.ActorSystemContext
 import com.overviewdocs.util.AwaitMethod
@@ -42,7 +43,7 @@ class DeciderSpec extends Specification with Mockito {
     )
 
     val mockBlobStorage = mock[BlobStorage]
-    val decider = new Decider(mockBlobStorage)
+    val decider = new Decider(Step.All, mockBlobStorage)
   }
 
   "Decider" should {
