@@ -39,8 +39,6 @@ class OfficeStepLogic extends StepLogic {
       case _ => ".tmp"
     }
 
-    val newFilename = input.filename.replaceFirst("(?:\\.[a-zA-Z0-9]{1,5})?$", ".pdf")
-
     def downloadTempfile: Future[Path] = {
       for {
         tempFilePath <- Future(blocking(Files.createTempFile("office-" + input.blob.location, ext)))
@@ -69,7 +67,7 @@ class OfficeStepLogic extends StepLogic {
 
       Source(Vector(
         StepOutputFragment.File2Header(
-          newFilename,
+          input.filename,
           "application/pdf",
           input.languageCode,
           input.metadata,
