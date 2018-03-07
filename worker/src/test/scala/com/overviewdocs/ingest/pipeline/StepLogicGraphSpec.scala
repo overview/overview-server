@@ -31,6 +31,11 @@ class StepLogicGraphSpec extends Specification with Mockito {
     val onProgressCalls = ArrayBuffer[Double]()
     val parentFile2 = mock[WrittenFile2]
     parentFile2.onProgress returns onProgressCalls.+= _
+    // Stuff for logger
+    parentFile2.id returns 1L
+    parentFile2.filename returns "filename.blob"
+    parentFile2.blob returns BlobStorageRefWithSha1(BlobStorageRef("loc:parent", 10), Array.empty[Byte])
+    parentFile2.pipelineOptions returns File2.PipelineOptions(false, false, Vector("foo"))
     var nCreates = 0
     val createdFile2 = mock[CreatedFile2]
     val writtenFile2 = mock[WrittenFile2]
