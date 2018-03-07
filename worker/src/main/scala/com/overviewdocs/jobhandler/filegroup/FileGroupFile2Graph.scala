@@ -83,7 +83,7 @@ class FileGroupFile2Graph(
     }
   }
 
-  private lazy val loadRootFile2s = {
+  private lazy val loadGroupedFileUploads = {
     import database.api._
     Compiled { fileGroupId: Rep[Long] =>
       GroupedFileUploads
@@ -97,23 +97,24 @@ class FileGroupFile2Graph(
   private def loadInternalFile2s(
     job: ResumedFileGroupJob
   )(implicit ec: ExecutionContext): Source[InternalFile2, akka.NotUsed] = {
-    val internalFile2sFuture = for {
-      roots: Vector[GroupedFileUpload] <- database.seq(loadRootFile2s(job.fileGroup.id))
-      file2Roots: Vector[File2] <- Future.sequence(roots.map(gfu => groupedFileUploadToFile2.groupedFileUploadToFile2(job.fileGroup, gfu)))
-      internalizedRoots: Vector[InternalFile2] <- internalizeRoots(file2Roots, job)
-    } yield Source(internalizedRoots)
-
-    Source.fromFutureSource(internalFile2sFuture)
+    Source.fromFutureSource(database.seq(loadGroupedFileUploads(job.fileGroup.id)).map(Source.apply _))
+      .flatMapConcat(gfu => loadFile2FromGroupedFileUpload(gfu, job))
       .mapMaterializedValue(_ => akka.NotUsed)
   }
 
-  private def internalizeRoots(
-    file2s: Vector[File2],
-    fileGroupJob: ResumedFileGroupJob
-  )(implicit ec: ExecutionContext): Future[Vector[InternalFile2]] = {
-    // Icky code: will run lots of queries on resume
-    Future.sequence(file2s.map(file2 => internalizeRoot(file2, fileGroupJob)))
-      .map(vectors => vectors.flatMap(identity))
+  private def loadFile2FromGroupedFileUpload(
+    groupedFileUpload: GroupedFileUpload,
+    job: ResumedFileGroupJob
+  )(implicit ec: ExecutionContext): Source[InternalFile2, akka.NotUsed] = {
+    val retFuture = for {
+      file2 <- groupedFileUploadToFile2.groupedFileUploadToFile2(job.fileGroup, groupedFileUpload)
+      internalFiles <- internalizeRoot(file2, job)
+    } yield {
+      Source(internalFiles)
+    }
+
+    Source.fromFutureSource(retFuture)
+      .mapMaterializedValue(_ => akka.NotUsed)
   }
 
   private def internalizeRoot(

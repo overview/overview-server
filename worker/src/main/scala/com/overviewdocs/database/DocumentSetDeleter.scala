@@ -78,11 +78,7 @@ trait DocumentSetDeleter extends HasDatabase {
       )
       SELECT id, blob_location, thumbnail_blob_location
       FROM file2
-      WHERE id IN (SELECT file2_id FROM root_ids)
-      UNION
-      SELECT id, blob_location, thumbnail_blob_location
-      FROM file2
-      WHERE root_file2_id IN (SELECT file2_id FROM root_ids)
+      WHERE id IN (SELECT file2_id FROM root_ids) OR root_file2_id IN (SELECT file2_id FROM root_ids)
     """.as[(Long, Option[String], Option[String])]
 
     def deleteSql(file2Ids: immutable.Seq[Long]) = sqlu"""

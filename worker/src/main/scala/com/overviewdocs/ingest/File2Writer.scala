@@ -261,7 +261,6 @@ class File2Writer(
     for {
       utf8Bytes <- utf8ByteSource.runFold(ByteString.empty)(_ ++ _)
     } yield {
-      System.err.println("Read nBytes of text: " + utf8Bytes.size + " -- content is: " + Textify(utf8Bytes.toArray, UTF_8))
       val text = Textify(utf8Bytes.toArray, UTF_8)
       val truncated = Textify.truncateToNChars(text, maxNTextChars)
       truncated

@@ -7,6 +7,7 @@ import scala.concurrent.{ExecutionContext,Future,Promise}
 
 import com.overviewdocs.ingest.File2Writer
 import com.overviewdocs.ingest.models.{CreatedFile2,WrittenFile2,ProcessedFile2}
+import com.overviewdocs.util.Logger
 
 /** Runs StepLogic on a stream of WrittenFile2s.
   *
@@ -56,6 +57,8 @@ import com.overviewdocs.ingest.models.{CreatedFile2,WrittenFile2,ProcessedFile2}
   * database if there are too many.)
   */
 class StepLogicGraph(logic: StepLogic, file2Writer: File2Writer, parallelism: Int) {
+  private val logger = Logger.forClass(getClass)
+
   /** Converts a File2 from WRITTEN to PROCESSED and outputs its WRITTEN
     * children as they come. (Just the children! Not itself.)
     */
@@ -91,6 +94,8 @@ class StepLogicGraph(logic: StepLogic, file2Writer: File2Writer, parallelism: In
   private def singleFileSource(
     parentFile2: WrittenFile2
   )(implicit ec: ExecutionContext, mat: Materializer): Graph[SourceShape[Either[WrittenFile2, ProcessedFile2]], akka.NotUsed] = {
+    logger.info("Processing file2 {} ({}, {} bytes, pipeline steps {}", parentFile2.id, parentFile2.filename, parentFile2.blob.nBytes, parentFile2.pipelineOptions.stepsRemaining)
+
     /*
      * We process the incoming stream of StepOutputFragments, passing each to
      * a (side-effect producing) File2Writer method and emitting each child
@@ -117,7 +122,6 @@ class StepLogicGraph(logic: StepLogic, file2Writer: File2Writer, parallelism: In
     )
 
     def onFragment(lastEmitAndState: ScanResult, fragment: StepOutputFragment): Future[ScanResult] = {
-      System.err.println("onFragment: " + fragment)
       val state = lastEmitAndState.state
       (state, fragment) match {
         case (_, p: StepOutputFragment.Progress) => { parentFile2.onProgress(p.fraction); ignore(state) }
@@ -245,6 +249,5 @@ class StepLogicGraph(logic: StepLogic, file2Writer: File2Writer, parallelism: In
     logic.toChildFragments(file2Writer.blobStorage, parentFile2) // StepOutputFragment
       .scanAsync(ScanResult(Vector(), Start))(onFragment)        // ScanResult
       .mapConcat(_.toEmit)                                       // Either[WrittenFile2,ProcessedFile2]
-      .map { toEmit => System.err.println("emitting " + toEmit); toEmit }
   }
 }
