@@ -6,6 +6,7 @@ import scala.concurrent.Future
 
 import com.overviewdocs.models._
 import com.overviewdocs.models.tables._
+import com.overviewdocs.searchindex.DocumentSetReindexer
 import com.overviewdocs.test.DbSpecification
 import com.overviewdocs.test.factories.{DbFactory=>factory}
 
@@ -18,8 +19,8 @@ class ClonerSpec extends DbSpecification with Mockito {
       val destinationDocumentSet = factory.documentSet(id=234L)
       val stepNumber: Short = 0
       val cancelled: Boolean = false
-      val mockIndexer = smartMock[Indexer]
-      mockIndexer.indexDocuments(any) returns Future.unit
+      val mockDocumentSetReindexer = mock[DocumentSetReindexer]
+      mockDocumentSetReindexer.reindexDocumentSet(any) returns Future.unit
       lazy val cloneJob = factory.cloneJob(
         sourceDocumentSetId=sourceDocumentSet.id,
         destinationDocumentSetId=destinationDocumentSet.id,
@@ -29,7 +30,7 @@ class ClonerSpec extends DbSpecification with Mockito {
 
       def go = {
         val cloner = new Cloner {
-          override protected val indexer = mockIndexer
+          override protected val documentSetReindexer = mockDocumentSetReindexer
         }
         await(cloner.run(cloneJob))
       }
@@ -125,7 +126,7 @@ class ClonerSpec extends DbSpecification with Mockito {
 
     "index the cloned documents" in new BaseScope {
       go
-      there was one(mockIndexer).indexDocuments(234L)
+      there was one(mockDocumentSetReindexer).reindexDocumentSet(234L)
     }
 
     "refer to the same Files" in new BaseScope {

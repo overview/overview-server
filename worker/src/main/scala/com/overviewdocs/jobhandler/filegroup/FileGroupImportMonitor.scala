@@ -14,11 +14,13 @@ import com.overviewdocs.ingest.pipeline.Step
 import com.overviewdocs.ingest.{File2Writer,GroupedFileUploadToFile2,Processor,Ingester}
 import com.overviewdocs.models.FileGroup
 import com.overviewdocs.models.tables.{FileGroups,GroupedFileUploads}
+import com.overviewdocs.searchindex.DocumentSetReindexer
 import com.overviewdocs.util.{AddDocumentsCommon,Logger}
 
 class FileGroupImportMonitor(
   val database: Database,
   val blobStorage: BlobStorage,
+  val documentSetReindexer: DocumentSetReindexer,
   val steps: Vector[Step],
   val progressReporter: ActorRef,
   val maxNTextChars: Int,                // see File2Writer.scala docs
@@ -36,8 +38,8 @@ class FileGroupImportMonitor(
     progressReporter ! progressState
   }
 
-  def enqueueFileGroup(fileGroup: FileGroup): Unit = {
-    fileGroupSource.enqueue ! fileGroup
+  def enqueueFileGroup(fileGroup: FileGroup, onComplete: () => Unit): Unit = {
+    fileGroupSource.enqueue.tell((fileGroup, onComplete), null)
   }
 
   private def markFileIngestedInJob(ingested: IngestedRootFile2): ResumedFileGroupJob = {
@@ -78,13 +80,18 @@ class FileGroupImportMonitor(
   private def finishFileGroupJob(fileGroupJob: ResumedFileGroupJob): Future[Unit] = {
     val documentSetId = fileGroupJob.documentSetId
     val fileGroup = fileGroupJob.fileGroup
+
+    val reindexFuture = documentSetReindexer.reindexDocumentSet(documentSetId) // run in parallel
+
     for {
       _ <- database.runUnit(addFileGroupFilesToDocumentSetFiles(fileGroup.id, documentSetId))
       _ <- database.delete(compiledGroupedFileUploadsForFileGroup(fileGroup.id))
       _ <- database.delete(compiledFileGroup(fileGroup.id))
-      // TODO _ <- reindexer.runJob(DocumentSetReindexJob(...)) -- maybe just reindex in AddDocumentsCommon?
+      _ <- reindexFuture
       _ <- AddDocumentsCommon.afterAddDocuments(documentSetId)
-    } yield ()
+    } yield {
+      fileGroupJob.onComplete()
+    }
   }
 
   def cancelFileGroupJob(fileGroupId: Long): Unit = synchronized {
@@ -140,6 +147,7 @@ object FileGroupImportMonitor {
     new FileGroupImportMonitor(
       Database(),
       BlobStorage,
+      DocumentSetReindexer,
       com.overviewdocs.ingest.pipeline.Step.All,
       progressReporter,
       config.getInt("max_n_chars_per_document"),
