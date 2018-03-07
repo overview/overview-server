@@ -161,7 +161,7 @@ class StepLogicGraph(logic: StepLogic, file2Writer: File2Writer, parallelism: In
     }
 
     def logicError(message: String, currentChild: Option[CreatedFile2]): Future[ScanResult] = {
-      error("logic error: " + message, currentChild)
+      error("logic error in " + logic.getClass.getName + ": " + message, currentChild)
     }
 
     def unexpectedFragment(f: StepOutputFragment, currentChild: Option[CreatedFile2]): Future[ScanResult] = {
