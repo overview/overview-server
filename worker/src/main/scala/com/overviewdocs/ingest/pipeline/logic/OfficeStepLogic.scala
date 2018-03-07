@@ -60,8 +60,8 @@ class OfficeStepLogic extends StepLogic {
       //
       // Nobody will be listening for the final materialized value.
       val blobSource: Source[ByteString, akka.NotUsed] = FileIO.fromPath(outPath)
-        .watchTermination() { (result, futureDone) =>
-          futureDone.onComplete { case _ => Future(blocking(Files.delete(outPath))) }
+        .mapMaterializedValue { ioResultFuture =>
+          ioResultFuture.onComplete { case _ => Future(blocking(Files.delete(outPath))) }
           akka.NotUsed
         }
 
@@ -73,7 +73,7 @@ class OfficeStepLogic extends StepLogic {
           input.metadata,
           input.pipelineOptions.copy(ocr=false, stepsRemaining=input.pipelineOptions.stepsRemaining.tail)
         ),
-        StepOutputFragment.Blob(FileIO.fromPath(outPath)),
+        StepOutputFragment.Blob(blobSource),
         StepOutputFragment.Done
       ))
     }
