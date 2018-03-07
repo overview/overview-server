@@ -25,6 +25,14 @@ class SplitExtractStepLogic(
     blobStorage: BlobStorage,
     input: WrittenFile2
   )(implicit ec: ExecutionContext, mat: Materializer): Source[StepOutputFragment, akka.NotUsed] = {
+    // Two modes:
+    // 1. Extract-only: executable will give us a list of pages, and we are to
+    //    emit exactly one output file.
+    // 2. Split-and-extract: executable will give us files and blobs, and we are
+    //    to emit them as they come.
+    val extractOnly = !input.pipelineOptions.splitByPage
+    var allPagesText = ByteString.empty
+
     case class State(
       child: Process,
       parser: SplitPdfAndExtractTextParser,
@@ -92,26 +100,53 @@ class SplitExtractStepLogic(
         }
         case (_, Token.PageHeader(isOcr: Boolean)) => {
           pageNumber += 1
-          Vector(
-            StepOutputFragment.ProgressChildren(pageNumber - 1, nPagesTotal),
-            StepOutputFragment.File2Header(
+          val maybeHeader = if (!extractOnly || pageNumber == 1) {
+            Vector(StepOutputFragment.File2Header(
               input.filename,
               input.contentType,
               input.languageCode,
               augmentedMetadata(isOcr, pageNumber),
               augmentedPipelineOptions
-            )
-          ) ++ (if (!input.pipelineOptions.splitByPage) { Vector(StepOutputFragment.InheritBlob) } else { Vector() })
+            ))
+          } else {
+            Vector()
+          }
+          val maybeInheritBlob = if (extractOnly && pageNumber == 1) {
+            Vector(StepOutputFragment.InheritBlob)
+          } else {
+            Vector()
+          }
+          Vector(StepOutputFragment.ProgressChildren(pageNumber - 1, nPagesTotal)) ++ maybeHeader ++ maybeInheritBlob
         }
-        case (_, Token.PageThumbnail(byteString)) => Vector(
-          StepOutputFragment.Thumbnail("image/png", Source.single(byteString))
-        )
-        case (_, Token.PagePdf(byteString)) => Vector(
-          StepOutputFragment.Blob(Source.single(byteString))
-        )
-        case (_, Token.PageText(byteString)) => Vector(
-          StepOutputFragment.Text(Source.single(byteString))
-        )
+        case (_, Token.PageThumbnail(byteString)) => {
+          if (byteString.nonEmpty) {
+            Vector(StepOutputFragment.Thumbnail("image/png", Source.single(byteString)))
+          } else {
+            // we're extractOnly and not on the first page. No PDF.
+            Vector()
+          }
+        }
+        case (_, Token.PagePdf(byteString)) => {
+          if (byteString.nonEmpty) {
+            Vector(StepOutputFragment.Blob(Source.single(byteString)))
+          } else {
+            // we're extractOnly and not on the first page. No PDF.
+            Vector()
+          }
+        }
+        case (_, Token.PageText(byteString)) => {
+          if (extractOnly) {
+            allPagesText = allPagesText ++ byteString
+            if (pageNumber == nPagesTotal) {
+              Vector(StepOutputFragment.Text(Source.single(allPagesText)))
+            } else {
+              allPagesText = allPagesText ++ ByteString("\f")
+              Vector()
+            }
+          } else {
+            Vector(StepOutputFragment.Text(Source.single(byteString)))
+          }
+        }
         case (_, Token.PdfError(message)) => Vector(
           StepOutputFragment.FileError(message)
         )
