@@ -125,7 +125,7 @@ class DocumentSetCommandWorker(
         // DocumentSetCommandWorker should not respond to this message;
         // instead, it should pass it to the AddDocumentsWorkBroker and keep
         // going as it always has.
-        //addDocumentsWorkBroker ! AddDocumentsWorkBroker.CancelJob(fileGroupId) // TODO handle this
+        fileGroupImportMonitor.cancelFileGroupJob(fileGroupId)
         // Don't send "ready": we don't know or care whether this worker has
         // actually been doing anything.
       }

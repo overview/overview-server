@@ -87,9 +87,9 @@ class FileGroupImportMonitor(
     } yield ()
   }
 
-  def cancelAllJobsForDocumentSet(documentSetId: Long): Unit = synchronized {
+  def cancelFileGroupJob(fileGroupId: Long): Unit = synchronized {
     inProgress
-      .filter(_.documentSetId == documentSetId)
+      .filter(_.fileGroup.id == fileGroupId)
       .foreach(job => job.cancel)
   }
 
