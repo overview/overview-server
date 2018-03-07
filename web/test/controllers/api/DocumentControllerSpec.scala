@@ -19,10 +19,10 @@ class DocumentControllerSpec extends ApiControllerSpecification {
     val documentSet = factory.documentSet(metadataSchema = MetadataSchema(1, Vector(
       MetadataField("foo")
     )))
-    val mockDocumentSetBackend = smartMock[DocumentSetBackend]
+    val mockDocumentSetBackend = mock[DocumentSetBackend]
     mockDocumentSetBackend.show(documentSet.id) returns Future.successful(Some(documentSet))
-    val mockDocumentBackend = smartMock[DocumentBackend]
-    val mockSelectionBackend = smartMock[SelectionBackend]
+    val mockDocumentBackend = mock[DocumentBackend]
+    val mockSelectionBackend = mock[SelectionBackend]
     // We don't report progress in the API.
     mockSelectionBackend.findOrCreate(any, any, any, any) returns Future { selection }
 

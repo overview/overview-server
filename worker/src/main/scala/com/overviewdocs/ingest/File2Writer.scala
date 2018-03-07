@@ -25,6 +25,12 @@ class File2Writer(
 ) {
   import database.api._
 
+  private val lookupChildCompiled = Compiled { (parentFile2Id: Rep[Long], indexInParent: Rep[Int]) =>
+    File2s
+      .filter(_.parentFile2Id === parentFile2Id)
+      .filter(_.indexInParent === indexInParent)
+  }
+
   private val createChildCompiled = (File2s.map(f => (
     f.rootFile2Id,
     f.parentFile2Id,
@@ -47,8 +53,9 @@ class File2Writer(
     metadata: File2.Metadata,
     pipelineOptions: File2.PipelineOptions
   )(implicit ec: ExecutionContext): Future[CreatedFile2] = {
-    for {
-      file2 <- database.run(createChildCompiled.+=((
+    // INSERT IGNORE
+    val childFile2Future = database.option(lookupChildCompiled(parentFile2.id, indexInParent)).flatMap(_ match {
+      case None => database.run(createChildCompiled.+=((
         parentFile2.rootId.orElse(Some(parentFile2.id)),
         Some(parentFile2.id),
         indexInParent,
@@ -60,9 +67,15 @@ class File2Writer(
         Array[Byte](),
         Instant.now()
       )))
+      case Some(file2) => Future.successful(file2)
+    })
+
+    for {
+      file2 <- childFile2Future
     } yield CreatedFile2(
       file2.id,
-      parentFile2.documentSetId,
+      parentFile2.fileGroupJob,
+      parentFile2.onProgress, // TODO do better -- use new progress reporter
       file2.rootFile2Id,
       file2.parentFile2Id,
       file2.indexInParent,
@@ -74,9 +87,7 @@ class File2Writer(
       None,
       false,
       None,
-      false,
-      parentFile2.onProgress,
-      parentFile2.canceled
+      false
     )
   }
 
@@ -237,7 +248,7 @@ class File2Writer(
       _ <- database.runUnit(setProcessedCompiled(file2.id).update((Some(Instant.now), Some(nChildren), processingError)))
     } yield ProcessedFile2(
       file2.id,
-      file2.documentSetId,
+      file2.fileGroupJob,
       file2.parentId,
       nChildren,
       0
@@ -248,9 +259,9 @@ class File2Writer(
     utf8ByteSource: Source[ByteString, _]
   )(implicit ec: ExecutionContext, mat: Materializer): Future[String] = {
     for {
-      utf8ByteStrings <- utf8ByteSource.runWith(Sink.seq)
+      utf8Bytes <- utf8ByteSource.runFold(ByteString.empty)(_ ++ _)
     } yield {
-      val utf8Bytes = utf8ByteStrings.fold(ByteString.empty)(_ ++ _)
+      System.err.println("Read nBytes of text: " + utf8Bytes.size + " -- content is: " + Textify(utf8Bytes.toArray, UTF_8))
       val text = Textify(utf8Bytes.toArray, UTF_8)
       val truncated = Textify.truncateToNChars(text, maxNTextChars)
       truncated

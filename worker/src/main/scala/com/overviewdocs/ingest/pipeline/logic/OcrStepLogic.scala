@@ -63,7 +63,7 @@ class OcrStepLogic(
         .via(Framing.delimiter(ByteString("\n"), maximumFrameLength=10240, allowTruncation=true))
         .concat(Source.single(ByteString("END"))) // so we can produce fragments after the end of the stream
         .mapConcat { lineUtf8 =>
-          if (input.canceled.isCompleted) {
+          if (input.fileGroupJob.isCanceled) {
             process.destroyForcibly
             Vector(StepOutputFragment.Canceled) // we may generate many of these
           } else {
@@ -79,7 +79,7 @@ class OcrStepLogic(
                     input.contentType,
                     input.languageCode,
                     input.metadata,
-                    input.pipelineOptions.copy(ocr=false)
+                    input.pipelineOptions.copy(ocr=false, stepsRemaining=input.pipelineOptions.stepsRemaining.tail)
                   ),
                   StepOutputFragment.Blob(blob),
                   StepOutputFragment.Done

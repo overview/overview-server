@@ -17,7 +17,8 @@ import com.overviewdocs.models.{BlobStorageRef,File2}
   */
 case class WrittenFile2(
   id: Long,
-  documentSetId: Long,                    // for ingest, later
+  fileGroupJob: ResumedFileGroupJob,      // for cancel, ingest and post-ingest
+  onProgress: Double => Unit,             // for progress
   rootId: Option[Long],                   // to create children while processing
   parentId: Option[Long],                 // to create children while processing
   filename: String,                       // for processing
@@ -25,7 +26,5 @@ case class WrittenFile2(
   languageCode: String,                   // for processing
   metadata: File2.Metadata,               // to create children while processing
   pipelineOptions: File2.PipelineOptions, // for processing
-  blob: BlobStorageRefWithSha1,           // for processing, and to let children inherit
-  onProgress: Double => Unit,             // for processing
-  canceled: Future[akka.Done]             // for processing, to abort
+  blob: BlobStorageRefWithSha1            // for processing, and to let children inherit
 )

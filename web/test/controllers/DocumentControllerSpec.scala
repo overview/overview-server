@@ -9,21 +9,23 @@ import play.api.mvc.AnyContent
 import scala.concurrent.Future
 
 import controllers.auth.AuthorizedRequest
-import controllers.backend.{DocumentBackend,FileBackend,PageBackend}
+import controllers.backend.{DocumentBackend,FileBackend,File2Backend,PageBackend}
 import com.overviewdocs.blobstorage.BlobStorage
 import com.overviewdocs.models.{Document,File,Page,PdfNote,PdfNoteCollection}
 
 class DocumentControllerSpec extends ControllerSpecification with JsonMatchers {
   trait DocumentScope extends Scope {
-    val mockDocumentBackend = smartMock[DocumentBackend]
-    val mockFileBackend = smartMock[FileBackend]
-    val mockPageBackend = smartMock[PageBackend]
-    val mockBlobStorage = smartMock[BlobStorage]
+    val mockDocumentBackend = mock[DocumentBackend]
+    val mockFileBackend = mock[FileBackend]
+    val mockFile2Backend = mock[File2Backend]
+    val mockPageBackend = mock[PageBackend]
+    val mockBlobStorage = mock[BlobStorage]
 
     val controller = new DocumentController(
       mockDocumentBackend,
       mockBlobStorage,
       mockFileBackend,
+      mockFile2Backend,
       mockPageBackend,
       fakeControllerComponents,
       app.configuration,

@@ -13,7 +13,8 @@ import com.overviewdocs.models.{BlobStorageRef,File2}
   */
 case class CreatedFile2(
   id: Long,
-  documentSetId: Long,                     // for ingest, later
+  fileGroupJob: ResumedFileGroupJob,       // for progress, cancel, ingest and post-ingest
+  onProgress: Double => Unit,              // for progress
   rootId: Option[Long],                    // to create children while processing
   parentId: Option[Long],                  // to create children while processing
   indexInParent: Int,                      // to delete, in case of processing error
@@ -25,16 +26,14 @@ case class CreatedFile2(
   blobOpt: Option[BlobStorageRefWithSha1], // for processing
   ownsBlob: Boolean,                       // for delete/resume
   thumbnailLocationOpt: Option[String],    // for delete/resume
-  ownsThumbnail: Boolean,                  // for delete/resume
-  onProgress: Double => Unit,              // for processing
-  canceled: Future[akka.Done]              // for processing
+  ownsThumbnail: Boolean                   // for delete/resume
 ) {
   def asWrittenFile2Opt: Option[WrittenFile2] = blobOpt match {
-    case Some(blob) => Some(WrittenFile2(id, documentSetId, rootId, parentId, filename, contentType, languageCode, metadata, pipelineOptions, blob, onProgress, canceled))
+    case Some(blob) => Some(WrittenFile2(id, fileGroupJob, onProgress, rootId, parentId, filename, contentType, languageCode, metadata, pipelineOptions, blob))
     case None => None
   }
 
   def asProcessedFile2(nChildren: Int, nIngestedChildren: Int): ProcessedFile2 = {
-    ProcessedFile2(id, documentSetId, parentId, nChildren, nIngestedChildren)
+    ProcessedFile2(id, fileGroupJob, parentId, nChildren, nIngestedChildren)
   }
 }

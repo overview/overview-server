@@ -15,7 +15,7 @@ import com.overviewdocs.searchindex.Utf16Snippet
 import com.overviewdocs.util.Logger
 import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.userOwningDocumentSet
-import controllers.backend.{DocumentBackend, DocumentNodeBackend, DocumentTagBackend, HighlightBackend, SelectionBackend}
+import controllers.backend.{DocumentBackend, DocumentNodeBackend, DocumentTagBackend, File2Backend, HighlightBackend, SelectionBackend}
 import models.{Selection,SelectionRequest}
 import models.pagination.PageRequest
 
@@ -23,6 +23,7 @@ class DocumentListController @Inject() (
   documentBackend: DocumentBackend,
   documentNodeBackend: DocumentNodeBackend,
   documentTagBackend: DocumentTagBackend,
+  file2Backend: File2Backend,
   highlightBackend: HighlightBackend,
   blobStorage: BlobStorage,
   protected val selectionBackend: SelectionBackend,
@@ -78,9 +79,18 @@ class DocumentListController @Inject() (
   }
 
   private def lookupThumbnailUrl(document: DocumentHeader): Future[Option[(Long,String)]] = {
-    document.thumbnailLocation match {
+    val futureLocation: Future[Option[String]] = document.file2Id match {
+      case None => Future.successful(document.thumbnailLocation)
+      case Some(file2Id) => {
+        file2Backend.lookupThumbnailBlob(file2Id)
+          .map(option => option.map(_.location))
+      }
+    }
+
+    futureLocation.flatMap(_ match {
       case None => Future.successful(None)
       case Some(location) => {
+        System.err.println("Thumbnail location: " + location)
         blobStorage.getUrl(location, "image/png").transform(_ match {
           case Success(url) => Success(Some((document.id, url)))
           case Failure(ex) => {
@@ -91,7 +101,7 @@ class DocumentListController @Inject() (
           }
         })
       }
-    }
+    })
   }
 
   def index(documentSetId: Long) = authorizedAction(userOwningDocumentSet(documentSetId)).async { implicit request =>

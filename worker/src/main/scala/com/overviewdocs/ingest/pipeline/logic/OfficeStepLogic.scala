@@ -73,7 +73,7 @@ class OfficeStepLogic extends StepLogic {
           "application/pdf",
           input.languageCode,
           input.metadata,
-          input.pipelineOptions.copy(ocr=false)
+          input.pipelineOptions.copy(ocr=false, stepsRemaining=input.pipelineOptions.stepsRemaining.tail)
         ),
         StepOutputFragment.Blob(FileIO.fromPath(outPath)),
         StepOutputFragment.Done

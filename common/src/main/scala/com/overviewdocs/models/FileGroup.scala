@@ -18,7 +18,9 @@ case class FileGroup(
   nBytesProcessed: Option[Long],
   estimatedCompletionTime: Option[Instant],
   metadataJson: JsObject
-)
+) {
+  def documentSetId: Long = addToDocumentSetId.get
+}
 
 object FileGroup {
   case class CreateAttributes(

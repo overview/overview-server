@@ -8,6 +8,7 @@ import scala.language.higherKinds
 import slick.dbio.DBIO
 import slick.jdbc.JdbcBackend.{Database=>DatabaseFactory}
 import slick.lifted.RunnableCompiled
+import slick.sql.SqlStreamingAction
 import slick.util.AsyncExecutor
 import com.typesafe.config.ConfigFactory
 

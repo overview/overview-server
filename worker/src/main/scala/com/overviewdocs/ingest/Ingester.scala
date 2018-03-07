@@ -145,7 +145,7 @@ object Ingester {
         _ <- if (toWrite.nonEmpty) { file2Writer.ingestBatch(toWrite) } else { Future.unit }
       } yield {
         val roots = toWrite.filter(_.parentId.isEmpty)
-        roots.map(root => IngestedRootFile2(root.id, root.documentSetId))
+        roots.map(root => IngestedRootFile2(root.id, root.fileGroupJob))
       }
     }
 

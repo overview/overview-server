@@ -3,12 +3,72 @@ package com.overviewdocs.database
 import org.specs2.mock.Mockito
 import scala.concurrent.Future
 
-import com.overviewdocs.test.DbSpecification
-import com.overviewdocs.models.{ Document, DocumentSet, UploadedFile }
+import com.overviewdocs.blobstorage.BlobStorage
+import com.overviewdocs.models.{BlobStorageRef,Document,DocumentSet,File2,UploadedFile}
 import com.overviewdocs.models.tables._
 import com.overviewdocs.searchindex.IndexClient
+import com.overviewdocs.test.DbSpecification
 
 class DocumentSetDeleterSpec extends DbSpecification with Mockito {
+  trait BaseScope extends DbScope {
+    implicit protected val ec = database.executionContext
+    def numberOfDocuments = 3
+
+    val mockIndexClient = mock[IndexClient]
+    val mockBlobStorage = mock[BlobStorage]
+    mockBlobStorage.deleteMany(any) returns Future.unit
+    mockIndexClient.removeDocumentSet(any) returns Future.unit
+    val deleter = new DocumentSetDeleter {
+      override protected val indexClient = mockIndexClient
+      override protected val blobStorage = mockBlobStorage
+    }
+
+    val documentSet = factory.documentSet()
+    val documents = createDocuments
+
+    def deleteDocumentSet: Unit = await(deleter.delete(documentSet.id))
+
+    def findDocumentSet(documentSetId: Long): Option[DocumentSet] = {
+      import database.api._
+      blockingDatabase.option(DocumentSets.filter(_.id === documentSetId))
+    }
+
+    def fileReferenceCount: Option[Int] = {
+      import database.api._
+      blockingDatabase.option(Files.map(_.referenceCount))
+    }
+
+    def findFile2(file2Id: Long): Option[File2] = {
+      import database.api._
+      blockingDatabase.option(File2s.filter(_.id === file2Id))
+    }
+
+    def createDocuments: Seq[Document] = Seq.fill(numberOfDocuments)(createDocument)
+    def createDocument: Document = factory.document(documentSetId = documentSet.id)
+  }
+
+  trait FileUploadScope extends BaseScope {
+    def refCount = 1
+    
+    override def createDocument = {
+      val file = factory.file(referenceCount = refCount)
+      factory.page(fileId = file.id, pageNumber = 1)
+
+      factory.document(documentSetId = documentSet.id, fileId = Some(file.id))
+    }
+
+  }
+
+  trait SplitFileUploadScope extends BaseScope {
+
+    override def createDocuments = {
+      val file = factory.file()
+      val pages = Seq.tabulate(numberOfDocuments)(n => factory.page(fileId = file.id, pageNumber = n + 1))
+
+      pages.map(p => factory.document(documentSetId = documentSet.id, fileId = Some(file.id),
+        pageId = Some(p.id), pageNumber = Some(p.pageNumber)))
+    }
+  }
 
   "DocumentSetDeleter" should {
 
@@ -134,57 +194,35 @@ class DocumentSetDeleterSpec extends DbSpecification with Mockito {
       
       findDocumentSet(documentSet.id) must beEmpty
     }
-  }
 
-  trait BaseScope extends DbScope {
-    implicit protected val ec = database.executionContext
-    def numberOfDocuments = 3
+    "delete file2s" in new BaseScope {
+      val file2 = factory.file2(blob=Some(BlobStorageRef("foo", 10)), thumbnailBlob=Some(BlobStorageRef("bar", 5)))
+      factory.documentSetFile2(documentSet.id, file2.id)
 
-    val mockIndexClient = smartMock[IndexClient]
-    mockIndexClient.removeDocumentSet(any) returns Future.unit
-    val deleter = new DocumentSetDeleter {
-      override protected val indexClient = mockIndexClient
+      deleteDocumentSet
+
+      findFile2(file2.id) must beNone
+      there was one(mockBlobStorage).deleteMany(Vector("foo", "bar"))
     }
 
-    val documentSet = factory.documentSet()
-    val documents = createDocuments
+    "delete child file2s" in new BaseScope {
+      val rootFile2 = factory.file2()
+      val childFile2 = factory.file2(rootFile2Id=Some(rootFile2.id), parentFile2Id=Some(rootFile2.id))
+      factory.documentSetFile2(documentSet.id, rootFile2.id)
 
-    def deleteDocumentSet: Unit = await(deleter.delete(documentSet.id))
+      deleteDocumentSet
 
-    def findDocumentSet(documentSetId: Long): Option[DocumentSet] = {
-      import database.api._
-      blockingDatabase.option(DocumentSets.filter(_.id === documentSetId))
+      findFile2(childFile2.id) must beNone
     }
 
-    def fileReferenceCount: Option[Int] = {
-      import database.api._
-      blockingDatabase.option(Files.map(_.referenceCount))
-    }
+    "not delete shared file2s" in new BaseScope {
+      val file2 = factory.file2()
+      factory.documentSetFile2(documentSet.id, file2.id)
+      factory.documentSetFile2(factory.documentSet().id, file2.id)
 
-    def createDocuments: Seq[Document] = Seq.fill(numberOfDocuments)(createDocument)
-    def createDocument: Document = factory.document(documentSetId = documentSet.id)
-  }
+      deleteDocumentSet
 
-  trait FileUploadScope extends BaseScope {
-    def refCount = 1
-    
-    override def createDocument = {
-      val file = factory.file(referenceCount = refCount)
-      factory.page(fileId = file.id, pageNumber = 1)
-
-      factory.document(documentSetId = documentSet.id, fileId = Some(file.id))
-    }
-
-  }
-
-  trait SplitFileUploadScope extends BaseScope {
-
-    override def createDocuments = {
-      val file = factory.file()
-      val pages = Seq.tabulate(numberOfDocuments)(n => factory.page(fileId = file.id, pageNumber = n + 1))
-
-      pages.map(p => factory.document(documentSetId = documentSet.id, fileId = Some(file.id),
-        pageId = Some(p.id), pageNumber = Some(p.pageNumber)))
+      findFile2(file2.id) must beSome
     }
   }
 }

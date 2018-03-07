@@ -1,16 +1,18 @@
 package com.overviewdocs.jobhandler.filegroup
 
+import akka.actor.ActorRef
 import akka.stream.{FlowShape,Graph,Materializer}
-import akka.stream.scaladsl.{GraphDSL,MergePreferred,Source}
+import akka.stream.scaladsl.{GraphDSL,MergePreferred,Source,Sink}
 import scala.collection.mutable.ArrayBuffer
-import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration.{Duration,FiniteDuration}
 import scala.concurrent.{ExecutionContext,Future}
 
 import com.overviewdocs.blobstorage.BlobStorage
 import com.overviewdocs.database.Database
-import com.overviewdocs.ingest.models.{WrittenFile2,ProcessedFile2,IngestedRootFile2}
+import com.overviewdocs.ingest.models.{ResumedFileGroupJob,WrittenFile2,ProcessedFile2,IngestedRootFile2,FileGroupProgressState}
 import com.overviewdocs.ingest.pipeline.Step
 import com.overviewdocs.ingest.{File2Writer,GroupedFileUploadToFile2,Processor,Ingester}
+import com.overviewdocs.models.FileGroup
 import com.overviewdocs.models.tables.{FileGroups,GroupedFileUploads}
 import com.overviewdocs.util.{AddDocumentsCommon,Logger}
 
@@ -18,6 +20,7 @@ class FileGroupImportMonitor(
   val database: Database,
   val blobStorage: BlobStorage,
   val steps: Vector[Step],
+  val progressReporter: ActorRef,
   val maxNTextChars: Int,                // see File2Writer.scala docs
   val nDeciders: Int,                    // see Processor.scala docs
   val recurseBufferSize: Int,            // see Processor.scala docs
@@ -27,56 +30,64 @@ class FileGroupImportMonitor(
   private val logger = Logger.forClass(getClass)
   private val inProgress = ArrayBuffer.empty[ResumedFileGroupJob]
 
-  private val fileGroupJobs: Source[ResumedFileGroupJob, akka.NotUsed] = {
-    new FileGroupSource(database, reportProgress _).source
-  }
+  private val fileGroupSource = new FileGroupSource(database, reportProgress _)
 
   private def reportProgress(progressState: FileGroupProgressState): Unit = {
-    //progressReporter ! progressState
+    progressReporter ! progressState
   }
 
-  private def finishIngesting(ingestedFile2: IngestedRootFile2): Future[Unit] = {
-    val job = inProgress.find(_.fileGroup.addToDocumentSetId == Some(ingestedFile2.documentSetId))
-    job match {
-      case None => {
-        logger.warn("Ingested File2 we were not expecting: {}", ingestedFile2.toString)
-        Future.unit
-      }
-      case Some(job) => {
-        job.progressState.incrementNFilesIngested
-        if (job.isComplete) {
-          finishJob(job)
-        } else {
-          Future.unit
-        }
-      }
+  def enqueueFileGroup(fileGroup: FileGroup): Unit = {
+    fileGroupSource.enqueue ! fileGroup
+  }
+
+  private def markFileIngestedInJob(ingested: IngestedRootFile2): ResumedFileGroupJob = {
+    val job = ingested.fileGroupJob
+    if (job.isComplete) {
+      logger.warn("Finishing FileGroup even though it is already complete: {}", job)
+    } else {
+      job.progressState.incrementNFilesIngested
     }
+    job
   }
 
-  lazy val compiledGroupedFileUploadsForFileGroup = {
+  private lazy val compiledGroupedFileUploadsForFileGroup = {
     import database.api._
     Compiled { fileGroupId: Rep[Long] =>
       GroupedFileUploads.filter(_.fileGroupId === fileGroupId)
     }
   }
 
-  lazy val compiledFileGroup = {
+  private lazy val compiledFileGroup = {
     import database.api._
     Compiled { id: Rep[Long] =>
       FileGroups.filter(_.id === id)
     }
   }
 
-  private def finishJob(job: ResumedFileGroupJob): Future[Unit] = {
+  private def addFileGroupFilesToDocumentSetFiles(fileGroupId: Long, documentSetId: Long) = {
+    import database.api._
+    sqlu"""
+      INSERT INTO document_set_file2 (document_set_id, file2_id)
+      SELECT ${documentSetId}, file2_id
+      FROM grouped_file_upload
+      WHERE file_group_id = ${fileGroupId}
+        AND NOT EXISTS (SELECT 1 FROM document_set_file2 WHERE document_set_file2.file2_id = grouped_file_upload.file2_id)
+    """
+  }
+
+  private def finishFileGroupJob(fileGroupJob: ResumedFileGroupJob): Future[Unit] = {
+    val documentSetId = fileGroupJob.documentSetId
+    val fileGroup = fileGroupJob.fileGroup
     for {
-      _ <- database.delete(compiledGroupedFileUploadsForFileGroup(job.fileGroup.id))
-      _ <- database.delete(compiledFileGroup(job.fileGroup.id))
+      _ <- database.runUnit(addFileGroupFilesToDocumentSetFiles(fileGroup.id, documentSetId))
+      _ <- database.delete(compiledGroupedFileUploadsForFileGroup(fileGroup.id))
+      _ <- database.delete(compiledFileGroup(fileGroup.id))
       // TODO _ <- reindexer.runJob(DocumentSetReindexJob(...)) -- maybe just reindex in AddDocumentsCommon?
-      _ <- AddDocumentsCommon.afterAddDocuments(job.fileGroup.addToDocumentSetId.get)
+      _ <- AddDocumentsCommon.afterAddDocuments(documentSetId)
     } yield ()
   }
 
-  def cancelAllJobsForDocumentSet(documentSetId: Long): Unit = {
+  def cancelAllJobsForDocumentSet(documentSetId: Long): Unit = synchronized {
     inProgress
       .filter(_.documentSetId == documentSetId)
       .foreach(job => job.cancel)
@@ -100,5 +111,42 @@ class FileGroupImportMonitor(
 
       new FlowShape(resumer.in, ingester.out)
     }
+  }
+
+  private def addInProgress(job: ResumedFileGroupJob): Unit = synchronized { inProgress.+=(job) }
+  private def removeInProgress(job: ResumedFileGroupJob): Unit = synchronized { inProgress.-=(job) }
+  private def isInProgress(job: ResumedFileGroupJob): Boolean = synchronized { inProgress.contains(job) }
+
+  def run: Future[Unit] = {
+    fileGroupSource.source                     // ResumedFileGroupJob
+      .map { job => addInProgress(job); job }
+      .via(graph)                              // IngestedFile2Root
+      .map(markFileIngestedInJob _)            // ResumedFileGroupJob
+      .filter(_.isComplete)                    // Complete ResumedFileGroupJob
+      .filter(isInProgress _)                  // avoid a warning
+      .map { job => removeInProgress(job); job }
+      .mapAsync(1)(finishFileGroupJob _)       // Unit -- now the FileGroup is deleted
+      .runReduce((_, _) => ()) // Future[Unit]
+  }
+}
+
+object FileGroupImportMonitor {
+  def withProgressReporter(
+    progressReporter: ActorRef
+  )(implicit ec: ExecutionContext, mat: Materializer): FileGroupImportMonitor = {
+    import com.typesafe.config.ConfigFactory
+    val config = ConfigFactory.load
+
+    new FileGroupImportMonitor(
+      Database(),
+      BlobStorage,
+      com.overviewdocs.ingest.pipeline.Step.All,
+      progressReporter,
+      config.getInt("max_n_chars_per_document"),
+      config.getInt("n_document_converters"),
+      config.getInt("max_ingest_recurse_buffer_length"),
+      config.getInt("ingest_batch_size"),
+      Duration.fromNanos(config.getDuration("ingest_batch_max_wait").toNanos)
+    )
   }
 }

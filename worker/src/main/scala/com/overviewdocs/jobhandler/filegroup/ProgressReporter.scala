@@ -6,10 +6,13 @@ import scala.collection.mutable
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext,Future}
 
+import com.overviewdocs.database.Database
+import com.overviewdocs.ingest.models.FileGroupProgressState
 import com.overviewdocs.models.FileGroup
+import com.overviewdocs.models.tables.FileGroups
 
 class ProgressReporter(
-  //val addDocumentsImpl: AddDocumentsImpl,
+  val database: Database,
 
   /** Delays writing.
     *
@@ -21,12 +24,12 @@ class ProgressReporter(
   import ProgressReporter._
   import context.dispatcher
 
-  private val pendingUpdates: mutable.Map[Long,Update] = mutable.Map()
+  private val pendingUpdates: mutable.Map[Long,FileGroupProgressState] = mutable.Map()
   private var isFlushScheduled: Boolean = false
 
   override def receive = {
-    case update: Update => {
-      pendingUpdates(update.fileGroupId) = update
+    case update: FileGroupProgressState => {
+      pendingUpdates(update.fileGroup.id) = update
       if (!isFlushScheduled) {
         isFlushScheduled = true
         scheduleFlush
@@ -55,11 +58,37 @@ class ProgressReporter(
     }
   }
 
-  private def flush(updates: Iterator[Update]): Future[Unit] = {
+  private lazy val writeProgressCompiled = {
+    import com.overviewdocs.database.Slick.api._
+
+    Compiled { fileGroupId: Rep[Long] =>
+      FileGroups
+        .filter(_.id === fileGroupId)
+        .map(g => (g.nFilesProcessed, g.nBytesProcessed, g.estimatedCompletionTime))
+    }
+  }
+
+  private def writeProgress(
+    fileGroupId: Long,
+    nFilesProcessed: Int,
+    nBytesProcessed: Long,
+    estimatedCompletionTime: Instant
+  )(implicit ec: ExecutionContext): Future[Unit] = {
+    import database.api._
+
+    database.runUnit(writeProgressCompiled(fileGroupId).update((
+      Some(nFilesProcessed),
+      Some(nBytesProcessed),
+      Some(estimatedCompletionTime)
+    )))
+  }
+
+  private def flush(updates: Iterator[FileGroupProgressState]): Future[Unit] = {
     if (updates.hasNext) {
-      val u = updates.next
-      //addDocumentsImpl.writeProgress(u.fileGroupId, u.nFilesProcessed, u.nBytesProcessed, u.estimatedCompletionTime)
-      flush(updates)//  .flatMap { _ => flush(updates) }
+      val state = updates.next
+      val report = state.getProgressReport
+      writeProgress(state.fileGroup.id, report.nFilesProcessed, report.nBytesProcessed, report.estimatedCompletionTime)
+        .flatMap { _ => flush(updates) }
     } else {
       Future.unit
     }
@@ -69,15 +98,12 @@ class ProgressReporter(
 }
 
 object ProgressReporter {
-  /** Schedule a progress update. */
-  case class Update(fileGroupId: Long, nFilesProcessed: Int, nBytesProcessed: Long, estimatedCompletionTime: Instant)
-
   /** Internal (plus tests): write to the database right away. */
   private[filegroup] case object Flush
 
   private val DefaultWriteDelay = FiniteDuration(200, "ms")
 
-  def props(/*addDocumentsImpl: AddDocumentsImpl*/): Props = {
-    Props(new ProgressReporter(/*addDocumentsImpl, */DefaultWriteDelay))
+  def props: Props = {
+    Props(new ProgressReporter(Database(), DefaultWriteDelay))
   }
 }

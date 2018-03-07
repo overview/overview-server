@@ -1,4 +1,4 @@
-package com.overviewdocs.jobhandler.filegroup
+package com.overviewdocs.ingest.models
 
 import com.google.common.collect.{Range=>GRange,RangeSet,TreeRangeSet}
 import java.time.Instant

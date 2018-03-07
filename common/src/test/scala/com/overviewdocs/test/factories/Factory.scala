@@ -103,6 +103,12 @@ trait Factory {
     deleted: Boolean = false
   ): DocumentSet
 
+  /** Creates a new DocumentSetFile2 with the given parameters. */
+  def documentSetFile2(
+    documentSetId: Long = 0L,
+    file2Id: Long = 0L
+  ): DocumentSetFile2
+
   /** Creates a DocumentCloudImport with the given parameters. */
   def documentCloudImport(
     id: Int = 0,

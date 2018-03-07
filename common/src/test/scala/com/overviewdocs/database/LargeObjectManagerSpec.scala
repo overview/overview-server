@@ -32,7 +32,7 @@ class LargeObjectManagerSpec extends DbSpecification {
       trait OpenScope extends BaseScope
 
       "throw a programmer-readable error on invalid OID" in new OpenScope {
-        run(loManager.open(oid + 1, LargeObject.Mode.Read)) must throwA[SQLException]
+        run(loManager.open(oid + 1, LargeObject.Mode.Read)) must throwA[exceptions.UndefinedObject]
       }
 
       "return a LargeObject" in new OpenScope {
@@ -44,12 +44,12 @@ class LargeObjectManagerSpec extends DbSpecification {
       trait UnlinkScope extends BaseScope
 
       "throw a programmer-readable error on invalid OID" in new UnlinkScope {
-        run(loManager.unlink(oid + 1)) must throwA[SQLException]
+        run(loManager.unlink(oid + 1)) must throwA[exceptions.UndefinedObject]
       }
 
       "delete the LargeObject" in new UnlinkScope {
         run(loManager.unlink(oid))
-        run(loManager.open(oid, LargeObject.Mode.Read)) must throwA[SQLException]
+        run(loManager.open(oid, LargeObject.Mode.Read)) must throwA[exceptions.UndefinedObject]
       }
     }
   }

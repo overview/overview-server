@@ -1,5 +1,6 @@
 package com.overviewdocs.pdfocr
 
+import akka.util.ByteString
 import com.google.common.io.ByteStreams
 import java.io.{ByteArrayInputStream,InputStream}
 import org.specs2.matcher.{Expectable,Matcher}
@@ -33,31 +34,6 @@ class SplitPdfAndExtractTextParserSpec extends Specification {
     def inputBytes: Array[Byte] = empty
     def input: InputStream = new ByteArrayInputStream(inputBytes)
     lazy val parser = new SplitPdfAndExtractTextParser(input)
-
-    case class BeSomePageText(val expectText: String) extends Matcher[Option[Token]] {
-      def apply[S <: Option[Token]](e: Expectable[S]) = {
-        val problem: Option[String] = e.value match {
-          case Some(PageText(nBytes, inputStream)) => {
-            val bytes = new Array[Byte](nBytes)
-            inputStream.read(bytes)
-            val actualText = new String(bytes)
-            if (expectText == actualText) {
-              None
-            } else {
-              Some(" is PageText but contains '" + actualText + "', expected '" + expectText + "'")
-            }
-          }
-          case _ => Some(" is not PageText")
-        }
-        result(
-          problem.isEmpty,
-          e.description + " matches PageText(" + expectText + ")",
-          e.description + " " + problem.get,
-          e
-        )
-      }
-    }
-    def beSomePageText(expectText: String): Matcher[Option[Token]] = new BeSomePageText(expectText)
   }
 
   "SplitPdfAndExtractTextParser" should {
@@ -82,71 +58,37 @@ class SplitPdfAndExtractTextParserSpec extends Specification {
       override def inputBytes = header(1) ++ page(false, empty, empty, "text")
       await(parser.next)
       await(parser.next)
-      await(parser.next) must beSomePageText("text")
+      await(parser.next) must beSome(PageText(ByteString("text")))
     }
 
     "produce a PageThumbnail blob" in new BaseScope {
       override def inputBytes = header(1) ++ page(false, Array(5.toByte), empty, "text")
       await(parser.next)
       await(parser.next)
-      await(parser.next) match {
-        case Some(PageThumbnail(nBytes, inputStream)) => {
-          nBytes must beEqualTo(1)
-          ByteStreams.toByteArray(inputStream) must beEqualTo(Array(5.toByte))
-        }
-        case _ => ???
-      }
+      await(parser.next) must beSome(PageThumbnail(ByteString(Array(5.toByte))))
     }
 
-    "produce a PageText after a PageThumbnail if we read it" in new BaseScope {
-      override def inputBytes = header(1) ++ page(false, Array(5.toByte), empty, "text")
-      await(parser.next)
-      await(parser.next)
-      await(parser.next) match {
-        case Some(PageThumbnail(_, inputStream)) => ByteStreams.exhaust(inputStream)
-        case _ => ???
-      }
-      await(parser.next) must beSomePageText("text")
-    }
-
-    "produce a PageText after a PageThumbnail if we don't read it" in new BaseScope {
+    "produce a PageText after a PageThumbnail" in new BaseScope {
       override def inputBytes = header(1) ++ page(false, Array(5.toByte), empty, "text")
       await(parser.next)
       await(parser.next)
       await(parser.next)
-      await(parser.next) must beSomePageText("text")
+      await(parser.next) must beSome(PageText(ByteString("text")))
     }
 
     "produce a PagePdf blob" in new BaseScope {
       override def inputBytes = header(1) ++ page(false, empty, Array(5.toByte), "text")
       await(parser.next)
       await(parser.next)
-      await(parser.next) match {
-        case Some(PagePdf(nBytes, inputStream)) => {
-          nBytes must beEqualTo(1)
-          ByteStreams.toByteArray(inputStream) must beEqualTo(Array(5.toByte))
-        }
-        case _ => ???
-      }
+      await(parser.next) must beSome(PagePdf(ByteString(Array(5.toByte))))
     }
 
-    "produce a PageText after a PagePdf if we read it" in new BaseScope {
-      override def inputBytes = header(1) ++ page(false, empty, Array(5.toByte), "text")
-      await(parser.next)
-      await(parser.next)
-      await(parser.next) match {
-        case Some(PagePdf(nBytes, inputStream)) => ByteStreams.exhaust(inputStream)
-        case _ => ???
-      }
-      await(parser.next) must beSomePageText("text")
-    }
-
-    "produce a Page after a PagePdf if we don't read it" in new BaseScope {
+    "produce a PageText after a PagePdf" in new BaseScope {
       override def inputBytes = header(1) ++ page(false, empty, Array(5.toByte), "text")
       await(parser.next)
       await(parser.next)
       await(parser.next)
-      await(parser.next) must beSomePageText("text")
+      await(parser.next) must beSome(PageText(ByteString("text")))
     }
 
     "produce a PageText after a PageThumbnail and PagePdf" in new BaseScope {
@@ -155,7 +97,7 @@ class SplitPdfAndExtractTextParserSpec extends Specification {
       await(parser.next)
       await(parser.next)
       await(parser.next)
-      await(parser.next) must beSomePageText("text")
+      await(parser.next) must beSome(PageText(ByteString("text")))
     }
 
     "produce a PdfError when input indicates an error in a PDF" in new BaseScope {

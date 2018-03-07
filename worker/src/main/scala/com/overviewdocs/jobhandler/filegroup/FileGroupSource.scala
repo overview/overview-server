@@ -9,6 +9,7 @@ import scala.concurrent.{ExecutionContext,Future,Promise}
 import com.overviewdocs.database.Database
 import com.overviewdocs.models.FileGroup
 import com.overviewdocs.models.tables.{File2s,FileGroups,GroupedFileUploads}
+import com.overviewdocs.ingest.models.{FileGroupProgressState,ResumedFileGroupJob}
 
 /** All the un-ingested FileGroups we have.
   *
@@ -38,9 +39,7 @@ class FileGroupSource(
     } yield Source(fileGroups)
 
     val actorSource = Source.actorRef[FileGroup](bufferSize, OverflowStrategy.fail)
-      .map { value => System.err.println("Providing value " + value); value }
-      .mapMaterializedValue(mat => { sourceActorRef = mat; System.err.println("sourceActorRef set in thread " + Thread.currentThread.getId); akka.NotUsed })
-      .watchTermination()((_, futureDone) => futureDone.onComplete { case _ => System.err.println("actorSource completed"); akka.NotUsed })
+      .mapMaterializedValue(mat => { sourceActorRef = mat; akka.NotUsed })
 
     Source.fromFutureSource(resumeSourceFuture)
       .mapMaterializedValue(_ => akka.NotUsed)

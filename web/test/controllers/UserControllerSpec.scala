@@ -9,7 +9,7 @@ import models.{PotentialNewUser,User}
 
 class UserControllerSpec extends ControllerSpecification {
   trait OurScope extends Scope {
-    val mockBackendStuff = smartMock[UserController.BackendStuff]
+    val mockBackendStuff = mock[UserController.BackendStuff]
     val controller = new UserController(
       Configuration("overview.contact_url" -> "https://contact.us", "overview.allow_registration" -> true),
       mockBackendStuff,

@@ -4,5 +4,5 @@ package com.overviewdocs.ingest.models
   */
 case class IngestedRootFile2(
   id: Long,
-  documentSetId: Long
+  fileGroupJob: ResumedFileGroupJob
 )

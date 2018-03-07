@@ -208,7 +208,7 @@ class UserControllerSpec extends controllers.ControllerSpecification with JsonMa
       }
 
       "return BadRequest when the user already exists" in new CreateScope {
-        mockBackend.create(any) returns Future.failed(new Conflict(new Throwable()))
+        mockBackend.create(any) returns Future.failed(new Conflict(new java.sql.SQLException()))
         h.status(result) must beEqualTo(h.BAD_REQUEST)
       }
 

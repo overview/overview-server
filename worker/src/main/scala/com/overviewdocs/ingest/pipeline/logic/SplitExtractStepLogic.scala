@@ -52,10 +52,6 @@ class SplitExtractStepLogic(
       File2.Metadata(json)
     }
 
-    def streamToSource(inputStream: InputStream): Source[ByteString, _] = {
-      StreamConverters.fromInputStream(() => inputStream, inputStreamChunkSize)
-    }
-
     def open: Future[State] = {
       for {
         // 1. Download from BlobStorage to tempfile
@@ -78,7 +74,7 @@ class SplitExtractStepLogic(
     }
 
     def readToken(state: State): Future[Option[SplitPdfAndExtractTextParser.Token]] = {
-      if (input.canceled.isCompleted) state.child.destroyForcibly
+      if (input.fileGroupJob.isCanceled) state.child.destroyForcibly
 
       state.parser.next
     }
@@ -86,7 +82,7 @@ class SplitExtractStepLogic(
     def tokenToFragments(token: SplitPdfAndExtractTextParser.Token): Vector[StepOutputFragment] = {
       import SplitPdfAndExtractTextParser.Token
 
-      (input.canceled.isCompleted, token) match {
+      (input.fileGroupJob.isCanceled, token) match {
         case (true, _) => Vector(
           StepOutputFragment.Canceled
         )
@@ -105,16 +101,16 @@ class SplitExtractStepLogic(
               augmentedMetadata(isOcr, pageNumber),
               augmentedPipelineOptions
             )
-          )
+          ) ++ (if (!input.pipelineOptions.splitByPage) { Vector(StepOutputFragment.InheritBlob) } else { Vector() })
         }
-        case (_, Token.PageThumbnail(_, inputStream)) => Vector(
-          StepOutputFragment.Thumbnail("image/png", streamToSource(inputStream))
+        case (_, Token.PageThumbnail(byteString)) => Vector(
+          StepOutputFragment.Thumbnail("image/png", Source.single(byteString))
         )
-        case (_, Token.PagePdf(_, inputStream)) => Vector(
-          StepOutputFragment.Blob(streamToSource(inputStream))
+        case (_, Token.PagePdf(byteString)) => Vector(
+          StepOutputFragment.Blob(Source.single(byteString))
         )
-        case (_, Token.PageText(_, inputStream)) => Vector(
-          StepOutputFragment.Text(streamToSource(inputStream))
+        case (_, Token.PageText(byteString)) => Vector(
+          StepOutputFragment.Text(Source.single(byteString))
         )
         case (_, Token.PdfError(message)) => Vector(
           StepOutputFragment.FileError(message)

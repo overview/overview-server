@@ -10,6 +10,6 @@ package com.overviewdocs.models
   * it makes more sense to start at the _tail_.
   */
 case class DocumentSetFile2(
-  documentSetId: Int,
+  documentSetId: Long,
   file2Id: Long
 )
