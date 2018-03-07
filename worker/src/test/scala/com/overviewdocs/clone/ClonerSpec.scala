@@ -39,6 +39,11 @@ class ClonerSpec extends DbSpecification with Mockito {
         blockingDatabase.seq(Documents.filter(_.documentSetId === destinationDocumentSet.id).sortBy(_.id))
       }
 
+      def dbDocumentSetFile2s = {
+        import database.api._
+        blockingDatabase.seq(DocumentSetFile2s.filter(_.documentSetId === destinationDocumentSet.id).sortBy(_.file2Id))
+      }
+
       def dbFiles = {
         import database.api._
         blockingDatabase.seq(Files.sortBy(_.id))
@@ -85,6 +90,13 @@ class ClonerSpec extends DbSpecification with Mockito {
             .sortBy(nd => (nd.nodeId, nd.documentId))
         )
       }
+    }
+
+    "clone file2 references" in new BaseScope {
+      val file2 = factory.file2()
+      factory.documentSetFile2(documentSetId=sourceDocumentSet.id, file2Id=file2.id)
+      go
+      dbDocumentSetFile2s.map(_.file2Id) must beEqualTo(Seq(file2.id))
     }
 
     "clone document text" in new BaseScope {
@@ -223,7 +235,7 @@ class ClonerSpec extends DbSpecification with Mockito {
     "resume after copying documents" in new BaseScope {
       val doc1 = factory.document(documentSetId=123L, id=(123L << 32) | 1)
       factory.document(documentSetId=234L, id=(234L << 32) | 1)
-      override val stepNumber = 1.toShort
+      override val stepNumber = 2.toShort
       go
       dbDocuments.length must beEqualTo(1)
     }
