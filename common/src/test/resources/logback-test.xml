@@ -36,8 +36,8 @@
   <logger name="com.overviewdocs.background.filecleanup" level="OFF"/>
   <logger name="com.overviewdocs.background.filegroupcleanup" level="OFF"/>
   <logger name="com.overviewdocs.documentcloud.DocumentRetriever" level="ERROR"/>
+  <logger name="com.overviewdocs.ingest" level="WARN"/>
   <logger name="com.overviewdocs.nlp" level="WARN"/>
-  <logger name="com.overviewdocs.messagequeue" level="OFF"/>
   <logger name="com.overviewdocs.jobhandler.documentset" level="ERROR"/>
   <logger name="com.overviewdocs.jobhandler.filegroup" level="OFF"/>
 
