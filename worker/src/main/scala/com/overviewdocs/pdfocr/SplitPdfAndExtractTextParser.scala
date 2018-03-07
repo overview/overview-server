@@ -88,23 +88,20 @@ class SplitPdfAndExtractTextParser(val inputStream: InputStream) {
   }
 
   private def readPageAfterPdf(nRemaining: Int)(implicit ec: ExecutionContext): Future[(Option[Token],State)] = {
-    readInt.flatMap(_ match {
-      case 0 => readPageHeader(nRemaining - 1) // on to the next page
-      case nTextBytes: Int => {
-        // ICK ICK ICK. We have to read it all now, because the caller may call
-        // .next anytime in the future and we'll want it to read the subsequent
-        // byte.
-        //
-        // This could make us run out of RAM. We should change the binary to
-        // upload to us via HTTP instead, so we can stream nicely.
-        val buf = new Array[Byte](nTextBytes)
-        blocking(ByteStreams.readFully(inputStream, buf))
-        Future.successful((
-          Some(Token.PageText(ByteString(buf))),
-          State.GotTextExpectNPagesIncludingThisOne(nRemaining)
-        ))
-      }
-    })
+    readInt.flatMap { nTextBytes: Int =>
+      // ICK ICK ICK. We have to read it all now, because the caller may call
+      // .next anytime in the future and we'll want it to read the subsequent
+      // byte.
+      //
+      // This could make us run out of RAM. We should change the binary to
+      // upload to us via HTTP instead, so we can stream nicely.
+      val buf = new Array[Byte](nTextBytes)
+      blocking(ByteStreams.readFully(inputStream, buf))
+      Future.successful((
+        Some(Token.PageText(ByteString(buf))),
+        State.GotTextExpectNPagesIncludingThisOne(nRemaining)
+      ))
+    }
   }
 
   private def readPageAfterThumbnail(nRemaining: Int)(implicit ec: ExecutionContext): Future[(Option[Token],State)] = {
