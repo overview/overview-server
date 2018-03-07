@@ -31,7 +31,8 @@ class IngesterSpec extends Specification with Mockito {
     val fileGroup = factory.fileGroup(addToDocumentSetId=Some(2L))
     val fileGroupJob = ResumedFileGroupJob(
       fileGroup,
-      new FileGroupProgressState(fileGroup, 0, 0L, Instant.now, _ => (), Promise[akka.Done]())
+      new FileGroupProgressState(fileGroup, 0, 0L, Instant.now, _ => (), Promise[akka.Done]()),
+      () => ()
     )
     val input: Vector[ProcessedFile2]
 

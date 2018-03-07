@@ -1,18 +1,20 @@
-package com.overviewdocs.clone
+package com.overviewdocs.searchindex
 
 import scala.concurrent.Future
 
 import com.overviewdocs.database.HasDatabase
-import com.overviewdocs.searchindex.{LuceneIndexClient,IndexClient}
 import com.overviewdocs.models.Document
 import com.overviewdocs.models.tables.Documents
+import com.overviewdocs.util.Logger
 
-trait Indexer {
+trait DocumentSetReindexer {
   protected val indexClient: IndexClient
-  def indexDocuments(documentSetId: Long): Future[Unit]
+  def reindexDocumentSet(documentSetId: Long): Future[Unit]
 }
 
-object Indexer extends Indexer with HasDatabase {
+object DocumentSetReindexer extends DocumentSetReindexer with HasDatabase {
+  private val logger = Logger.forClass(getClass)
+
   import database.api._
   import database.executionContext
 
@@ -20,11 +22,15 @@ object Indexer extends Indexer with HasDatabase {
 
   private val NDocumentsPerBatch = 30 // ~1MB/document max
 
-  def indexDocuments(documentSetId: Long): Future[Unit] = {
+  def reindexDocumentSet(documentSetId: Long): Future[Unit] = {
+    logger.info("Reindexing DocumentSet {}", documentSetId)
     for {
+      _ <- indexClient.removeDocumentSet(documentSetId)
       _ <- indexClient.addDocumentSet(documentSetId)
       _ <- indexEachDocument(documentSetId)
-    } yield ()
+    } yield {
+      logger.info("Finished reindexing DocumentSet {}", documentSetId)
+    }
   }
 
   private def indexRemainingBatches(documentSetId: Long, idsIt: Iterator[Seq[Long]]): Future[Unit] = {

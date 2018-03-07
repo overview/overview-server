@@ -39,7 +39,8 @@ class File2WriterSpec extends DbSpecification with Mockito {
         )
         val fileGroupJob = ResumedFileGroupJob(
           fileGroup,
-          new FileGroupProgressState(fileGroup, 0, 0L, Instant.now, _ => (), Promise[akka.Done]())
+          new FileGroupProgressState(fileGroup, 0, 0L, Instant.now, _ => (), Promise[akka.Done]()),
+          () => ()
         )
 
         val parentBlob: BlobStorageRef = BlobStorageRef("foo", 10)
@@ -303,7 +304,8 @@ class File2WriterSpec extends DbSpecification with Mockito {
         )
         val fileGroupJob = ResumedFileGroupJob(
           fileGroup,
-          new FileGroupProgressState(fileGroup, 0, 0L, Instant.now, _ => (), Promise[akka.Done]())
+          new FileGroupProgressState(fileGroup, 0, 0L, Instant.now, _ => (), Promise[akka.Done]()),
+          () => ()
         )
 
         lazy val dbDocumentsQuery = {
@@ -383,7 +385,8 @@ class File2WriterSpec extends DbSpecification with Mockito {
         )
         val fileGroupJob2 = ResumedFileGroupJob(
           fileGroup2,
-          new FileGroupProgressState(fileGroup2, 0, 0L, Instant.now, _ => (), Promise[akka.Done]())
+          new FileGroupProgressState(fileGroup2, 0, 0L, Instant.now, _ => (), Promise[akka.Done]()),
+          () => ()
         )
 
         ingest(Vector(

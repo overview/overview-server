@@ -34,17 +34,21 @@ class FileGroupSource(
     * all FileGroups sent to `.enqueue`.
     */
   val source: Source[ResumedFileGroupJob, akka.NotUsed] = {
-    val resumeSourceFuture: Future[Source[FileGroup, akka.NotUsed]] = for {
-      fileGroups <- toResume
-    } yield Source(fileGroups)
+    //val resumeSourceFuture: Future[Source[FileGroup, akka.NotUsed]] = for {
+    //  fileGroups <- toResume
+    //} yield Source(fileGroups)
 
-    val actorSource = Source.actorRef[FileGroup](bufferSize, OverflowStrategy.fail)
+    //val actorSource = Source.actorRef[FileGroup](bufferSize, OverflowStrategy.fail)
+    //  .mapMaterializedValue(mat => { sourceActorRef = mat; akka.NotUsed })
+
+    //Source.fromFutureSource(resumeSourceFuture)
+    //  .mapMaterializedValue(_ => akka.NotUsed)
+    //  .concat(actorSource)
+    //  .mapAsync(1)(resumeFileGroupJob _)
+
+    Source.actorRef[(FileGroup,() => Unit)](bufferSize, OverflowStrategy.fail)
       .mapMaterializedValue(mat => { sourceActorRef = mat; akka.NotUsed })
-
-    Source.fromFutureSource(resumeSourceFuture)
-      .mapMaterializedValue(_ => akka.NotUsed)
-      .concat(actorSource)
-      .mapAsync(1)(resumeFileGroupJob _)
+      .mapAsync(1)((resumeFileGroupJob _).tupled)
   }
 
   /** Actor which accepts FileGroups for emitting.
@@ -73,7 +77,10 @@ class FileGroupSource(
     }
   }
 
-  private def resumeFileGroupJob(fileGroup: FileGroup): Future[ResumedFileGroupJob] = {
+  private def resumeFileGroupJob(
+    fileGroup: FileGroup,
+    onComplete: () => Unit
+  ): Future[ResumedFileGroupJob] = {
     for {
       nBytesVec: Vector[Int] <- database.seq(fileGroupIngestStatsCompiled(fileGroup.id))
     } yield ResumedFileGroupJob(
@@ -85,7 +92,8 @@ class FileGroupSource(
         Instant.now,
         onProgress,
         Promise[akka.Done]()
-      )
+      ),
+      onComplete
     )
   }
 }

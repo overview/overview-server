@@ -6,12 +6,13 @@ import scala.concurrent.Future
 import com.overviewdocs.database.HasDatabase
 import com.overviewdocs.models.CloneJob
 import com.overviewdocs.models.tables.CloneJobs
+import com.overviewdocs.searchindex.DocumentSetReindexer
 import com.overviewdocs.util.AddDocumentsCommon
 
 /** Clones document sets.
   */
 trait Cloner extends HasDatabase {
-  protected val indexer: Indexer
+  protected val documentSetReindexer: DocumentSetReindexer
 
   /** Clones a document set.
     *
@@ -58,7 +59,7 @@ trait Cloner extends HasDatabase {
   }
 
   private def indexDocuments(cloneJob: CloneJob): Future[Unit] = {
-    indexer.indexDocuments(cloneJob.destinationDocumentSetId)
+    documentSetReindexer.reindexDocumentSet(cloneJob.destinationDocumentSetId)
   }
 
   import database.api._
@@ -233,5 +234,5 @@ trait Cloner extends HasDatabase {
 }
 
 object Cloner extends Cloner {
-  override protected val indexer = Indexer
+  override protected val documentSetReindexer = DocumentSetReindexer
 }
