@@ -90,7 +90,6 @@ class DocumentListController @Inject() (
     futureLocation.flatMap(_ match {
       case None => Future.successful(None)
       case Some(location) => {
-        System.err.println("Thumbnail location: " + location)
         blobStorage.getUrl(location, "image/png").transform(_ match {
           case Success(url) => Success(Some((document.id, url)))
           case Failure(ex) => {
