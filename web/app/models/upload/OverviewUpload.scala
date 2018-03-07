@@ -41,7 +41,7 @@ object OverviewUpload extends HasBlockingDatabase {
   import database.api._
 
   lazy val inserter = (Uploads.map(_.createAttributes) returning Uploads)
-  lazy val updater = Compiled { (id: Rep[Long]) => Uploads.map(_.updateAttributes) }
+  lazy val updater = Compiled { (id: Rep[Long]) => Uploads.filter(_.id === id).map(_.updateAttributes) }
 
   def apply(upload: Upload, uploadedFile: UploadedFile): OverviewUpload = {
     new OverviewUploadImpl(upload, OverviewUploadedFile(uploadedFile))
