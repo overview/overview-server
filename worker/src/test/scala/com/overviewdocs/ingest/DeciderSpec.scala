@@ -10,7 +10,7 @@ import org.specs2.specification.Scope
 import scala.concurrent.{ExecutionContext,Future}
 
 import com.overviewdocs.blobstorage.BlobStorage
-import com.overviewdocs.ingest.models.{BlobStorageRefWithSha1,WrittenFile2}
+import com.overviewdocs.ingest.models.{BlobStorageRefWithSha1,WrittenFile2,ResumedFileGroupJob}
 import com.overviewdocs.ingest.pipeline.Step
 import com.overviewdocs.models.{BlobStorageRef,File2}
 import com.overviewdocs.test.ActorSystemContext
@@ -29,7 +29,8 @@ class DeciderSpec extends Specification with Mockito {
       stepsRemaining: Vector[String]
     ) = WrittenFile2(
       0L,
-      0L,
+      mock[ResumedFileGroupJob],
+      _ => (),
       None,
       None,
       filename,
@@ -37,9 +38,7 @@ class DeciderSpec extends Specification with Mockito {
       "en",
       File2.Metadata(JsObject(Seq())),
       File2.PipelineOptions(ocr, false, stepsRemaining),
-      BlobStorageRefWithSha1(BlobStorageRef("foo", 10), "abc".getBytes),
-      _ => (),
-      Future.never
+      BlobStorageRefWithSha1(BlobStorageRef("foo", 10), "abc".getBytes)
     )
 
     val mockBlobStorage = mock[BlobStorage]

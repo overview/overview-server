@@ -87,6 +87,7 @@ class DbDocumentBackend @Inject() (
     override val pageNumber = None
     override val createdAt = new java.util.Date(0L)
     override val displayMethod = DocumentDisplayMethod.auto
+    override val file2Id = None
     override val isFromOcr = false
     override val metadataJson = JsObject(Seq())
     override val text = ""

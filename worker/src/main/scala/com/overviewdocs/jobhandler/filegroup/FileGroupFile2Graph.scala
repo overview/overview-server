@@ -5,7 +5,7 @@ import akka.stream.scaladsl.{Flow,GraphDSL,Partition,Source}
 import scala.concurrent.{ExecutionContext,Future}
 
 import com.overviewdocs.database.Database
-import com.overviewdocs.ingest.models.{BlobStorageRefWithSha1,WrittenFile2,ProcessedFile2}
+import com.overviewdocs.ingest.models.{ResumedFileGroupJob,BlobStorageRefWithSha1,WrittenFile2,ProcessedFile2,ProgressPiece}
 import com.overviewdocs.ingest.GroupedFileUploadToFile2
 import com.overviewdocs.models.{File2,FileGroup,GroupedFileUpload}
 import com.overviewdocs.models.tables.{File2s,GroupedFileUploads}
@@ -32,10 +32,11 @@ class FileGroupFile2Graph(
 ) {
   private case class InternalFile2(writtenFile2: WrittenFile2, processedFile2Opt: Option[ProcessedFile2])
   private object InternalFile2 {
-    def apply(file2: File2, documentSetId: Long, progressPiece: ProgressPiece, canceled: Future[akka.Done], nIngestedChildren: Int) = new InternalFile2(
+    def apply(file2: File2, fileGroupJob: ResumedFileGroupJob, progressPiece: ProgressPiece, nIngestedChildren: Int) = new InternalFile2(
       WrittenFile2(
         file2.id,
-        documentSetId,
+        fileGroupJob,
+        progressPiece.onProgress,
         file2.rootFile2Id,
         file2.parentFile2Id,
         file2.filename,
@@ -43,13 +44,11 @@ class FileGroupFile2Graph(
         file2.languageCode,
         file2.metadata,
         file2.pipelineOptions,
-        BlobStorageRefWithSha1(file2.blob.get, file2.blobSha1),
-        progressPiece.onProgress,
-        canceled
+        BlobStorageRefWithSha1(file2.blob.get, file2.blobSha1)
       ),
       file2.processedAt.map(_ => ProcessedFile2(
         file2.id,
-        documentSetId,
+        fileGroupJob,
         file2.parentFile2Id,
         file2.nChildren.get,
         nIngestedChildren
@@ -101,7 +100,7 @@ class FileGroupFile2Graph(
     val internalFile2sFuture = for {
       roots: Vector[GroupedFileUpload] <- database.seq(loadRootFile2s(job.fileGroup.id))
       file2Roots: Vector[File2] <- Future.sequence(roots.map(gfu => groupedFileUploadToFile2.groupedFileUploadToFile2(job.fileGroup, gfu)))
-      internalizedRoots: Vector[InternalFile2] <- internalizeRoots(job.progressState, job.documentSetId, file2Roots)
+      internalizedRoots: Vector[InternalFile2] <- internalizeRoots(file2Roots, job)
     } yield Source(internalizedRoots)
 
     Source.fromFutureSource(internalFile2sFuture)
@@ -109,51 +108,47 @@ class FileGroupFile2Graph(
   }
 
   private def internalizeRoots(
-    state: FileGroupProgressState,
-    documentSetId: Long,
-    file2s: Vector[File2]
+    file2s: Vector[File2],
+    fileGroupJob: ResumedFileGroupJob
   )(implicit ec: ExecutionContext): Future[Vector[InternalFile2]] = {
     // Icky code: will run lots of queries on resume
-    Future.sequence(file2s.map(file2 => internalizeRoot(state, documentSetId, file2)))
+    Future.sequence(file2s.map(file2 => internalizeRoot(file2, fileGroupJob)))
       .map(vectors => vectors.flatMap(identity))
   }
 
   private def internalizeRoot(
-    state: FileGroupProgressState,
-    documentSetId: Long,
-    file2: File2
+    file2: File2,
+    fileGroupJob: ResumedFileGroupJob
   )(implicit ec: ExecutionContext): Future[Vector[InternalFile2]] = {
-    val progressPiece = state.buildFile2Progress(file2)
-    internalizeOne(file2, documentSetId, progressPiece, state.cancel.future)
+    val progressPiece = fileGroupJob.progressState.buildFile2Progress(file2)
+    internalizeOne(file2, fileGroupJob, progressPiece)
   }
 
   private def internalizeChildren(
     file2s: Vector[File2],
-    documentSetId: Long,
-    canceled: Future[akka.Done]
+    fileGroupJob: ResumedFileGroupJob
   )(implicit ec: ExecutionContext): Future[Vector[InternalFile2]] = {
     // Icky code: will run lots of queries on resume
     val progressPiece = new ProgressPiece { override def onPieceProgress(begin: Double, end: Double): Unit = {} }
-    Future.sequence(file2s.map(file2 => internalizeOne(file2, documentSetId: Long, progressPiece, canceled)))
+    Future.sequence(file2s.map(file2 => internalizeOne(file2, fileGroupJob, progressPiece)))
       .map(vectors => vectors.flatMap(identity))
   }
 
   private def internalizeOne(
     file2: File2,
-    documentSetId: Long,
-    progressPiece: ProgressPiece,
-    canceled: Future[akka.Done]
+    fileGroupJob: ResumedFileGroupJob,
+    progressPiece: ProgressPiece
   )(implicit ec: ExecutionContext): Future[Vector[InternalFile2]] = {
     if (file2.processedAt.nonEmpty && file2.nChildren.get > 0) {
       for {
         children <- database.seq(loadChildFile2s(file2.id))
-        internalizedChildren <- internalizeChildren(children.filter(_.ingestedAt.isEmpty), documentSetId, canceled)
+        internalizedChildren <- internalizeChildren(children.filter(_.ingestedAt.isEmpty), fileGroupJob)
       } yield {
         val nIngestedChildren = children.filter(_.ingestedAt.nonEmpty).length
-        Vector(InternalFile2(file2, documentSetId, progressPiece, canceled, nIngestedChildren)) ++ internalizedChildren
+        Vector(InternalFile2(file2, fileGroupJob, progressPiece, nIngestedChildren)) ++ internalizedChildren
       }
     } else {
-      Future.successful(Vector(InternalFile2(file2, documentSetId, progressPiece, canceled, 0)))
+      Future.successful(Vector(InternalFile2(file2, fileGroupJob, progressPiece, 0)))
     }
   }
 }

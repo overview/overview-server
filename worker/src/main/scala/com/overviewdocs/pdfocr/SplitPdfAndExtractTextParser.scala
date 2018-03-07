@@ -1,5 +1,6 @@
 package com.overviewdocs.pdfocr
 
+import akka.util.ByteString
 import com.google.common.io.ByteStreams
 import java.io.{DataInputStream,InputStream}
 import java.nio.charset.StandardCharsets.UTF_8
@@ -70,10 +71,17 @@ class SplitPdfAndExtractTextParser(val inputStream: InputStream) {
     readInt.flatMap(_ match {
       case 0 => readPageAfterThumbnail(nRemaining)
       case nThumbnailBytes: Int => {
-        val subStream = ByteStreams.limit(inputStream, nThumbnailBytes)
+        // ICK ICK ICK. We have to read it all now, because the caller may call
+        // .next anytime in the future and we'll want it to read the subsequent
+        // byte.
+        //
+        // This could make us run out of RAM. We should change the binary to
+        // upload to us via HTTP instead, so we can stream nicely.
+        val buf = new Array[Byte](nThumbnailBytes)
+        blocking(ByteStreams.readFully(inputStream, buf))
         Future.successful((
-          Some(Token.PageThumbnail(nThumbnailBytes, subStream)),
-          State.GotThumbnailExpectNPagesIncludingThisOne(nRemaining, subStream)
+          Some(Token.PageThumbnail(ByteString(buf))),
+          State.GotThumbnailExpectNPagesIncludingThisOne(nRemaining)
         ))
       }
     })
@@ -83,10 +91,17 @@ class SplitPdfAndExtractTextParser(val inputStream: InputStream) {
     readInt.flatMap(_ match {
       case 0 => readPageHeader(nRemaining - 1) // on to the next page
       case nTextBytes: Int => {
-        val subStream = ByteStreams.limit(inputStream, nTextBytes)
+        // ICK ICK ICK. We have to read it all now, because the caller may call
+        // .next anytime in the future and we'll want it to read the subsequent
+        // byte.
+        //
+        // This could make us run out of RAM. We should change the binary to
+        // upload to us via HTTP instead, so we can stream nicely.
+        val buf = new Array[Byte](nTextBytes)
+        blocking(ByteStreams.readFully(inputStream, buf))
         Future.successful((
-          Some(Token.PageText(nTextBytes, subStream)),
-          State.GotTextExpectNPagesIncludingThisOne(nRemaining, subStream)
+          Some(Token.PageText(ByteString(buf))),
+          State.GotTextExpectNPagesIncludingThisOne(nRemaining)
         ))
       }
     })
@@ -96,10 +111,17 @@ class SplitPdfAndExtractTextParser(val inputStream: InputStream) {
     readInt.flatMap(_ match {
       case 0 => readPageAfterPdf(nRemaining)
       case nPdfBytes: Int => {
-        val subStream = ByteStreams.limit(inputStream, nPdfBytes)
+        // ICK ICK ICK. We have to read it all now, because the caller may call
+        // .next anytime in the future and we'll want it to read the subsequent
+        // byte.
+        //
+        // This could make us run out of RAM. We should change the binary to
+        // upload to us via HTTP instead, so we can stream nicely.
+        val buf = new Array[Byte](nPdfBytes)
+        blocking(ByteStreams.readFully(inputStream, buf))
         Future.successful((
-          Some(Token.PagePdf(nPdfBytes, subStream)),
-          State.GotPdfExpectNPagesIncludingThisOne(nRemaining, subStream)
+          Some(Token.PagePdf(ByteString(buf))),
+          State.GotPdfExpectNPagesIncludingThisOne(nRemaining)
         ))
       }
     })
@@ -117,21 +139,9 @@ class SplitPdfAndExtractTextParser(val inputStream: InputStream) {
       case State.Head => readHeader
       case State.ExpectNPages(nRemaining) => readPageHeader(nRemaining)
       case State.GotPageHeaderExpectNPagesIncludingThisOne(nRemaining) => readPageAfterHeader(nRemaining)
-      case State.GotThumbnailExpectNPagesIncludingThisOne(nRemaining: Int, subStream: InputStream) => {
-        Future(blocking(ByteStreams.exhaust(subStream))).flatMap(_ => {
-          readPageAfterThumbnail(nRemaining)
-        })
-      }
-      case State.GotPdfExpectNPagesIncludingThisOne(nRemaining: Int, subStream: InputStream) => {
-        Future(blocking(ByteStreams.exhaust(subStream))).flatMap(_ => {
-          readPageAfterPdf(nRemaining)
-        })
-      }
-      case State.GotTextExpectNPagesIncludingThisOne(nRemaining: Int, subStream: InputStream) => {
-        Future(blocking(ByteStreams.exhaust(subStream))).flatMap(_ => {
-          readPageHeader(nRemaining - 1)
-        })
-      }
+      case State.GotThumbnailExpectNPagesIncludingThisOne(nRemaining: Int) => readPageAfterThumbnail(nRemaining)
+      case State.GotPdfExpectNPagesIncludingThisOne(nRemaining: Int) => readPageAfterPdf(nRemaining)
+      case State.GotTextExpectNPagesIncludingThisOne(nRemaining: Int) => readPageHeader(nRemaining - 1)
       case State.Done => Future.successful((None, State.Done))
     }
 
@@ -161,16 +171,16 @@ object SplitPdfAndExtractTextParser {
       *
       * The caller is expected to empty the inputStream before continuing.
       */
-    case class PageThumbnail(nBytes: Int, inputStream: InputStream) extends Token
+    case class PageThumbnail(byteString: ByteString) extends Token
 
     /** A PDF blob describing a an as-yet unparsed Page.
       *
       * The caller is expected to empty the inputStream before continuing.
       */
-    case class PagePdf(nBytes: Int, inputStream: InputStream) extends Token
+    case class PagePdf(byteString: ByteString) extends Token
 
     /** A fully-processed Page. */
-    case class PageText(nBytes: Int, inputStream: InputStream) extends Token
+    case class PageText(byteString: ByteString) extends Token
 
     /** An error in the PDF. This will be the final token. */
     case class PdfError(message: String) extends Token with FinalToken
@@ -193,23 +203,14 @@ object SplitPdfAndExtractTextParser {
     /** Just returned a PageHeader. */
     case class GotPageHeaderExpectNPagesIncludingThisOne(n: Int) extends State
 
-    /** Just returned a PageThumbnail (InputStream).
-      *
-      * If subStream isn't exhausted, we'll exhaust it ourselves.
-      */
-    case class GotThumbnailExpectNPagesIncludingThisOne(n: Int, subStream: InputStream) extends State
+    /** Just returned a PageThumbnail (InputStream). */
+    case class GotThumbnailExpectNPagesIncludingThisOne(n: Int) extends State
 
-    /** Just returned a PagePdf (InputStream).
-      *
-      * If subStream isn't exhausted, we'll exhaust it ourselves.
-      */
-    case class GotPdfExpectNPagesIncludingThisOne(n: Int, subStream: InputStream) extends State
+    /** Just returned a PagePdf (InputStream). */
+    case class GotPdfExpectNPagesIncludingThisOne(n: Int) extends State
 
-    /** Just returned a PageText (InputStream).
-      *
-      * If subStream isn't exhausted, we'll exhaust it ourselves.
-      */
-    case class GotTextExpectNPagesIncludingThisOne(n: Int, subStream: InputStream) extends State
+    /** Just returned a PageText (InputStream). */
+    case class GotTextExpectNPagesIncludingThisOne(n: Int) extends State
 
     /** Terminal state. */
     case object Done extends State

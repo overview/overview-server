@@ -117,6 +117,7 @@ class StepLogicGraph(logic: StepLogic, file2Writer: File2Writer, parallelism: In
     )
 
     def onFragment(lastEmitAndState: ScanResult, fragment: StepOutputFragment): Future[ScanResult] = {
+      System.err.println("onFragment: " + fragment)
       val state = lastEmitAndState.state
       (state, fragment) match {
         case (_, p: StepOutputFragment.Progress) => { parentFile2.onProgress(p.fraction); ignore(state) }
@@ -176,8 +177,6 @@ class StepLogicGraph(logic: StepLogic, file2Writer: File2Writer, parallelism: In
     }
 
     def createChild(lastChild: Option[CreatedFile2], header: StepOutputFragment.File2Header): Future[ScanResult] = {
-      // If header is invalid (has wrong indexInParent), move to error state
-      // Otherwise, emit lastChild (which may be None) and move to AtChild
       if (lastChild.map(_.blobOpt) == Some(None)) {
         unexpectedFragment(header, lastChild)
       } else {
@@ -192,7 +191,9 @@ class StepLogicGraph(logic: StepLogic, file2Writer: File2Writer, parallelism: In
             header.metadata,
             header.pipelineOptions
           )
-        } yield ScanResult(lastChildWritten, AtChild(nextChild))
+        } yield {
+          ScanResult(lastChildWritten, AtChild(nextChild))
+        }
       }
     }
 
@@ -244,5 +245,6 @@ class StepLogicGraph(logic: StepLogic, file2Writer: File2Writer, parallelism: In
     logic.toChildFragments(file2Writer.blobStorage, parentFile2) // StepOutputFragment
       .scanAsync(ScanResult(Vector(), Start))(onFragment)        // ScanResult
       .mapConcat(_.toEmit)                                       // Either[WrittenFile2,ProcessedFile2]
+      .map { toEmit => System.err.println("emitting " + toEmit); toEmit }
   }
 }

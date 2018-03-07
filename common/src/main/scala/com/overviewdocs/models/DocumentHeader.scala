@@ -17,6 +17,7 @@ trait DocumentHeader {
   val pageNumber: Option[Int]
   val createdAt: Date
   val displayMethod: DocumentDisplayMethod
+  val file2Id: Option[Long]
   val isFromOcr: Boolean
   val metadataJson: JsObject
   val thumbnailLocation: Option[String]

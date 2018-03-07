@@ -25,7 +25,7 @@ case class Document(
   override val createdAt: Date,
   val fileId: Option[Long],
   val pageId: Option[Long],
-  val file2Id: Option[Long],
+  override val file2Id: Option[Long],
   override val displayMethod: DocumentDisplayMethod.Value,
   override val isFromOcr: Boolean,
   override val metadataJson: JsObject,
@@ -47,8 +47,9 @@ case class Document(
     pageNumber,
     createdAt,
     displayMethod,
+    file2Id,
     isFromOcr,
-    fileId.isDefined || file2Id.isDefined,
+    fileId.isDefined,
     thumbnailLocation
   )
 

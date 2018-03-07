@@ -26,15 +26,10 @@ object Worker {
     thread.start
   }
 
-  private def startMainActorSystem(database: Database): ActorRef = {
-    logger.info("Starting actor system...")
-    new WorkerActorEnvironment(database, TempDirectory.path).messageBroker
-  }
-
   def main(args: Array[String]): Unit = {
-    // Start an ActorSystem so we'll have non-daemon threads running.
     val database = Database()
-    val broker = startMainActorSystem(database)
+    val workerActorEnvironment = new WorkerActorEnvironment(database, TempDirectory.path)
+    val broker = workerActorEnvironment.messageBroker
 
     for {
       _ <- cleanDanglingReferences
@@ -47,5 +42,7 @@ object Worker {
         broker ! command
       }
     }
+
+    scala.concurrent.Await.result(workerActorEnvironment.complete, scala.concurrent.duration.Duration.Inf)
   }
 }

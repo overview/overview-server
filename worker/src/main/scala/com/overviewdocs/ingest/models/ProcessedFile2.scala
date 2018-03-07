@@ -12,10 +12,11 @@ import play.api.libs.json.JsObject
   */
 case class ProcessedFile2(
   id: Long,
-  documentSetId: Long,
+  fileGroupJob: ResumedFileGroupJob,
   parentId: Option[Long],
   nChildren: Int,
   nIngestedChildren: Int
 ) {
+  def documentSetId: Long = fileGroupJob.documentSetId
   def areChildrenIngested: Boolean = nChildren == nIngestedChildren
 }

@@ -10,7 +10,7 @@ import com.overviewdocs.clone.Cloner
 import com.overviewdocs.database.DocumentSetDeleter
 import com.overviewdocs.jobhandler.csv.CsvImportWorkBroker
 import com.overviewdocs.jobhandler.documentcloud.DocumentCloudImportWorkBroker
-//import com.overviewdocs.jobhandler.filegroup.AddDocumentsWorkBroker
+import com.overviewdocs.jobhandler.filegroup.FileGroupImportMonitor
 import com.overviewdocs.searchindex.Indexer
 import com.overviewdocs.messages.{DocumentSetReadCommands,DocumentSetCommands}
 import com.overviewdocs.util.Logger
@@ -31,7 +31,7 @@ import com.overviewdocs.util.Logger
   */
 class DocumentSetCommandWorker(
   val broker: ActorRef,
-  //val addDocumentsWorkBroker: ActorRef,
+  val fileGroupImportMonitor: FileGroupImportMonitor,
   val csvImportWorkBroker: ActorRef,
   val documentCloudImportWorkBroker: ActorRef,
   val indexer: ActorRef,
@@ -94,8 +94,7 @@ class DocumentSetCommandWorker(
         // downstream AddDocumentsWorkBroker can juggle all import jobs at
         // once, while this DocumentSetCommandWorker can work on other
         // commands.
-        //val message = AddDocumentsWorkBroker.DoWorkThenAck(addDocuments, broker, done(addDocuments.documentSetId))
-        //addDocumentsWorkBroker ! message // TODO implement this!
+        fileGroupImportMonitor.enqueueFileGroup(addDocuments.fileGroup)
         sendReady
       }
       case command: SortField => {
@@ -164,7 +163,7 @@ class DocumentSetCommandWorker(
 object DocumentSetCommandWorker {
   def props(
     broker: ActorRef,
-    //addDocumentsWorkBroker: ActorRef,
+    fileGroupImportMonitor: FileGroupImportMonitor,
     csvImportWorkBroker: ActorRef, 
     documentCloudImportWorkBroker: ActorRef,
     indexer: ActorRef,
@@ -175,7 +174,7 @@ object DocumentSetCommandWorker {
   ): Props = {
     Props(new DocumentSetCommandWorker(
       broker,
-      //addDocumentsWorkBroker,
+      fileGroupImportMonitor,
       csvImportWorkBroker,
       documentCloudImportWorkBroker,
       indexer,

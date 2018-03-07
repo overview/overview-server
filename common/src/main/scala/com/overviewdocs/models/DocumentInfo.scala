@@ -18,6 +18,7 @@ case class DocumentInfo(
   override val pageNumber: Option[Int],
   override val createdAt: Date,
   override val displayMethod: DocumentDisplayMethod.Value,
+  override val file2Id: Option[Long],
   override val isFromOcr: Boolean,
   val hasFileView: Boolean,
   override val thumbnailLocation: Option[String]
@@ -28,6 +29,6 @@ case class DocumentInfo(
 
   override def viewUrl: Option[String] = {
     url
-      .orElse(if (hasFileView) Some(s"/documents/${id}.pdf") else None)
+      .orElse(if (hasFileView || file2Id.nonEmpty) Some(s"/documents/${id}.pdf") else None)
   }
 }

@@ -1,13 +1,16 @@
 package com.overviewdocs.database
 
+import scala.collection.immutable
 import scala.concurrent.Future 
 import scala.concurrent.ExecutionContext.Implicits.global
 
+import com.overviewdocs.blobstorage.BlobStorage
 import com.overviewdocs.models.tables._
 import com.overviewdocs.searchindex.{IndexClient,LuceneIndexClient}
 
 trait DocumentSetDeleter extends HasDatabase {
   protected val indexClient: IndexClient
+  protected val blobStorage: BlobStorage
 
   import database.api._
 
@@ -60,11 +63,48 @@ trait DocumentSetDeleter extends HasDatabase {
     DocumentIdLists.filter(_.documentSetId === documentSetId.toInt).delete.map(_ => ())
   }
 
+  private def deleteFile2s(documentSetId: Long): Future[Unit] = {
+    val toDeleteQ = sql"""
+      WITH root_ids AS (
+        SELECT file2_id
+        FROM document_set_file2
+        WHERE document_set_id = ${documentSetId}
+          AND NOT EXISTS (
+            SELECT 1
+            FROM document_set_file2 dsf2
+            WHERE dsf2.document_set_id <> ${documentSetId}
+              AND dsf2.file2_id = document_set_file2.file2_id
+          )
+      )
+      SELECT id, blob_location, thumbnail_blob_location
+      FROM file2
+      WHERE id IN (SELECT file2_id FROM root_ids)
+      UNION
+      SELECT id, blob_location, thumbnail_blob_location
+      FROM file2
+      WHERE root_file2_id IN (SELECT file2_id FROM root_ids)
+    """.as[(Long, Option[String], Option[String])]
+
+    def deleteSql(file2Ids: immutable.Seq[Long]) = sqlu"""
+      WITH delete1 AS (DELETE FROM document_set_file2 WHERE document_set_id = ${documentSetId})
+      DELETE FROM file2 WHERE id = ANY(${file2Ids})
+    """
+
+    for {
+      toDelete <- database.run(toDeleteQ)
+      blobLocations: immutable.Seq[String] = toDelete.flatMap(_._2)
+      thumbnailBlobLocations: immutable.Seq[String] = toDelete.flatMap(_._3)
+      _ <- blobStorage.deleteMany(blobLocations ++ thumbnailBlobLocations)
+      _ <- database.runUnit(deleteSql(toDelete.map(_._1)))
+    } yield ()
+  }
+
   // The minimal set of components, common to all document sets
   private def deleteCore(documentSetId: Long): DBIO[Unit] = {
     for {
       _ <- deleteDocumentsAndFiles(documentSetId)
       _ <- DocumentProcessingErrors.filter(_.documentSetId === documentSetId).delete
+      _ <- DBIO.from(deleteFile2s(documentSetId))
       _ <- DocumentSetUsers.filter(_.documentSetId === documentSetId).delete
       _ <- DocumentSets.filter(_.id === documentSetId).delete
     } yield ()
@@ -141,4 +181,5 @@ trait DocumentSetDeleter extends HasDatabase {
 
 object DocumentSetDeleter extends DocumentSetDeleter {
   override protected val indexClient = LuceneIndexClient.onDiskSingleton
+  override protected val blobStorage = BlobStorage
 }

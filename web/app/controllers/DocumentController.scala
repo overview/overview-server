@@ -17,16 +17,17 @@ import play.api.{Play,Logger}
 import scala.concurrent.{Future,blocking}
 
 import com.overviewdocs.blobstorage.BlobStorage
-import com.overviewdocs.models.{Document,File,Page,PdfNote,PdfNoteCollection}
+import com.overviewdocs.models.{BlobStorageRef,Document,File,Page,PdfNote,PdfNoteCollection}
 import com.overviewdocs.util.ContentDisposition
 import controllers.auth.Authorities.{anyUser,userOwningDocument,userOwningDocumentSet,userViewingDocumentSet}
 import controllers.auth.AuthorizedAction
-import controllers.backend.{DocumentBackend,FileBackend,PageBackend}
+import controllers.backend.{DocumentBackend,FileBackend,File2Backend,PageBackend}
 
 class DocumentController @Inject() (
   documentBackend: DocumentBackend,
   blobStorage: BlobStorage,
   fileBackend: FileBackend,
+  file2Backend: File2Backend,
   pageBackend: PageBackend,
   val controllerComponents: ControllerComponents,
   configuration: Configuration,
@@ -166,17 +167,27 @@ class DocumentController @Inject() (
     })
   }
 
+  private def file2IdToBodyAndLength(file2Id: Long): Future[Tuple2[Source[ByteString, _], Long]] = {
+    file2Backend.lookupBlob(file2Id).map(_ match {
+      case Some(BlobStorageRef(location, nBytes)) => (blobStorage.get(location), nBytes)
+      case None => (Source.empty, 0)
+    })
+  }
+
   private def fileToBodyAndLength(file: File): Future[Tuple2[Source[ByteString, _], Long]] = {
     Future.successful((blobStorage.get(file.viewLocation), file.viewSize))
   }
 
   private def documentToBodyAndLength(document: Document): Future[Tuple2[Source[ByteString, _], Long]] = {
-    document.pageId match {
-      case Some(pageId) => pageIdToBodyAndLength(pageId)
-      case None => {
-        document.fileId match {
-          case Some(fileId) => fileIdToBodyAndLength(fileId)
-          case None => emptyBodyAndLength
+    document.file2Id match {
+      case Some(file2Id) => file2IdToBodyAndLength(file2Id)
+      case None => document.pageId match {
+        case Some(pageId) => pageIdToBodyAndLength(pageId)
+        case None => {
+          document.fileId match {
+            case Some(fileId) => fileIdToBodyAndLength(fileId)
+            case None => emptyBodyAndLength
+          }
         }
       }
     }

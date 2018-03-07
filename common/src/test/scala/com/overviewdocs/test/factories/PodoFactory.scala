@@ -235,6 +235,14 @@ object PodoFactory extends Factory {
     deleted
   )
 
+  override def documentSetFile2(
+    documentSetId: Long,
+    file2Id: Long
+  ) = DocumentSetFile2(
+    getId(documentSetId),
+    getId(file2Id)
+  )
+
   override def documentSetReindexJob(
     id: Long,
     documentSetId: Long,

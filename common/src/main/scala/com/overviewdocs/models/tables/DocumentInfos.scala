@@ -24,6 +24,7 @@ class DocumentInfosImpl(tag: Tag) extends Table[DocumentInfo](tag, "document") {
   def pageNumber = column[Option[Int]]("page_number")
   def fileId = column[Option[Long]]("file_id")
   def displayMethod = column[Option[DocumentDisplayMethod.Value]]("display_method")
+  def file2Id = column[Option[Long]]("file2_id")
   def isFromOcr = column[Option[Boolean]]("is_from_ocr")
   def thumbnailLocation = column[Option[String]]("thumbnail_location")
 
@@ -43,10 +44,11 @@ class DocumentInfosImpl(tag: Tag) extends Table[DocumentInfo](tag, "document") {
     createdAt,
     fileId,
     displayMethod,
+    file2Id,
     isFromOcr,
     thumbnailLocation
   ).<>(
-    (t: Tuple12[Long,Long,Option[String],Option[String],Option[String],Option[String],Option[Int],Date,Option[Long],Option[DocumentDisplayMethod.Value],Option[Boolean], Option[String]]) => DocumentInfo.apply(
+    (t: Tuple13[Long,Long,Option[String],Option[String],Option[String],Option[String],Option[Int],Date,Option[Long],Option[DocumentDisplayMethod.Value],Option[Long],Option[Boolean], Option[String]]) => DocumentInfo.apply(
       t._1,                            // id
       t._2,                            // documentSetId
       t._3,                            // url
@@ -55,9 +57,10 @@ class DocumentInfosImpl(tag: Tag) extends Table[DocumentInfo](tag, "document") {
       t._7,                            // pageNumber
       t._8,                            // createdAt
       t._10.getOrElse(DocumentDisplayMethod.auto),
-      t._11.getOrElse(false),          // isFromOcr
+      t._11,                           // file2Id,
+      t._12.getOrElse(false),          // isFromOcr
       t._9.isDefined,                  // hasFileView
-      t._12                            // thumbnailLocation
+      t._13                            // thumbnailLocation
     ),
     { d: DocumentInfo => Some(
       d.id,
@@ -70,6 +73,7 @@ class DocumentInfosImpl(tag: Tag) extends Table[DocumentInfo](tag, "document") {
       d.createdAt,
       None,
       Some(d.displayMethod),
+      d.file2Id,
       Some(d.isFromOcr),
       d.thumbnailLocation
     )}

@@ -12,7 +12,7 @@ import scala.concurrent.{Future,Promise,blocking}
 import com.overviewdocs.blobstorage.{BlobBucketId,BlobStorage}
 import com.overviewdocs.models.{BlobStorageRef,File2}
 import com.overviewdocs.models.tables.{Documents,DocumentProcessingErrors,File2s}
-import com.overviewdocs.ingest.models.{BlobStorageRefWithSha1,CreatedFile2,WrittenFile2,ProcessedFile2}
+import com.overviewdocs.ingest.models.{BlobStorageRefWithSha1,CreatedFile2,WrittenFile2,ProcessedFile2,ResumedFileGroupJob,FileGroupProgressState}
 import com.overviewdocs.test.{ActorSystemContext,DbSpecification}
 
 class File2WriterSpec extends DbSpecification with Mockito {
@@ -25,6 +25,22 @@ class File2WriterSpec extends DbSpecification with Mockito {
           // wait only 2s
           blocking(scala.concurrent.Await.result(future, scala.concurrent.duration.Duration("2s")))
         }
+
+        val documentSet = factory.documentSet(id=123L)
+        val fileGroup = factory.fileGroup(
+          addToDocumentSetId=Some(documentSet.id),
+          lang=Some("en"),
+          splitDocuments=Some(false),
+          ocr=Some(true),
+          nFiles=Some(5),
+          nBytes=Some(20000L),
+          nFilesProcessed=Some(0),
+          nBytesProcessed=Some(0L)
+        )
+        val fileGroupJob = ResumedFileGroupJob(
+          fileGroup,
+          new FileGroupProgressState(fileGroup, 0, 0L, Instant.now, _ => (), Promise[akka.Done]())
+        )
 
         val parentBlob: BlobStorageRef = BlobStorageRef("foo", 10)
         val parentBlobSha1: Array[Byte] = Array(1, 2, 3).map(_.toByte)
@@ -50,7 +66,8 @@ class File2WriterSpec extends DbSpecification with Mockito {
 
         val parent = WrittenFile2(
           dbParent.id,
-          123L,
+          fileGroupJob,
+          _ => (),
           dbParent.rootFile2Id,
           dbParent.parentFile2Id,
           dbParent.filename,
@@ -58,9 +75,7 @@ class File2WriterSpec extends DbSpecification with Mockito {
           dbParent.languageCode,
           dbParent.metadata,
           dbParent.pipelineOptions,
-          BlobStorageRefWithSha1(parentBlob, parentBlobSha1),
-          _ => (),
-          Future.never
+          BlobStorageRefWithSha1(parentBlob, parentBlobSha1)
         )
 
         lazy val lookupFile2Compiled = {
@@ -109,7 +124,7 @@ class File2WriterSpec extends DbSpecification with Mockito {
         }
 
         "create a child" in new CreatedChildScope {
-          child.documentSetId must beEqualTo(123L)
+          child.fileGroupJob must beEqualTo(fileGroupJob)
           child.rootId must beSome(dbParent.id)
           child.parentId must beSome(dbParent.id)
           child.blobOpt must beNone
@@ -275,7 +290,21 @@ class File2WriterSpec extends DbSpecification with Mockito {
       trait BaseScope extends DbScope {
         implicit val ec = scala.concurrent.ExecutionContext.global
 
-        factory.documentSet(id=123L)
+        val documentSet = factory.documentSet(id=123L)
+        val fileGroup = factory.fileGroup(
+          addToDocumentSetId=Some(documentSet.id),
+          lang=Some("en"),
+          splitDocuments=Some(false),
+          ocr=Some(true),
+          nFiles=Some(5),
+          nBytes=Some(20000L),
+          nFilesProcessed=Some(0),
+          nBytesProcessed=Some(0L)
+        )
+        val fileGroupJob = ResumedFileGroupJob(
+          fileGroup,
+          new FileGroupProgressState(fileGroup, 0, 0L, Instant.now, _ => (), Promise[akka.Done]())
+        )
 
         lazy val dbDocumentsQuery = {
           import database.api._
@@ -299,7 +328,7 @@ class File2WriterSpec extends DbSpecification with Mockito {
           }
         }
 
-        def processedFile2(documentSetId: Long, filename: String, text: String, metadataJson: JsObject, nChildren: Int = 0, processingError: Option[String] = None): ProcessedFile2 = {
+        def processedFile2(fileGroupJob: ResumedFileGroupJob, filename: String, text: String, metadataJson: JsObject, nChildren: Int = 0, processingError: Option[String] = None): ProcessedFile2 = {
           val dbFile2 = factory.file2(
             filename=filename,
             text=Some(text),
@@ -308,7 +337,7 @@ class File2WriterSpec extends DbSpecification with Mockito {
             processingError=processingError
           )
 
-          ProcessedFile2(dbFile2.id, documentSetId, None, nChildren, 0)
+          ProcessedFile2(dbFile2.id, fileGroupJob, None, nChildren, 0)
         }
 
         val mockBlobStorage = mock[BlobStorage]
@@ -330,8 +359,8 @@ class File2WriterSpec extends DbSpecification with Mockito {
 
       "create Documents" in new BaseScope {
         ingest(Vector(
-          processedFile2(123L, "doc1.pdf", "doc1", Json.obj("foo" -> "bar")),
-          processedFile2(123L, "doc2.pdf", "doc2", Json.obj("foo" -> "baz"))
+          processedFile2(fileGroupJob, "doc1.pdf", "doc1", Json.obj("foo" -> "bar")),
+          processedFile2(fileGroupJob, "doc2.pdf", "doc2", Json.obj("foo" -> "baz"))
         ))
 
         dbDocuments(123L) must beEqualTo(Vector(
@@ -341,11 +370,25 @@ class File2WriterSpec extends DbSpecification with Mockito {
       }
 
       "create Documents in different DocumentSets" in new BaseScope {
-        factory.documentSet(124L)
+        val documentSet2 = factory.documentSet(124L)
+        val fileGroup2 = factory.fileGroup(
+          addToDocumentSetId=Some(documentSet2.id),
+          lang=Some("en"),
+          splitDocuments=Some(false),
+          ocr=Some(true),
+          nFiles=Some(5),
+          nBytes=Some(20000L),
+          nFilesProcessed=Some(0),
+          nBytesProcessed=Some(0L)
+        )
+        val fileGroupJob2 = ResumedFileGroupJob(
+          fileGroup2,
+          new FileGroupProgressState(fileGroup2, 0, 0L, Instant.now, _ => (), Promise[akka.Done]())
+        )
 
         ingest(Vector(
-          processedFile2(123L, "doc1.pdf", "doc1", Json.obj("foo" -> "bar")),
-          processedFile2(124L, "doc2.pdf", "doc2", Json.obj("foo" -> "baz"))
+          processedFile2(fileGroupJob, "doc1.pdf", "doc1", Json.obj("foo" -> "bar")),
+          processedFile2(fileGroupJob2, "doc2.pdf", "doc2", Json.obj("foo" -> "baz"))
         ))
 
         dbDocuments(123L) must beEqualTo(Vector(
@@ -360,14 +403,14 @@ class File2WriterSpec extends DbSpecification with Mockito {
         factory.document(id=(123L << 32) | 10, documentSetId=123L)
 
         ingest(Vector(
-          processedFile2(123L, "doc1.pdf", "doc1", Json.obj("foo" -> "bar")),
+          processedFile2(fileGroupJob, "doc1.pdf", "doc1", Json.obj("foo" -> "bar")),
         ))
 
         dbDocuments(123L).map(_.id) must beEqualTo(Vector((123L << 32) | 10, (123L << 32) | 11))
       }
 
       "ignore already-existing documents" in new BaseScope {
-        val file2 = processedFile2(123L, "doc1.pdf", "doc1", Json.obj("foo" -> "bar"))
+        val file2 = processedFile2(fileGroupJob, "doc1.pdf", "doc1", Json.obj("foo" -> "bar"))
         factory.document(id=(123L << 32) | 1, documentSetId=123L, title="existing", file2Id=Some(file2.id))
 
         ingest(Vector(file2))
@@ -375,7 +418,7 @@ class File2WriterSpec extends DbSpecification with Mockito {
       }
 
       "create a document_processing_error" in new BaseScope {
-        val input1 = processedFile2(123L, "doc1.pdf", "doc1", Json.obj(), 1, Some("error-foo"))
+        val input1 = processedFile2(fileGroupJob, "doc1.pdf", "doc1", Json.obj(), 1, Some("error-foo"))
         ingest(Vector(input1))
 
         dbErrors(123L) must beEqualTo(Vector(
@@ -384,22 +427,22 @@ class File2WriterSpec extends DbSpecification with Mockito {
       }
 
       "ignore existing document_processing_errors" in new BaseScope {
-        val input1 = processedFile2(123L, "doc1.pdf", "doc1", Json.obj(), 1, Some("error-foo"))
+        val input1 = processedFile2(fileGroupJob, "doc1.pdf", "doc1", Json.obj(), 1, Some("error-foo"))
         factory.documentProcessingError(documentSetId=123L, file2Id=Some(input1.id), message="existing")
         ingest(Vector(input1))
         dbErrors(123L).map(_.message) must beEqualTo(Vector("existing"))
       }
 
       "ignore parent documents" in new BaseScope {
-        ingest(Vector(processedFile2(123L, "doc1.pdf", "doc1", Json.obj(), 1)))
+        ingest(Vector(processedFile2(fileGroupJob, "doc1.pdf", "doc1", Json.obj(), 1)))
         dbDocuments(123L) must beEmpty
       }
 
       "set is_ocr" in new BaseScope {
         ingest(Vector(
-          processedFile2(123L, "doc1.pdf", "doc1", Json.obj()),
-          processedFile2(123L, "doc2.pdf", "doc2", Json.obj("isFromOcr" -> false)),
-          processedFile2(123L, "doc3.pdf", "doc3", Json.obj("isFromOcr" -> true)),
+          processedFile2(fileGroupJob, "doc1.pdf", "doc1", Json.obj()),
+          processedFile2(fileGroupJob, "doc2.pdf", "doc2", Json.obj("isFromOcr" -> false)),
+          processedFile2(fileGroupJob, "doc3.pdf", "doc3", Json.obj("isFromOcr" -> true)),
         ))
 
         dbDocuments(123L).map(_.isFromOcr) must beEqualTo(Vector(false, false, true))
@@ -407,10 +450,10 @@ class File2WriterSpec extends DbSpecification with Mockito {
 
       "set page_number" in new BaseScope {
         ingest(Vector(
-          processedFile2(123L, "doc1.pdf", "doc1", Json.obj()),
-          processedFile2(123L, "doc2.pdf", "doc2", Json.obj("pageNumber" -> 2)),
-          processedFile2(123L, "doc3.pdf", "doc3", Json.obj("pageNumber" -> "4")),
-          processedFile2(123L, "doc4.pdf", "doc4", Json.obj("pageNumber" -> Json.obj("foo" -> "bar")))
+          processedFile2(fileGroupJob, "doc1.pdf", "doc1", Json.obj()),
+          processedFile2(fileGroupJob, "doc2.pdf", "doc2", Json.obj("pageNumber" -> 2)),
+          processedFile2(fileGroupJob, "doc3.pdf", "doc3", Json.obj("pageNumber" -> "4")),
+          processedFile2(fileGroupJob, "doc4.pdf", "doc4", Json.obj("pageNumber" -> Json.obj("foo" -> "bar")))
         ))
 
         dbDocuments(123L).map(_.pageNumber) must beEqualTo(Vector(None, Some(2), None, None))
@@ -418,7 +461,7 @@ class File2WriterSpec extends DbSpecification with Mockito {
 
       "not crash with \u0000 in metadata" in new BaseScope {
         ingest(Vector(
-          processedFile2(123L, "doc1.pdf", "doc1", Json.obj("foo" -> "asdf\u0000blsdf")),
+          processedFile2(fileGroupJob, "doc1.pdf", "doc1", Json.obj("foo" -> "asdf\u0000blsdf")),
         ))
         true must beTrue
       }
