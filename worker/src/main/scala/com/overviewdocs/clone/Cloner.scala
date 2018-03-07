@@ -39,6 +39,7 @@ trait Cloner extends HasDatabase {
   }
 
   private val Steps: Array[CloneJob => Future[Unit]] = Array(
+    cloneDocumentSetFile2s,
     cloneDocuments,
     indexDocuments,
     cloneDocumentProcessingErrors,
@@ -91,6 +92,20 @@ trait Cloner extends HasDatabase {
     } yield ()
   }
 
+  private def cloneDocumentSetFile2s(cloneJob: CloneJob): Future[Unit] = {
+    database.runUnit(sqlu"""
+      INSERT INTO document_set_file2 (document_set_id, file2_id)
+      SELECT ${cloneJob.destinationDocumentSetId}, file2_id
+      FROM document_set_file2
+      WHERE document_set_id = ${cloneJob.sourceDocumentSetId}
+        AND file2_id NOT IN (
+          SELECT file2_id
+          FROM document_set_file2
+          WHERE document_set_id = ${cloneJob.destinationDocumentSetId}
+        )
+    """)
+  }
+
   private def cloneDocuments(cloneJob: CloneJob): Future[Unit] = {
     for {
       _ <- AddDocumentsCommon.beforeAddDocuments(cloneJob.destinationDocumentSetId)
@@ -99,13 +114,13 @@ trait Cloner extends HasDatabase {
           INSERT INTO document (
             id, document_set_id,
             documentcloud_id, text, url, supplied_id, title,
-            created_at, file_id, page_id, page_number, metadata_json_text, thumbnail_location
+            created_at, file_id, page_id, file2_id, page_number, metadata_json_text, thumbnail_location
           )
           SELECT 
              ${cloneJob.destinationDocumentSetId << 32} | (${0xffffffffL} & id),
              ${cloneJob.destinationDocumentSetId},
              documentcloud_id, text, url, supplied_id, title,
-             created_at, file_id, page_id, page_number, metadata_json_text, thumbnail_location
+             created_at, file_id, page_id, file2_id, page_number, metadata_json_text, thumbnail_location
           FROM document
           WHERE document_set_id = ${cloneJob.sourceDocumentSetId}
           RETURNING file_id AS id
