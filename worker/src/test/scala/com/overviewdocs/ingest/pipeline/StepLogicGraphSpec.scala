@@ -20,6 +20,13 @@ import com.overviewdocs.test.ActorSystemContext
 class StepLogicGraphSpec extends Specification with Mockito {
   sequential
 
+  class MockStepLogic(fragments: Vector[StepOutputFragment]) extends StepLogic {
+    override def toChildFragments(
+      blobStorage: BlobStorage,
+      file2: WrittenFile2,
+    )(implicit ec: ExecutionContext, mat: Materializer) = Source(fragments)
+  }
+
   protected def await[T](future: Future[T]): T = {
     blocking(scala.concurrent.Await.result(future, scala.concurrent.duration.Duration("2s")))
   }
@@ -65,14 +72,8 @@ class StepLogicGraphSpec extends Specification with Mockito {
     mockFile2Writer.setWrittenAndProcessed(any)(any) returns Future.successful(processedFile2)
     mockFile2Writer.setProcessed(any, any, any)(any) returns Future.successful(processedParent) // input is parentFile2
 
-    def fragments: Vector[StepOutputFragment]
-
-    val mockLogic = new StepLogic {
-      override def toChildFragments(
-        blobStorage: BlobStorage,
-        file2: WrittenFile2,
-      )(implicit ec: ExecutionContext, mat: Materializer) = Source(fragments)
-    }
+    val fragments: Vector[StepOutputFragment]
+    lazy val mockLogic = new MockStepLogic(fragments)
 
     val returnedParentPromise = Promise[ProcessedFile2]()
 
@@ -115,8 +116,8 @@ class StepLogicGraphSpec extends Specification with Mockito {
       val pipelineOptions = File2.PipelineOptions(true, false, Vector("foo"))
 
       override val fragments = Vector(
-        StepOutputFragment.File2Header("foo", "text/csv", "en", metadata, pipelineOptions),
-        StepOutputFragment.Blob(blob0),
+        StepOutputFragment.File2Header(0, "foo", "text/csv", "en", metadata, pipelineOptions),
+        StepOutputFragment.Blob(0, blob0),
         StepOutputFragment.Done
       )
       result must beEqualTo((Vector(writtenFile2), Vector(processedParent)))
@@ -141,8 +142,8 @@ class StepLogicGraphSpec extends Specification with Mockito {
       val pipelineOptions = File2.PipelineOptions(true, false, Vector())
 
       override val fragments = Vector(
-        StepOutputFragment.File2Header("foo", "text/csv", "en", metadata, pipelineOptions),
-        StepOutputFragment.Blob(blob0),
+        StepOutputFragment.File2Header(0, "foo", "text/csv", "en", metadata, pipelineOptions),
+        StepOutputFragment.Blob(0, blob0),
         StepOutputFragment.Done
       )
       result must beEqualTo((Vector(), Vector(processedFile2, processedParent)))
@@ -165,9 +166,9 @@ class StepLogicGraphSpec extends Specification with Mockito {
 
     "delete partial output on cancel" in new BaseScope {
       override val fragments = Vector(
-        StepOutputFragment.File2Header("foo", "text/csv", "en", emptyMetadata, defaultPipelineOptions),
+        StepOutputFragment.File2Header(0, "foo", "text/csv", "en", emptyMetadata, defaultPipelineOptions),
         // createdFile2.indexInParent returns 0
-        StepOutputFragment.Blob(Source.single(ByteString("foo".getBytes))),
+        StepOutputFragment.Blob(0, Source.single(ByteString("foo".getBytes))),
         StepOutputFragment.Canceled
       )
 
@@ -178,10 +179,10 @@ class StepLogicGraphSpec extends Specification with Mockito {
 
     "write multiple children" in new BaseScope {
       override val fragments = Vector(
-        StepOutputFragment.File2Header("foo", "text/csv", "en", emptyMetadata, defaultPipelineOptions),
-        StepOutputFragment.Blob(Source.single(ByteString("foo".getBytes))),
-        StepOutputFragment.File2Header("bar", "text/csv", "en", emptyMetadata, defaultPipelineOptions),
-        StepOutputFragment.Blob(Source.single(ByteString("bar".getBytes))),
+        StepOutputFragment.File2Header(0, "foo", "text/csv", "en", emptyMetadata, defaultPipelineOptions),
+        StepOutputFragment.Blob(0, Source.single(ByteString("foo".getBytes))),
+        StepOutputFragment.File2Header(1, "bar", "text/csv", "en", emptyMetadata, defaultPipelineOptions),
+        StepOutputFragment.Blob(1, Source.single(ByteString("bar".getBytes))),
         StepOutputFragment.Done
       )
 
@@ -194,10 +195,10 @@ class StepLogicGraphSpec extends Specification with Mockito {
 
     "delete partial not-first-child on cancel" in new BaseScope {
       override val fragments = Vector(
-        StepOutputFragment.File2Header("foo", "text/csv", "en", emptyMetadata, defaultPipelineOptions),
-        StepOutputFragment.Blob(Source.single(ByteString("foo".getBytes))),
-        StepOutputFragment.File2Header("bar", "text/csv", "en", emptyMetadata, defaultPipelineOptions),
-        StepOutputFragment.Blob(Source.single(ByteString("bar".getBytes))),
+        StepOutputFragment.File2Header(0, "foo", "text/csv", "en", emptyMetadata, defaultPipelineOptions),
+        StepOutputFragment.Blob(0, Source.single(ByteString("foo".getBytes))),
+        StepOutputFragment.File2Header(1, "bar", "text/csv", "en", emptyMetadata, defaultPipelineOptions),
+        StepOutputFragment.Blob(1, Source.single(ByteString("bar".getBytes))),
         StepOutputFragment.Canceled
       )
 
@@ -210,8 +211,8 @@ class StepLogicGraphSpec extends Specification with Mockito {
 
     "write processingError=error on StepError" in new BaseScope {
       override val fragments = Vector(
-        StepOutputFragment.File2Header("foo", "text/csv", "en", emptyMetadata, defaultPipelineOptions),
-        StepOutputFragment.Blob(Source.single(ByteString("foo".getBytes))),
+        StepOutputFragment.File2Header(0, "foo", "text/csv", "en", emptyMetadata, defaultPipelineOptions),
+        StepOutputFragment.Blob(0, Source.single(ByteString("foo".getBytes))),
         StepOutputFragment.StepError(new Exception("foo"))
       )
 
@@ -225,9 +226,9 @@ class StepLogicGraphSpec extends Specification with Mockito {
       val blob1 = Source.single(ByteString("bar".getBytes))
 
       override val fragments = Vector(
-        StepOutputFragment.File2Header("foo", "text/csv", "en", emptyMetadata, defaultPipelineOptions),
-        StepOutputFragment.Thumbnail("image/jpeg", blob0),
-        StepOutputFragment.Text(blob1),
+        StepOutputFragment.File2Header(0, "foo", "text/csv", "en", emptyMetadata, defaultPipelineOptions),
+        StepOutputFragment.Thumbnail(0, "image/jpeg", blob0),
+        StepOutputFragment.Text(0, blob1),
         StepOutputFragment.Canceled
       )
 
@@ -238,33 +239,33 @@ class StepLogicGraphSpec extends Specification with Mockito {
 
     "error when there is no blob at the end of the stream" in new BaseScope {
       override val fragments = Vector(
-        StepOutputFragment.File2Header("foo", "text/csv", "en", emptyMetadata, defaultPipelineOptions),
+        StepOutputFragment.File2Header(0, "foo", "text/csv", "en", emptyMetadata, defaultPipelineOptions),
         StepOutputFragment.Done
       )
 
       result
-      there was one(mockFile2Writer).setProcessed(parentFile2, 0, Some("logic error: tried to write child without blob data"))
+      there was one(mockFile2Writer).setProcessed(parentFile2, 0, Some("logic error in com.overviewdocs.ingest.pipeline.StepLogicGraphSpec$MockStepLogic: tried to write child without blob data"))
     }
 
     "error when there is no blob at the start of another file" in new BaseScope {
       override val fragments = Vector(
-        StepOutputFragment.File2Header("foo", "text/csv", "en", emptyMetadata, defaultPipelineOptions),
-        StepOutputFragment.File2Header("bar", "text/csv", "en", emptyMetadata, defaultPipelineOptions),
+        StepOutputFragment.File2Header(0, "foo", "text/csv", "en", emptyMetadata, defaultPipelineOptions),
+        StepOutputFragment.File2Header(1, "bar", "text/csv", "en", emptyMetadata, defaultPipelineOptions),
         StepOutputFragment.Done
       )
 
       result
-      there was one(mockFile2Writer).setProcessed(parentFile2, 0, Some("logic error: unexpected fragment class com.overviewdocs.ingest.pipeline.StepOutputFragment$File2Header"))
+      there was one(mockFile2Writer).setProcessed(parentFile2, 0, Some("logic error in com.overviewdocs.ingest.pipeline.StepLogicGraphSpec$MockStepLogic: unexpected fragment class com.overviewdocs.ingest.pipeline.StepOutputFragment$File2Header"))
     }
 
     "error when a blob comes without a file" in new BaseScope {
       override val fragments = Vector(
-        StepOutputFragment.Blob(Source.single(ByteString("foo".getBytes))),
+        StepOutputFragment.Blob(0, Source.single(ByteString("foo".getBytes))),
         StepOutputFragment.Done
       )
 
       result
-      there was one(mockFile2Writer).setProcessed(parentFile2, 0, Some("logic error: unexpected fragment class com.overviewdocs.ingest.pipeline.StepOutputFragment$Blob"))
+      there was one(mockFile2Writer).setProcessed(parentFile2, 0, Some("logic error in com.overviewdocs.ingest.pipeline.StepLogicGraphSpec$MockStepLogic: unexpected fragment class com.overviewdocs.ingest.pipeline.StepOutputFragment$Blob"))
     }
 
     "allows inheriting a blob from the parent" in new BaseScope {
@@ -272,7 +273,7 @@ class StepLogicGraphSpec extends Specification with Mockito {
       parentFile2.blob returns blobStorageRef
 
       override val fragments = Vector(
-        StepOutputFragment.File2Header("foo", "text/csv", "en", emptyMetadata, defaultPipelineOptions),
+        StepOutputFragment.File2Header(0, "foo", "text/csv", "en", emptyMetadata, defaultPipelineOptions),
         StepOutputFragment.InheritBlob,
         StepOutputFragment.Done
       )
@@ -282,13 +283,41 @@ class StepLogicGraphSpec extends Specification with Mockito {
 
     "ignore fragments after the end" in new BaseScope {
       override val fragments = Vector(
-        StepOutputFragment.File2Header("foo", "text/csv", "en", emptyMetadata, defaultPipelineOptions),
+        StepOutputFragment.File2Header(0, "foo", "text/csv", "en", emptyMetadata, defaultPipelineOptions),
         StepOutputFragment.InheritBlob,
         StepOutputFragment.Done,
-        StepOutputFragment.File2Header("bar", "text/csv", "en", emptyMetadata, defaultPipelineOptions),
+        StepOutputFragment.File2Header(1, "bar", "text/csv", "en", emptyMetadata, defaultPipelineOptions),
       )
       result must beEqualTo((Vector(writtenFile2), Vector(processedParent)))
       there was no(mockFile2Writer).createChild(parentFile2, 1, "bar", "text/csv", "en", emptyMetadata, defaultPipelineOptions)
+    }
+
+    "ignore spurious fragments (e.g., from duplicated workers)" in new BaseScope {
+      val blob = Source.single(ByteString("blob".getBytes))
+      val blob2 = Source.single(ByteString("blob2".getBytes))
+      val blob3 = Source.single(ByteString("blob3".getBytes))
+
+      override val fragments = Vector(
+        StepOutputFragment.File2Header(0, "foo", "text/csv", "en", emptyMetadata, defaultPipelineOptions),
+        StepOutputFragment.Blob(0, blob),
+        StepOutputFragment.Thumbnail(0, "image/png", blob),
+        StepOutputFragment.Text(0, blob),
+        StepOutputFragment.File2Header(1, "bar", "text/csv", "en", emptyMetadata, defaultPipelineOptions),
+        StepOutputFragment.File2Header(0, "bar", "text/csv", "en", emptyMetadata, defaultPipelineOptions),
+        StepOutputFragment.Blob(0, blob2),
+        StepOutputFragment.Thumbnail(0, "image/jpeg", blob2),
+        StepOutputFragment.Text(0, blob2),
+        StepOutputFragment.Text(1, blob3),
+        StepOutputFragment.Done
+      )
+
+      result
+      there was no(mockFile2Writer).createChild(parentFile2, 0, "bar", "text/csv", "en", emptyMetadata, defaultPipelineOptions)
+      there was no(mockFile2Writer).writeBlob(createdFile2, blob2)
+      there was no(mockFile2Writer).writeThumbnail(createdFile2, "image/jpeg", blob2)
+      there was no(mockFile2Writer).writeText(createdFile2, blob2)
+      there was one(mockFile2Writer).createChild(parentFile2, 1, "bar", "text/csv", "en", emptyMetadata, defaultPipelineOptions)
+      there was one(mockFile2Writer).writeText(createdFile2, blob3)
     }
 
     "report progress" in new BaseScope {

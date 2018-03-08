@@ -98,6 +98,7 @@ object Dependencies {
   )
   
   val workerDependencies = Seq(
+    deps.akkaHttp,
     deps.asyncHttpClient,
     deps.logback,
     deps.lucene,

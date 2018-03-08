@@ -67,8 +67,9 @@ object StepOutputFragment {
     * This can be used to create a CREATED File2 in the database. The next
     * fragment(s) should stream its blob contents.
     *
-    * indexInParent is implicit: the first File2 header gets index 0; the second
-    * gets 1; and so on.
+    * indexInParent is explicit: if the producer restarts or a fragment is
+    * doubled (we have at-least-once delivery over the network), we'll want to
+    * ignore fragments we've already seen.
     *
     * When a second File2Header fragment arrives, the receiver can assume the
     * previous File2 is completely transferred. The previous File2 should
@@ -77,6 +78,7 @@ object StepOutputFragment {
     * crash).
     */
   case class File2Header(
+    indexInParent: Int,
     filename: String,
     contentType: String,
     languageCode: String,
@@ -84,8 +86,14 @@ object StepOutputFragment {
     pipelineOptions: File2.PipelineOptions
   ) extends File2Fragment
 
-  /** Blob data for the current File2. */
+  /** Blob data for the current File2.
+    *
+    * indexInParent is explicit: if the producer restarts or a fragment is
+    * doubled (we have at-least-once delivery over the network), we'll want to
+    * ignore fragments for children we've already handled.
+    */
   case class Blob(
+    indexInParent: Int,
     rawBytes: Source[ByteString, _]
   ) extends File2Fragment
 
@@ -102,16 +110,26 @@ object StepOutputFragment {
   /** Text data for the current File2.
     *
     * Text data is optional for all but a leaf File2.
+    *
+    * indexInParent is explicit: if the producer restarts or a fragment is
+    * doubled (we have at-least-once delivery over the network), we'll want to
+    * ignore fragments for children we've already handled.
     */
   case class Text(
+    indexInParent: Int,
     utf8Bytes: Source[ByteString, _]
   ) extends File2Fragment
 
   /** Thumbnail data for the current File2.
     *
     * Thumbnail data is optional for all but a leaf File2.
+    *
+    * indexInParent is explicit: if the producer restarts or a fragment is
+    * doubled (we have at-least-once delivery over the network), we'll want to
+    * ignore fragments for children we've already handled.
     */
   case class Thumbnail(
+    indexInParent: Int,
     contentType: String,
     bytes: Source[ByteString, _]
   ) extends File2Fragment

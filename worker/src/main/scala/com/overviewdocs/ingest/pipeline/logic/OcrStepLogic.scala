@@ -75,13 +75,14 @@ class OcrStepLogic(
 
                 Vector(
                   StepOutputFragment.File2Header(
+                    0,
                     input.filename,
                     input.contentType,
                     input.languageCode,
                     input.metadata,
                     input.pipelineOptions.copy(ocr=false, stepsRemaining=input.pipelineOptions.stepsRemaining.tail)
                   ),
-                  StepOutputFragment.Blob(blob),
+                  StepOutputFragment.Blob(0, blob),
                   StepOutputFragment.Done
                 )
               }

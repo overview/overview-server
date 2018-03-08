@@ -102,6 +102,7 @@ class SplitExtractStepLogic(
           pageNumber += 1
           val maybeHeader = if (!extractOnly || pageNumber == 1) {
             Vector(StepOutputFragment.File2Header(
+              pageNumber - 1,
               input.filename,
               input.contentType,
               input.languageCode,
@@ -120,7 +121,7 @@ class SplitExtractStepLogic(
         }
         case (_, Token.PageThumbnail(byteString)) => {
           if (byteString.nonEmpty) {
-            Vector(StepOutputFragment.Thumbnail("image/png", Source.single(byteString)))
+            Vector(StepOutputFragment.Thumbnail(pageNumber - 1, "image/png", Source.single(byteString)))
           } else {
             // we're extractOnly and not on the first page. No PDF.
             Vector()
@@ -128,7 +129,7 @@ class SplitExtractStepLogic(
         }
         case (_, Token.PagePdf(byteString)) => {
           if (byteString.nonEmpty) {
-            Vector(StepOutputFragment.Blob(Source.single(byteString)))
+            Vector(StepOutputFragment.Blob(pageNumber - 1, Source.single(byteString)))
           } else {
             // we're extractOnly and not on the first page. No PDF.
             Vector()
@@ -138,13 +139,13 @@ class SplitExtractStepLogic(
           if (extractOnly) {
             allPagesText = allPagesText ++ byteString
             if (pageNumber == nPagesTotal) {
-              Vector(StepOutputFragment.Text(Source.single(allPagesText)))
+              Vector(StepOutputFragment.Text(pageNumber - 1, Source.single(allPagesText)))
             } else {
               allPagesText = allPagesText ++ ByteString("\f")
               Vector()
             }
           } else {
-            Vector(StepOutputFragment.Text(Source.single(byteString)))
+            Vector(StepOutputFragment.Text(pageNumber - 1, Source.single(byteString)))
           }
         }
         case (_, Token.PdfError(message)) => Vector(

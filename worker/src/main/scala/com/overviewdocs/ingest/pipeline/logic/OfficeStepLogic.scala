@@ -67,13 +67,14 @@ class OfficeStepLogic extends StepLogic {
 
       Source(Vector(
         StepOutputFragment.File2Header(
+          0,
           input.filename,
           "application/pdf",
           input.languageCode,
           input.metadata,
           input.pipelineOptions.copy(ocr=false, stepsRemaining=input.pipelineOptions.stepsRemaining.tail)
         ),
-        StepOutputFragment.Blob(blobSource),
+        StepOutputFragment.Blob(0, blobSource),
         StepOutputFragment.Done
       ))
     }

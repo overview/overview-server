@@ -126,13 +126,22 @@ class StepLogicGraph(logic: StepLogic, file2Writer: File2Writer, parallelism: In
       (state, fragment) match {
         case (_, p: StepOutputFragment.Progress) => { parentFile2.onProgress(p.fraction); ignore(state) }
         case (End, _) => ignore(state) // we've marked the parent as processed: garbage can't change our minds
+
+        // In edge cases, workers can send duplicate messages. The most common
+        // is "restart", in which a second worker receives all the same
+        // fragments as the first.
+        case (AtChild(child), h: StepOutputFragment.File2Header) if h.indexInParent != child.indexInParent + 1 => ignore(state)
+        case (AtChild(child), StepOutputFragment.Blob(i, _)) if i != child.indexInParent => ignore(state)
+        case (AtChild(child), StepOutputFragment.Text(i, _)) if i != child.indexInParent => ignore(state)
+        case (AtChild(child), StepOutputFragment.Thumbnail(i, _, _)) if i != child.indexInParent => ignore(state)
+
         case (Start, h: StepOutputFragment.File2Header) => createChild(None, h)
         case (Start, e: StepOutputFragment.EndFragment) => end(None, e)
         case (Start, f) => unexpectedFragment(f, None)
-        case (AtChild(child), StepOutputFragment.Blob(stream)) => addBlob(child, stream)
+        case (AtChild(child), StepOutputFragment.Blob(_, stream)) => addBlob(child, stream)
         case (AtChild(child), StepOutputFragment.InheritBlob) => inheritBlob(child)
-        case (AtChild(child), StepOutputFragment.Text(stream)) => addText(child, stream)
-        case (AtChild(child), StepOutputFragment.Thumbnail(ct, stream)) => addThumbnail(child, ct, stream)
+        case (AtChild(child), StepOutputFragment.Text(_, stream)) => addText(child, stream)
+        case (AtChild(child), StepOutputFragment.Thumbnail(_, ct, stream)) => addThumbnail(child, ct, stream)
         case (AtChild(child), h: StepOutputFragment.File2Header) => createChild(Some(child), h)
         case (AtChild(child), e: StepOutputFragment.EndFragment) => end(Some(child), e)
       }

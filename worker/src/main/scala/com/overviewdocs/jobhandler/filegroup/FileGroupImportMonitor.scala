@@ -91,6 +91,20 @@ class FileGroupImportMonitor(
       _ <- AddDocumentsCommon.afterAddDocuments(documentSetId)
     } yield {
       fileGroupJob.onComplete()
+
+      // If anything is somehow still waiting for this task to cancel (e.g.,
+      // a confused worker long-polling MinimportHttpServer), wake it up.
+      //
+      // At this point, any data anywhere that refers to this fileGroupJob
+      // is spurious; it doesn't matter what programs output, and it doesn't
+      // matter what we _input_ into them because it really isn't any of
+      // their business whether the user clicked "cancel" or not. They
+      // shouldn't be listening.
+      //
+      // If you've tracked a logic error back to here, don't delete this
+      // line: the error is really in your logic. Try something simpler: poll
+      // the `cancel.isCompleted` instead of using `cancel.future.onComplete`.
+      fileGroupJob.progressState.cancel.trySuccess(akka.Done)
     }
   }
 
