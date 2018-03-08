@@ -43,22 +43,11 @@ class Decider(
     *
     * Usually, the slow part is reading from BlobStorage.
     */
-  parallelism: Int = 2,
-
-  /** Number of output items to keep in memory.
-    *
-    * As this is a fan-out, items only pass through it as quickly as they pass
-    * through its slowest consumer (Step). Set this high enough to keep Steps
-    * saturated with work.
-    *
-    * A WrittenFile2 consumes ~200 bytes plus its metadata. Assume 5kb per file.
-    */
-  outputBufferSize: Int = 1000
+  parallelism: Int = 2
 ) extends AwaitMethod {
   def graph(implicit ec: ExecutionContext, mat: Materializer): Graph[UniformFanOutShape[WrittenFile2, WrittenFile2], akka.NotUsed] = {
     val flow = Flow.apply[WrittenFile2]
       .mapAsyncUnordered(parallelism)(ensurePipelineStepsRemaining _)
-      .buffer(outputBufferSize, OverflowStrategy.backpressure)
 
     GraphDSL.create() { implicit builder =>
       import GraphDSL.Implicits._
