@@ -72,9 +72,9 @@ class Processor(steps: Vector[Step], file2Writer: File2Writer, nDeciders: Int, r
                            stepGraphs(i).out0 ~> mergeOutputWrittenFiles
                            stepGraphs(i).out1 ~> mergeOutputProcessedFiles
       }
-      merger.in(0) <~ recurseBuffer <~ mergeOutputWrittenFiles // highest-priority merger input
+      merger.preferred <~ recurseBuffer <~ mergeOutputWrittenFiles // highest-priority merger input
 
-      FlowShape(merger.in(1), mergeOutputProcessedFiles.out) // Flow input is lower-priority merger input
+      FlowShape(merger.in(0), mergeOutputProcessedFiles.out) // Flow input is lower-priority merger input
     }
   }
 }

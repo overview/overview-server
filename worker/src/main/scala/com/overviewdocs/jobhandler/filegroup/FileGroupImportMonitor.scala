@@ -113,7 +113,7 @@ class FileGroupImportMonitor(
       val ingester = builder.add(Ingester.ingest(file2Writer, ingestBatchSize, ingestBatchMaxWait))
 
       resumer.out0 ~> processor                           // WrittenFile2s
-      resumer.out1 ~>              toIngester             // ProcessedFile2s: ingester should prefer these
+      resumer.out1 ~>              toIngester.preferred   // ProcessedFile2s: ingester should prefer these
                       processor ~> toIngester ~> ingester // other ProcessedFile2s
 
       new FlowShape(resumer.in, ingester.out)
