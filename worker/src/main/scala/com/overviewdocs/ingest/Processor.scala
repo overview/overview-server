@@ -40,8 +40,8 @@ import com.overviewdocs.ingest.pipeline.Step
   *               |       v            /         \           |  |
   *               |  +----o-----------o           o-------+  |  |
   *               |  |     decider    | +-------+ | merge o~~+  |
-  *               |  |        +       o~| logic |~o-------|     |
-  *               |  | stepLogicGraph | +-------+ | split o~~~~>O    ~> out1
+  *               |  |        +       o~| logic |~o split |     |
+  *               |  | stepLogicGraph | +-------+ |       o~~~~>O    ~> out1
   *               |  +----------------o           o-------+     | ProcessedFile2
   *               |                    \         /              |
   *               |                     +-------+               |
@@ -62,7 +62,10 @@ class Processor(steps: Vector[Step], file2Writer: File2Writer, nDeciders: Int, r
       // Vector, nSteps long, of 1..1 FanOutShape2s.
       val stepGraphs = steps.map(step => builder.add(step.toFlow(file2Writer)))
 
+      // nSteps .. 1 merger
       val mergeOutput = builder.add(Merge[ConvertOutputElement](Step.All.length))
+
+      // FanOut: ConvertOutputElement => 0. WrittenFile2, 1. ProcessedFile2
       val splitOutput = builder.add(Partition[ConvertOutputElement](2, _ match {
         case ConvertOutputElement.ToProcess(_) => 0
         case _ => 1
@@ -77,7 +80,7 @@ class Processor(steps: Vector[Step], file2Writer: File2Writer, nDeciders: Int, r
       }
                                             mergeOutput ~> splitOutput ~> toProcess
                                                            splitOutput ~> toIngest
-      merger.preferred <~ recurseBuffer                                <~ toProcess // highest-priority merger input
+      merger.preferred <~                   recurseBuffer              <~ toProcess // highest-priority merger input
 
       FlowShape(merger.in(0), toIngest.out) // Flow input is lower-priority merger input
     }
