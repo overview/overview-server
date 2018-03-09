@@ -1,5 +1,5 @@
 function compareNotes(a, b) {
-  return (b.pageIndex - a.pageIndex) ||
+  return (a.pageIndex - b.pageIndex) ||
     (b.y - a.y) ||
     (a.x - b.x) ||
     (a.height - b.height) ||
