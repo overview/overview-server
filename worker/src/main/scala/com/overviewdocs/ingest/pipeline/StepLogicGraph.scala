@@ -1,99 +1,72 @@
 package com.overviewdocs.ingest.pipeline
 
-import akka.stream.{FanOutShape2,FlowShape,Graph,Materializer,SourceShape}
-import akka.stream.scaladsl.{Flow,GraphDSL,Partition,Source}
+import akka.stream.Materializer
+import akka.stream.scaladsl.{Flow,Partition,Source}
 import akka.util.ByteString
 import scala.concurrent.{ExecutionContext,Future,Promise}
 
 import com.overviewdocs.ingest.File2Writer
-import com.overviewdocs.ingest.models.{CreatedFile2,WrittenFile2,ProcessedFile2}
+import com.overviewdocs.ingest.models.{ConvertOutputElement,CreatedFile2,WrittenFile2,ProcessedFile2}
 import com.overviewdocs.util.Logger
 
 /** Runs StepLogic on a stream of WrittenFile2s.
   *
-  * This is a fan-out Graph: it produces WrittenFile2s to pass to the next
-  * pipeline step and ProcessedFile2s to pass to the ingester.
+  * This produces WrittenFile2s to pass to the next pipeline step and
+  * ProcessedFile2s to pass to the ingester.
   *
   * `writtenFile2.onProgress()` will be called every time the StepLogic outputs
   * Progress fragments. `writtenFile2.canceled` should be handled by the
   * StepLogic.
   *
-  * This Graph converts and outputs its _inputs_, too. Each input element will
+  * This Flow converts and outputs its _inputs_, too. Each input element will
   * transition from WRITTEN to PROCESSED (while being written to the database),
   * and it will be emitted. It will have `nChildren` and may have a
   * `processingError`. Even after cancellation, the StepLogic will complete; in
   * that case, `processingError` will become `"canceled"`.
   *
-  *               +---------------------------------------+
-  *               |         StepLogic substreams          |
-  *               |              +-------+                |
-  *               |              | logic |                |
-  *               |              +-------+                |
-  *               |             /         \               |
-  *               |  +---------o           o-----------+  | WrittenFile2
-  *               |  | process | +-------+ | partition o~~O    ~> out0
-  *     in  ~>    O~~o         o~| logic |~o           |  |
-  * WrittenFile2  |  |         | +-------+ |           o~~O    ~> out1
-  *               |  +---------o           o-----------+  | ProcessedFile2
-  *               |             \         /               |
-  *               |              +-------+                |
-  *               |              | logic |                |
-  *               |              +-------+                |
-  *               +---------------------------------------+
+  *               +-----------------------------------+
+  *               |         StepLogic substreams      |
+  *               |              +-------+            |
+  *               |              | logic |            |
+  *               |              +-------+            |
+  *               |             /         \           |
+  *               |  +---------o           o-------+  |
+  *               |  | process | +-------+ | merge |  |
+  *     in  ~>    O~~o         o~| logic |~o       o~~O      ~> out
+  * WrittenFile2  |  |         | +-------+ |       |  | ConvertOutputElement
+  *               |  +---------o           o-------+  |
+  *               |             \         /           |
+  *               |              +-------+            |
+  *               |              | logic |            |
+  *               |              +-------+            |
+  *               +-----------------------------------+
   *
-  * About `parallelism`: the parameter is the _maximum_ number of simultaneous
-  * conversions. If the logic is in-process, you should set `parallelism` low:
-  * nCPUs, perhaps. If the logic is a broker+worker system, set `parallelism` as
-  * high as the maximum expected number of workers: otherwise, the broker will
-  * not be able to queue enough fork for the workers.
+  * `Parallelism` is the number of simultaneous conversions. If the logic is
+  * in-process, you should set `parallelism` low: nCPUs, perhaps. If the logic
+  * is a broker+worker system, set `parallelism` as high as the maximum expected
+  * number of workers: otherwise, the broker will not be able to queue enough
+  * work for the workers.
   *
   * There is a potential deadlock in buffering: a StepLogic that outputs lots of
-  * WrittenFile2s meant for recursion (e.g., zipfiles full of zipfiles) will
+  * WrittenFile2s meant for recursion (e.g., zipfiles full of zipfiles) should
   * eventually receive them again as input: a feedback loop. The solution: the
   * caller should buffer the output. Assume a WrittenFile2 consumes ~200 bytes
   * plus 5kb of metadata. A 10K-element output buffer could consume 50MB and
   * would allow extracting a zipfile full of 10k zipfiles. (Future idea: it
-  * would be more scalable to just store WrittenFile2 IDs and read them from the
-  * database if there are too many.)
+  * would be more scalable to buffer only the WrittenFile2 IDs, rebuilding the
+  * WrittenFile2s from the database, if the buffer gets very full.)
   */
-class StepLogicGraph(logic: StepLogic, file2Writer: File2Writer, parallelism: Int) {
+class StepLogicFlow(logic: StepLogic, file2Writer: File2Writer, parallelism: Int) {
   private val logger = Logger.forClass(getClass)
 
-  /** Converts a File2 from WRITTEN to PROCESSED and outputs its WRITTEN
-    * children as they come. (Just the children! Not itself.)
-    */
-  def graph(implicit ec: ExecutionContext, mat: Materializer): Graph[FanOutShape2[WrittenFile2, WrittenFile2, ProcessedFile2], akka.NotUsed] = {
-    GraphDSL.create() { implicit builder =>
-      import GraphDSL.Implicits._
-
-      type ToFanOut = Either[WrittenFile2, ProcessedFile2]
-
-      val process: FlowShape[WrittenFile2, ToFanOut] = builder.add(
-        Flow.apply[WrittenFile2].flatMapMerge(parallelism, singleFileSource _)
-      )
-
-      val partition = builder.add(
-        Partition[ToFanOut](2, x => if (x.isLeft) { 0 } else { 1 })
-      )
-
-      val written: FlowShape[ToFanOut, WrittenFile2] = builder.add(
-        Flow.apply[ToFanOut].collect { case Left(w) => w }
-      )
-
-      val processed: FlowShape[ToFanOut, ProcessedFile2] = builder.add(
-        Flow.apply[ToFanOut].collect { case Right(p) => p }
-      )
-
-      process.out ~> partition ~> written
-                     partition ~> processed
-
-      new FanOutShape2(process.in, written.out, processed.out)
-    }
+  def flow(implicit ec: ExecutionContext, mat: Materializer): Flow[WrittenFile2, ConvertOutputElement, akka.NotUsed] = {
+    Flow.apply[WrittenFile2]
+      .flatMapMerge(parallelism, singleFileSource _)
   }
 
   private def singleFileSource(
     parentFile2: WrittenFile2
-  )(implicit ec: ExecutionContext, mat: Materializer): Graph[SourceShape[Either[WrittenFile2, ProcessedFile2]], akka.NotUsed] = {
+  )(implicit ec: ExecutionContext, mat: Materializer): Source[ConvertOutputElement, akka.NotUsed] = {
     logger.info("Processing file2 {} ({}, {} bytes, pipeline steps {}", parentFile2.id, parentFile2.filename, parentFile2.blob.nBytes, parentFile2.pipelineOptions.stepsRemaining)
 
     /*
@@ -114,10 +87,8 @@ class StepLogicGraph(logic: StepLogic, file2Writer: File2Writer, parallelism: In
     case class AtChild(child: CreatedFile2) extends State
     case object End extends State
 
-    type ToFanOut = Either[WrittenFile2, ProcessedFile2]
-
     case class ScanResult(
-      toEmit: Vector[ToFanOut],
+      toEmit: Vector[ConvertOutputElement],
       state: State
     )
 
@@ -177,13 +148,13 @@ class StepLogicGraph(logic: StepLogic, file2Writer: File2Writer, parallelism: In
       logicError("unexpected fragment " + f.getClass.toString, currentChild)
     }
 
-    def writeLastChildOpt(lastChildOpt: Option[CreatedFile2]): Future[Vector[ToFanOut]] = {
+    def writeLastChildOpt(lastChildOpt: Option[CreatedFile2]): Future[Vector[ConvertOutputElement]] = {
       lastChildOpt match {
         case Some(child) if child.pipelineOptions.stepsRemaining.isEmpty => {
-          file2Writer.setWrittenAndProcessed(child).map(p => Vector(Right(p)))
+          file2Writer.setWrittenAndProcessed(child).map(p => Vector(ConvertOutputElement.ToIngest(p)))
         }
         case Some(child) => {
-          file2Writer.setWritten(child).map(w => Vector(Left(w)))
+          file2Writer.setWritten(child).map(w => Vector(ConvertOutputElement.ToProcess(w)))
         }
         case None => Future.successful(Vector.empty)
       }
@@ -245,14 +216,14 @@ class StepLogicGraph(logic: StepLogic, file2Writer: File2Writer, parallelism: In
         case (_, StepOutputFragment.Canceled) => error("canceled", lastChildOpt)
         case (Some(child), _) if (child.blobOpt.isEmpty) => logicError("tried to write child without blob data", lastChildOpt)
         case (_, StepOutputFragment.Done) => for {
-          lastChildWritten: Vector[ToFanOut] <- writeLastChildOpt(lastChildOpt)
+          lastChildWritten: Vector[ConvertOutputElement] <- writeLastChildOpt(lastChildOpt)
           parentProcessed <- writeParent(lastChildOpt.map(_.indexInParent + 1).getOrElse(0), None)
         } yield ScanResult(lastChildWritten :+ parentProcessed, End)
       }
     }
 
-    def writeParent(nChildren: Int, error: Option[String]): Future[ToFanOut] = {
-      file2Writer.setProcessed(parentFile2, nChildren, error).map(Right.apply _)
+    def writeParent(nChildren: Int, error: Option[String]): Future[ConvertOutputElement] = {
+      file2Writer.setProcessed(parentFile2, nChildren, error).map(f => ConvertOutputElement.ToIngest(f))
     }
 
     logic.toChildFragments(file2Writer.blobStorage, parentFile2) // StepOutputFragment

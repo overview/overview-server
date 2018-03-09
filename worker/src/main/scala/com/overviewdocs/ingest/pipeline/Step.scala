@@ -1,37 +1,44 @@
 package com.overviewdocs.ingest.pipeline
 
-import akka.stream.{FanOutShape2,Graph,Materializer}
+import akka.stream.Materializer
+import akka.stream.scaladsl.Flow
 import scala.concurrent.ExecutionContext
 
 import com.overviewdocs.ingest.File2Writer
-import com.overviewdocs.ingest.models.{WrittenFile2,ProcessedFile2}
+import com.overviewdocs.ingest.models.{ConvertOutputElement,WrittenFile2}
 import com.overviewdocs.ingest.pipeline.logic._
 
 sealed trait Step {
   val id: String
+
+  def toFlow(
+    file2Writer: File2Writer
+  )(implicit ec: ExecutionContext, mat: Materializer): Flow[WrittenFile2, ConvertOutputElement, akka.NotUsed]
+}
+sealed trait StepLogicStep extends Step {
   val logic: StepLogic
   val parallelism: Int
 
-  def toGraph(
+  override def toFlow(
     file2Writer: File2Writer
-  )(implicit ec: ExecutionContext, mat: Materializer): Graph[FanOutShape2[WrittenFile2, WrittenFile2, ProcessedFile2], akka.NotUsed] = {
-    new StepLogicGraph(logic, file2Writer, parallelism).graph
+  )(implicit ec: ExecutionContext, mat: Materializer): Flow[WrittenFile2, ConvertOutputElement, akka.NotUsed] = {
+    new StepLogicFlow(logic, file2Writer, parallelism).flow
   }
 }
 object Step {
-  case object Ocr extends Step {
+  case object Ocr extends StepLogicStep {
     override val id = "Ocr"
     override val logic = new OcrStepLogic
     override val parallelism = 2
   }
 
-  case object SplitExtract extends Step {
+  case object SplitExtract extends StepLogicStep {
     override val id = "SplitExtract"
     override val logic = new SplitExtractStepLogic
     override val parallelism = 2 // TODO correct number of workers
   }
 
-  case object Office extends Step {
+  case object Office extends StepLogicStep {
     override val id = "Office"
     override val logic = new OfficeStepLogic
     override val parallelism = 2
@@ -52,7 +59,7 @@ object Step {
 //    override val logic = ImageStepLogic
 //  }
 
-  case object Unhandled extends Step {
+  case object Unhandled extends StepLogicStep {
     override val id = "Unhandled"
     override val logic = new UnhandledStepLogic
     override val parallelism = 1 // it's super-fast

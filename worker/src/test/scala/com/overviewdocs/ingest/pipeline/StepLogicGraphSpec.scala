@@ -13,11 +13,11 @@ import scala.concurrent.{ExecutionContext,Future,Promise,blocking}
 
 import com.overviewdocs.blobstorage.BlobStorage
 import com.overviewdocs.ingest.File2Writer
-import com.overviewdocs.ingest.models.{BlobStorageRefWithSha1,CreatedFile2,WrittenFile2,ProcessedFile2}
+import com.overviewdocs.ingest.models.{BlobStorageRefWithSha1,ConvertOutputElement,CreatedFile2,WrittenFile2,ProcessedFile2}
 import com.overviewdocs.models.{BlobStorageRef,File2}
 import com.overviewdocs.test.ActorSystemContext
 
-class StepLogicGraphSpec extends Specification with Mockito {
+class StepLogicFlowSpec extends Specification with Mockito {
   sequential
 
   class MockStepLogic(fragments: Vector[StepOutputFragment]) extends StepLogic {
@@ -77,29 +77,17 @@ class StepLogicGraphSpec extends Specification with Mockito {
 
     val returnedParentPromise = Promise[ProcessedFile2]()
 
-    lazy val source = Source.single(parentFile2)
-    val writtenSink = Sink.seq[WrittenFile2]
-    val processedSink = Sink.seq[ProcessedFile2]
-
-    lazy val runnable = RunnableGraph.fromGraph(GraphDSL.create(source, writtenSink, processedSink)((_, _, _)) { implicit builder => (s, l, r) =>
-      import GraphDSL.Implicits._
-
-      val graph = builder.add(new StepLogicGraph(mockLogic, mockFile2Writer, 2).graph)
-
-      s ~> graph.in
-           graph.out0 ~> l.in
-           graph.out1 ~> r.in
-
-      ClosedShape
-    })
+    val source = Source.single(parentFile2)
+    lazy val flow = new StepLogicFlow(mockLogic, mockFile2Writer, 2).flow
 
     lazy val resultFuture: Future[(Vector[WrittenFile2], Vector[ProcessedFile2])] = {
-      val output = runnable.run
-
       for {
-        written <- output._2
-        processed <- output._3
-      } yield (written.toVector, processed.toVector)
+        output <- source.via(flow).runWith(Sink.seq[ConvertOutputElement])
+      } yield (
+        // Split WrittenFile2s and ProcessedFile2s
+        output.collect { case ConvertOutputElement.ToProcess(w) => w }.to[Vector],
+        output.collect { case ConvertOutputElement.ToIngest(p) => p }.to[Vector]
+      )
     }
 
     lazy val result = await(resultFuture)
@@ -244,7 +232,7 @@ class StepLogicGraphSpec extends Specification with Mockito {
       )
 
       result
-      there was one(mockFile2Writer).setProcessed(parentFile2, 0, Some("logic error in com.overviewdocs.ingest.pipeline.StepLogicGraphSpec$MockStepLogic: tried to write child without blob data"))
+      there was one(mockFile2Writer).setProcessed(parentFile2, 0, Some("logic error in com.overviewdocs.ingest.pipeline.StepLogicFlowSpec$MockStepLogic: tried to write child without blob data"))
     }
 
     "error when there is no blob at the start of another file" in new BaseScope {
@@ -255,7 +243,7 @@ class StepLogicGraphSpec extends Specification with Mockito {
       )
 
       result
-      there was one(mockFile2Writer).setProcessed(parentFile2, 0, Some("logic error in com.overviewdocs.ingest.pipeline.StepLogicGraphSpec$MockStepLogic: unexpected fragment class com.overviewdocs.ingest.pipeline.StepOutputFragment$File2Header"))
+      there was one(mockFile2Writer).setProcessed(parentFile2, 0, Some("logic error in com.overviewdocs.ingest.pipeline.StepLogicFlowSpec$MockStepLogic: unexpected fragment class com.overviewdocs.ingest.pipeline.StepOutputFragment$File2Header"))
     }
 
     "error when a blob comes without a file" in new BaseScope {
@@ -265,7 +253,7 @@ class StepLogicGraphSpec extends Specification with Mockito {
       )
 
       result
-      there was one(mockFile2Writer).setProcessed(parentFile2, 0, Some("logic error in com.overviewdocs.ingest.pipeline.StepLogicGraphSpec$MockStepLogic: unexpected fragment class com.overviewdocs.ingest.pipeline.StepOutputFragment$Blob"))
+      there was one(mockFile2Writer).setProcessed(parentFile2, 0, Some("logic error in com.overviewdocs.ingest.pipeline.StepLogicFlowSpec$MockStepLogic: unexpected fragment class com.overviewdocs.ingest.pipeline.StepOutputFragment$Blob"))
     }
 
     "allows inheriting a blob from the parent" in new BaseScope {
