@@ -5,6 +5,7 @@ import akka.stream.scaladsl.Flow
 import scala.concurrent.ExecutionContext
 
 import com.overviewdocs.ingest.File2Writer
+import com.overviewdocs.ingest.convert.HttpConverter
 import com.overviewdocs.ingest.models.{ConvertOutputElement,WrittenFile2}
 import com.overviewdocs.ingest.pipeline.logic._
 
@@ -44,6 +45,14 @@ object Step {
     override val parallelism = 2
   }
 
+  case class HttpConverterStep(val httpConverter: HttpConverter, override val id: String) extends Step {
+    override def toFlow(
+      file2Writer: File2Writer
+    )(implicit ec: ExecutionContext, mat: Materializer): Flow[WrittenFile2, ConvertOutputElement, akka.NotUsed] = {
+      httpConverter.createFlow(id)
+    }
+  }
+
 //  case object Zip extends Step {
 //    override val id = "Zip"
 //    override val logic = ZipStepLogic
@@ -65,5 +74,11 @@ object Step {
     override val parallelism = 1 // it's super-fast
   }
 
-  val All: Vector[Step] = Vector(Ocr, SplitExtract, Office, Unhandled)
+  val All: Vector[Step] = Vector(
+    HttpConverterStep(HttpConverter.singleton, "Zip"),
+    Ocr,
+    SplitExtract,
+    Office,
+    Unhandled
+  )
 }
