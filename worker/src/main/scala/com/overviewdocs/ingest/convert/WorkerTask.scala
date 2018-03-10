@@ -15,9 +15,7 @@ import scala.util.{Success,Failure}
   *
   * Inputs into this Actor:
   *
-  * * HandlePostRequest() -- wires up a RunnableGraph (which updates
-  *                          lastActivityAt as a side-effect)
-  * * HandleGetRequest() -- updates lastActivityAt
+  * * GetForAsker(asker) -- sends Some((task, self)) to asker.
   * * Tick -- checks lastActivityAt and task.isCanceled; can send to
   *           `timeoutActorRef` or generate a `StepOutputFragment.Canceled`.
   */
@@ -73,48 +71,17 @@ class WorkerTask(
       updateLastActivity
     }
 
-    case WorkerTask.HandlePostRequest(httpRequest, respondTo) => {
+    case WorkerTask.GetForAsker(asker) => {
       updateLastActivity
-      respondWithFuture(taskHandler.handlePost(httpRequest, updateLastActivity _), respondTo)
-    }
-
-    case WorkerTask.HandleHeadRequest(httpRequest, respondTo) => {
-      updateLastActivity
-      respondWithFuture(taskHandler.handleHead(httpRequest), respondTo)
-    }
-
-    case WorkerTask.HandleGetRequest(httpRequest, respondTo) => {
-      updateLastActivity
-      respondWithFuture(taskHandler.handleGet(httpRequest), respondTo)
-    }
-  }
-
-  private def respondWithFuture(futureResponse: Future[HttpResponse], respondTo: ActorRef): Unit = {
-    futureResponse.onComplete { case _ => updateLastActivity }
-    futureResponse.onComplete {
-      case Success(response) => respondTo ! Status.Success(response)
-      case Failure(ex) => respondTo ! Status.Failure(ex)
+      asker ! Some((task, self))
     }
   }
 }
 
 object WorkerTask {
-  /** Streams the POST request to the task's output -- updating lastActivityAt
-    * in the process -- and sends an HttpResponse to `respondTo`.
-    */
-  case class HandlePostRequest(request: HttpRequest, respondTo: ActorRef)
-
-  /** Updates lastActivityAt and sends an HttpResponse to `respondTo`.
-    */
-  case class HandleHeadRequest(request: HttpRequest, respondTo: ActorRef)
-
-  /** Responds with the task's information and updates lastActivityAt.
-    */
-  case class HandleGetRequest(request: HttpRequest, respondTo: ActorRef)
-
   private case object Tick
-
   private case object Heartbeat
+  case class GetForAsker(asker: ActorRef)
 
   private val TickInterval: FiniteDuration = Duration(500, "ms")
 

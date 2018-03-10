@@ -44,13 +44,14 @@ class WorkerTaskPool(
   private var nChildren = 0
 
   override def receive = {
-    case WorkerTaskPool.Create(id, task) => {
+    case WorkerTaskPool.Create(task) => {
       if (nChildren >= maxNWorkers) {
         sender ! Status.Failure(new RuntimeException("Reached maxNWorkers"))
       } else {
+        val uuid = UUID.randomUUID
         val child = context.actorOf(
           WorkerTask.props(task, workerIdleTimeout, timeoutActorRef),
-          id.toString
+          uuid.toString
         )
         context.watch(child)
         sender ! Status.Success(child)
@@ -58,26 +59,15 @@ class WorkerTaskPool(
       }
     }
 
-    case WorkerTaskPool.HandlePostRequest(id, httpRequest) => {
-      context.child(id.toString) match {
-        case Some(child) => child ! WorkerTask.HandlePostRequest(httpRequest, sender)
-        case None => notFound(httpRequest, sender)
+    case WorkerTaskPool.Get(uuid) => {
+      context.child(uuid.toString) match {
+        case Some(child) => child ! WorkerTask.GetForAsker(sender)
+        case None => sender ! None
       }
     }
 
-    case DeadLetter(WorkerTask.HandlePostRequest(httpRequest, sender), `self`, _) => {
-      notFound(httpRequest, sender)
-    }
-
-    case WorkerTaskPool.HandleHeadRequest(id, httpRequest) => {
-      context.child(id.toString) match {
-        case Some(child) => child ! WorkerTask.HandleHeadRequest(httpRequest, sender)
-        case None => notFound(httpRequest, sender)
-      }
-    }
-
-    case DeadLetter(WorkerTask.HandleHeadRequest(httpRequest, sender), `self`, _) => {
-      notFound(httpRequest, sender)
+    case DeadLetter(WorkerTask.GetForAsker(asker), `self`, _) => {
+      asker ! None
     }
 
     case Terminated(_) => {
@@ -86,19 +76,12 @@ class WorkerTaskPool(
     }
   }
 
-  private def notFound(httpRequest: HttpRequest, respondTo: ActorRef): Unit = {
-    httpRequest.discardEntityBytes(mat).future
-      .onComplete { case _ =>
-        respondTo ! Status.Success(HttpResponse(StatusCodes.NotFound))
-      }
-  }
-
   context.system.eventStream.subscribe(self, classOf[DeadLetter])
 }
 
 object WorkerTaskPool {
-  /** Creates a WorkerTask child and responds with `Status.Success(akka.Done)`
-    * or `Status.Failure()`.
+  /** Creates a WorkerTask child and responds with
+    * `Status.Success(UUID)` or `Status.Failure()`.
     *
     * `Create()` askers that receive a Failure should complete the Task with a
     * `StepOutputFragment.StepError`. Currently, the only possible failure is
@@ -106,21 +89,14 @@ object WorkerTaskPool {
     * (`.maxNWorkers` is too low) or a worker error (workers aren't working on
     * the tasks they request).
     */
-  case class Create(id: UUID, task: Task)
+  case class Create(task: Task)
 
-  /** Responds with a `Status.Success(HttpResponse)`.
+  /** Responds with a `Status.Success(Option[(Task,ActorRef)])`.
     *
-    * Internally, we just pass this to the WorkerTask. If there is no
-    * WorkerTask, we generate a NotFound response.
+    * The caller is responsible for keeping the ActorRef alive: it should send
+    * periodic `WorkerTask.Heartbeat` messages during activity.
     */
-  case class HandlePostRequest(id: UUID, request: HttpRequest)
-
-  /** Responds with a `Status.Success(HttpResponse)`.
-    *
-    * Internally, we just pass this to the WorkerTask. If there is no
-    * WorkerTask, we generate a NotFound response.
-    */
-  case class HandleHeadRequest(id: UUID, request: HttpRequest)
+  case class Get(id: UUID)
 
   def props(
     maxNWorkers: Int,
