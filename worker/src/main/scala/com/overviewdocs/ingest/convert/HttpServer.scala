@@ -1,13 +1,14 @@
 package com.overviewdocs.ingest.convert
 
 import akka.actor.{Actor,ActorContext,ActorRef,Props}
-import akka.http.scaladsl.model.{RequestEntity,StatusCodes}
+import akka.http.scaladsl.model.{ContentTypes,HttpEntity,HttpResponse,ResponseEntity,RequestEntity,StatusCodes}
 import akka.http.scaladsl.server.{RequestContext,RouteResult}
 import akka.pattern.ask
 import akka.stream.{ActorMaterializer,OverflowStrategy,SourceShape}
 import akka.stream.scaladsl.{GraphDSL,MergePreferred,Sink,Source}
+import akka.util.ByteString
 import java.util.UUID
-import play.api.libs.json.Json
+import play.api.libs.json.{JsValue,Json}
 import scala.concurrent.duration.{Duration,FiniteDuration}
 import scala.concurrent.{ExecutionContext,Future}
 import scala.util.{Success,Failure}
@@ -141,12 +142,13 @@ class HttpTaskServer(
       case None => ctx.complete(StatusCodes.NotFound)
       case Some(task) => {
         ask(workerTaskPoolRef, WorkerTaskPool.Create(task)).mapTo[UUID].transformWith {
-          case Success(uuid) => ctx.complete((StatusCodes.Created, taskEntity(uuid, task)))
+          case Success(uuid) => ctx.complete(HttpResponse(StatusCodes.Created, Nil, taskEntity(uuid, task)))
           case Failure(ex: Exception) => {
             Source.single(StepOutputFragment.StepError(ex))
               .runWith(task.sink)
-            ctx.complete((StatusCodes.ServerError, errorEntity(ex)))
+            ctx.complete(HttpResponse(StatusCodes.InternalServerError, Nil, errorEntity(ex)))
           }
+          case Failure(ex: Throwable) => ???
         }
       }
     })
@@ -155,7 +157,7 @@ class HttpTaskServer(
   def handleGet(uuid: UUID)(ctx: RequestContext): Future[RouteResult] = {
     ask(workerTaskPoolRef, WorkerTaskPool.Get(uuid)).mapTo[Option[(Task,ActorRef)]].flatMap(_ match {
       case None => ctx.complete(StatusCodes.NotFound)
-      case Some((task, _)) => ctx.complete(taskEntity(uuid, task))
+      case Some((task, _)) => ctx.complete(HttpResponse(entity=taskEntity(uuid, task)))
     })
   }
 
@@ -177,16 +179,20 @@ class HttpTaskServer(
     })
   }
 
-  private def taskEntity(uuid: UUID, task: Task) = Json.obj(
+  private def taskEntity(uuid: UUID, task: Task) = jsonEntity(Json.obj(
     "id" -> uuid.toString,
     "foo" -> "bar"
-  )
+  ))
 
-  private def errorEntity(ex: Exception) = Json.obj(
+  private def errorEntity(ex: Throwable) = jsonEntity(Json.obj(
     "error" -> Json.obj(
       "message" -> ex.getMessage
     )
-  )
+  ))
+
+  private def jsonEntity(jsValue: JsValue): ResponseEntity = {
+    HttpEntity.Strict(ContentTypes.`application/json`, ByteString(Json.toBytes(jsValue)))
+  }
 
   private def pipeRequestEntityToTaskSink(
     entity: RequestEntity,

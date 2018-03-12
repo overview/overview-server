@@ -49,7 +49,7 @@ object Step {
     override def toFlow(
       file2Writer: File2Writer
     )(implicit ec: ExecutionContext, mat: Materializer): Flow[WrittenFile2, ConvertOutputElement, akka.NotUsed] = {
-      httpConverter.createFlow(id)
+      httpConverter.createFlow(new StepOutputFragmentCollector(file2Writer, id))
     }
   }
 

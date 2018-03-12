@@ -44,3 +44,7 @@ class HttpConverter {
     Task(writtenFile2, fragmentSink)
   }
 }
+
+object HttpConverter {
+  lazy val singleton = new HttpConverter
+}
