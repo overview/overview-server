@@ -18,17 +18,17 @@ import com.overviewdocs.searchindex.DocumentSetReindexer
 import com.overviewdocs.util.{AddDocumentsCommon,Logger}
 
 class FileGroupImportMonitor(
-  val database: Database,
-  val blobStorage: BlobStorage,
+  val file2Writer: File2Writer,
   val documentSetReindexer: DocumentSetReindexer,
   val steps: Vector[Step],
   val progressReporter: ActorRef,
-  val maxNTextChars: Int,                // see File2Writer.scala docs
   val nDeciders: Int,                    // see Processor.scala docs
   val recurseBufferSize: Int,            // see Processor.scala docs
   val ingestBatchSize: Int,              // see Ingester.scala docs
   val ingestBatchMaxWait: FiniteDuration // see Ingester.scala docs
 )(implicit ec: ExecutionContext, mat: Materializer) {
+  private val database = file2Writer.database
+  private val blobStorage = file2Writer.blobStorage
   private val logger = Logger.forClass(getClass)
   private val inProgress = ArrayBuffer.empty[ResumedFileGroupJob]
 
@@ -116,7 +116,6 @@ class FileGroupImportMonitor(
 
   def graph: Graph[FlowShape[ResumedFileGroupJob, IngestedRootFile2], akka.NotUsed] = {
     val groupedFileUploadToFile2 = new GroupedFileUploadToFile2(database, blobStorage)
-    val file2Writer = new File2Writer(database, blobStorage, maxNTextChars)
 
     GraphDSL.create() { implicit builder =>
       import GraphDSL.Implicits._
@@ -157,14 +156,22 @@ object FileGroupImportMonitor {
   )(implicit ec: ExecutionContext, mat: Materializer): FileGroupImportMonitor = {
     import com.typesafe.config.ConfigFactory
     val config = ConfigFactory.load
-
-    new FileGroupImportMonitor(
+    val file2Writer = new File2Writer(
       Database(),
       BlobStorage,
-      DocumentSetReindexer,
-      com.overviewdocs.ingest.pipeline.Step.All,
-      progressReporter,
       config.getInt("max_n_chars_per_document"),
+    )
+
+    new FileGroupImportMonitor(
+      file2Writer,
+      DocumentSetReindexer,
+      com.overviewdocs.ingest.pipeline.Step.all(
+        file2Writer,
+        config.getInt("n_document_converters"),
+        Duration.fromNanos(config.getDuration("worker_idle_timeout").toNanos),
+        Duration.fromNanos(config.getDuration("worker_http_create_timeout").toNanos)
+      ),
+      progressReporter,
       config.getInt("n_document_converters"),
       config.getInt("max_ingest_recurse_buffer_length"),
       config.getInt("ingest_batch_size"),

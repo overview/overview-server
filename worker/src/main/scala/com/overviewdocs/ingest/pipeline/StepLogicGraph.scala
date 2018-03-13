@@ -60,14 +60,15 @@ class StepLogicFlow(logic: StepLogic, file2Writer: File2Writer, parallelism: Int
   private val logger = Logger.forClass(getClass)
   private val stepOutputFragmentCollector = new StepOutputFragmentCollector(file2Writer, logic.getClass.getName)
 
-  def flow(implicit ec: ExecutionContext, mat: Materializer): Flow[WrittenFile2, ConvertOutputElement, akka.NotUsed] = {
+  def flow(implicit mat: Materializer): Flow[WrittenFile2, ConvertOutputElement, akka.NotUsed] = {
     Flow.apply[WrittenFile2]
       .flatMapMerge(parallelism, singleFileSource _)
   }
 
   private def singleFileSource(
     parentFile2: WrittenFile2
-  )(implicit ec: ExecutionContext, mat: Materializer): Source[ConvertOutputElement, akka.NotUsed] = {
+  )(implicit mat: Materializer): Source[ConvertOutputElement, akka.NotUsed] = {
+    implicit val ec = mat.executionContext
     logger.info("Processing file2 {} ({}, {} bytes, pipeline steps {}", parentFile2.id, parentFile2.filename, parentFile2.blob.nBytes, parentFile2.pipelineOptions.stepsRemaining)
 
     logic.toChildFragments(file2Writer.blobStorage, parentFile2)

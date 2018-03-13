@@ -1,68 +1,68 @@
 package com.overviewdocs.ingest.pipeline
 
-import akka.http.scaladsl.server.Route
+import akka.http.scaladsl.model.StatusCodes
+import akka.http.scaladsl.server.{RequestContext,Route,RouteResult}
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Flow,Keep,MergeHub,Sink}
 import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext,Future}
 
 import com.overviewdocs.ingest.File2Writer
 import com.overviewdocs.ingest.convert.{HttpTaskServer,Task}
 import com.overviewdocs.ingest.models.{ConvertOutputElement,WrittenFile2}
 import com.overviewdocs.ingest.pipeline.logic._
 
-sealed trait Step {
-  def canHandle(id: String): Boolean
+trait Step {
+  val id: String
+  val flow: Flow[WrittenFile2, ConvertOutputElement, Route]
 
-  def toFlow(
-    file2Writer: File2Writer
-  )(implicit ec: ExecutionContext, mat: Materializer): Flow[WrittenFile2, ConvertOutputElement, akka.NotUsed]
+  // We treat some Steps specially, based on their IDs:
+  // "Ocr": skip this Step if the user didn't ask for OCR
+  val isOcr: Boolean = (id == "Ocr")
+  // "Unhandled": this is the fallback Step
+  val isUnhandled: Boolean = (id == "Unhandled")
 }
+
 object Step {
-  sealed trait StepLogicStep extends Step {
-    val id: String
-    val logic: StepLogic
-    val parallelism: Int
+  case class SimpleStep(
+    override val id: String,
+    override val flow: Flow[WrittenFile2, ConvertOutputElement, Route]
+  ) extends Step
 
-    override def canHandle(anId: String) = anId == id
+  class StepLogicStep(
+    override val id: String,
+    file2Writer: File2Writer,
+    logic: StepLogic,
+    paralellism: Int
+  )(implicit mat: Materializer) extends Step {
+    override val flow: Flow[WrittenFile2, ConvertOutputElement, Route] = {
+      new StepLogicFlow(logic, file2Writer, paralellism)
+        .flow
+        .mapMaterializedValue(_ => nullRoute)
+    }
 
-    override def toFlow(
-      file2Writer: File2Writer
-    )(implicit ec: ExecutionContext, mat: Materializer): Flow[WrittenFile2, ConvertOutputElement, akka.NotUsed] = {
-      new StepLogicFlow(logic, file2Writer, parallelism).flow
+    private def nullRoute(ctx: RequestContext): Future[RouteResult] = {
+      implicit val ec = ctx.executionContext
+      ctx.request.discardEntityBytes(ctx.materializer).future
+        .flatMap(_ => ctx.complete((StatusCodes.NotFound, "Unhandled URL")))
     }
   }
 
-  case object Ocr extends StepLogicStep {
-    override val id = "Ocr"
-    override val logic = new OcrStepLogic
-    override val parallelism = 2
-  }
-
-  case object SplitExtract extends StepLogicStep {
-    override val id = "SplitExtract"
-    override val logic = new SplitExtractStepLogic
-    override val parallelism = 2 // TODO correct number of workers
-  }
-
-  case object Office extends StepLogicStep {
-    override val id = "Office"
-    override val logic = new OfficeStepLogic
-    override val parallelism = 2
-  }
-
-  case class HttpConverterStep(
+  class HttpConverter(
     stepIds: Vector[String],
+    file2Writer: File2Writer,
     maxNWorkers: Int,
     workerIdleTimeout: FiniteDuration,
     httpCreateIdleTimeout: FiniteDuration
-  ) extends Step {
-    override def canHandle(id: String) = stepIds.contains(id)
+  ) {
+    /** Builds all Steps that have HTTP server components.
+      *
+      * TODO avoid passing a Materializer here. We end up starting actors before
+      * materialization, which is wrong.
+      */
+    def steps(implicit mat: Materializer): Vector[Step] = stepIds.map(buildStep _)
 
-    private def stepFlow(
-      stepId: String,
-      file2Writer: File2Writer,
-    )(implicit mat: Materializer): Flow[WrittenFile2, ConvertOutputElement, Route] = {
+    private def buildStep(stepId: String)(implicit mat: Materializer): Step = {
       val fragmentCollector = new StepOutputFragmentCollector(file2Writer, stepId)
       val taskServer = new HttpTaskServer(stepId, maxNWorkers, workerIdleTimeout, httpCreateIdleTimeout)
       val (outputSink, outputSource) = MergeHub.source[ConvertOutputElement].preMaterialize
@@ -71,12 +71,9 @@ object Step {
         .map(w => createTask(fragmentCollector, w, outputSink))
         .toMat(taskServer.taskSink)(Keep.right)
 
-      Flow.fromSinkAndSourceCoupledMat(inputSink, outputSource)(Keep.left)
+      val flow = Flow.fromSinkAndSourceCoupledMat(inputSink, outputSource)(Keep.left)
+      SimpleStep(stepId, flow)
     }
-
-    override def toFlow(
-      file2Writer: File2Writer
-    )(implicit ec: ExecutionContext, mat: Materializer): Flow[WrittenFile2, ConvertOutputElement, akka.NotUsed] = ???
 
     private def createTask(
       stepOutputFragmentCollector: StepOutputFragmentCollector,
@@ -98,32 +95,15 @@ object Step {
     }
   }
 
-//  case object Zip extends Step {
-//    override val id = "Zip"
-//    override val logic = ZipStepLogic
-//  }
-//
-//  case object Pst extends Step {
-//    override val id = "Pst"
-//    override val logic = PstStepLogic
-//  }
-//
-//  case object Image extends Step {
-//    override val id = "Image"
-//    override val logic = ImageStepLogic
-//  }
-
-  case object Unhandled extends StepLogicStep {
-    override val id = "Unhandled"
-    override val logic = new UnhandledStepLogic
-    override val parallelism = 1 // it's super-fast
-  }
-
-  val All: Vector[Step] = Vector(
-    //HttpConverterStep(Vector("Zip")),
-    Ocr,
-    SplitExtract,
-    Office,
-    Unhandled
-  )
+  def all(
+    file2Writer: File2Writer,
+    maxNWorkers: Int,
+    workerIdleTimeout: FiniteDuration,
+    httpCreateIdleTimeout: FiniteDuration
+  )(implicit mat: Materializer): Vector[Step] = Vector(
+    new StepLogicStep("SplitExtract", file2Writer, new SplitExtractStepLogic, maxNWorkers),
+    new StepLogicStep("Ocr", file2Writer, new OcrStepLogic, maxNWorkers),
+    new StepLogicStep("Office", file2Writer, new OfficeStepLogic, maxNWorkers),
+    new StepLogicStep("Unhandled", file2Writer, new UnhandledStepLogic, 1),
+  ) ++ new HttpConverter(Vector("Zip"), file2Writer, maxNWorkers, workerIdleTimeout, httpCreateIdleTimeout).steps
 }

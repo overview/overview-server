@@ -34,6 +34,9 @@ import org.overviewproject.mime_types.MimeTypeDetector
   * extension. Only rarely does it use magic numbers from BlobStorage. Plus,
   * if there's a large backlog of magic-number detection to handle, that means
   * downstream isn't processing files quickly enough.
+  *
+  * HACK: while the caller passes in Steps, it doesn't pass in Pipelines. This
+  * is janky, and it should be fixed.
   */
 class Decider(
   steps: Vector[Step],
@@ -45,100 +48,15 @@ class Decider(
     */
   parallelism: Int = 2
 ) extends AwaitMethod {
-  def graph(implicit ec: ExecutionContext, mat: Materializer): Graph[UniformFanOutShape[WrittenFile2, WrittenFile2], akka.NotUsed] = {
-    val flow = Flow.apply[WrittenFile2]
-      .mapAsyncUnordered(parallelism)(ensurePipelineStepsRemaining _)
-
-    GraphDSL.create() { implicit builder =>
-      import GraphDSL.Implicits._
-
-      val addPipelineStepsRemaining = builder.add(flow)
-
-      val partition = builder.add(Partition[WrittenFile2](steps.size, getOutletIndex _))
-
-      addPipelineStepsRemaining ~> partition
-
-      // The compiler seems to need help typecasting outlets
-      val outlets: Seq[Outlet[WrittenFile2]] = partition.outlets.map(_.asInstanceOf[Outlet[WrittenFile2]])
-      UniformFanOutShape(addPipelineStepsRemaining.in, outlets: _*)
-    }
+  private def pipeline(stepIds: String*): Vector[Step] = {
+    stepIds.to[Vector].map(id => steps.find(_.id == id).get)
   }
-
-  private def buildGetBytes(
-    blobLocation: String
-  )(implicit mat: Materializer): Callable[Array[Byte]] = { () =>
-    val maxNBytes = Decider.mimeTypeDetector.getMaxGetBytesLength
-    var nBytesSeen = 0 // icky way of tracking state
-    val byteStringFuture: Future[ByteString] = blobStorage.get(blobLocation)
-      .takeWhile(bs => {
-        nBytesSeen += bs.size
-        nBytesSeen < maxNBytes
-      })
-      .runWith(Sink.fold(ByteString.empty)(_ ++ _))
-
-    val byteString = await(byteStringFuture)
-    byteString.slice(0, maxNBytes).toArray
-  }
-
-  private def detectMimeType(
-    filename: String,
-    blob: BlobStorageRef
-  )(implicit ec: ExecutionContext, mat: Materializer): Future[String] = {
-    Future {
-      Decider.mimeTypeDetector.detectMimeType(filename, buildGetBytes(blob.location))
-    }
-  }
-
-  protected[ingest] def getContentTypeNoParameters(
-    input: WrittenFile2
-  )(implicit ec: ExecutionContext, mat: Materializer): Future[String] = {
-    val MediaTypeRegex = "^([^;]+).*$".r
-
-    input.contentType match {
-      case "application/octet-stream" => detectMimeType(input.filename, input.blob.ref)
-      case MediaTypeRegex(withoutParameter) => Future.successful(withoutParameter)
-      case _ => detectMimeType(input.filename, input.blob.ref)
-    }
-  }
-
-  protected[ingest] def ensurePipelineStepsRemaining(
-    input: WrittenFile2
-  )(implicit ec: ExecutionContext, mat: Materializer): Future[WrittenFile2] = {
-    if (input.pipelineOptions.stepsRemaining.nonEmpty) {
-      Future.successful(input)
-    } else {
-      for {
-        detectedContentType <- getContentTypeNoParameters(input)
-      } yield {
-        val steps = Decider.handlers.get(detectedContentType)
-          .orElse(Decider.handlers.get(detectedContentType.replaceFirst("/.*", "/*")))
-          .getOrElse(Decider.pipelines.Unhandled)
-          // Filter out "OCR"
-          .filter(_ match {
-            case Step.Ocr if !input.pipelineOptions.ocr => false
-            case _ => true
-          })
-
-        input.copy(pipelineOptions=input.pipelineOptions.copy(
-          stepsRemaining=steps.map(_.toString)
-        ))
-      }
-    }
-  }
-
-  private def getOutletIndex(inputWithPipeline: WrittenFile2): Int = {
-    val id = inputWithPipeline.pipelineOptions.stepsRemaining.head
-    steps.indexWhere(_.canHandle(id))
-  }
-}
-
-object Decider {
-  protected[ingest] val mimeTypeDetector = new MimeTypeDetector
 
   private object pipelines {
-    val Pdf = Vector(Step.Ocr, Step.SplitExtract)
-    val Office = Vector(Step.Office, Step.SplitExtract)
-    val Unhandled = Vector(Step.Unhandled)
+    val Pdf = pipeline("Ocr", "SplitExtract")
+    val Office = pipeline("Office", "SplitExtract")
+    val Zip = pipeline("Zip")
+    val Unhandled = pipeline("Unhandled")
   }
 
   private val handlers = Map(
@@ -236,4 +154,91 @@ object Decider {
     "text/html" -> pipelines.Office, // TODO anything else: LibreOffice is uniquely inept with HTML
     "text/*" -> pipelines.Office
   )
+
+  def graph(implicit ec: ExecutionContext, mat: Materializer): Graph[UniformFanOutShape[WrittenFile2, WrittenFile2], akka.NotUsed] = {
+    val flow = Flow.apply[WrittenFile2]
+      .mapAsyncUnordered(parallelism)(ensurePipelineStepsRemaining _)
+
+    GraphDSL.create() { implicit builder =>
+      import GraphDSL.Implicits._
+
+      val addPipelineStepsRemaining = builder.add(flow)
+
+      val partition = builder.add(Partition[WrittenFile2](steps.size, getOutletIndex _))
+
+      addPipelineStepsRemaining ~> partition
+
+      // The compiler seems to need help typecasting outlets
+      val outlets: Seq[Outlet[WrittenFile2]] = partition.outlets.map(_.asInstanceOf[Outlet[WrittenFile2]])
+      UniformFanOutShape(addPipelineStepsRemaining.in, outlets: _*)
+    }
+  }
+
+  private def buildGetBytes(
+    blobLocation: String
+  )(implicit mat: Materializer): Callable[Array[Byte]] = { () =>
+    val maxNBytes = Decider.mimeTypeDetector.getMaxGetBytesLength
+    var nBytesSeen = 0 // icky way of tracking state
+    val byteStringFuture: Future[ByteString] = blobStorage.get(blobLocation)
+      .takeWhile(bs => {
+        nBytesSeen += bs.size
+        nBytesSeen < maxNBytes
+      })
+      .runWith(Sink.fold(ByteString.empty)(_ ++ _))
+
+    val byteString = await(byteStringFuture)
+    byteString.slice(0, maxNBytes).toArray
+  }
+
+  private def detectMimeType(
+    filename: String,
+    blob: BlobStorageRef
+  )(implicit ec: ExecutionContext, mat: Materializer): Future[String] = {
+    Future {
+      Decider.mimeTypeDetector.detectMimeType(filename, buildGetBytes(blob.location))
+    }
+  }
+
+  protected[ingest] def getContentTypeNoParameters(
+    input: WrittenFile2
+  )(implicit ec: ExecutionContext, mat: Materializer): Future[String] = {
+    val MediaTypeRegex = "^([^;]+).*$".r
+
+    input.contentType match {
+      case "application/octet-stream" => detectMimeType(input.filename, input.blob.ref)
+      case MediaTypeRegex(withoutParameter) => Future.successful(withoutParameter)
+      case _ => detectMimeType(input.filename, input.blob.ref)
+    }
+  }
+
+  protected[ingest] def ensurePipelineStepsRemaining(
+    input: WrittenFile2
+  )(implicit ec: ExecutionContext, mat: Materializer): Future[WrittenFile2] = {
+    if (input.pipelineOptions.stepsRemaining.nonEmpty) {
+      Future.successful(input)
+    } else {
+      for {
+        detectedContentType <- getContentTypeNoParameters(input)
+      } yield {
+        val steps = handlers.get(detectedContentType)
+          .orElse(handlers.get(detectedContentType.replaceFirst("/.*", "/*")))
+          .getOrElse(pipelines.Unhandled)
+          // Filter out "OCR"
+          .filter(step => !step.isOcr || input.pipelineOptions.ocr)
+
+        input.copy(pipelineOptions=input.pipelineOptions.copy(
+          stepsRemaining=steps.map(_.id)
+        ))
+      }
+    }
+  }
+
+  private def getOutletIndex(inputWithPipeline: WrittenFile2): Int = {
+    val id = inputWithPipeline.pipelineOptions.stepsRemaining.head
+    steps.indexWhere(_.id == id)
+  }
+}
+
+object Decider {
+  protected[ingest] val mimeTypeDetector = new MimeTypeDetector
 }

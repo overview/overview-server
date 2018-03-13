@@ -1,7 +1,7 @@
 package com.overviewdocs.ingest
 
 import akka.stream.Materializer
-import akka.stream.scaladsl.Source
+import akka.stream.scaladsl.{Flow,Source}
 import akka.util.ByteString
 import play.api.libs.json.JsObject
 import org.specs2.mock.Mockito
@@ -10,7 +10,7 @@ import org.specs2.specification.Scope
 import scala.concurrent.{ExecutionContext,Future}
 
 import com.overviewdocs.blobstorage.BlobStorage
-import com.overviewdocs.ingest.models.{BlobStorageRefWithSha1,WrittenFile2,ResumedFileGroupJob}
+import com.overviewdocs.ingest.models.{BlobStorageRefWithSha1,ConvertOutputElement,WrittenFile2,ResumedFileGroupJob}
 import com.overviewdocs.ingest.pipeline.Step
 import com.overviewdocs.models.{BlobStorageRef,File2}
 import com.overviewdocs.test.ActorSystemContext
@@ -42,7 +42,16 @@ class DeciderSpec extends Specification with Mockito {
     )
 
     val mockBlobStorage = mock[BlobStorage]
-    val decider = new Decider(Step.All, mockBlobStorage)
+    case class MockStep(override val id: String) extends Step {
+      override val flow = Flow[WrittenFile2]
+        .collect(PartialFunction.empty[WrittenFile2,ConvertOutputElement])
+        .mapMaterializedValue { _ =>
+          import akka.http.scaladsl.server.{RequestContext,RouteResult}
+          (ctx: RequestContext) => Future.successful(RouteResult.Rejected(Nil))
+        }
+    }
+    val steps = Vector("Ocr", "SplitExtract", "Office", "Zip", "Unhandled").map(MockStep.apply _)
+    val decider = new Decider(steps, mockBlobStorage)
   }
 
   "Decider" should {

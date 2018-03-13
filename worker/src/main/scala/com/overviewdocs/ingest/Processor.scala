@@ -60,7 +60,7 @@ class Processor(steps: Vector[Step], file2Writer: File2Writer, nDeciders: Int, r
       val decider = builder.add(new Decider(steps, file2Writer.blobStorage, nDeciders).graph)
 
       // Vector, nSteps long, of 1..1 FanOutShape2s.
-      val stepGraphs = steps.map(step => builder.add(step.toFlow(file2Writer)))
+      val stepFlows = steps.map(step => builder.add(step.flow))
 
       // nSteps .. 1 merger
       val mergeOutput = builder.add(Merge[ConvertOutputElement](steps.length))
@@ -76,11 +76,11 @@ class Processor(steps: Vector[Step], file2Writer: File2Writer, nDeciders: Int, r
 
       merger ~> decider
       steps.zipWithIndex.foreach { case (_, i) =>
-                decider ~> stepGraphs(i) ~> mergeOutput
+                decider ~> stepFlows(i) ~> mergeOutput
       }
-                                            mergeOutput ~> splitOutput ~> toProcess
-                                                           splitOutput ~> toIngest
-      merger.preferred <~                   recurseBuffer              <~ toProcess // highest-priority merger input
+                                           mergeOutput ~> splitOutput ~> toProcess
+                                                          splitOutput ~> toIngest
+      merger.preferred <~                  recurseBuffer              <~ toProcess // highest-priority merger input
 
       FlowShape(merger.in(0), toIngest.out) // Flow input is lower-priority merger input
     }
