@@ -63,7 +63,7 @@ class Processor(steps: Vector[Step], file2Writer: File2Writer, nDeciders: Int, r
       val stepGraphs = steps.map(step => builder.add(step.toFlow(file2Writer)))
 
       // nSteps .. 1 merger
-      val mergeOutput = builder.add(Merge[ConvertOutputElement](Step.All.length))
+      val mergeOutput = builder.add(Merge[ConvertOutputElement](steps.length))
 
       // FanOut: ConvertOutputElement => 0. WrittenFile2, 1. ProcessedFile2
       val splitOutput = builder.add(Partition[ConvertOutputElement](2, _ match {
