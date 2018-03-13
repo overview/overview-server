@@ -18,6 +18,7 @@ import scala.util.{Success,Failure}
   * * GetForAsker(asker) -- sends Some((task, self)) to asker.
   * * Tick -- checks lastActivityAt and task.isCanceled; can send to
   *           `timeoutActorRef` or generate a `StepOutputFragment.Canceled`.
+  * * stop -- when the parent stops this Actor, the job is complete.
   */
 class WorkerTask(
   task: Task,
@@ -38,7 +39,8 @@ class WorkerTask(
   val timeoutActorRef: ActorRef
 ) extends Actor with Timers {
   implicit val ec = context.dispatcher
-  timers.startPeriodicTimer("tick", WorkerTask.Tick, WorkerTask.TickInterval)
+  private val tickInterval = workerIdleTimeout / 10
+  timers.startPeriodicTimer("tick", WorkerTask.Tick, tickInterval)
 
   private var lastActivityAt = Instant.now
 
@@ -51,18 +53,10 @@ class WorkerTask(
     lastActivityAt = Instant.now
   }
 
-  private val taskHandler = new TaskHandler(task)
-
   override def receive = {
     case WorkerTask.Tick => {
-      if (task.isCanceled) {
-        // may someday we'll want workers to long-poll. In the meantime, all
-        // we need to do is disappear and the worker can see the 404 error on
-        // its next poll, signalling that it should stop what it's doing and
-        // request a new task.
-        context.stop(self)
-      } else if (isTimedOut) {
-        taskHandler.onCancel
+      if (isTimedOut) {
+        timeoutActorRef ! task
         context.stop(self)
       }
     }
@@ -80,10 +74,8 @@ class WorkerTask(
 
 object WorkerTask {
   private case object Tick
-  private case object Heartbeat
+  case object Heartbeat
   case class GetForAsker(asker: ActorRef)
-
-  private val TickInterval: FiniteDuration = Duration(500, "ms")
 
   def props(
     task: Task,

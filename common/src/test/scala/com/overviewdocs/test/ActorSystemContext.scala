@@ -19,29 +19,31 @@ trait ActorSystemContext
 }
 
 object ActorSystemContext {
-  lazy val singletonActorSystem: ActorSystem = ActorSystem(
-    name="ActorSystemContext",
-    config=ConfigFactory.parseString("""
-      akka {
-        log-dead-letters: off
+  val testConfigSource: String = """
+    akka {
+      log-dead-letters: off
 
-        actor {
-          provider: "akka.actor.LocalActorRefProvider"
-        }
+      actor {
+        provider: "akka.actor.LocalActorRefProvider"
+      }
 
-        remote {
-          enabled-transports: []
-        }
+      remote {
+        enabled-transports: []
+      }
 
-        default-dispatcher {
-          type = Dispatcher
-          executor = "fork-join-executor"
-          fork-join-executor {
-            parallelism-min = 3
-            parallelism-max = 10
-          }
+      default-dispatcher {
+        type = Dispatcher
+        executor = "fork-join-executor"
+        fork-join-executor {
+          parallelism-min = 3
+          parallelism-max = 10
         }
       }
-    """)
+    }
+  """
+
+  lazy val singletonActorSystem: ActorSystem = ActorSystem(
+    name="ActorSystemContext",
+    config=ConfigFactory.parseString(testConfigSource)
   )
 }

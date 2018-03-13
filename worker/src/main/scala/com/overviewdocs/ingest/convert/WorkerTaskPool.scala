@@ -54,7 +54,7 @@ class WorkerTaskPool(
           uuid.toString
         )
         context.watch(child)
-        sender ! Status.Success(child)
+        sender ! Status.Success(uuid)
         nChildren += 1
       }
     }

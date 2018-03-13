@@ -8,9 +8,10 @@ object Dependencies {
     val akkaRemote = "com.typesafe.akka" %% "akka-remote" % "2.5.3"
     val akkaTestkit = "com.typesafe.akka" %% "akka-testkit"  % "2.5.3"
     val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.0.10"
-    val asyncHttpClient = "com.ning" % "async-http-client" % "1.9.31"
+    val akkaHttpTestkit = "com.typesafe.akka" %% "akka-http-testkit" % "10.0.10"
     val akkaStream = "com.typesafe.akka" %% "akka-stream" % "2.5.11"
     val akkaStreamTestkit = "com.typesafe.akka" %% "akka-stream-testkit" % "2.5.11"
+    val asyncHttpClient = "com.ning" % "async-http-client" % "1.9.31"
     val awsCore = "com.amazonaws" % "aws-java-sdk-core" % "1.11.232"
     val awsS3 = "com.amazonaws" % "aws-java-sdk-s3" % "1.11.232"
     val bcrypt = "com.github.t3hnar" %% "scala-bcrypt" % "3.1"
@@ -106,6 +107,7 @@ object Dependencies {
     deps.luceneHighlighter,
     deps.mimeTypes,
     deps.pdfocr,
+    deps.akkaHttpTestkit % "test",
     deps.akkaStreamTestkit % "test",
     deps.janino % "test" // See logback-test.xml
   )
