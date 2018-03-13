@@ -74,7 +74,7 @@ class Processor(file2Writer: File2Writer, nDeciders: Int, recurseBufferSize: Int
     Flow.fromGraph(GraphDSL.create([#g1#])(([#r1#]) => RouteConcatenation.concat([#r1#])) { implicit builder => ([#step1: FlowShape[WrittenFile##2, ConvertOutputElement]#]) =>
       import GraphDSL.Implicits._
 
-      val merger = builder.add(MergePreferred[WrittenFile##2](1))
+      val merger = builder.add(MergePreferred[WrittenFile##2](##1))
 
       // 1..nSteps splitter
       val decider = builder.add(new Decider(steps, file##2Writer.blobStorage, nDeciders).graph)
