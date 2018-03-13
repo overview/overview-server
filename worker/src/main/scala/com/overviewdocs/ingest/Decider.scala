@@ -4,7 +4,7 @@ import akka.stream.{Graph,Materializer,Outlet,OverflowStrategy,UniformFanOutShap
 import akka.stream.scaladsl.{Flow,GraphDSL,Partition,Sink}
 import akka.util.ByteString
 import java.util.concurrent.Callable
-import scala.concurrent.{ExecutionContext,Future}
+import scala.concurrent.{ExecutionContext,Future,blocking}
 
 import com.overviewdocs.blobstorage.BlobStorage
 import com.overviewdocs.ingest.models.WrittenFile2
@@ -155,7 +155,7 @@ class Decider(
     "text/*" -> pipelines.Office
   )
 
-  def graph(implicit ec: ExecutionContext, mat: Materializer): Graph[UniformFanOutShape[WrittenFile2, WrittenFile2], akka.NotUsed] = {
+  def graph(implicit mat: Materializer): Graph[UniformFanOutShape[WrittenFile2, WrittenFile2], akka.NotUsed] = {
     val flow = Flow.apply[WrittenFile2]
       .mapAsyncUnordered(parallelism)(ensurePipelineStepsRemaining _)
 
@@ -193,15 +193,16 @@ class Decider(
   private def detectMimeType(
     filename: String,
     blob: BlobStorageRef
-  )(implicit ec: ExecutionContext, mat: Materializer): Future[String] = {
-    Future {
+  )(implicit mat: Materializer): Future[String] = {
+    implicit val ec = mat.executionContext
+    Future(blocking {
       Decider.mimeTypeDetector.detectMimeType(filename, buildGetBytes(blob.location))
-    }
+    })
   }
 
   protected[ingest] def getContentTypeNoParameters(
     input: WrittenFile2
-  )(implicit ec: ExecutionContext, mat: Materializer): Future[String] = {
+  )(implicit mat: Materializer): Future[String] = {
     val MediaTypeRegex = "^([^;]+).*$".r
 
     input.contentType match {
@@ -213,7 +214,9 @@ class Decider(
 
   protected[ingest] def ensurePipelineStepsRemaining(
     input: WrittenFile2
-  )(implicit ec: ExecutionContext, mat: Materializer): Future[WrittenFile2] = {
+  )(implicit mat: Materializer): Future[WrittenFile2] = {
+    implicit val ec = mat.executionContext
+
     if (input.pipelineOptions.stepsRemaining.nonEmpty) {
       Future.successful(input)
     } else {

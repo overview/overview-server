@@ -1,5 +1,6 @@
 package com.overviewdocs.ingest
 
+import akka.http.scaladsl.server.{Route,RouteConcatenation}
 import akka.stream.{Graph,FlowShape,Materializer,OverflowStrategy}
 import akka.stream.scaladsl.{Flow,GraphDSL,Merge,MergePreferred,Partition}
 import scala.concurrent.ExecutionContext
@@ -49,40 +50,57 @@ import com.overviewdocs.ingest.pipeline.Step
   *               |                     +-------+               |
   *               +---------------------------------------------+
   */
-class Processor(steps: Vector[Step], file2Writer: File2Writer, nDeciders: Int, recurseBufferSize: Int) {
-  def graph(implicit ec: ExecutionContext, mat: Materializer): Graph[FlowShape[WrittenFile2, ProcessedFile2], akka.NotUsed] = {
-    GraphDSL.create() { implicit builder =>
-      import GraphDSL.Implicits._
-
-      val merger = builder.add(MergePreferred[WrittenFile2](1))
-
-      // 1..nSteps splitter
-      val decider = builder.add(new Decider(steps, file2Writer.blobStorage, nDeciders).graph)
-
-      // Vector, nSteps long, of 1..1 FanOutShape2s.
-      val stepFlows = steps.map(step => builder.add(step.flow))
-
-      // nSteps .. 1 merger
-      val mergeOutput = builder.add(Merge[ConvertOutputElement](steps.length))
-
-      // FanOut: ConvertOutputElement => 0. WrittenFile2, 1. ProcessedFile2
-      val splitOutput = builder.add(Partition[ConvertOutputElement](2, _ match {
-        case ConvertOutputElement.ToProcess(_) => 0
-        case _ => 1
-      }))
-      val toProcess = builder.add(Flow.apply[ConvertOutputElement].collect[WrittenFile2] { case ConvertOutputElement.ToProcess(x) => x })
-      val toIngest = builder.add(Flow.apply[ConvertOutputElement].collect[ProcessedFile2] { case ConvertOutputElement.ToIngest(x) => x })
-      val recurseBuffer = builder.add(Flow.apply[WrittenFile2].buffer(recurseBufferSize, OverflowStrategy.fail))
-
-      merger ~> decider
-      steps.zipWithIndex.foreach { case (_, i) =>
-                decider ~> stepFlows(i) ~> mergeOutput
-      }
-                                           mergeOutput ~> splitOutput ~> toProcess
-                                                          splitOutput ~> toIngest
-      merger.preferred <~                  recurseBuffer              <~ toProcess // highest-priority merger input
-
-      FlowShape(merger.in(0), toIngest.out) // Flow input is lower-priority merger input
+class Processor(file2Writer: File2Writer, nDeciders: Int, recurseBufferSize: Int) {
+  /** Creates a new [[Flow]] by routing inputs through the appropriate Steps,
+    * recursively.
+    */
+  def flow(
+    steps: Vector[Step]
+  )(implicit mat: Materializer): Flow[WrittenFile2, ProcessedFile2, Route] = {
+    steps match {
+[2..#
+      case Vector([#s1#]) => flowGraph(steps, [#s1.flow#])#
+]
+      case _ => throw new RuntimeException("Unhandled number of Steps: " + steps.length)
     }
   }
+
+[2..#
+
+  private def flowGraph(
+    steps: Vector[Step],
+    [#g1: Flow[WrittenFile##2, ConvertOutputElement, Route]#]
+  )(implicit mat: Materializer): Flow[WrittenFile##2, ProcessedFile##2, Route] = {
+    Flow.fromGraph(GraphDSL.create([#g1#])(([#r1#]) => RouteConcatenation.concat([#r1#])) { implicit builder => ([#step1: FlowShape[WrittenFile##2, ConvertOutputElement]#]) =>
+      import GraphDSL.Implicits._
+
+      val merger = builder.add(MergePreferred[WrittenFile##2](1))
+
+      // 1..nSteps splitter
+      val decider = builder.add(new Decider(steps, file##2Writer.blobStorage, nDeciders).graph)
+
+      // nSteps .. 1 merger
+      val mergeOutput = builder.add(Merge[ConvertOutputElement](1))
+
+      // FanOut: ConvertOutputElement => 0. WrittenFile2, 1. ProcessedFile2
+      val splitOutput = builder.add(Partition[ConvertOutputElement](##2, _ match {
+        case ConvertOutputElement.ToProcess(_) => ##0
+        case _ => ##1
+      }))
+      val toProcess = builder.add(Flow.apply[ConvertOutputElement].collect[WrittenFile##2] { case ConvertOutputElement.ToProcess(x) => x })
+      val toIngest = builder.add(Flow.apply[ConvertOutputElement].collect[ProcessedFile##2] { case ConvertOutputElement.ToIngest(x) => x })
+      val recurseBuffer = builder.add(Flow.apply[WrittenFile##2].buffer(recurseBufferSize, OverflowStrategy.fail))
+
+      merger ~> decider
+      [#        decider ~> step1 ~> mergeOutput#
+      ]
+                                    mergeOutput ~> splitOutput ~> toProcess
+                                                   splitOutput ~> toIngest
+      merger.preferred <~           recurseBuffer              <~ toProcess // highest-priority merger input
+
+      FlowShape(merger.in(##0), toIngest.out) // Flow input is lower-priority merger input
+    })
+  }#
+  
+]
 }

@@ -121,7 +121,7 @@ class FileGroupImportMonitor(
       import GraphDSL.Implicits._
 
       val resumer = builder.add(new FileGroupFile2Graph(database, groupedFileUploadToFile2).graph)
-      val processor = builder.add(new Processor(steps, file2Writer, nDeciders, recurseBufferSize).graph)
+      val processor = builder.add(new Processor(file2Writer, nDeciders, recurseBufferSize).flow(steps))
       val toIngester = builder.add(MergePreferred[ProcessedFile2](1))
       val ingester = builder.add(Ingester.ingest(file2Writer, ingestBatchSize, ingestBatchMaxWait))
 

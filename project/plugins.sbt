@@ -5,6 +5,8 @@ resolvers += "Typesafe repository" at "http://repo.typesafe.com/typesafe/release
 // https://github.com/coursier/coursier#sbt-plugin for a big speedup
 addSbtPlugin("io.get-coursier" % "sbt-coursier" % "1.0.0-RC13")
 
+addSbtPlugin("io.spray" % "sbt-boilerplate" % "0.6.1")
+
 addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.6.11")
 addSbtPlugin("com.typesafe.sbt" % "sbt-digest" % "1.1.4")
 addSbtPlugin("com.typesafe.sbt" % "sbt-gzip" % "1.0.2")

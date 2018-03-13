@@ -1,4 +1,5 @@
 import java.io.{File,IOException}
+import spray.boilerplate.BoilerplatePlugin
 
 val rootDirectory = sys.props("user.dir")
 
@@ -81,6 +82,7 @@ lazy val common = (project in file("common"))
 // Daemon that executes background tasks
 lazy val worker = (project in file("worker"))
   .enablePlugins(JavaAppPackaging)
+  .enablePlugins(BoilerplatePlugin)
   //.enablePlugins(Revolver)
   .settings(
     target := file("/root") / "overview-build" / "worker",
