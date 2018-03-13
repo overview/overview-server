@@ -1,8 +1,11 @@
 package com.overviewdocs.jobhandler.filegroup
 
-import akka.actor.ActorRef
+import akka.actor.{ActorRef,ActorSystem}
+import akka.http.scaladsl.{Http,HttpExt}
+import akka.http.scaladsl.server.{Route,RoutingLog}
+import akka.http.scaladsl.settings.{ParserSettings,RoutingSettings}
 import akka.stream.{FlowShape,Graph,Materializer}
-import akka.stream.scaladsl.{GraphDSL,MergePreferred,Source,Sink}
+import akka.stream.scaladsl.{Flow,GraphDSL,Keep,MergePreferred,Source,Sink}
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.duration.{Duration,FiniteDuration}
 import scala.concurrent.{ExecutionContext,Future}
@@ -19,6 +22,7 @@ import com.overviewdocs.util.{AddDocumentsCommon,Logger}
 
 class FileGroupImportMonitor(
   val file2Writer: File2Writer,
+  val httpConfig: FileGroupImportMonitor.HttpConfig,
   val documentSetReindexer: DocumentSetReindexer,
   val steps: Vector[Step],
   val progressReporter: ActorRef,
@@ -26,7 +30,9 @@ class FileGroupImportMonitor(
   val recurseBufferSize: Int,            // see Processor.scala docs
   val ingestBatchSize: Int,              // see Ingester.scala docs
   val ingestBatchMaxWait: FiniteDuration // see Ingester.scala docs
-)(implicit ec: ExecutionContext, mat: Materializer) {
+)(implicit mat: Materializer) {
+  implicit val ec = mat.executionContext
+
   private val database = file2Writer.database
   private val blobStorage = file2Writer.blobStorage
   private val logger = Logger.forClass(getClass)
@@ -114,14 +120,15 @@ class FileGroupImportMonitor(
       .foreach(job => job.cancel)
   }
 
-  def graph: Graph[FlowShape[ResumedFileGroupJob, IngestedRootFile2], akka.NotUsed] = {
+  def graph: Flow[ResumedFileGroupJob, IngestedRootFile2, Route] = {
     val groupedFileUploadToFile2 = new GroupedFileUploadToFile2(database, blobStorage)
 
-    GraphDSL.create() { implicit builder =>
+    val processorFlowWithMat = new Processor(file2Writer, nDeciders, recurseBufferSize).flow(steps)
+
+    Flow.fromGraph(GraphDSL.create(processorFlowWithMat) { implicit builder => processor =>
       import GraphDSL.Implicits._
 
       val resumer = builder.add(new FileGroupFile2Graph(database, groupedFileUploadToFile2).graph)
-      val processor = builder.add(new Processor(file2Writer, nDeciders, recurseBufferSize).flow(steps))
       val toIngester = builder.add(MergePreferred[ProcessedFile2](1))
       val ingester = builder.add(Ingester.ingest(file2Writer, ingestBatchSize, ingestBatchMaxWait))
 
@@ -130,30 +137,63 @@ class FileGroupImportMonitor(
                       processor ~> toIngester ~> ingester // other ProcessedFile2s
 
       new FlowShape(resumer.in, ingester.out)
-    }
+    })
   }
 
   private def addInProgress(job: ResumedFileGroupJob): Unit = synchronized { inProgress.+=(job) }
   private def removeInProgress(job: ResumedFileGroupJob): Unit = synchronized { inProgress.-=(job) }
   private def isInProgress(job: ResumedFileGroupJob): Boolean = synchronized { inProgress.contains(job) }
 
-  def run: Future[Unit] = {
-    fileGroupSource.source                     // ResumedFileGroupJob
-      .map { job => addInProgress(job); job }
-      .via(graph)                              // IngestedFile2Root
-      .map(markFileIngestedInJob _)            // ResumedFileGroupJob
-      .filter(_.isComplete)                    // Complete ResumedFileGroupJob
-      .filter(isInProgress _)                  // avoid a warning
-      .map { job => removeInProgress(job); job }
-      .mapAsync(1)(finishFileGroupJob _)       // Unit -- now the FileGroup is deleted
-      .runReduce((_, _) => ()) // Future[Unit]
+  private def startHttpServer(route: Route): Future[Http.ServerBinding] = {
+    httpConfig.bindAndHandle(route)
+  }
+
+  def run: Future[akka.Done] = {
+    val (futureBinding: Future[Http.ServerBinding], futureDone: Future[akka.Done]) =
+      fileGroupSource.source // ResumedFileGroupJob
+        .map { job => addInProgress(job); job }
+        .viaMat(graph)((_, route) => startHttpServer(route)) // IngestedFile2Root
+        .map(markFileIngestedInJob _)                        // ResumedFileGroupJob
+        .filter(_.isComplete)                                // Complete ResumedFileGroupJob
+        .filter(isInProgress _)                              // avoid a warning
+        .map { job => removeInProgress(job); job }
+        .mapAsync(1)(finishFileGroupJob _)                   // Unit -- now the FileGroup is deleted
+        .toMat(Sink.ignore)(Keep.both)
+        .run
+
+    for {
+      binding <- futureBinding
+      _ <- futureDone
+      _ <- binding.unbind
+    } yield akka.Done
   }
 }
 
 object FileGroupImportMonitor {
+  case class HttpConfig(
+    httpExt: HttpExt,
+    routingSettings: RoutingSettings,
+    parserSettings: ParserSettings,
+    routingLog: RoutingLog,
+    interface: String,
+    port: Int
+  ) {
+    def bindAndHandle(
+      route: Route
+    )(implicit mat: Materializer): Future[Http.ServerBinding] = {
+      implicit val rs = routingSettings
+      implicit val ps = parserSettings
+      implicit val rl = routingLog
+      val sealedRoute = Route.seal(route)
+      val handler = Route.asyncHandler(sealedRoute)
+      httpExt.bindAndHandleAsync(handler, interface, port)
+    }
+  }
+
   def withProgressReporter(
+    actorSystem: ActorSystem,
     progressReporter: ActorRef
-  )(implicit ec: ExecutionContext, mat: Materializer): FileGroupImportMonitor = {
+  )(implicit mat: Materializer): FileGroupImportMonitor = {
     import com.typesafe.config.ConfigFactory
     val config = ConfigFactory.load
     val file2Writer = new File2Writer(
@@ -162,20 +202,34 @@ object FileGroupImportMonitor {
       config.getInt("max_n_chars_per_document"),
     )
 
+    val routingSettings = RoutingSettings(actorSystem)
+    val parserSettings = ParserSettings(actorSystem)
+    val routingLog = RoutingLog.fromActorSystem(actorSystem)
+
+    val httpConfig = HttpConfig(
+      Http(actorSystem),
+      routingSettings,
+      parserSettings,
+      routingLog,
+      config.getString("ingest.broker_http_address"),
+      config.getInt("ingest.broker_http_port")
+    )
+
     new FileGroupImportMonitor(
       file2Writer,
+      httpConfig,
       DocumentSetReindexer,
       com.overviewdocs.ingest.pipeline.Step.all(
         file2Writer,
-        config.getInt("n_document_converters"),
-        Duration.fromNanos(config.getDuration("worker_idle_timeout").toNanos),
-        Duration.fromNanos(config.getDuration("worker_http_create_timeout").toNanos)
+        config.getInt("ingest.n_document_converters"),
+        Duration.fromNanos(config.getDuration("ingest.worker_idle_timeout").toNanos),
+        Duration.fromNanos(config.getDuration("ingest.worker_http_create_timeout").toNanos)
       ),
       progressReporter,
-      config.getInt("n_document_converters"),
-      config.getInt("max_ingest_recurse_buffer_length"),
-      config.getInt("ingest_batch_size"),
-      Duration.fromNanos(config.getDuration("ingest_batch_max_wait").toNanos)
+      config.getInt("ingest.n_document_converters"),
+      config.getInt("ingest.max_recurse_buffer_length"),
+      config.getInt("ingest.batch_size"),
+      Duration.fromNanos(config.getDuration("ingest.batch_max_wait").toNanos)
     )
   }
 }

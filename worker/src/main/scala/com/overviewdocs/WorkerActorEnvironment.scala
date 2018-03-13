@@ -81,7 +81,7 @@ class WorkerActorEnvironment(database: Database, tempDirectory: Path) {
 
   val progressReporter = system.actorOf(ProgressReporter.props)
 
-  val fileGroupImportMonitor = FileGroupImportMonitor.withProgressReporter(progressReporter)(system.dispatcher, materializer)
+  val fileGroupImportMonitor = FileGroupImportMonitor.withProgressReporter(system, progressReporter)(materializer)
   val complete = fileGroupImportMonitor.run
 
   system.actorOf(
