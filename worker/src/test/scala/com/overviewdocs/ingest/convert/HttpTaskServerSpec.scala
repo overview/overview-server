@@ -1,6 +1,7 @@
 package com.overviewdocs.ingest.convert
 
 import akka.http.scaladsl.model.{ContentTypes,HttpEntity,HttpHeader,Multipart,RequestEntity,StatusCodes}
+import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.Specs2RouteTest
 import akka.stream.scaladsl.{Keep,MergeHub,Sink,Source}
 import akka.util.ByteString
@@ -60,14 +61,12 @@ class HttpTaskServerSpec extends Specification with Specs2RouteTest with Mockito
 
     lazy val server = new HttpTaskServer(
       "Step",
-      Source(tasks).concat(Source.fromFutureSource(endPromise.future)),
-      system,
       2,
       workerIdleTimeout,
       httpCreateTimeout
     )
 
-    lazy val route = server.route
+    lazy val route: Route = Source(tasks).concat(Source.fromFutureSource(endPromise.future)).runWith(server.taskSink)
 
     def httpCreate = Post("/Step", "") ~> route
     def httpGet(uuid: String) = Get("/Step/" + uuid) ~> route

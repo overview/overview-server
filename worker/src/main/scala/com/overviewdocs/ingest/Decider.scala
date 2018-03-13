@@ -128,7 +128,7 @@ class Decider(
 
   private def getOutletIndex(inputWithPipeline: WrittenFile2): Int = {
     val id = inputWithPipeline.pipelineOptions.stepsRemaining.head
-    steps.indexWhere(_.id == id)
+    steps.indexWhere(_.canHandle(id))
   }
 }
 

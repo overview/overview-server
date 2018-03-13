@@ -12,7 +12,8 @@ import com.overviewdocs.util.Logger
 class StepOutputFragmentCollector(file2Writer: File2Writer, logicName: String) {
   def forParent(
     parentFile2: WrittenFile2
-  )(implicit ec: ExecutionContext, mat: Materializer): Flow[StepOutputFragment, ConvertOutputElement, akka.NotUsed] = {
+  )(implicit mat: Materializer): Flow[StepOutputFragment, ConvertOutputElement, akka.NotUsed] = {
+    implicit val ec = mat.executionContext
     /*
      * We process the incoming stream of StepOutputFragments, passing each to
      * a (side-effect producing) File2Writer method and emitting each child
