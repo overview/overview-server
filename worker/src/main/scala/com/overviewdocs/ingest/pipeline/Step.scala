@@ -1,7 +1,7 @@
 package com.overviewdocs.ingest.pipeline
 
 import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.server.{RequestContext,Route,RouteResult}
+import akka.http.scaladsl.server.{Directives,RequestContext,Route,RouteResult}
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Flow,Keep,MergeHub,Sink}
 import scala.concurrent.duration.FiniteDuration
@@ -36,13 +36,7 @@ object Step {
     override val flow: Flow[WrittenFile2, ConvertOutputElement, Route] = {
       new StepLogicFlow(logic, file2Writer, paralellism)
         .flow
-        .mapMaterializedValue(_ => nullRoute)
-    }
-
-    private def nullRoute(ctx: RequestContext): Future[RouteResult] = {
-      implicit val ec = ctx.executionContext
-      ctx.request.discardEntityBytes(ctx.materializer).future
-        .flatMap(_ => ctx.complete((StatusCodes.NotFound, "Unhandled URL")))
+        .mapMaterializedValue(_ => Directives.reject)
     }
   }
 
