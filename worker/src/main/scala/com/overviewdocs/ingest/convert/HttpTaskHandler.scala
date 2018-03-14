@@ -19,7 +19,7 @@ import scala.util.{Try,Success,Failure}
 import com.overviewdocs.ingest.pipeline.StepOutputFragment
 import com.overviewdocs.models.File2
 
-class HttpTaskServer(
+class HttpTaskHandler(
   stepId: String,
   maxNWorkers: Int,
   workerIdleTimeout: FiniteDuration,

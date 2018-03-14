@@ -8,7 +8,7 @@ import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext,Future}
 
 import com.overviewdocs.ingest.File2Writer
-import com.overviewdocs.ingest.convert.{HttpTaskServer,Task}
+import com.overviewdocs.ingest.convert.{HttpTaskHandler,Task}
 import com.overviewdocs.ingest.models.{ConvertOutputElement,WrittenFile2}
 import com.overviewdocs.ingest.pipeline.logic._
 
@@ -56,7 +56,7 @@ object Step {
 
     private def buildStep(stepId: String)(implicit mat: Materializer): Step = {
       val fragmentCollector = new StepOutputFragmentCollector(file2Writer, stepId)
-      val taskServer = new HttpTaskServer(stepId, maxNWorkers, workerIdleTimeout, httpCreateIdleTimeout)
+      val taskServer = new HttpTaskHandler(stepId, maxNWorkers, workerIdleTimeout, httpCreateIdleTimeout)
       val (outputSink, outputSource) = MergeHub.source[ConvertOutputElement].preMaterialize
 
       val inputSink = Flow.apply[WrittenFile2]

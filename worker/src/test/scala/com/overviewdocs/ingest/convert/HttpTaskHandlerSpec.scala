@@ -19,7 +19,7 @@ import com.overviewdocs.ingest.pipeline.StepOutputFragment
 import com.overviewdocs.models.File2
 import com.overviewdocs.test.ActorSystemContext
 
-class HttpTaskServerSpec extends Specification with Specs2RouteTest with Mockito with JsonMatchers {
+class HttpTaskHandlerSpec extends Specification with Specs2RouteTest with Mockito with JsonMatchers {
   sequential
 
   // Specs2RouteTest conflicts with ActorSystemContext. But we can at least
@@ -46,7 +46,7 @@ class HttpTaskServerSpec extends Specification with Specs2RouteTest with Mockito
       mergeSink
     )
 
-    // Keep Source alive: HttpTaskServer shuts down when it's completed
+    // Keep Source alive: HttpTaskHandler shuts down when it's completed
     val endPromise = Promise[Source[Task, akka.NotUsed]]()
     def end: Unit = {
       Source.single(StepOutputFragment.Canceled).runWith(mergeSink)
@@ -59,7 +59,7 @@ class HttpTaskServerSpec extends Specification with Specs2RouteTest with Mockito
     val readTimeout: FiniteDuration = Duration(1, "s")
     val httpCreateTimeout: FiniteDuration = Duration(1, "s")
 
-    lazy val server = new HttpTaskServer(
+    lazy val server = new HttpTaskHandler(
       "Step",
       2,
       workerIdleTimeout,
@@ -97,7 +97,7 @@ class HttpTaskServerSpec extends Specification with Specs2RouteTest with Mockito
     }
   }
 
-  "HttpTaskServerSpec" should {
+  "HttpTaskHandlerSpec" should {
     "create a task" in new BaseScope {
       httpCreate ~> check {
         status must beEqualTo(StatusCodes.Created)
