@@ -55,12 +55,14 @@ class Decider(
   private object pipelines {
     val Pdf = pipeline("Ocr", "SplitExtract")
     val Office = pipeline("Office", "SplitExtract")
-    val Zip = pipeline("Zip")
+    val Archive = pipeline("Archive")
     val Unhandled = pipeline("Unhandled")
   }
 
   private val handlers = Map(
     "application/pdf" -> pipelines.Pdf,
+
+    "application/zip" -> pipelines.Archive,
 
     "application/clarisworks" -> pipelines.Office,
     "application/excel" -> pipelines.Office,

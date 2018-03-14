@@ -97,5 +97,5 @@ object Step {
     new StepLogicStep("Ocr", file2Writer, new OcrStepLogic, maxNWorkers),
     new StepLogicStep("Office", file2Writer, new OfficeStepLogic, maxNWorkers),
     new StepLogicStep("Unhandled", file2Writer, new UnhandledStepLogic, 1),
-  ) ++ new HttpConverter(Vector("Zip"), file2Writer, maxNWorkers, workerIdleTimeout, httpCreateIdleTimeout).steps
+  ) ++ new HttpConverter(Vector("Archive"), file2Writer, maxNWorkers, workerIdleTimeout, httpCreateIdleTimeout).steps
 }
