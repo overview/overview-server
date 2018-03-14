@@ -7,7 +7,7 @@ import akka.http.scaladsl.server.{RequestContext,Route,RouteResult}
 import akka.pattern.ask
 import akka.stream.{ActorMaterializer,FlowShape,OverflowStrategy,Materializer}
 import akka.stream.scaladsl.{Flow,GraphDSL,Keep,MergePreferred,Sink,Source}
-import akka.util.ByteString
+import akka.util.{ByteString,Timeout}
 import com.google.common.hash.HashCode
 import java.nio.charset.StandardCharsets.UTF_8
 import java.util.UUID
@@ -27,7 +27,7 @@ class HttpTaskHandler(
   workerIdleTimeout: FiniteDuration,
   httpCreateIdleTimeout: FiniteDuration
 ) {
-  implicit val timeout = akka.util.Timeout(Duration(2, "s")) // for ask()
+  private val unresponsiveTimeout = Duration(2, "s") // for ask()
 
   // The worst form of race:
   //
@@ -123,14 +123,14 @@ class HttpTaskHandler(
       implicit val ec = ctx.executionContext
 
       drainEntity(ctx.request.entity).flatMap { _ =>
-        ask(taskProviderRef, TaskProvider.Ask).mapTo[Option[Task]].flatMap(_ match {
+        ask(taskProviderRef, TaskProvider.Ask)(Timeout(httpCreateIdleTimeout + unresponsiveTimeout)).mapTo[Option[Task]].flatMap(_ match {
           case None => {
             ctx.complete(StatusCodes.NoContent)
           }
           case Some(task) => {
             // At this point, the task is in neither the Source[Task, _] nor the
             // WorkerTaskPool. Place it in the WorkerTaskPool, before we lose it.
-            ask(workerTaskPoolRef, WorkerTaskPool.Create(task)).mapTo[UUID].transformWith {
+            ask(workerTaskPoolRef, WorkerTaskPool.Create(task))(Timeout(unresponsiveTimeout)).mapTo[UUID].transformWith {
               case Success(uuid) => {
                 taskEntity(ctx, uuid, task).flatMap(e => ctx.complete(HttpResponse(StatusCodes.Created, Nil, e)))
               }
@@ -161,7 +161,7 @@ class HttpTaskHandler(
       implicit val mat = ctx.materializer
       implicit val ec = ctx.executionContext
 
-      ask(workerTaskPoolRef, WorkerTaskPool.Get(uuid)).mapTo[Option[(Task,ActorRef)]].flatMap(_ match {
+      ask(workerTaskPoolRef, WorkerTaskPool.Get(uuid))(Timeout(unresponsiveTimeout)).mapTo[Option[(Task,ActorRef)]].flatMap(_ match {
         case Some((task, workerTaskRef)) if task.isCanceled => {
           Source.single(StepOutputFragment.Canceled).runWith(task.sink)
           actorRefFactory.stop(workerTaskRef)
