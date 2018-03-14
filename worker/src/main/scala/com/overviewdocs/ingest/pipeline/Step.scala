@@ -19,8 +19,6 @@ trait Step {
   // We treat some Steps specially, based on their IDs:
   // "Ocr": skip this Step if the user didn't ask for OCR
   val isOcr: Boolean = (id == "Ocr")
-  // "Unhandled": this is the fallback Step
-  val isUnhandled: Boolean = (id == "Unhandled")
 }
 
 object Step {
