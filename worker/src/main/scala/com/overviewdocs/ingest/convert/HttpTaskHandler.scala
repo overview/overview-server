@@ -2,12 +2,13 @@ package com.overviewdocs.ingest.convert
 
 import akka.actor.{Actor,ActorRef,ActorRefFactory,Props}
 import akka.http.scaladsl.marshalling.ToResponseMarshallable
-import akka.http.scaladsl.model.{ContentTypes,HttpEntity,HttpResponse,Multipart,ResponseEntity,RequestEntity,StatusCodes}
+import akka.http.scaladsl.model.{ContentTypes,HttpEntity,HttpResponse,Multipart,ResponseEntity,RequestEntity,StatusCodes,Uri}
 import akka.http.scaladsl.server.{RequestContext,Route,RouteResult}
 import akka.pattern.ask
 import akka.stream.{ActorMaterializer,FlowShape,OverflowStrategy,Materializer}
 import akka.stream.scaladsl.{Flow,GraphDSL,Keep,MergePreferred,Sink,Source}
 import akka.util.ByteString
+import com.google.common.hash.HashCode
 import java.nio.charset.StandardCharsets.UTF_8
 import java.util.UUID
 import play.api.libs.json.{JsObject,JsNumber,JsPath,JsValue,Json,Reads}
@@ -16,6 +17,7 @@ import scala.concurrent.duration.{Duration,FiniteDuration}
 import scala.concurrent.{ExecutionContext,Future}
 import scala.util.{Try,Success,Failure}
 
+import com.overviewdocs.blobstorage.BlobStorage
 import com.overviewdocs.ingest.pipeline.StepOutputFragment
 import com.overviewdocs.models.File2
 
@@ -41,7 +43,9 @@ class HttpTaskHandler(
 
   /** A Sink for tasks provided by the user.
     */
-  def taskSink(implicit mat: Materializer): Sink[Task, Route] = {
+  def taskSink(
+    blobStorage: BlobStorage
+  )(implicit mat: Materializer): Sink[Task, Route] = {
     implicit val ec: ExecutionContext = mat.executionContext
     val actorRefFactory: ActorRefFactory = mat match {
       case am: ActorMaterializer => am.system
@@ -94,7 +98,7 @@ class HttpTaskHandler(
         // Sink because we want to shut things down in an orderly fashion.
         futureDone.onComplete { case _ => shutdown }; akka.NotUsed
       }
-      .mapMaterializedValue(_ => new StepRouteFactory(stepId, taskProviderRef, workerTaskPoolRef, actorRefFactory).route)
+      .mapMaterializedValue(_ => new StepRouteFactory(stepId, blobStorage, taskProviderRef, workerTaskPoolRef, actorRefFactory).route)
       .to(Sink.actorRefWithAck[Task](
         taskProviderRef,
         TaskProvider.Init,
@@ -105,6 +109,7 @@ class HttpTaskHandler(
 
   class StepRouteFactory(
     stepId: String,
+    blobStorage: BlobStorage,
     taskProviderRef: ActorRef, 
     workerTaskPoolRef: ActorRef,
     actorRefFactory: ActorRefFactory
@@ -117,26 +122,28 @@ class HttpTaskHandler(
       implicit val mat = ctx.materializer
       implicit val ec = ctx.executionContext
 
-      ask(taskProviderRef, TaskProvider.Ask).mapTo[Option[Task]].flatMap(_ match {
-        case None => {
-          ctx.complete(StatusCodes.NotFound)
-        }
-        case Some(task) => {
-          // At this point, the task is in neither the Source[Task, _] nor the
-          // WorkerTaskPool. Place it in the WorkerTaskPool, before we lose it.
-          ask(workerTaskPoolRef, WorkerTaskPool.Create(task)).mapTo[UUID].transformWith {
-            case Success(uuid) => {
-              ctx.complete(HttpResponse(StatusCodes.Created, Nil, taskEntity(uuid, task)))
-            }
-            case Failure(ex: Exception) => {
-              Source.single(StepOutputFragment.StepError(ex))
-                .runWith(task.sink)
-              ctx.complete(HttpResponse(StatusCodes.InternalServerError, Nil, errorEntity(ex)))
-            }
-            case Failure(ex: Throwable) => ???
+      drainEntity(ctx.request.entity).flatMap { _ =>
+        ask(taskProviderRef, TaskProvider.Ask).mapTo[Option[Task]].flatMap(_ match {
+          case None => {
+            ctx.complete(StatusCodes.NoContent)
           }
-        }
-      })
+          case Some(task) => {
+            // At this point, the task is in neither the Source[Task, _] nor the
+            // WorkerTaskPool. Place it in the WorkerTaskPool, before we lose it.
+            ask(workerTaskPoolRef, WorkerTaskPool.Create(task)).mapTo[UUID].transformWith {
+              case Success(uuid) => {
+                taskEntity(ctx, uuid, task).flatMap(e => ctx.complete(HttpResponse(StatusCodes.Created, Nil, e)))
+              }
+              case Failure(ex: Exception) => {
+                Source.single(StepOutputFragment.StepError(ex))
+                  .runWith(task.sink)
+                ctx.complete(HttpResponse(StatusCodes.InternalServerError, Nil, errorEntity(ex)))
+              }
+              case Failure(ex: Throwable) => ???
+            }
+          }
+        })
+      }
     }
 
     private def drainEntity(entity: HttpEntity)(implicit mat: Materializer): Future[akka.Done] = {
@@ -169,13 +176,26 @@ class HttpTaskHandler(
       })
     }
 
+    private def handleGetBlob(uuid: UUID)(ctx: RequestContext): Future[RouteResult] = {
+      implicit val ec = ctx.executionContext
+      implicit val mat = ctx.materializer
+
+      drainEntity(ctx.request.entity).flatMap { _ =>
+        withTask(uuid, ctx)(() => Future.successful(akka.Done)) { (task, _) =>
+          val byteSource = blobStorage.get(task.writtenFile2.blob.location)
+          val nBytes = task.writtenFile2.blob.nBytes
+          ctx.complete(HttpEntity.Default(ContentTypes.`application/octet-stream`, nBytes.toLong, byteSource))
+        }
+      }
+    }
+
     private def handleGet(uuid: UUID)(ctx: RequestContext): Future[RouteResult] = {
       implicit val mat = ctx.materializer
       implicit val ec = ctx.executionContext
 
       drainEntity(ctx.request.entity).flatMap { _ =>
         withTask(uuid, ctx)(() => Future.successful(akka.Done)) { (task, _) =>
-          ctx.complete(HttpResponse(entity=taskEntity(uuid, task)))
+          taskEntity(ctx, uuid, task).flatMap(e => ctx.complete(HttpResponse(entity=e)))
         }
       }
     }
@@ -191,10 +211,33 @@ class HttpTaskHandler(
       }
     }
 
-    private def taskEntity(uuid: UUID, task: Task) = jsonEntity(Json.obj(
-      "id" -> uuid.toString,
-      "foo" -> "bar"
-    ))
+    private def taskEntity(ctx: RequestContext, uuid: UUID, task: Task): Future[ResponseEntity] = {
+      implicit val ec = ctx.executionContext
+
+      val file2 = task.writtenFile2
+      implicit val pipelineOptionsWrites = Json.writes[File2.PipelineOptions]
+
+      for {
+        externalBlobUrl <- blobStorage.getUrlOpt(file2.blob.location, file2.contentType)
+      } yield {
+        val blobUrl: String = externalBlobUrl
+          .getOrElse(Uri.parseAndResolve("/" + stepId + "/" + uuid + "/blob", ctx.request.uri).toString)
+
+        jsonEntity(Json.obj(
+          "id" -> uuid.toString,
+          "filename" -> file2.filename,
+          "contentType" -> file2.contentType,
+          "languageCode" -> file2.languageCode,
+          "metadata" -> file2.metadata.jsObject,
+          "pipelineOptions" -> file2.pipelineOptions,
+          "blob" -> Json.obj(
+            "url" -> blobUrl,
+            "nBytes" -> file2.blob.nBytes,
+            "sha1" -> HashCode.fromBytes(file2.blob.sha1).toString
+          )
+        ))
+      }
+    }
 
     private def errorEntity(ex: Throwable) = jsonEntity(Json.obj(
       "error" -> Json.obj(
@@ -206,9 +249,9 @@ class HttpTaskHandler(
       HttpEntity.Strict(ContentTypes.`application/json`, ByteString(Json.toBytes(jsValue)))
     }
 
-    implicit val file2MetadataReads = Reads.JsObjectReads.map(File2.Metadata.apply _)
-    implicit val pipelineOptionsReads = Json.reads[File2.PipelineOptions]
-    implicit val stepOutputFragmentReads = Json.reads[StepOutputFragment.File2Header]
+    implicit val file2MetadataReads: Reads[File2.Metadata] = Reads.JsObjectReads.map(File2.Metadata.apply _)
+    implicit val pipelineOptionsReads: Reads[File2.PipelineOptions] = Json.reads[File2.PipelineOptions]
+    implicit val file2HeaderReads: Reads[StepOutputFragment.File2Header] = Json.reads[StepOutputFragment.File2Header]
     implicit val progressChildrenReads: Reads[StepOutputFragment.ProgressChildren] = (
       (JsPath \ "children" \ "nProcessed").read[Int] and
       (JsPath \ "children" \ "nTotal").read[Int]
@@ -217,7 +260,9 @@ class HttpTaskHandler(
       (JsPath \ "bytes" \ "nProcessed").read[Int] and
       (JsPath \ "bytes" \ "nTotal").read[Int]
     )(StepOutputFragment.ProgressBytes.apply _)
-    implicit val progressFractionReads = Reads.DoubleReads.map(StepOutputFragment.ProgressFraction.apply _)
+    implicit val progressFractionReads: Reads[StepOutputFragment.ProgressFraction] = {
+      Reads.DoubleReads.map(StepOutputFragment.ProgressFraction.apply _)
+    }
     implicit val progressReads: Reads[StepOutputFragment.Progress] = {
       progressChildrenReads.map[StepOutputFragment.Progress](identity)
         .orElse(progressBytesReads.map[StepOutputFragment.Progress](identity))
@@ -370,8 +415,13 @@ class HttpTaskHandler(
           }
         } ~
         get {
-          path(JavaUUID) { uuid =>
-            handleGet(uuid)
+          pathPrefix(JavaUUID) { uuid =>
+            path("blob") {
+              handleGetBlob(uuid)
+            } ~
+            pathEnd {
+              handleGet(uuid)
+            }
           }
         } ~
         head {

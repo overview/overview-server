@@ -63,6 +63,25 @@ trait BlobStorage {
     strategyFactory.forLocation(location).getUrl(location, mimeType)
   }
 
+  /** Gets a public URL the end-user can use to access the blob for a while.
+    *
+    * The <tt>location</tt> should look like <tt>"s3:bucket:key"</tt> or
+    * <tt>"pglo:123456"</tt>.
+    *
+    * This method checks <tt>location</tt> for syntax synchronously. The URL
+    * it returns may fail if there is a network error or permissions problem.
+    *
+    * Some storage backends (like File) cannot return a URL: they will return
+    * None.
+    *
+    * @param location Something like <tt>"s3:bucket:key"</tt> or <tt>"pglo:123"</tt>
+    * @param mimeType Something like <tt>"image/png"</tt>, for a data: URL.
+    * @throws InvalidArgumentException if <tt>location</tt> is invalid
+    */
+  def getUrlOpt(location: String, mimeType: String): Future[Option[String]] = {
+    strategyFactory.forLocation(location).getUrlOpt(location, mimeType)
+  }
+
   /** Streams the blob into a file, runs the callback, and deletes the file.
     *
     * The File will be deleted after the callback ends, whether it succeeds or

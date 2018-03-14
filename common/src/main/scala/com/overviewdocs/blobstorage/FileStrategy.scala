@@ -42,6 +42,10 @@ trait FileStrategy extends BlobStorageStrategy {
     }}
   }
 
+  override def getUrlOpt(locationString: String, mimeType: String): Future[Option[String]] = {
+    Future.successful(None)
+  }
+
   override def delete(locationString: String): Future[Unit] = {
     val location = stringToLocation(locationString)
     val file = keyFile(location)

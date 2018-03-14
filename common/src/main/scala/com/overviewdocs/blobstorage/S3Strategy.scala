@@ -62,6 +62,11 @@ trait S3Strategy extends BlobStorageStrategy {
     })
   }
 
+  override def getUrlOpt(locationString: String, mimeType: String): Future[Option[String]] = {
+    import scala.concurrent.ExecutionContext.Implicits.global
+    getUrl(locationString, mimeType).map(url => Some(url))
+  }
+
   override def delete(location: String): Future[Unit] = deleteMany(Seq(location))
 
   override def deleteMany(locationStrings: Seq[String]): Future[Unit] = {

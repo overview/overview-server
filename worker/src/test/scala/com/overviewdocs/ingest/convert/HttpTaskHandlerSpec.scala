@@ -11,12 +11,14 @@ import org.specs2.mock.Mockito
 import org.specs2.mutable.{After,Specification}
 import org.specs2.specification.Scope
 import play.api.libs.json.{JsObject,Json}
+import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.duration.{Duration,FiniteDuration}
 import scala.concurrent.{Future,Promise,blocking}
 
-import com.overviewdocs.ingest.models.{ResumedFileGroupJob,WrittenFile2}
+import com.overviewdocs.blobstorage.BlobStorage
+import com.overviewdocs.ingest.models.{BlobStorageRefWithSha1,ResumedFileGroupJob,WrittenFile2}
 import com.overviewdocs.ingest.pipeline.StepOutputFragment
-import com.overviewdocs.models.File2
+import com.overviewdocs.models.{BlobStorageRef,File2}
 import com.overviewdocs.test.ActorSystemContext
 
 class HttpTaskHandlerSpec extends Specification with Specs2RouteTest with Mockito with JsonMatchers {
@@ -36,10 +38,24 @@ class HttpTaskHandlerSpec extends Specification with Specs2RouteTest with Mockit
       .toMat(Sink.collection[StepOutputFragment, Vector[_]])(Keep.both)
       .run
 
-    val mockWrittenFile2 = mock[WrittenFile2]
     val mockFileGroupJob = mock[ResumedFileGroupJob]
     mockFileGroupJob.isCanceled returns false
-    mockWrittenFile2.fileGroupJob returns mockFileGroupJob
+    val mockWrittenFile2 = WrittenFile2(
+      id=1L,
+      fileGroupJob=mockFileGroupJob,
+      onProgress=(d => ???),
+      rootId=None,
+      parentId=None,
+      filename="file.name",
+      contentType="application/test",
+      languageCode="fr",
+      metadata=File2.Metadata(Json.obj("foo" -> "bar")),
+      pipelineOptions=File2.PipelineOptions(true, false, Vector("Next")),
+      blob=BlobStorageRefWithSha1(BlobStorageRef("loc:123", 20), ByteString("abcdabcdabcdabcdabcd").toArray)
+    )
+
+    val mockBlobStorage = mock[BlobStorage]
+    mockBlobStorage.getUrlOpt(any[String], any[String]) returns Future.successful[Option[String]](None)
 
     def createTask: Task = Task(
       mockWrittenFile2,
@@ -66,7 +82,11 @@ class HttpTaskHandlerSpec extends Specification with Specs2RouteTest with Mockit
       httpCreateTimeout
     )
 
-    lazy val route: Route = Source(tasks).concat(Source.fromFutureSource(endPromise.future)).runWith(server.taskSink)
+    lazy val route: Route = {
+      Source(tasks)
+        .concat(Source.fromFutureSource(endPromise.future))
+        .runWith(server.taskSink(mockBlobStorage))
+    }
 
     def httpCreate = Post("/Step", "") ~> route
     def httpGet(uuid: String) = Get("/Step/" + uuid) ~> route
@@ -109,7 +129,7 @@ class HttpTaskHandlerSpec extends Specification with Specs2RouteTest with Mockit
     "fail to create a second task if there is not one" in new BaseScope {
       override val httpCreateTimeout = Duration(1, "ms")
       createWorkerTask
-      httpCreate ~> check { status must beEqualTo(StatusCodes.NotFound) }
+      httpCreate ~> check { status must beEqualTo(StatusCodes.NoContent) }
     }
 
     "create a second task if there is one" in new BaseScope {
@@ -117,17 +137,61 @@ class HttpTaskHandlerSpec extends Specification with Specs2RouteTest with Mockit
       override val nTasks = 2
       httpCreate ~> check { status must beEqualTo(StatusCodes.Created) }
       httpCreate ~> check { status must beEqualTo(StatusCodes.Created) }
-      httpCreate ~> check { status must beEqualTo(StatusCodes.NotFound) }
+      httpCreate ~> check { status must beEqualTo(StatusCodes.NoContent) }
     }
 
     "allow GET and HEAD of a task" in new BaseScope {
-      val taskId = createWorkerTask
+      val taskJson = httpCreate ~> check {
+        status must beEqualTo(StatusCodes.Created)
+        Json.parse(await(responseEntity.toStrict(readTimeout)).data.toArray).as[JsObject]
+      }
+      val taskId = taskJson.value("id").as[String]
+
+      taskJson.value("filename").as[String] must beEqualTo("file.name")
+      taskJson.value("contentType").as[String] must beEqualTo("application/test")
+      taskJson.value("languageCode").as[String] must beEqualTo("fr")
+      taskJson.value("metadata") must beEqualTo(Json.obj("foo" -> "bar"))
+      taskJson.value("pipelineOptions") must beEqualTo(Json.obj("ocr" -> true, "splitByPage" -> false, "stepsRemaining" -> Json.arr("Next")))
+      val blobJson = taskJson.value("blob").as[JsObject]
+      blobJson.value("url").as[String] must beEqualTo("http://example.com/Step/" + taskId + "/blob")
+      blobJson.value("nBytes").as[Int] must beEqualTo(20)
+      blobJson.value("sha1").as[String] must beEqualTo("6162636461626364616263646162636461626364") // hex
+
       httpGet(taskId) ~> check {
         status must beEqualTo(StatusCodes.OK)
-        readTaskId(responseEntity) must beEqualTo(taskId)
+        Json.parse(await(responseEntity.toStrict(readTimeout)).data.toArray) must beEqualTo(taskJson)
       }
       httpHead(taskId) ~> check {
         status must beEqualTo(StatusCodes.OK)
+      }
+    }
+
+    "allow GET of a task blob in S3" in new BaseScope {
+      mockBlobStorage.getUrlOpt("loc:123", "application/test") returns Future.successful(Some("http://foo"))
+      val taskJson = httpCreate ~> check {
+        status must beEqualTo(StatusCodes.Created)
+        Json.parse(await(responseEntity.toStrict(readTimeout)).data.toArray).as[JsObject]
+      }
+      val blobJson = taskJson.value("blob").as[JsObject]
+      val blobUrl = blobJson.value("url").as[String]
+
+      blobUrl must beEqualTo("http://foo")
+    }
+
+    "allow GET of a task blob in file storage" in new BaseScope {
+      mockBlobStorage.getUrlOpt("loc:123", "application/test") returns Future.successful(None)
+      mockBlobStorage.get("loc:123") returns Source.single(ByteString("here are the bytes"))
+
+      val taskJson = httpCreate ~> check {
+        status must beEqualTo(StatusCodes.Created)
+        Json.parse(await(responseEntity.toStrict(readTimeout)).data.toArray).as[JsObject]
+      }
+      val blobJson = taskJson.value("blob").as[JsObject]
+      val blobUrl = blobJson.value("url").as[String]
+
+      Get(blobUrl) ~> route ~> check {
+        status must beEqualTo(StatusCodes.OK)
+        await(responseEntity.toStrict(readTimeout)).data must beEqualTo(ByteString("here are the bytes"))
       }
     }
 
@@ -230,7 +294,7 @@ class HttpTaskHandlerSpec extends Specification with Specs2RouteTest with Mockit
     "cancel the task before sending it to a worker" in new BaseScope {
       mockFileGroupJob.isCanceled returns true
       override val httpCreateTimeout = Duration(10, "ms")
-      httpCreate ~> check { status must beEqualTo(StatusCodes.NotFound) }
+      httpCreate ~> check { status must beEqualTo(StatusCodes.NoContent) }
 
       end
 
@@ -243,7 +307,7 @@ class HttpTaskHandlerSpec extends Specification with Specs2RouteTest with Mockit
       val taskId = createWorkerTask
       httpHead(taskId) ~> check { status must beEqualTo(StatusCodes.OK) }
       httpHead(taskId) ~> check { status must beEqualTo(StatusCodes.NotFound) }
-      httpCreate ~> check { status must beEqualTo(StatusCodes.NotFound) }
+      httpCreate ~> check { status must beEqualTo(StatusCodes.NoContent) }
 
       end
 

@@ -61,7 +61,7 @@ object Step {
 
       val inputSink = Flow.apply[WrittenFile2]
         .map(w => createTask(fragmentCollector, w, outputSink))
-        .toMat(taskServer.taskSink)(Keep.right)
+        .toMat(taskServer.taskSink(file2Writer.blobStorage))(Keep.right)
 
       val flow = Flow.fromSinkAndSourceCoupledMat(inputSink, outputSource)(Keep.left)
       SimpleStep(stepId, flow)

@@ -1,9 +1,8 @@
 package com.overviewdocs.jobhandler.filegroup
 
 import akka.actor.{ActorRef,ActorSystem}
-import akka.http.scaladsl.{Http,HttpExt}
-import akka.http.scaladsl.server.{Route,RoutingLog}
-import akka.http.scaladsl.settings.{ParserSettings,RoutingSettings}
+import akka.http.scaladsl.Http
+import akka.http.scaladsl.server.Route
 import akka.stream.{FlowShape,Graph,Materializer}
 import akka.stream.scaladsl.{Flow,GraphDSL,Keep,MergePreferred,Source,Sink}
 import scala.collection.mutable.ArrayBuffer
@@ -12,6 +11,7 @@ import scala.concurrent.{ExecutionContext,Future}
 
 import com.overviewdocs.blobstorage.BlobStorage
 import com.overviewdocs.database.Database
+import com.overviewdocs.ingest.convert.HttpConvertServer
 import com.overviewdocs.ingest.models.{ResumedFileGroupJob,WrittenFile2,ProcessedFile2,IngestedRootFile2,FileGroupProgressState}
 import com.overviewdocs.ingest.pipeline.Step
 import com.overviewdocs.ingest.{File2Writer,GroupedFileUploadToFile2,Processor,Ingester}
@@ -22,7 +22,7 @@ import com.overviewdocs.util.{AddDocumentsCommon,Logger}
 
 class FileGroupImportMonitor(
   val file2Writer: File2Writer,
-  val httpConfig: FileGroupImportMonitor.HttpConfig,
+  val httpConvertServer: HttpConvertServer,
   val documentSetReindexer: DocumentSetReindexer,
   val steps: Vector[Step],
   val progressReporter: ActorRef,
@@ -145,7 +145,7 @@ class FileGroupImportMonitor(
   private def isInProgress(job: ResumedFileGroupJob): Boolean = synchronized { inProgress.contains(job) }
 
   private def startHttpServer(route: Route): Future[Http.ServerBinding] = {
-    httpConfig.bindAndHandle(route)
+    httpConvertServer.bindAndHandle(route)
   }
 
   def run: Future[akka.Done] = {
@@ -170,26 +170,6 @@ class FileGroupImportMonitor(
 }
 
 object FileGroupImportMonitor {
-  case class HttpConfig(
-    httpExt: HttpExt,
-    routingSettings: RoutingSettings,
-    parserSettings: ParserSettings,
-    routingLog: RoutingLog,
-    interface: String,
-    port: Int
-  ) {
-    def bindAndHandle(
-      route: Route
-    )(implicit mat: Materializer): Future[Http.ServerBinding] = {
-      implicit val rs = routingSettings
-      implicit val ps = parserSettings
-      implicit val rl = routingLog
-      val sealedRoute = Route.seal(route)
-      val handler = Route.asyncHandler(sealedRoute)
-      httpExt.bindAndHandleAsync(handler, interface, port)
-    }
-  }
-
   def withProgressReporter(
     actorSystem: ActorSystem,
     progressReporter: ActorRef
@@ -202,22 +182,15 @@ object FileGroupImportMonitor {
       config.getInt("max_n_chars_per_document"),
     )
 
-    val routingSettings = RoutingSettings(actorSystem)
-    val parserSettings = ParserSettings(actorSystem)
-    val routingLog = RoutingLog.fromActorSystem(actorSystem)
-
-    val httpConfig = HttpConfig(
-      Http(actorSystem),
-      routingSettings,
-      parserSettings,
-      routingLog,
+    val httpConvertServer = HttpConvertServer(
+      actorSystem,
       config.getString("ingest.broker_http_address"),
       config.getInt("ingest.broker_http_port")
     )
 
     new FileGroupImportMonitor(
       file2Writer,
-      httpConfig,
+      httpConvertServer,
       DocumentSetReindexer,
       com.overviewdocs.ingest.pipeline.Step.all(
         file2Writer,

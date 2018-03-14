@@ -38,6 +38,22 @@ trait BlobStorageStrategy {
     */
   def getUrl(location: String, mimeType: String): Future[String]
 
+  /** Gets a public URL the end-user can use to access the blob for a while.
+    *
+    * The <tt>location</tt> should look like <tt>"s3:bucket:key"</tt> or
+    * <tt>"pglo:123456"</tt>.
+    *
+    * This method checks <tt>location</tt> for syntax synchronously. The URL
+    * it returns may fail if there is a network error or permissions problem.
+    *
+    * Some storage backends (like File) cannot return a URL: they will return
+    * None.
+    *
+    * @param location Something like <tt>"s3:bucket:key"</tt> or <tt>"pglo:123"</tt>
+    * @throws InvalidArgumentException if <tt>location</tt> is invalid
+    */
+  def getUrlOpt(location: String, mimeType: String): Future[Option[String]]
+
   /** Deletes a blob.
     *
     * The <tt>location</tt> should look like <tt>"s3:bucket:key"</tt> or

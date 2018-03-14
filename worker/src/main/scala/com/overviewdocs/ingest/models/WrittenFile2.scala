@@ -27,4 +27,8 @@ case class WrittenFile2(
   metadata: File2.Metadata,               // to create children while processing
   pipelineOptions: File2.PipelineOptions, // for processing
   blob: BlobStorageRefWithSha1            // for processing, and to let children inherit
-)
+) {
+  def blobLocation: String = blob.location
+  def blobNBytes: Int = blob.nBytes
+  def blobSha1: Array[Byte] = blob.sha1
+}
