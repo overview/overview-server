@@ -62,6 +62,22 @@ class Decider(
   private val handlers = Map(
     "application/pdf" -> pipelines.Pdf,
 
+    "application/bzip2" -> pipelines.Archive,
+    "application/gzip" -> pipelines.Archive,
+    "application/jar" -> pipelines.Archive,
+    "application/tar" -> pipelines.Archive,
+    "application/vnd.ms-cab-compressed" -> pipelines.Archive,
+    "application/x-7z-compressed" -> pipelines.Archive,
+    "application/x-bzip2" -> pipelines.Archive,
+    "application/x-bzip2-compressed-tar" -> pipelines.Archive,
+    "application/x-bzip" -> pipelines.Archive,
+    "application/x-bzip-compressed-tar" -> pipelines.Archive,
+    "application/x-compressed-tar" -> pipelines.Archive,
+    "application/x-iso9660-image" -> pipelines.Archive,
+    "application/x-rar-compressed" -> pipelines.Archive,
+    "application/x-tar" -> pipelines.Archive,
+    "application/x-xz" -> pipelines.Archive,
+    "application/x-xz-compressed-tar" -> pipelines.Archive,
     "application/zip" -> pipelines.Archive,
 
     "application/clarisworks" -> pipelines.Office,
