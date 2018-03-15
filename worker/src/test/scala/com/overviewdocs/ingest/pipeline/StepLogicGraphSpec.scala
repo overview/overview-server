@@ -53,6 +53,7 @@ class StepLogicFlowSpec extends Specification with Mockito {
     mockFile2Writer.createChild(any, any, any, any, any, any, any)(any) answers { args =>
       createdFile2.blobOpt returns None
       createdFile2.indexInParent returns nCreates
+      createdFile2.contentType returns args.asInstanceOf[Array[Any]](3).asInstanceOf[String]
       createdFile2.pipelineOptions returns args.asInstanceOf[Array[Any]](6).asInstanceOf[File2.PipelineOptions]
       nCreates += 1
       Future.successful(createdFile2)
@@ -130,12 +131,28 @@ class StepLogicFlowSpec extends Specification with Mockito {
       val pipelineOptions = File2.PipelineOptions(true, false, Vector())
 
       override val fragments = Vector(
-        StepOutputFragment.File2Header(0, "foo", "text/csv", "en", metadata, pipelineOptions),
+        StepOutputFragment.File2Header(0, "foo", "application/pdf", "en", metadata, pipelineOptions),
         StepOutputFragment.Blob(0, blob0),
         StepOutputFragment.Done
       )
       result must beEqualTo((Vector(), Vector(processedFile2, processedParent)))
       there was one(mockFile2Writer).setWrittenAndProcessed(createdFile2)
+    }
+
+    "write a WrittenFile2 if there are no more processing steps but we are meant to recurse" in new BaseScope {
+      val blob0 = Source.single(ByteString("foo".getBytes))
+
+      val metadata = File2.Metadata(JsObject(Seq("meta" -> JsString("data"))))
+      val pipelineOptions = File2.PipelineOptions(true, false, Vector())
+
+      override val fragments = Vector(
+        StepOutputFragment.File2Header(0, "foo", "application/anything-but-pdf", "en", metadata, pipelineOptions),
+        StepOutputFragment.Blob(0, blob0),
+        StepOutputFragment.Done
+      )
+      result must beEqualTo((Vector(writtenFile2), Vector(processedParent)))
+      there was one(mockFile2Writer).setWritten(createdFile2)
+      there was no(mockFile2Writer).setWrittenAndProcessed(any)(any)
     }
 
     "cancel immediately after start" in new BaseScope {
@@ -243,7 +260,7 @@ class StepLogicFlowSpec extends Specification with Mockito {
       )
 
       result
-      there was one(mockFile2Writer).setProcessed(parentFile2, 0, Some("logic error in com.overviewdocs.ingest.pipeline.StepLogicFlowSpec$MockStepLogic: unexpected fragment class com.overviewdocs.ingest.pipeline.StepOutputFragment$File2Header"))
+      there was one(mockFile2Writer).setProcessed(parentFile2, 0, Some("logic error in com.overviewdocs.ingest.pipeline.StepLogicFlowSpec$MockStepLogic: tried to write child without blob data"))
     }
 
     "error when a blob comes without a file" in new BaseScope {

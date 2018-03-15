@@ -79,7 +79,7 @@ object Step {
         // whether there's any way to "leak" a task, which would make it run
         // forever.
         .takeWhile(fragment => !(fragment.isInstanceOf[StepOutputFragment.EndFragment]), inclusive=true)
-        .via(stepOutputFragmentCollector.forParent(writtenFile2))
+        .via(stepOutputFragmentCollector.flowForParent(writtenFile2))
         .to(outputSink)
         .run
 

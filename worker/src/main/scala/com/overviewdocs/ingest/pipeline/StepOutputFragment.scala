@@ -11,9 +11,17 @@ import com.overviewdocs.models.File2
   * which we process data is important. This trait class describes that order.
   */
 sealed trait StepOutputFragment
+
 object StepOutputFragment {
-  /** Messages that lead us to write to a File2. */
-  sealed trait File2Fragment extends StepOutputFragment
+  /** Messages that lead us to write information about a child File2.
+    *
+    * indexInParent is explicit: if the producer restarts or a fragment is
+    * doubled (we have at-least-once delivery over the network), we'll want to
+    * ignore fragments we've already seen.
+    */
+  trait ChildFragment extends StepOutputFragment {
+    val indexInParent: Int
+  }
 
   /** Fragment that marks the end of the stream.
     *
@@ -67,10 +75,6 @@ object StepOutputFragment {
     * This can be used to create a CREATED File2 in the database. The next
     * fragment(s) should stream its blob contents.
     *
-    * indexInParent is explicit: if the producer restarts or a fragment is
-    * doubled (we have at-least-once delivery over the network), we'll want to
-    * ignore fragments we've already seen.
-    *
     * When a second File2Header fragment arrives, the receiver can assume the
     * previous File2 is completely transferred. The previous File2 should
     * transition to WRITTEN, meaning we can leave it alone if we restart the
@@ -84,7 +88,7 @@ object StepOutputFragment {
     languageCode: String,
     metadata: File2.Metadata,
     pipelineOptions: File2.PipelineOptions
-  ) extends File2Fragment
+  ) extends StepOutputFragment
 
   /** Blob data for the current File2.
     *
@@ -93,9 +97,9 @@ object StepOutputFragment {
     * ignore fragments for children we've already handled.
     */
   case class Blob(
-    indexInParent: Int,
+    override val indexInParent: Int,
     rawBytes: Source[ByteString, _]
-  ) extends File2Fragment
+  ) extends ChildFragment
 
   /** Indicates there will be no Blob data for the current File2.
     *
@@ -105,7 +109,9 @@ object StepOutputFragment {
     *
     * This message only makes sense for child `0`.
     */
-  case object InheritBlob extends File2Fragment
+  case object InheritBlob extends ChildFragment {
+    override val indexInParent: Int = 0
+  }
 
   /** Text data for the current File2.
     *
@@ -116,9 +122,9 @@ object StepOutputFragment {
     * ignore fragments for children we've already handled.
     */
   case class Text(
-    indexInParent: Int,
+    override val indexInParent: Int,
     utf8Bytes: Source[ByteString, _]
-  ) extends File2Fragment
+  ) extends ChildFragment
 
   /** Thumbnail data for the current File2.
     *
@@ -129,10 +135,10 @@ object StepOutputFragment {
     * ignore fragments for children we've already handled.
     */
   case class Thumbnail(
-    indexInParent: Int,
+    override val indexInParent: Int,
     contentType: String,
     bytes: Source[ByteString, _]
-  ) extends File2Fragment
+  ) extends ChildFragment
 
   /** All child File2s have been transmitted, and the conversion succeeded.
     */

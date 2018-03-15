@@ -72,6 +72,6 @@ class StepLogicFlow(logic: StepLogic, file2Writer: File2Writer, parallelism: Int
     logger.info("Processing file2 {} ({}, {} bytes, pipeline steps {}", parentFile2.id, parentFile2.filename, parentFile2.blob.nBytes, parentFile2.pipelineOptions.stepsRemaining)
 
     logic.toChildFragments(file2Writer.blobStorage, parentFile2)
-      .via(stepOutputFragmentCollector.forParent(parentFile2))
+      .via(stepOutputFragmentCollector.flowForParent(parentFile2))
   }
 }

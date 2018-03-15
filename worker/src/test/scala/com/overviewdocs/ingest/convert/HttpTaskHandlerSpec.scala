@@ -157,7 +157,7 @@ class HttpTaskHandlerSpec extends Specification with Specs2RouteTest with Mockit
       blobJson.value("nBytes").as[Int] must beEqualTo(20)
       blobJson.value("sha1").as[String] must beEqualTo("6162636461626364616263646162636461626364") // hex
 
-      httpGet(taskId) ~> check {
+      Get(taskJson.value("url").as[String]) ~> route ~> check {
         status must beEqualTo(StatusCodes.OK)
         Json.parse(await(responseEntity.toStrict(readTimeout)).data.toArray) must beEqualTo(taskJson)
       }

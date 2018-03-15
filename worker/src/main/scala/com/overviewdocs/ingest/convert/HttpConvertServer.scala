@@ -1,8 +1,10 @@
 package com.overviewdocs.ingest.convert
 
 import akka.actor.ActorSystem
+import akka.event.Logging
 import akka.http.scaladsl.{Http,HttpExt}
 import akka.http.scaladsl.server.{Route,RoutingLog}
+import akka.http.scaladsl.server.directives.DebuggingDirectives
 import akka.http.scaladsl.settings.{ParserSettings,RoutingSettings}
 import akka.stream.Materializer
 import scala.concurrent.Future
@@ -62,7 +64,8 @@ class HttpConvertServer(
     implicit val rs = routingSettings
     implicit val ps = parserSettings
     implicit val rl = routingLog
-    val sealedRoute = Route.seal(route)
+    val logging = DebuggingDirectives.logRequestResult("http-convert", Logging.InfoLevel)
+    val sealedRoute = Route.seal(logging { route })
     val handler = Route.asyncHandler(sealedRoute)
     httpExt.bindAndHandleAsync(handler, interface, port)
   }

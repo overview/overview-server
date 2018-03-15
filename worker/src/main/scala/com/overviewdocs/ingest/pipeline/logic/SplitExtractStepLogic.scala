@@ -104,7 +104,7 @@ class SplitExtractStepLogic(
             Vector(StepOutputFragment.File2Header(
               pageNumber - 1,
               input.filename,
-              input.contentType,
+              "application/pdf",
               input.languageCode,
               augmentedMetadata(isOcr, pageNumber),
               augmentedPipelineOptions

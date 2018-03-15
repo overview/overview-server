@@ -220,11 +220,12 @@ class HttpTaskHandler(
       for {
         externalBlobUrl <- blobStorage.getUrlOpt(file2.blob.location, file2.contentType)
       } yield {
-        val blobUrl: String = externalBlobUrl
-          .getOrElse(Uri.parseAndResolve("/" + stepId + "/" + uuid + "/blob", ctx.request.uri).toString)
+        val taskUrl: String = Uri.parseAndResolve("/" + stepId + "/" + uuid, ctx.request.uri).toString
+        val blobUrl: String = externalBlobUrl.getOrElse(taskUrl + "/blob")
 
         jsonEntity(Json.obj(
           "id" -> uuid.toString,
+          "url" -> taskUrl,
           "filename" -> file2.filename,
           "contentType" -> file2.contentType,
           "languageCode" -> file2.languageCode,
@@ -337,27 +338,18 @@ class HttpTaskHandler(
       implicit val ec = ctx.executionContext
 
       withTask(uuid, ctx)(() => drainEntity(ctx.request.entity)) { (task, workerTaskRef) =>
-        // There's a race: how can we tell when downstream has processed this
-        // fragment? Well, let's not get hung up on it: let's assume that the
-        // time of downstream demand is pretty darned close to the time the
-        // fragment has been processed (hence "lazily" -- otherwise, the
-        // Future would complete right away).
-        //
-        // This is a total fail when it comes to Blob, Text and Thumbnail
-        // requests, whose entities are only read after they travel down the
-        // stream.
-        Source.lazilyAsync(() => partToFragment(name, ctx.request.entity))
-          .map { fragment =>
-            if (fragment.isInstanceOf[StepOutputFragment.EndFragment]) {
-              actorRefFactory.stop(workerTaskRef)
-            } else {
-              workerTaskRef ! WorkerTask.Heartbeat
-            }
-            fragment
+        for {
+          fragment <- partToFragment(name, ctx.request.entity)
+          _ <- Source.single(fragment).watchTermination()(Keep.right).to(task.sink).run
+          routeResult <- ctx.complete(StatusCodes.Accepted)
+        } yield {
+          if (fragment.isInstanceOf[StepOutputFragment.EndFragment]) {
+            actorRefFactory.stop(workerTaskRef)
+          } else {
+            workerTaskRef ! WorkerTask.Heartbeat
           }
-          .to(task.sink)
-          .run // Future[akka.NotUsed] 
-          .flatMap(_ => ctx.complete(StatusCodes.Accepted))
+          routeResult
+        }
       }
     }
 
@@ -365,7 +357,12 @@ class HttpTaskHandler(
       implicit val mat = ctx.materializer
       implicit val ec = ctx.executionContext
 
+      case class State(lastReadCompleted: Future[akka.Done], fragments: List[StepOutputFragment])
+
+      System.err.println("POST MULTIPART" + formData)
+
       withTask(uuid, ctx)(() => formData.parts.flatMapConcat(part => part.entity.dataBytes).runWith(Sink.ignore)) { (task, workerTaskRef) =>
+        System.err.println("TASK: " + task)
         // There's a race that might affect fringe clients: watchTermination()
         // watches the _source_'s termination, not the _sink's_. That means the
         // request can be completed and we can respond to it before all bytes
@@ -383,8 +380,9 @@ class HttpTaskHandler(
         // will all stall until their previous output is processed, which is what
         // we want.
         formData.parts
-          .mapAsync(1)(part => partToFragment(part.name, part.entity))
+          .mapAsync(1) { part => partToFragment(part.name, part.entity) }
           .map { fragment =>
+            System.err.println(fragment.toString)
             if (fragment.isInstanceOf[StepOutputFragment.EndFragment]) {
               actorRefFactory.stop(workerTaskRef)
             } else {
@@ -395,7 +393,7 @@ class HttpTaskHandler(
           .watchTermination()(Keep.right)
           .to(task.sink)
           .run
-          .flatMap(_ => ctx.complete(StatusCodes.Accepted))
+          .flatMap { _ => System.err.println("COMPLETED"); ctx.complete(StatusCodes.Accepted) }
       }
     }
 
@@ -408,10 +406,12 @@ class HttpTaskHandler(
             handleCreate
           } ~
           pathPrefix(JavaUUID) { uuid =>
-            (pathEnd & entity(as[Multipart.FormData])) { formData =>
-              handlePostMultipart(uuid, formData)
-            } ~
-            path(Segment) { name => handlePost(uuid, name) }
+            withoutSizeLimit {
+              (pathEnd & entity(as[Multipart.FormData])) { formData =>
+                handlePostMultipart(uuid, formData)
+              } ~
+              path(Segment) { name => handlePost(uuid, name) }
+            }
           }
         } ~
         get {
