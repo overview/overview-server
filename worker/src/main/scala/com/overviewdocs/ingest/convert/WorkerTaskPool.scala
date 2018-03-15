@@ -48,6 +48,7 @@ class WorkerTaskPool(
       if (nChildren >= maxNWorkers) {
         sender ! Status.Failure(new RuntimeException("Reached maxNWorkers"))
       } else {
+        // TODO handle task.isCanceled?
         val uuid = UUID.randomUUID
         val child = context.actorOf(
           WorkerTask.props(task, workerIdleTimeout, timeoutActorRef),
@@ -61,6 +62,7 @@ class WorkerTaskPool(
 
     case WorkerTaskPool.Get(uuid) => {
       context.child(uuid.toString) match {
+        // TODO handle task.isCanceled?
         case Some(child) => child ! WorkerTask.GetForAsker(sender)
         case None => sender ! None
       }

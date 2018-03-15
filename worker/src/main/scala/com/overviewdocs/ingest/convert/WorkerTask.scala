@@ -2,10 +2,14 @@ package com.overviewdocs.ingest.convert
 
 import akka.actor.{Actor,ActorRef,Props,Status,Timers}
 import akka.http.scaladsl.model.{HttpRequest,HttpResponse}
+import akka.stream.ActorMaterializer
+import akka.stream.scaladsl.Source
 import java.time.{Duration=>JDuration,Instant}
 import scala.concurrent.duration.{Duration,FiniteDuration}
 import scala.concurrent.Future
 import scala.util.{Success,Failure}
+
+import com.overviewdocs.ingest.pipeline.{StepOutputFragment,StepOutputFragmentCollector}
 
 /** The server's understanding of the state of a (HTTP-client) worker.
   *
@@ -38,6 +42,9 @@ class WorkerTask(
     */
   val timeoutActorRef: ActorRef
 ) extends Actor with Timers {
+  private var processingFragments: Boolean = false
+  private var fragmentCollectorState: StepOutputFragmentCollector.State = StepOutputFragmentCollector.State.Start(task.writtenFile2)
+
   implicit val ec = context.dispatcher
   private val tickInterval = workerIdleTimeout / 10
   timers.startPeriodicTimer("tick", WorkerTask.Tick, tickInterval)
@@ -61,21 +68,62 @@ class WorkerTask(
       }
     }
 
-    case WorkerTask.Heartbeat => {
-      updateLastActivity
-    }
-
     case WorkerTask.GetForAsker(asker) => {
       updateLastActivity
       asker ! Some((task, self))
+    }
+
+    case WorkerTask.ProcessFragments(fragments) => {
+      updateLastActivity
+      val asker = sender
+      implicit val mat = ActorMaterializer.create(context)
+
+      if (processingFragments) {
+        sender ! Status.Failure(new RuntimeException("Overview is already processing a POST to this task"))
+      } else {
+        processingFragments = true
+        fragments
+          .scanAsync(fragmentCollectorState)(task.stepOutputFragmentCollector.transitionState)
+          .mapConcat { state =>
+            self ! WorkerTask.UpdateState(state)
+            state.toEmit
+          }
+          // Any ConvertOutputElement at this point is "safe" to read -- it
+          // does not depend on upstream HTTP POST request bytes like a
+          // StepOutputFragment does. So once we've seen the final fragment in
+          // the POST, we've read all the bytes from it
+          .watchTermination() { (mat, doneFuture) =>
+            doneFuture.onComplete {
+              case Success(_) => self ! WorkerTask.DoneProcessingFragments(mat, asker)
+              case Failure(err) => asker ! Status.Failure(err)
+            }
+          }
+          .runWith(task.sink)
+      }
+    }
+
+    case WorkerTask.UpdateState(state) => {
+      updateLastActivity
+      fragmentCollectorState = state
+    }
+
+    case WorkerTask.DoneProcessingFragments(materializedValue, asker) => {
+      processingFragments = false
+      asker ! Status.Success(materializedValue)
+      updateLastActivity
+      if (fragmentCollectorState.isInstanceOf[StepOutputFragmentCollector.State.End]) {
+        context.stop(self)
+      }
     }
   }
 }
 
 object WorkerTask {
   private case object Tick
-  case object Heartbeat
   case class GetForAsker(asker: ActorRef)
+  case class ProcessFragments(fragments: Source[StepOutputFragment, Any])
+  private case class UpdateState(state: StepOutputFragmentCollector.State)
+  private case class DoneProcessingFragments(materializedValue: Any, asker: ActorRef)
 
   def props(
     task: Task,

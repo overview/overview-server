@@ -72,18 +72,7 @@ object Step {
       writtenFile2: WrittenFile2,
       outputSink: Sink[ConvertOutputElement, akka.NotUsed]
     )(implicit mat: Materializer): Task = {
-      val fragmentSink: Sink[StepOutputFragment, akka.NotUsed] = MergeHub.source[StepOutputFragment]
-        // Task ends once we receive an EndFragment
-        // TODO consider whether this is the best place to end the stream. (We
-        // need to end it _somewhere_, but what's most intuitive?) Also, analyze
-        // whether there's any way to "leak" a task, which would make it run
-        // forever.
-        .takeWhile(fragment => !(fragment.isInstanceOf[StepOutputFragment.EndFragment]), inclusive=true)
-        .via(stepOutputFragmentCollector.flowForParent(writtenFile2))
-        .to(outputSink)
-        .run
-
-      Task(writtenFile2, fragmentSink)
+      Task(writtenFile2, stepOutputFragmentCollector, outputSink)
     }
   }
 

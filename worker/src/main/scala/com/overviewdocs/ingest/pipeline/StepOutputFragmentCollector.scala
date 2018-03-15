@@ -23,6 +23,8 @@ import com.overviewdocs.util.Logger
   * Use StepOutputFragmentCollector.transitionState for that.
   */
 class StepOutputFragmentCollector(file2Writer: File2Writer, logicName: String) {
+  import StepOutputFragmentCollector.State
+
   def flowForParent(
     parentFile2: WrittenFile2
   )(implicit mat: Materializer): Flow[StepOutputFragment, ConvertOutputElement, akka.NotUsed] = {
@@ -33,46 +35,6 @@ class StepOutputFragmentCollector(file2Writer: File2Writer, logicName: String) {
     Flow[StepOutputFragment]
       .scanAsync(initialState)((state, fragment) => transitionState(state, fragment))
       .mapConcat(_.toEmit)                                // ConvertOutputElement
-  }
-
-  sealed trait State {
-    /** Holds information for a `Flow.scanAsync()` pattern.
-      *
-      * akka-stream doesn't have exactly what we want. Its foldAsync() is great
-      * for generating side-effects and maintaining state, but it doesn't emit
-      * anything. scanAsync() is great for emitting, but it emits exactly its
-      * internal state, which is too much information.
-      *
-      * This State is meant to be run through scanAsync() and then decomposed to
-      * only its useful information:
-      *
-      * val state: State = State.Start(parentFile2)
-      * sourceOfFragments      // Source[StepOutputFragment, _]
-      *   .scanAsync { (state, fragment) =>
-      *     transitionState(state, fragment)
-      *   }                    // Source[State, _]
-      *   .mapConcat(_.toEmit) // Source[ConvertOutputElement, _]
-      *
-      * Each toEmit holds zero, one or two ConvertOutputElements.
-      */
-    val toEmit: List[ConvertOutputElement]
-  }
-  object State {
-    case class Start(
-      parentFile2: WrittenFile2
-    ) extends State {
-      override val toEmit = Nil
-    }
-
-    case class AtChild(
-      parentFile2: WrittenFile2,
-      child: CreatedFile2,
-      override val toEmit: List[ConvertOutputElement]
-    ) extends State
-
-    case class End(
-      override val toEmit: List[ConvertOutputElement]
-    ) extends State
   }
 
   def transitionState(
@@ -287,5 +249,47 @@ class StepOutputFragmentCollector(file2Writer: File2Writer, logicName: String) {
   )(implicit ec: ExecutionContext): Future[ConvertOutputElement] = {
     file2Writer.setProcessed(parentFile2, nChildren, error)
       .map(f => ConvertOutputElement.ToIngest(f))
+  }
+}
+
+object StepOutputFragmentCollector {
+  sealed trait State {
+    /** Holds information for a `Flow.scanAsync()` pattern.
+      *
+      * akka-stream doesn't have exactly what we want. Its foldAsync() is great
+      * for generating side-effects and maintaining state, but it doesn't emit
+      * anything. scanAsync() is great for emitting, but it emits exactly its
+      * internal state, which is too much information.
+      *
+      * This State is meant to be run through scanAsync() and then decomposed to
+      * only its useful information:
+      *
+      * val state: State = State.Start(parentFile2)
+      * sourceOfFragments      // Source[StepOutputFragment, _]
+      *   .scanAsync { (state, fragment) =>
+      *     transitionState(state, fragment)
+      *   }                    // Source[State, _]
+      *   .mapConcat(_.toEmit) // Source[ConvertOutputElement, _]
+      *
+      * Each toEmit holds zero, one or two ConvertOutputElements.
+      */
+    val toEmit: List[ConvertOutputElement]
+  }
+  object State {
+    case class Start(
+      parentFile2: WrittenFile2
+    ) extends State {
+      override val toEmit = Nil
+    }
+
+    case class AtChild(
+      parentFile2: WrittenFile2,
+      child: CreatedFile2,
+      override val toEmit: List[ConvertOutputElement]
+    ) extends State
+
+    case class End(
+      override val toEmit: List[ConvertOutputElement]
+    ) extends State
   }
 }

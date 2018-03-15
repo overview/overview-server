@@ -28,6 +28,8 @@ class HttpTaskHandler(
   httpCreateIdleTimeout: FiniteDuration
 ) {
   private val unresponsiveTimeout = Duration(2, "s") // for ask()
+  private val postTimeout = Duration(30, "minutes")
+  private val postMultipartTimeout = Duration(6, "hours")
 
   // The worst form of race:
   //
@@ -76,21 +78,6 @@ class HttpTaskHandler(
 
       new FlowShape(normal.in, merge.out)
     })
-      .mapConcat { task =>
-        // When a worker asks for a task that has been canceled, hardwire a
-        // "Canceled" fragment over `task.sink` and destroy the task.
-        //
-        // This is better than processing cancellation messages asynchronously,
-        // since it doesn't leak any closures. It means we only process a
-        // cancellation when there's downstream demand from a worker -- which
-        // kinda makes sense.
-        if (task.isCanceled) {
-          Source.single(StepOutputFragment.Canceled).runWith(task.sink)
-          Vector()
-        } else {
-          Vector(task)
-        }
-      }
       .watchTermination() { (_, futureDone) =>
         // Shut down when there's no more input.
         //
@@ -135,8 +122,7 @@ class HttpTaskHandler(
                 taskEntity(ctx, uuid, task).flatMap(e => ctx.complete(HttpResponse(StatusCodes.Created, Nil, e)))
               }
               case Failure(ex: Exception) => {
-                Source.single(StepOutputFragment.StepError(ex))
-                  .runWith(task.sink)
+                ex.printStackTrace()
                 ctx.complete(HttpResponse(StatusCodes.InternalServerError, Nil, errorEntity(ex)))
               }
               case Failure(ex: Throwable) => ???
@@ -162,16 +148,11 @@ class HttpTaskHandler(
       implicit val ec = ctx.executionContext
 
       ask(workerTaskPoolRef, WorkerTaskPool.Get(uuid))(Timeout(unresponsiveTimeout)).mapTo[Option[(Task,ActorRef)]].flatMap(_ match {
-        case Some((task, workerTaskRef)) if task.isCanceled => {
-          Source.single(StepOutputFragment.Canceled).runWith(task.sink)
-          actorRefFactory.stop(workerTaskRef)
-          drain().flatMap(_ => ctx.complete(StatusCodes.NotFound))
+        case Some((task, workerTaskRef)) => {
+          fn(task, workerTaskRef)
         }
         case None => {
           drain().flatMap(_ => ctx.complete(StatusCodes.NotFound))
-        }
-        case Some((task, workerTaskRef)) => {
-          fn(task, workerTaskRef)
         }
       })
     }
@@ -340,16 +321,9 @@ class HttpTaskHandler(
       withTask(uuid, ctx)(() => drainEntity(ctx.request.entity)) { (task, workerTaskRef) =>
         for {
           fragment <- partToFragment(name, ctx.request.entity)
-          _ <- Source.single(fragment).watchTermination()(Keep.right).to(task.sink).run
+          _ <- ask(workerTaskRef, WorkerTask.ProcessFragments(Source.single(fragment)))(postTimeout)
           routeResult <- ctx.complete(StatusCodes.Accepted)
-        } yield {
-          if (fragment.isInstanceOf[StepOutputFragment.EndFragment]) {
-            actorRefFactory.stop(workerTaskRef)
-          } else {
-            workerTaskRef ! WorkerTask.Heartbeat
-          }
-          routeResult
-        }
+        } yield routeResult
       }
     }
 
@@ -363,37 +337,12 @@ class HttpTaskHandler(
 
       withTask(uuid, ctx)(() => formData.parts.flatMapConcat(part => part.entity.dataBytes).runWith(Sink.ignore)) { (task, workerTaskRef) =>
         System.err.println("TASK: " + task)
-        // There's a race that might affect fringe clients: watchTermination()
-        // watches the _source_'s termination, not the _sink's_. That means the
-        // request can be completed and we can respond to it before all bytes
-        // have been fully processed.
-        //
-        // In practice, this shouldn't matter. Stream-based chunks like Body and
-        // Text block the `.mapAsync()` step because they back-pressure until
-        // their contents are consumed. So the only chunks left over are "done",
-        // "progress" and other tiny ones. Assuming the worker sends "done" (the
-        // common case: the server sends all messages in one big HTTP request), it
-        // will never ask after this Task again anyway.
-        //
-        // Backpressure from downstream doesn't halt the response, but that isn't
-        // bad: it'll prevent _future_ HTTP requests from completing, so workers
-        // will all stall until their previous output is processed, which is what
-        // we want.
-        formData.parts
+        val fragments: Source[StepOutputFragment, _] = formData.parts
           .mapAsync(1) { part => partToFragment(part.name, part.entity) }
-          .map { fragment =>
-            System.err.println(fragment.toString)
-            if (fragment.isInstanceOf[StepOutputFragment.EndFragment]) {
-              actorRefFactory.stop(workerTaskRef)
-            } else {
-              workerTaskRef ! WorkerTask.Heartbeat
-            }
-            fragment
-          }
-          .watchTermination()(Keep.right)
-          .to(task.sink)
-          .run
-          .flatMap { _ => System.err.println("COMPLETED"); ctx.complete(StatusCodes.Accepted) }
+        for {
+          _ <- ask(workerTaskRef, WorkerTask.ProcessFragments(fragments))(postMultipartTimeout)
+          routeResult <- ctx.complete(StatusCodes.Accepted)
+        } yield routeResult
       }
     }
 
