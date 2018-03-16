@@ -38,7 +38,7 @@ class FileCleanerSpec extends Specification with Mockito {
       mockFileRemover.deleteFile(any) returns promise.future
 
       fileCleaner ! Clean(1L)
-      expectNoMsg(Duration.Zero)
+      expectNoMessage(Duration.Zero)
       promise.success(())
 
       expectMsg(CleanComplete(1L))

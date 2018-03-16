@@ -20,42 +20,42 @@ class BrokerActorSpec extends Specification {
   "BrokerActor" should {
     "queue work then send it when worker asks" in new BaseScope {
       broker.tell(BrokerActor.Work(TestMessage("foo"), sender.ref), sender.ref)
-      expectNoMsg
+      expectNoMessage
       broker.tell(BrokerActor.WorkerReady, worker1.ref)
       worker1.expectMsg(BrokerActor.Work(TestMessage("foo"), sender.ref))
-      expectNoMsg
+      expectNoMessage
     }
 
     "queue worker then send message when work arrives" in new BaseScope {
       broker.tell(BrokerActor.WorkerReady, worker1.ref)
-      expectNoMsg
+      expectNoMessage
       broker.tell(BrokerActor.Work(TestMessage("foo"), sender.ref), sender.ref)
       worker1.expectMsg(BrokerActor.Work(TestMessage("foo"), sender.ref))
-      expectNoMsg
+      expectNoMessage
     }
 
     "queue multiple messages" in new BaseScope {
       broker.tell(BrokerActor.Work(TestMessage("foo"), sender.ref), sender.ref)
       broker.tell(BrokerActor.Work(TestMessage("bar"), sender.ref), sender.ref)
-      expectNoMsg
+      expectNoMessage
       broker.tell(BrokerActor.WorkerReady, worker1.ref)
       worker1.expectMsg(BrokerActor.Work(TestMessage("foo"), sender.ref))
-      expectNoMsg
+      expectNoMessage
       broker.tell(BrokerActor.WorkerReady, worker2.ref)
       worker2.expectMsg(BrokerActor.Work(TestMessage("bar"), sender.ref))
-      expectNoMsg
+      expectNoMessage
     }
 
     "queue multiple workers" in new BaseScope {
       broker.tell(BrokerActor.WorkerReady, worker1.ref)
       broker.tell(BrokerActor.WorkerReady, worker2.ref)
-      expectNoMsg
+      expectNoMessage
       broker.tell(BrokerActor.Work(TestMessage("foo"), sender.ref), sender.ref)
       worker1.expectMsg(BrokerActor.Work(TestMessage("foo"), sender.ref))
-      expectNoMsg
+      expectNoMessage
       broker.tell(BrokerActor.Work(TestMessage("bar"), sender.ref), sender.ref)
       worker2.expectMsg(BrokerActor.Work(TestMessage("bar"), sender.ref))
-      expectNoMsg
+      expectNoMessage
     }
   }
 }

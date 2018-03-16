@@ -11,10 +11,12 @@ import scala.concurrent.{ExecutionContext,Future}
 
 import com.overviewdocs.blobstorage.BlobStorage
 import com.overviewdocs.database.Database
-import com.overviewdocs.ingest.convert.HttpConvertServer
-import com.overviewdocs.ingest.models.{ResumedFileGroupJob,WrittenFile2,ProcessedFile2,IngestedRootFile2,FileGroupProgressState}
-import com.overviewdocs.ingest.pipeline.Step
-import com.overviewdocs.ingest.{File2Writer,GroupedFileUploadToFile2,Processor,Ingester}
+import com.overviewdocs.ingest.ingest.Ingester
+import com.overviewdocs.ingest.model.{ResumedFileGroupJob,WrittenFile2,ProcessedFile2,IngestedRootFile2,FileGroupProgressState}
+import com.overviewdocs.ingest.process.{Processor,Step}
+import com.overviewdocs.ingest.process.convert.HttpConvertServer
+import com.overviewdocs.ingest.create.GroupedFileUploadToFile2
+import com.overviewdocs.ingest.File2Writer
 import com.overviewdocs.models.FileGroup
 import com.overviewdocs.models.tables.{FileGroups,GroupedFileUploads}
 import com.overviewdocs.searchindex.DocumentSetReindexer
@@ -192,7 +194,7 @@ object FileGroupImportMonitor {
       file2Writer,
       httpConvertServer,
       DocumentSetReindexer,
-      com.overviewdocs.ingest.pipeline.Step.all(
+      Step.all(
         file2Writer,
         config.getInt("ingest.n_document_converters"),
         Duration.fromNanos(config.getDuration("ingest.worker_idle_timeout").toNanos),

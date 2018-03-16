@@ -12,7 +12,7 @@ import scala.concurrent.{Future,Promise,blocking}
 import com.overviewdocs.blobstorage.{BlobBucketId,BlobStorage}
 import com.overviewdocs.models.{BlobStorageRef,File2}
 import com.overviewdocs.models.tables.{Documents,DocumentProcessingErrors,File2s}
-import com.overviewdocs.ingest.models.{BlobStorageRefWithSha1,CreatedFile2,WrittenFile2,ProcessedFile2,ResumedFileGroupJob,FileGroupProgressState}
+import com.overviewdocs.ingest.model.{BlobStorageRefWithSha1,CreatedFile2,WrittenFile2,ProcessedFile2,ResumedFileGroupJob,FileGroupProgressState}
 import com.overviewdocs.test.{ActorSystemContext,DbSpecification}
 
 class File2WriterSpec extends DbSpecification with Mockito {

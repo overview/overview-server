@@ -83,7 +83,7 @@ class DocumentSetMessageBrokerSpec extends Specification {
       worker1.expectMsg(msg.Add(123L))
       subject ! msg.CancelAdd(123L)
       worker1.expectMsg(msg.CancelAdd(123L))
-      worker2.expectNoMsg(Duration.Zero)
+      worker2.expectNoMessage(Duration.Zero)
     }
 
     "not forward a CancelCommand to a worker that is not handling it any more" in new BaseScope {
@@ -92,7 +92,7 @@ class DocumentSetMessageBrokerSpec extends Specification {
       worker1.expectMsg(msg.Add(123L))
       subject.tell(msg.Done(123L), worker1.ref)
       subject ! msg.CancelAdd(123L)
-      worker1.expectNoMsg(Duration.Zero)
+      worker1.expectNoMessage(Duration.Zero)
     }
 
     "run only one command per document set at a time" in new BaseScope {
@@ -101,7 +101,7 @@ class DocumentSetMessageBrokerSpec extends Specification {
       subject ! msg.Add(123L)
       subject ! msg.Delete(123L)
       worker1.expectMsg(msg.Add(123L))
-      worker2.expectNoMsg(Duration.Zero)
+      worker2.expectNoMessage(Duration.Zero)
       subject.tell(msg.Done(123L), worker1.ref)
       worker2.expectMsg(msg.Delete(123L))
     }

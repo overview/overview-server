@@ -1,0 +1,20 @@
+package com.overviewdocs.ingest.process.logic
+
+import akka.stream.Materializer
+import akka.stream.scaladsl.Source
+import scala.concurrent.ExecutionContext
+
+import com.overviewdocs.blobstorage.BlobStorage
+import com.overviewdocs.ingest.model.{StepOutputFragment,WrittenFile2}
+import com.overviewdocs.ingest.process.StepLogic
+
+/** Declares that we have no handler for this file.
+  */
+class UnhandledStepLogic extends StepLogic {
+  override def toChildFragments(
+    blobStorage: BlobStorage,
+    input: WrittenFile2
+  )(implicit mat: Materializer): Source[StepOutputFragment, akka.NotUsed] = {
+    Source.single(StepOutputFragment.FileError("unhandled"))
+  }
+}

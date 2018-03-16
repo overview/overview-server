@@ -67,7 +67,7 @@ class CsvImportWorkBrokerSpec extends Specification {
       subject ! DoWorkThenAck(addCommand(ci), receiver.ref, "ack")
       subject.tell(WorkerReady, worker1.ref)
       worker1.expectMsg(addCommand(ci))
-      receiver.expectNoMsg(Duration.Zero)
+      receiver.expectNoMessage(Duration.Zero)
       subject.tell(WorkerDone(addCommand(ci)), worker1.ref)
       receiver.expectMsg("ack")
     }

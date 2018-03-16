@@ -7,7 +7,7 @@ import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext,Future}
 
 import com.overviewdocs.database.Database
-import com.overviewdocs.ingest.models.FileGroupProgressState
+import com.overviewdocs.ingest.model.FileGroupProgressState
 import com.overviewdocs.models.FileGroup
 import com.overviewdocs.models.tables.FileGroups
 

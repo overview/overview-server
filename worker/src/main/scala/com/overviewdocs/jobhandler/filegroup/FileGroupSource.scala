@@ -9,7 +9,7 @@ import scala.concurrent.{ExecutionContext,Future,Promise}
 import com.overviewdocs.database.Database
 import com.overviewdocs.models.FileGroup
 import com.overviewdocs.models.tables.{File2s,FileGroups,GroupedFileUploads}
-import com.overviewdocs.ingest.models.{FileGroupProgressState,ResumedFileGroupJob}
+import com.overviewdocs.ingest.model.{FileGroupProgressState,ResumedFileGroupJob}
 
 /** All the un-ingested FileGroups we have.
   *

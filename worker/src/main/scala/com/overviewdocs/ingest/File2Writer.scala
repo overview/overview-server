@@ -15,7 +15,7 @@ import com.overviewdocs.blobstorage.{BlobBucketId,BlobStorage}
 import com.overviewdocs.database.Database
 import com.overviewdocs.models.{BlobStorageRef,File2}
 import com.overviewdocs.models.tables.File2s
-import com.overviewdocs.ingest.models.{BlobStorageRefWithSha1,CreatedFile2,WrittenFile2,ProcessedFile2,IngestedRootFile2}
+import com.overviewdocs.ingest.model.{BlobStorageRefWithSha1,CreatedFile2,WrittenFile2,ProcessedFile2,IngestedRootFile2}
 import com.overviewdocs.util.{TempFiles,Textify}
 
 class File2Writer(

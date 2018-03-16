@@ -5,8 +5,8 @@ import akka.stream.scaladsl.{Flow,GraphDSL,Partition,Source}
 import scala.concurrent.{ExecutionContext,Future}
 
 import com.overviewdocs.database.Database
-import com.overviewdocs.ingest.models.{ResumedFileGroupJob,BlobStorageRefWithSha1,WrittenFile2,ProcessedFile2,ProgressPiece}
-import com.overviewdocs.ingest.GroupedFileUploadToFile2
+import com.overviewdocs.ingest.create.GroupedFileUploadToFile2
+import com.overviewdocs.ingest.model.{ResumedFileGroupJob,BlobStorageRefWithSha1,WrittenFile2,ProcessedFile2,ProgressPiece}
 import com.overviewdocs.models.{File2,FileGroup,GroupedFileUpload}
 import com.overviewdocs.models.tables.{File2s,GroupedFileUploads}
 

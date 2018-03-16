@@ -1,0 +1,68 @@
+package com.overviewdocs.ingest.process
+
+import akka.http.scaladsl.server.{Route,RouteConcatenation}
+import akka.stream.{Graph,FlowShape,Materializer,OverflowStrategy}
+import akka.stream.scaladsl.{Flow,GraphDSL,Merge,MergePreferred,Partition}
+import scala.concurrent.ExecutionContext
+
+import com.overviewdocs.ingest.File2Writer
+import com.overviewdocs.ingest.model.{ConvertOutputElement,WrittenFile2,ProcessedFile2}
+
+/** Sends WrittenFile2s to Decider and Steps (recursively) and outputs
+  * ConvertOutputElements.
+  *
+  * The flow:
+  *                 +------------------------------------+
+  *                 |               +------+             |
+  *                 |               | step |             |
+  *                 |              /+------+\            |
+  *                 |   +---------o          o-------+   |
+  *                 |   | decider | +------+ | merge |   |
+  * WrittenFile2 ~> O~~>o         o~| step |~o       o~~>O ~> ConvertOutputElement
+  *                 |   |         | +------+ |       |   |
+  *                 |   +---------o          o-------+   |
+  *                 |              \+------+/            |
+  *                 |               | step |             |
+  *                 |               +------+             |
+  *                 +------------------------------------+
+  *
+  *
+  * @see [[Processor]], which uses StepProcessor recursively.
+  */
+class StepProcessor(file2Writer: File2Writer, nDeciders: Int) {
+  /** Creates a new [[Flow]] by routing inputs through the appropriate Steps.
+    */
+  def flow(
+    steps: Vector[Step]
+  )(implicit mat: Materializer): Flow[WrittenFile2, ConvertOutputElement, Route] = {
+    steps match {
+[2..#
+      case Vector([#s1#]) => flowGraph(steps, [#s1.flow#])#
+]
+      case _ => throw new RuntimeException("Unhandled number of Steps: " + steps.length)
+    }
+  }
+
+[2..#
+
+  private def flowGraph(
+    steps: Vector[Step],
+    [#g1: Flow[WrittenFile##2, ConvertOutputElement, Route]#]
+  )(implicit mat: Materializer): Flow[WrittenFile##2, ConvertOutputElement, Route] = {
+    Flow.fromGraph(GraphDSL.create([#g1#])(([#r1#]) => RouteConcatenation.concat([#r1#])) { implicit builder => ([#step1: FlowShape[WrittenFile##2, ConvertOutputElement]#]) =>
+      import GraphDSL.Implicits._
+
+      // 1..nSteps splitter
+      val decider = builder.add(new Decider(steps, file##2Writer.blobStorage, nDeciders).graph)
+
+      // nSteps .. 1 merger
+      val mergeOutput = builder.add(Merge[ConvertOutputElement](1))
+
+      [# decider ~> step1 ~> mergeOutput#
+      ]
+
+      FlowShape(decider.in, mergeOutput.out) // Flow input is lower-priority merger input
+    })
+  }#
+]
+}

@@ -32,7 +32,7 @@ class FileGroupRemovalRequestQueueSpec extends Specification {
       requestQueue ! RemoveFileGroup(1L)
       requestQueue ! RemoveFileGroup(2L)
       cleaner.expectMsg(Clean(1L))
-      cleaner.expectNoMsg(Duration.Zero)
+      cleaner.expectNoMessage(Duration.Zero)
 
       requestQueue.tell(CleanComplete(1L), cleaner.ref)
       cleaner.expectMsg(Clean(2L))

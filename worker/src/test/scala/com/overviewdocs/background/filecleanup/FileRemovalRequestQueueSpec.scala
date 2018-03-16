@@ -36,7 +36,7 @@ class FileRemovalRequestQueueSpec extends Specification {
        fileRemover.expectMsg(RemoveDeletedFiles)
        fileRemover.reply(FileRemovalComplete)
 
-       fileRemover.expectNoMsg(Duration.Zero)
+       fileRemover.expectNoMessage(Duration.Zero)
     }
 
     "send a request received after a previous one completes" in new QueueScope {

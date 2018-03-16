@@ -35,7 +35,7 @@ class FileGroupCleanerSpec extends Specification with Mockito {
       mockFileGroupRemover.remove(any) returns promise.future
 
       fileGroupCleaner ! Clean(1L)
-      expectNoMsg(Duration.Zero)
+      expectNoMessage(Duration.Zero)
 
       promise.success(())
       expectMsg(CleanComplete(1L))

@@ -27,7 +27,7 @@ class DeletedFileCleanerSpec extends Specification with Mockito {
       deletedFileCleaner ! RemoveDeletedFiles
       
       cleaner.expectMsg(Clean(0))
-      cleaner.expectNoMsg(Duration.Zero)
+      cleaner.expectNoMessage(Duration.Zero)
       
       deletedFileCleaner ! CleanComplete(0)
       cleaner.expectMsg(Clean(1))
@@ -59,7 +59,7 @@ class DeletedFileCleanerSpec extends Specification with Mockito {
       cleaner.reply(CleanComplete(1))
       
       expectMsg(FileRemovalComplete)
-      cleaner.expectNoMsg(Duration.Zero)
+      cleaner.expectNoMessage(Duration.Zero)
     }
     
     "notify requester that file removal is complete when no deleted files are found" in new NoDeletedFileScope {
