@@ -12,20 +12,17 @@ import com.overviewdocs.ingest.model.{ConvertOutputElement,WrittenFile2,Processe
   * ConvertOutputElements.
   *
   * The flow:
-  *                 +------------------------------------+
-  *                 |               +------+             |
-  *                 |               | step |             |
-  *                 |              /+------+\            |
-  *                 |   +---------o          o-------+   |
-  *                 |   | decider | +------+ | merge |   |
-  * WrittenFile2 ~> O~~>o         o~| step |~o       o~~>O ~> ConvertOutputElement
-  *                 |   |         | +------+ |       |   |
-  *                 |   +---------o          o-------+   |
-  *                 |              \+------+/            |
-  *                 |               | step |             |
-  *                 |               +------+             |
-  *                 +------------------------------------+
-  *
+  *                ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+  *                ┃                ╭──────╮              ┃
+  *                ┃             ╭─>┤ Step ├>╮            ┃
+  *                ┃             │  ╰──────╯ │            ┃
+  *                ┃  ╭─────────╮│  ╭──────╮ │ ╭───────╮  ┃    WrittenFile or
+  * WrittenFile ━>━╉─>┤ Decider ╞╡─>┤ Step ├>╞═╡ merge ├─>╊━>━ ProcessedFile
+  *                ┃  ╰─────────╯│  ╰──────╯ │ ╰───────╯  ┃    ("ConvertOutputElement")
+  *                ┃             │  ╭──────╮ │            ┃
+  *                ┃             ╰─>┤ Step ├>╯            ┃
+  *                ┃                ╰──────╯              ┃
+  *                ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
   *
   * @see [[Processor]], which uses StepProcessor recursively.
   */
