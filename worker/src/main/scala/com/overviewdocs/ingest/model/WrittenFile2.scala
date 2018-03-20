@@ -31,4 +31,6 @@ case class WrittenFile2(
   def blobLocation: String = blob.location
   def blobNBytes: Int = blob.nBytes
   def blobSha1: Array[Byte] = blob.sha1
+
+  def isCanceled: Boolean = fileGroupJob.isCanceled
 }

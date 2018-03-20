@@ -1,7 +1,6 @@
 package com.overviewdocs
 
 import akka.actor.{ActorRef,ActorSystem,UnhandledMessage}
-import akka.stream.{ActorMaterializer,ActorMaterializerSettings,Supervision}
 import java.nio.file.{Files,Path}
 
 import com.overviewdocs.akkautil.BrokerActor
@@ -23,12 +22,6 @@ class WorkerActorEnvironment(database: Database, tempDirectory: Path) {
   private val logger = Logger.forClass(getClass)
 
   val system = ActorSystem("worker")
-  val materializer = ActorMaterializer.apply(
-    ActorMaterializerSettings(system).withSupervisionStrategy { e =>
-      e.printStackTrace()
-      Supervision.Stop
-    }
-  )(system)
 
   val messageBroker = system.actorOf(DocumentSetMessageBroker.props, "DocumentSetMessageBroker")
   logger.info("Message broker path: {}", messageBroker.toString)
@@ -72,7 +65,7 @@ class WorkerActorEnvironment(database: Database, tempDirectory: Path) {
 
   val progressReporter = system.actorOf(ProgressReporter.props)
 
-  val fileGroupImportMonitor = FileGroupImportMonitor.withProgressReporter(system, progressReporter)(materializer)
+  val fileGroupImportMonitor = FileGroupImportMonitor.withProgressReporter(system, progressReporter)
   val complete = fileGroupImportMonitor.run
 
   system.actorOf(

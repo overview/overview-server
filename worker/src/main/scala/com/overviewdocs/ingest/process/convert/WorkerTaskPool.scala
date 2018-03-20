@@ -7,9 +7,14 @@ import akka.stream.scaladsl.Sink
 import java.util.UUID
 import scala.concurrent.duration.FiniteDuration
 
+import com.overviewdocs.ingest.model.WrittenFile2
+import com.overviewdocs.ingest.process.StepOutputFragmentCollector
+
 /** Holds the server's references to (HTTP-client) workers and their Tasks.
   */
 class WorkerTaskPool(
+  val stepOutputFragmentCollector: StepOutputFragmentCollector,
+
   /** Maximum number of workers to track. If we try to create another worker,
     * we'll see a Status.Failure.
     *
@@ -35,7 +40,7 @@ class WorkerTaskPool(
     */
   val workerIdleTimeout: FiniteDuration,
 
-  /** ActorRef where `Task`s will be sent when they time out. */
+  /** ActorRef where `WrittenFile2`s will be sent when they time out. */
   val timeoutActorRef: ActorRef
 ) extends Actor {
   private implicit val ec = context.dispatcher
@@ -51,7 +56,7 @@ class WorkerTaskPool(
         // TODO handle task.isCanceled?
         val uuid = UUID.randomUUID
         val child = context.actorOf(
-          WorkerTask.props(task, workerIdleTimeout, timeoutActorRef),
+          WorkerTask.props(stepOutputFragmentCollector, task, workerIdleTimeout, timeoutActorRef),
           uuid.toString
         )
         context.watch(child)
@@ -91,9 +96,9 @@ object WorkerTaskPool {
     * (`.maxNWorkers` is too low) or a worker error (workers aren't working on
     * the tasks they request).
     */
-  case class Create(task: Task)
+  case class Create(task: WrittenFile2)
 
-  /** Responds with a `Status.Success(Option[(Task,ActorRef)])`.
+  /** Responds with a `Status.Success(Option[(WrittenFile2,ActorRef)])`.
     *
     * The caller is responsible for keeping the ActorRef alive: it should send
     * periodic `WorkerTask.Heartbeat` messages during activity.
@@ -101,8 +106,15 @@ object WorkerTaskPool {
   case class Get(id: UUID)
 
   def props(
+    stepOutputFragmentCollector: StepOutputFragmentCollector,
     maxNWorkers: Int,
     workerIdleTimeout: FiniteDuration,
     timeoutActorRef: ActorRef
-  ) = Props(classOf[WorkerTaskPool], maxNWorkers, workerIdleTimeout, timeoutActorRef)
+  ) = Props(
+    classOf[WorkerTaskPool],
+    stepOutputFragmentCollector,
+    maxNWorkers,
+    workerIdleTimeout,
+    timeoutActorRef
+  )
 }

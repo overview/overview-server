@@ -6,7 +6,10 @@ import java.util.UUID // for random IDs
 import scala.collection.immutable.Queue
 import scala.concurrent.duration.FiniteDuration
 
-/** TaskProvider: respond to Asks with an Option[Task] (backed by a Source[Task])
+import com.overviewdocs.ingest.model.WrittenFile2
+
+/** TaskProvider: respond to Asks with an Option[WrittenFile2] (backed by a
+  * Source[WrittenFile2])
   *
   * Why not just use a Source? Because these are connected to incoming
   * HttpRequests. An HttpRequest only lasts a certain amount of time, after
@@ -32,7 +35,7 @@ class TaskProvider(
     case TaskProvider.Init => {
       sender ! TaskProvider.Ack
     }
-    case task: Task => queuedAsks.dequeueOption match {
+    case task: WrittenFile2 => queuedAsks.dequeueOption match {
       case Some((firstQueuedAsk, nextAskers)) => {
         timers.cancel(firstQueuedAsk.id.toString)
         firstQueuedAsk.asker ! Some(task)
@@ -63,7 +66,7 @@ class TaskProvider(
     }
   }
 
-  def full(task: Task, sinkActor: ActorRef): Receive = {
+  def full(task: WrittenFile2, sinkActor: ActorRef): Receive = {
     case TaskProvider.Complete => become(draining(task))
     case TaskProvider.Ask => {
       sender ! Some(task)
@@ -72,7 +75,7 @@ class TaskProvider(
     }
   }
 
-  def draining(task: Task): Receive = {
+  def draining(task: WrittenFile2): Receive = {
     case TaskProvider.Ask => {
       sender ! Some(task)
       context.stop(self)

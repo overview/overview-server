@@ -3,13 +3,14 @@ package com.overviewdocs.ingest.process.convert
 import akka.actor.{Actor,ActorRef,Props,Status,Timers}
 import akka.http.scaladsl.model.{HttpRequest,HttpResponse}
 import akka.stream.{ActorMaterializer,ActorMaterializerSettings,Supervision}
-import akka.stream.scaladsl.Source
+import akka.stream.scaladsl.{Sink,Source}
 import java.time.{Duration=>JDuration,Instant}
 import scala.concurrent.duration.{Duration,FiniteDuration}
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext,Future}
 import scala.util.{Success,Failure}
 
-import com.overviewdocs.ingest.model.StepOutputFragment
+import com.overviewdocs.ingest.File2Writer
+import com.overviewdocs.ingest.model.{WrittenFile2,StepOutputFragment,ConvertOutputElement}
 import com.overviewdocs.ingest.process.StepOutputFragmentCollector
 
 /** The server's understanding of the state of a (HTTP-client) worker.
@@ -26,7 +27,8 @@ import com.overviewdocs.ingest.process.StepOutputFragmentCollector
   * * stop -- when the parent stops this Actor, the job is complete.
   */
 class WorkerTask(
-  task: Task,
+  stepOutputFragmentCollector: StepOutputFragmentCollector,
+  task: WrittenFile2,
 
   /** Maximum amount of time a worker can remain idle on a task before we
     * RESTART it.
@@ -44,17 +46,18 @@ class WorkerTask(
     */
   val timeoutActorRef: ActorRef
 ) extends Actor with Timers {
-  private var processingFragments: Boolean = false
-  private var fragmentCollectorState: StepOutputFragmentCollector.State = StepOutputFragmentCollector.State.Start(task.writtenFile2)
+  implicit val ec: ExecutionContext = context.dispatcher
 
-  implicit val ec = context.dispatcher
+
   private val tickInterval = workerIdleTimeout / 10
   timers.startPeriodicTimer("tick", WorkerTask.Tick, tickInterval)
 
+  private var processingFragments: Boolean = false
+  private var fragmentCollectorState: StepOutputFragmentCollector.State = StepOutputFragmentCollector.State.Start(task)
   private var lastActivityAt = Instant.now
 
-  private val timeoutTemporalAmount = JDuration.ofNanos(workerIdleTimeout.toNanos)
   private def isTimedOut: Boolean = {
+    val timeoutTemporalAmount = JDuration.ofNanos(workerIdleTimeout.toNanos)
     lastActivityAt.plus(timeoutTemporalAmount).isBefore(Instant.now)
   }
 
@@ -75,7 +78,7 @@ class WorkerTask(
       asker ! Some((task, self))
     }
 
-    case WorkerTask.ProcessFragments(fragments) => {
+    case WorkerTask.ProcessFragments(fragments, sink) => {
       updateLastActivity
       val asker = sender
       val decider: Supervision.Decider = {
@@ -88,7 +91,7 @@ class WorkerTask(
       } else {
         processingFragments = true
         fragments
-          .scanAsync[StepOutputFragmentCollector.State](fragmentCollectorState)(task.stepOutputFragmentCollector.transitionState)
+          .scanAsync[StepOutputFragmentCollector.State](fragmentCollectorState)(stepOutputFragmentCollector.transitionState)
           .mapConcat { state =>
             // Record the state, _without_ toEmit. We're going to feed that
             // state back into scanAsync(), which emits its initial state on
@@ -111,7 +114,7 @@ class WorkerTask(
               case Failure(err) => err.printStackTrace(); asker ! Status.Failure(err)
             }
           }
-          .runWith(task.sink)
+          .runWith(sink)
       }
     }
 
@@ -134,13 +137,20 @@ class WorkerTask(
 object WorkerTask {
   private case object Tick
   case class GetForAsker(asker: ActorRef)
-  case class ProcessFragments(fragments: Source[StepOutputFragment, Any])
+  case class ProcessFragments(fragments: Source[StepOutputFragment, Any], sink: Sink[ConvertOutputElement, akka.NotUsed])
   private case class UpdateState(state: StepOutputFragmentCollector.State)
   private case class DoneProcessingFragments(materializedValue: Any, asker: ActorRef)
 
   def props(
-    task: Task,
+    stepOutputFragmentCollector: StepOutputFragmentCollector,
+    task: WrittenFile2,
     workerIdleTimeout: FiniteDuration,
     timeoutActorRef: ActorRef
-  ) = Props(classOf[WorkerTask], task, workerIdleTimeout, timeoutActorRef)
+  ) = Props(
+    classOf[WorkerTask],
+    stepOutputFragmentCollector,
+    task,
+    workerIdleTimeout,
+    timeoutActorRef
+  )
 }

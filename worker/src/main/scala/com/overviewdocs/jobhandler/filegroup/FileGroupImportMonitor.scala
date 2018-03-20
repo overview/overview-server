@@ -3,7 +3,7 @@ package com.overviewdocs.jobhandler.filegroup
 import akka.actor.{ActorRef,ActorSystem}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Route
-import akka.stream.{FlowShape,Graph,Materializer}
+import akka.stream.{ActorMaterializer,ActorMaterializerSettings,FlowShape,Graph,Materializer,Supervision}
 import akka.stream.scaladsl.{Flow,GraphDSL,Keep,MergePreferred,Source,Sink}
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.duration.{Duration,FiniteDuration}
@@ -32,7 +32,7 @@ class FileGroupImportMonitor(
   val recurseBufferSize: Int,            // see Processor.scala docs
   val ingestBatchSize: Int,              // see Ingester.scala docs
   val ingestBatchMaxWait: FiniteDuration // see Ingester.scala docs
-)(implicit mat: Materializer) {
+)(implicit mat: ActorMaterializer) {
   implicit val ec = mat.executionContext
 
   private val database = file2Writer.database
@@ -175,7 +175,14 @@ object FileGroupImportMonitor {
   def withProgressReporter(
     actorSystem: ActorSystem,
     progressReporter: ActorRef
-  )(implicit mat: Materializer): FileGroupImportMonitor = {
+  ): FileGroupImportMonitor = {
+    implicit val mat: ActorMaterializer = ActorMaterializer.apply(
+      ActorMaterializerSettings(actorSystem).withSupervisionStrategy { e =>
+        e.printStackTrace()
+        Supervision.Stop
+      }
+    )(actorSystem)
+
     import com.typesafe.config.ConfigFactory
     val config = ConfigFactory.load
     val file2Writer = new File2Writer(

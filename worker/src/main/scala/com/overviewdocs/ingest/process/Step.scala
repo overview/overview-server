@@ -1,15 +1,16 @@
 package com.overviewdocs.ingest.process
 
+import akka.actor.ActorRefFactory
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.{Directives,RequestContext,Route,RouteResult}
-import akka.stream.Materializer
+import akka.stream.{ActorMaterializer,Materializer}
 import akka.stream.scaladsl.{Flow,Keep,MergeHub,Sink}
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext,Future}
 
 import com.overviewdocs.ingest.File2Writer
 import com.overviewdocs.ingest.model.{ConvertOutputElement,WrittenFile2,StepOutputFragment}
-import com.overviewdocs.ingest.process.convert.{HttpTaskHandler,Task}
+import com.overviewdocs.ingest.process.convert.HttpTaskHandler
 import com.overviewdocs.ingest.process.logic._
 
 trait Step {
@@ -52,27 +53,14 @@ object Step {
       * TODO avoid passing a Materializer here. We end up starting actors before
       * materialization, which is wrong.
       */
-    def steps(implicit mat: Materializer): Vector[Step] = stepIds.map(buildStep _)
-
-    private def buildStep(stepId: String)(implicit mat: Materializer): Step = {
-      val fragmentCollector = new StepOutputFragmentCollector(file2Writer, stepId)
-      val taskServer = new HttpTaskHandler(stepId, maxNWorkers, workerIdleTimeout, httpCreateIdleTimeout)
-      val (outputSink, outputSource) = MergeHub.source[ConvertOutputElement].preMaterialize
-
-      val inputSink = Flow.apply[WrittenFile2]
-        .map(w => createTask(fragmentCollector, w, outputSink))
-        .toMat(taskServer.taskSink(file2Writer.blobStorage))(Keep.right)
-
-      val flow = Flow.fromSinkAndSourceCoupledMat(inputSink, outputSource)(Keep.left)
-      SimpleStep(stepId, flow)
+    def steps(implicit mat: ActorMaterializer): Vector[Step] = {
+      stepIds.map(stepId => buildStep(stepId, mat.system))
     }
 
-    private def createTask(
-      stepOutputFragmentCollector: StepOutputFragmentCollector,
-      writtenFile2: WrittenFile2,
-      outputSink: Sink[ConvertOutputElement, akka.NotUsed]
-    )(implicit mat: Materializer): Task = {
-      Task(writtenFile2, stepOutputFragmentCollector, outputSink)
+    private def buildStep(stepId: String, actorRefFactory: ActorRefFactory): Step = {
+      val fragmentCollector = new StepOutputFragmentCollector(file2Writer, stepId)
+      val taskServer = new HttpTaskHandler(stepId, file2Writer.blobStorage, fragmentCollector, maxNWorkers, workerIdleTimeout, httpCreateIdleTimeout)
+      SimpleStep(stepId, taskServer.flow(actorRefFactory))
     }
   }
 
@@ -81,7 +69,7 @@ object Step {
     maxNWorkers: Int,
     workerIdleTimeout: FiniteDuration,
     httpCreateIdleTimeout: FiniteDuration
-  )(implicit mat: Materializer): Vector[Step] = Vector(
+  )(implicit mat: ActorMaterializer): Vector[Step] = Vector(
     new StepLogicStep("SplitExtract", file2Writer, new SplitExtractStepLogic, maxNWorkers),
     new StepLogicStep("Ocr", file2Writer, new OcrStepLogic, maxNWorkers),
     new StepLogicStep("Office", file2Writer, new OfficeStepLogic, maxNWorkers),

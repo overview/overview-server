@@ -5,8 +5,8 @@ import akka.http.scaladsl.marshalling.ToResponseMarshallable
 import akka.http.scaladsl.model.{ContentTypes,HttpEntity,HttpResponse,Multipart,ResponseEntity,RequestEntity,StatusCodes,Uri}
 import akka.http.scaladsl.server.{RequestContext,Route,RouteResult}
 import akka.pattern.ask
-import akka.stream.{ActorMaterializer,FlowShape,OverflowStrategy,Materializer}
-import akka.stream.scaladsl.{Flow,GraphDSL,Keep,MergePreferred,Sink,Source}
+import akka.stream.{FlowShape,OverflowStrategy,Materializer}
+import akka.stream.scaladsl.{Flow,GraphDSL,Keep,MergeHub,MergePreferred,Sink,Source}
 import akka.util.{ByteString,Timeout}
 import com.google.common.hash.HashCode
 import java.nio.charset.StandardCharsets.UTF_8
@@ -18,11 +18,15 @@ import scala.concurrent.{ExecutionContext,Future}
 import scala.util.{Try,Success,Failure}
 
 import com.overviewdocs.blobstorage.BlobStorage
-import com.overviewdocs.ingest.model.StepOutputFragment
+import com.overviewdocs.ingest.File2Writer
+import com.overviewdocs.ingest.model.{WrittenFile2,ConvertOutputElement,StepOutputFragment}
+import com.overviewdocs.ingest.process.StepOutputFragmentCollector
 import com.overviewdocs.models.File2
 
 class HttpTaskHandler(
   stepId: String,
+  blobStorage: BlobStorage,
+  stepOutputFragmentCollector: StepOutputFragmentCollector,
   maxNWorkers: Int,
   workerIdleTimeout: FiniteDuration,
   httpCreateIdleTimeout: FiniteDuration
@@ -43,63 +47,70 @@ class HttpTaskHandler(
   // reality will be kinder.)
   private val maxNTimedOutTasks = maxNWorkers * 2
 
-  /** A Sink for tasks provided by the user.
-    */
-  def taskSink(
-    blobStorage: BlobStorage
-  )(implicit mat: Materializer): Sink[Task, Route] = {
-    implicit val ec: ExecutionContext = mat.executionContext
-    val actorRefFactory: ActorRefFactory = mat match {
-      case am: ActorMaterializer => am.system
-      case _ => throw new RuntimeException("Only ActorMaterializer can be used with this Sink")
-    }
-
-    val (timeoutActorRef, timeoutTaskSource) = Source.actorRef(maxNTimedOutTasks, OverflowStrategy.fail).preMaterialize
-    val workerTaskPoolRef = actorRefFactory.actorOf(WorkerTaskPool.props(maxNWorkers, workerIdleTimeout, timeoutActorRef))
-
-    // taskProviderRef: responds to Asks with an Option[Task]
+  def flow(
+    actorRefFactory: ActorRefFactory
+  ): Flow[WrittenFile2, ConvertOutputElement, Route] = {
+    // taskProviderRef: responds to Asks with an Option[WrittenFile2]
     val taskProviderRef = actorRefFactory.actorOf(TaskProvider.props(httpCreateIdleTimeout))
+    val taskProviderSink = Sink.actorRefWithAck[WrittenFile2](
+      taskProviderRef,
+      TaskProvider.Init,
+      TaskProvider.Ack,
+      TaskProvider.Complete
+    )
 
-    def shutdown = {
-      actorRefFactory.stop(timeoutActorRef)
-      actorRefFactory.stop(workerTaskPoolRef)
-    }
-
-    // With GraphDSL, build a Flow that incorporates tasks from timeoutTaskSource.
-    Flow.fromGraph[Task, Task, akka.NotUsed](GraphDSL.create() { implicit builder =>
+    val graph = GraphDSL.create(
+      MergeHub.source[ConvertOutputElement],
+      Source.actorRef(maxNTimedOutTasks, OverflowStrategy.fail)
+    )(Tuple2.apply _) { implicit builder => (outputHub, timeoutTaskSource) =>
       import GraphDSL.Implicits._
 
-      val normal = builder.add(Flow.apply[Task])
-      val merge = builder.add(MergePreferred[Task](1, eagerComplete=true))
-      val timedOut = builder.add(timeoutTaskSource)
+      val normal = builder.add(Flow.apply[WrittenFile2])
+      val retry = builder.add(MergePreferred[WrittenFile2](1, eagerComplete=true))
+      val taskProvider = builder.add(taskProviderSink)
 
-      normal   ~> merge
-      timedOut ~> merge.preferred
+      normal            ~> retry ~> taskProvider
+      timeoutTaskSource ~> retry.preferred
 
-      new FlowShape(normal.in, merge.out)
-    })
-      .watchTermination() { (_, futureDone) =>
+      new FlowShape(normal.in, outputHub.out)
+    }
+
+    Flow.fromGraph(graph)
+      .watchTermination() { (tuple: (Sink[ConvertOutputElement, akka.NotUsed], ActorRef), futureDone: Future[akka.Done]) =>
+        // Spin up actors
+        val (outputSink, timeoutActorRef) = tuple
+        val workerTaskPoolRef = actorRefFactory.actorOf(WorkerTaskPool.props(
+          stepOutputFragmentCollector,
+          maxNWorkers,
+          workerIdleTimeout,
+          timeoutActorRef
+        ))
+
         // Shut down when there's no more input.
-        //
-        // TODO reconsider the lifecycle. Right now we only allow a single
-        // Sink because we want to shut things down in an orderly fashion.
-        futureDone.onComplete { case _ => shutdown }; akka.NotUsed
+        def shutdown = {
+          actorRefFactory.stop(timeoutActorRef)
+          actorRefFactory.stop(workerTaskPoolRef)
+        }
+        futureDone.onComplete { case _ => shutdown }(actorRefFactory.dispatcher)
+
+        new StepRouteFactory(
+          stepId,
+          stepOutputFragmentCollector,
+          taskProviderRef,
+          workerTaskPoolRef,
+          actorRefFactory,
+          outputSink
+        ).route
       }
-      .mapMaterializedValue(_ => new StepRouteFactory(stepId, blobStorage, taskProviderRef, workerTaskPoolRef, actorRefFactory).route)
-      .to(Sink.actorRefWithAck[Task](
-        taskProviderRef,
-        TaskProvider.Init,
-        TaskProvider.Ack,
-        TaskProvider.Complete
-      ))
   }
 
   class StepRouteFactory(
     stepId: String,
-    blobStorage: BlobStorage,
+    stepOutputFragmentCollector: StepOutputFragmentCollector,
     taskProviderRef: ActorRef, 
     workerTaskPoolRef: ActorRef,
-    actorRefFactory: ActorRefFactory
+    actorRefFactory: ActorRefFactory,
+    outputSink: Sink[ConvertOutputElement, akka.NotUsed]
   ) {
     import scala.language.implicitConversions
     implicit def executionContext(ctx: RequestContext): ExecutionContext = ctx.executionContext
@@ -110,12 +121,12 @@ class HttpTaskHandler(
       implicit val ec = ctx.executionContext
 
       drainEntity(ctx.request.entity).flatMap { _ =>
-        ask(taskProviderRef, TaskProvider.Ask)(Timeout(httpCreateIdleTimeout + unresponsiveTimeout)).mapTo[Option[Task]].flatMap(_ match {
+        ask(taskProviderRef, TaskProvider.Ask)(Timeout(httpCreateIdleTimeout + unresponsiveTimeout)).mapTo[Option[WrittenFile2]].flatMap(_ match {
           case None => {
             ctx.complete(StatusCodes.NoContent)
           }
           case Some(task) => {
-            // At this point, the task is in neither the Source[Task, _] nor the
+            // At this point, the task is in neither the Source[WrittenFile2, _] nor the
             // WorkerTaskPool. Place it in the WorkerTaskPool, before we lose it.
             ask(workerTaskPoolRef, WorkerTaskPool.Create(task))(Timeout(unresponsiveTimeout)).mapTo[UUID].transformWith {
               case Success(uuid) => {
@@ -143,11 +154,11 @@ class HttpTaskHandler(
       * If the Task is found to have been canceled, emits a `Canceled` fragment
       * to its Sink, responds with 404 and never calls `fn()`.
       */
-    private def withTask(uuid: UUID, ctx: RequestContext)(drain: () => Future[akka.Done])(fn: (Task, ActorRef) => Future[RouteResult]): Future[RouteResult] = {
+    private def withTask(uuid: UUID, ctx: RequestContext)(drain: () => Future[akka.Done])(fn: (WrittenFile2, ActorRef) => Future[RouteResult]): Future[RouteResult] = {
       implicit val mat = ctx.materializer
       implicit val ec = ctx.executionContext
 
-      ask(workerTaskPoolRef, WorkerTaskPool.Get(uuid))(Timeout(unresponsiveTimeout)).mapTo[Option[(Task,ActorRef)]].flatMap(_ match {
+      ask(workerTaskPoolRef, WorkerTaskPool.Get(uuid))(Timeout(unresponsiveTimeout)).mapTo[Option[(WrittenFile2,ActorRef)]].flatMap(_ match {
         case Some((task, workerTaskRef)) => {
           fn(task, workerTaskRef)
         }
@@ -163,8 +174,8 @@ class HttpTaskHandler(
 
       drainEntity(ctx.request.entity).flatMap { _ =>
         withTask(uuid, ctx)(() => Future.successful(akka.Done)) { (task, _) =>
-          val byteSource = blobStorage.get(task.writtenFile2.blob.location)
-          val nBytes = task.writtenFile2.blob.nBytes
+          val byteSource = blobStorage.get(task.blob.location)
+          val nBytes = task.blob.nBytes
           ctx.complete(HttpEntity.Default(ContentTypes.`application/octet-stream`, nBytes.toLong, byteSource))
         }
       }
@@ -192,14 +203,13 @@ class HttpTaskHandler(
       }
     }
 
-    private def taskEntity(ctx: RequestContext, uuid: UUID, task: Task): Future[ResponseEntity] = {
+    private def taskEntity(ctx: RequestContext, uuid: UUID, task: WrittenFile2): Future[ResponseEntity] = {
       implicit val ec = ctx.executionContext
 
-      val file2 = task.writtenFile2
       implicit val pipelineOptionsWrites = Json.writes[File2.PipelineOptions]
 
       for {
-        externalBlobUrl <- blobStorage.getUrlOpt(file2.blob.location, file2.contentType)
+        externalBlobUrl <- blobStorage.getUrlOpt(task.blob.location, task.contentType)
       } yield {
         val taskUrl: String = Uri.parseAndResolve("/" + stepId + "/" + uuid, ctx.request.uri).toString
         val blobUrl: String = externalBlobUrl.getOrElse(taskUrl + "/blob")
@@ -207,15 +217,15 @@ class HttpTaskHandler(
         jsonEntity(Json.obj(
           "id" -> uuid.toString,
           "url" -> taskUrl,
-          "filename" -> file2.filename,
-          "contentType" -> file2.contentType,
-          "languageCode" -> file2.languageCode,
-          "metadata" -> file2.metadata.jsObject,
-          "pipelineOptions" -> file2.pipelineOptions,
+          "filename" -> task.filename,
+          "contentType" -> task.contentType,
+          "languageCode" -> task.languageCode,
+          "metadata" -> task.metadata.jsObject,
+          "pipelineOptions" -> task.pipelineOptions,
           "blob" -> Json.obj(
             "url" -> blobUrl,
-            "nBytes" -> file2.blob.nBytes,
-            "sha1" -> HashCode.fromBytes(file2.blob.sha1).toString
+            "nBytes" -> task.blob.nBytes,
+            "sha1" -> HashCode.fromBytes(task.blob.sha1).toString
           )
         ))
       }
@@ -321,7 +331,7 @@ class HttpTaskHandler(
       withTask(uuid, ctx)(() => drainEntity(ctx.request.entity)) { (task, workerTaskRef) =>
         for {
           fragment <- partToFragment(name, ctx.request.entity)
-          _ <- ask(workerTaskRef, WorkerTask.ProcessFragments(Source.single(fragment)))(postTimeout)
+          _ <- ask(workerTaskRef, WorkerTask.ProcessFragments(Source.single(fragment), outputSink))(postTimeout)
           routeResult <- ctx.complete(StatusCodes.Accepted)
         } yield routeResult
       }
@@ -337,7 +347,7 @@ class HttpTaskHandler(
         val fragments: Source[StepOutputFragment, _] = formData.parts
           .mapAsync(1) { part => partToFragment(part.name, part.entity) }
         for {
-          _ <- ask(workerTaskRef, WorkerTask.ProcessFragments(fragments))(postMultipartTimeout)
+          _ <- ask(workerTaskRef, WorkerTask.ProcessFragments(fragments, outputSink))(postMultipartTimeout)
           routeResult <- ctx.complete(StatusCodes.Accepted)
         } yield routeResult
       }

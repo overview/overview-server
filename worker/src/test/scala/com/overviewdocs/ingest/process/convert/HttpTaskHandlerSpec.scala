@@ -3,9 +3,9 @@ package com.overviewdocs.ingest.process.convert
 import akka.http.scaladsl.model.{ContentTypes,HttpEntity,HttpHeader,Multipart,RequestEntity,StatusCodes}
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.Specs2RouteTest
-import akka.stream.scaladsl.{Keep,MergeHub,Sink,Source}
+import akka.stream.scaladsl.{Keep,Sink,Source}
 import akka.util.ByteString
-import java.util.UUID
+import java.time.Instant
 import org.specs2.matcher.JsonMatchers
 import org.specs2.mock.Mockito
 import org.specs2.mutable.{After,Specification}
@@ -24,8 +24,6 @@ import com.overviewdocs.test.ActorSystemContext
 // Kinda an integration test: tests WorkerTask and WorkerTaskPool as well as
 // HttpTaskHandler.route.
 class HttpTaskHandlerSpec extends Specification with Specs2RouteTest with Mockito with JsonMatchers {
-  sequential
-
   // Specs2RouteTest conflicts with ActorSystemContext. But we can at least
   // share their confits.
   override def testConfigSource = ActorSystemContext.testConfigSource
@@ -35,6 +33,10 @@ class HttpTaskHandlerSpec extends Specification with Specs2RouteTest with Mockit
   }
 
   trait BaseScope extends Scope with After {
+    val mockFileGroupJob = mock[ResumedFileGroupJob]
+    mockFileGroupJob.isCanceled returns false
+    val onProgressCalls = ArrayBuffer.empty[Double]
+
     val postedFragments = ArrayBuffer.empty[StepOutputFragment]
     val mockStepOutputFragmentCollector = mock[StepOutputFragmentCollector]
     mockStepOutputFragmentCollector.transitionState(any, any)(any) answers { args =>
@@ -58,54 +60,52 @@ class HttpTaskHandlerSpec extends Specification with Specs2RouteTest with Mockit
       }
     }
 
-    val mockFileGroupJob = mock[ResumedFileGroupJob]
-    mockFileGroupJob.isCanceled returns false
-    val mockWrittenFile2 = WrittenFile2(
-      id=1L,
-      fileGroupJob=mockFileGroupJob,
-      onProgress=(d => ???),
-      rootId=None,
-      parentId=None,
-      filename="file.name",
-      contentType="application/test",
-      languageCode="fr",
-      metadata=File2.Metadata(Json.obj("foo" -> "bar")),
-      pipelineOptions=File2.PipelineOptions(true, false, Vector("Next")),
-      blob=BlobStorageRefWithSha1(BlobStorageRef("loc:123", 20), ByteString("abcdabcdabcdabcdabcd").toArray)
-    )
+    def createTask: WrittenFile2 = {
+      WrittenFile2(
+        id=1L,
+        fileGroupJob=mockFileGroupJob,
+        onProgress=(d => onProgressCalls.+=(d)),
+        rootId=None,
+        parentId=None,
+        filename="file.name",
+        contentType="application/test",
+        languageCode="fr",
+        metadata=File2.Metadata(Json.obj("foo" -> "bar")),
+        pipelineOptions=File2.PipelineOptions(true, false, Vector("Next")),
+        blob=BlobStorageRefWithSha1(BlobStorageRef("loc:123", 20), ByteString("abcdabcdabcdabcdabcd").toArray)
+      )
+    }
 
     val mockBlobStorage = mock[BlobStorage]
     mockBlobStorage.getUrlOpt(any[String], any[String]) returns Future.successful[Option[String]](None)
 
-    def createTask: Task = Task(
-      mockWrittenFile2,
-      mockStepOutputFragmentCollector,
-      Sink.foreach[ConvertOutputElement](_ => ()).mapMaterializedValue(_ => akka.NotUsed)
-    )
-
     // Keep Source alive: HttpTaskHandler shuts down when it's completed
-    val endPromise = Promise[Source[Task, akka.NotUsed]]()
+    val endPromise = Promise[Source[WrittenFile2, akka.NotUsed]]()
     def end: Unit = {
-      endPromise.trySuccess(Source.empty[Task])
+      endPromise.trySuccess(Source.empty[WrittenFile2])
     }
 
     val nTasks: Int = 1
-    lazy val tasks: Vector[Task] = Vector.fill[Task](nTasks)(createTask)
+    lazy val tasks: Vector[WrittenFile2] = Vector.fill[WrittenFile2](nTasks)(createTask)
     val workerIdleTimeout: FiniteDuration = Duration(1, "s")
     val readTimeout: FiniteDuration = Duration(1, "s")
     val httpCreateTimeout: FiniteDuration = Duration(1, "s")
 
     lazy val server = new HttpTaskHandler(
       "Step",
+      mockBlobStorage,
+      mockStepOutputFragmentCollector,
       2,
       workerIdleTimeout,
       httpCreateTimeout
     )
 
-    lazy val route: Route = {
+    lazy val (route: Route, futureDone: Future[akka.Done]) = {
       Source(tasks)
         .concat(Source.fromFutureSource(endPromise.future))
-        .runWith(server.taskSink(mockBlobStorage))
+        .viaMat(server.flow(system))(Keep.right)
+        .toMat(Sink.ignore)(Keep.both)
+        .run()
     }
 
     def httpCreate = Post("/Step", "") ~> route
@@ -132,6 +132,7 @@ class HttpTaskHandlerSpec extends Specification with Specs2RouteTest with Mockit
 
     override def after = {
       end
+      //await(futureDone)
     }
   }
 
