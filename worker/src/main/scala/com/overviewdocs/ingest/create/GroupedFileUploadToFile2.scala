@@ -9,7 +9,7 @@ import scala.concurrent.{ExecutionContext,Future,blocking}
 
 import com.overviewdocs.blobstorage.{BlobBucketId,BlobStorage}
 import com.overviewdocs.database.{Database,LargeObject}
-import com.overviewdocs.models.{BlobStorageRef,File2,FileGroup,GroupedFileUpload,StatefulFile2}
+import com.overviewdocs.models.{BlobStorageRef,File2,FileGroup,GroupedFileUpload}
 import com.overviewdocs.models.tables.{File2s,GroupedFileUploads}
 import com.overviewdocs.util.{Logger,TempFiles}
 
@@ -41,16 +41,19 @@ class GroupedFileUploadToFile2(database: Database, blobStorage: BlobStorage) {
     fileGroup: FileGroup,
     groupedFileUpload: GroupedFileUpload
   )(implicit ec: ExecutionContext): Future[File2] = {
-    val maybeStatefulFile2Future = groupedFileUpload.file2Id match {
-      case Some(file2Id) => lookupFile2(file2Id).map(f => f.map(_.toStatefulFile2))
+    val futureFile2Opt = groupedFileUpload.file2Id match {
+      case Some(file2Id) => lookupFile2(file2Id)
       case None => Future.successful(None)
     }
 
-    maybeStatefulFile2Future.flatMap(_ match {
-      case Some(StatefulFile2.Ingested(file2)) => Future.successful(file2)
-      case Some(StatefulFile2.Processed(file2)) => Future.successful(file2)
-      case Some(StatefulFile2.Written(file2)) => Future.successful(file2)
-      case Some(StatefulFile2.Created(file2)) => writeFile2(groupedFileUpload, file2)
+    futureFile2Opt.flatMap(_ match {
+      case Some(file2) => {
+        if (file2.state == File2.State.Created) {
+          writeFile2(groupedFileUpload, file2)
+        } else {
+          Future.successful(file2)
+        }
+      }
       case None => createFile2(fileGroup, groupedFileUpload).flatMap(file2 => writeFile2(groupedFileUpload, file2))
     })
   }
