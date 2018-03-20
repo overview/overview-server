@@ -47,10 +47,10 @@ class HttpStepHandler(
   private val maxNTimedOutTasks = maxNWorkers * 2
 
   private def retryFlow: Flow[WrittenFile2, WrittenFile2, ActorRef] = {
-    val graph = GraphDSL.create(Source.actorRef(maxNTimedOutTasks, OverflowStrategy.fail)) { implicit builder => timeoutTaskSource =>
+    val graph = GraphDSL.create(Source.actorRef(maxNTimedOutTasks, OverflowStrategy.fail).named("timeoutTaskSource")) { implicit builder => timeoutTaskSource =>
       import GraphDSL.Implicits._
 
-      val retry = builder.add(MergePreferred[WrittenFile2](1, eagerComplete=true))
+      val retry = builder.add(MergePreferred[WrittenFile2](1, eagerComplete=true).named("retry"))
 
       timeoutTaskSource ~> retry.preferred
       new FlowShape(retry.in(0), retry.out)
@@ -79,7 +79,7 @@ class HttpStepHandler(
         HttpTaskProvider.Init,
         HttpTaskProvider.Ack,
         HttpTaskProvider.Complete
-      )
+      ).named("taskProviderSink")
 
       val sink: Sink[WrittenFile2, ActorRef] = retryFlow
         .toMat(taskProviderSink)(Keep.left)

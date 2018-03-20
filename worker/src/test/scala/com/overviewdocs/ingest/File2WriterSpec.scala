@@ -12,7 +12,7 @@ import scala.concurrent.{Future,Promise,blocking}
 import com.overviewdocs.blobstorage.{BlobBucketId,BlobStorage}
 import com.overviewdocs.models.{BlobStorageRef,File2}
 import com.overviewdocs.models.tables.{Documents,DocumentProcessingErrors,File2s}
-import com.overviewdocs.ingest.model.{BlobStorageRefWithSha1,CreatedFile2,WrittenFile2,ProcessedFile2,ResumedFileGroupJob,FileGroupProgressState}
+import com.overviewdocs.ingest.model.{BlobStorageRefWithSha1,CreatedFile2,WrittenFile2,ProcessedFile2,ResumedFileGroupJob,FileGroupProgressState,ProgressPiece}
 import com.overviewdocs.test.{ActorSystemContext,DbSpecification}
 
 class File2WriterSpec extends DbSpecification with Mockito {
@@ -68,7 +68,7 @@ class File2WriterSpec extends DbSpecification with Mockito {
         val parent = WrittenFile2(
           dbParent.id,
           fileGroupJob,
-          _ => (),
+          ProgressPiece.Null,
           dbParent.rootFile2Id,
           dbParent.parentFile2Id,
           dbParent.filename,

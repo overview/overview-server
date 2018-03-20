@@ -106,26 +106,6 @@ object FileGroupProgressState {
   )
 }
 
-/** Something that can be completed or divided into sub-tasks. */
-trait ProgressPiece {
-  /** Signal the amount of progress that has occurred. */
-  def onProgress(fraction: Double): Unit = onPieceProgress(0.0, fraction)
-
-  /** Signal that a _piece_ has progressed. */
-  def onPieceProgress(begin: Double, end: Double): Unit
-
-//  /** Create sub-ProgressPieces.
-//    *
-//    * For instance: `progressPiece.split(Vector(0.0, 0.5), Vector(0.5, 1.0))`
-//    * will create two evently-sized splits, each with a `.onProgress()` method.
-//    *
-//    * You'll get undefined behavior if you call `.split()` and `.onProgress()`
-//    * on the same ProgressPiece. The only exception is `.onProgress(1.0)`, which
-//    * will have the same effect as marking all split ProgressPieces as finished.
-//    */
-//  def split(fractions: Vector[(Double,Double)]): Vector[SubProgressPiece]
-}
-
 /** Completion of a single, root File2.
   *
   * You can either call `.onProgress()` to report progress of the entire File2; or
@@ -141,33 +121,18 @@ case class File2Progress(
 
   /** Last byte plus one, within the FileGroupProgressState. */
   endBytePlusOne: Long
-) extends ProgressPiece {
-  override def onPieceProgress(begin: Double, end: Double): Unit = {
-    val nBytes: Long = ((endBytePlusOne - beginByte) * (end - begin)).toLong
-    fileGroupProgressState.setBytesProcessed(beginByte, beginByte + nBytes)
-  }
-//
-//  override def split(fractions: Vector[(Double,Double)]): Vector[SubProgressPiece] = {
-//    fractions.map(t => SubProgressPiece(this, t._1, t._2))
-//  }
-}
+) {
+  private val d = endBytePlusOne - beginByte
 
-//case class SubProgressPiece(
-//  parent: ProgressPiece,
-//  begin: Double,
-//  end: Double
-//) extends ProgressPiece {
-//  override def onPieceProgress(pieceBegin: Double, pieceEnd: Double): Unit = {
-//    val size = (end - begin) * (pieceEnd - pieceBegin)
-//    parent.onPieceProgress(begin, begin + size)
-//  }
-//
-//  override def split(fractions: Vector[(Double,Double)]): Vector[SubProgressPiece] = {
-//    val size = end - begin
-//    fractions.map(t => SubProgressPiece(
-//      parent,
-//      begin + size * t._1,
-//      begin + size * t._2
-//    ))
-//  }
-//}
+  private def color(begin: Double, end: Double): Unit = {
+    val a = (beginByte + d * begin).toLong
+    val b = (beginByte + d * end).toLong
+    fileGroupProgressState.setBytesProcessed(a, b)
+  }
+
+  def progressPiece = new ProgressPiece(
+    color _,
+    0.0,
+    1.0
+  )
+}

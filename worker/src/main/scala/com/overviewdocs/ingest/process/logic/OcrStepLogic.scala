@@ -37,6 +37,9 @@ class OcrStepLogic(
   private val ProgressRegex = """^(\d+)/(\d+)$""".r
   private val logger = Logger.forClass(getClass)
 
+  override val id = "Ocr"
+  override val progressWeight = 0.95
+
   override def toChildFragments(
     blobStorage: BlobStorage,
     input: WrittenFile2

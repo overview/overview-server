@@ -30,12 +30,12 @@ object Step {
   ) extends Step
 
   class StepLogicStep(
-    override val id: String,
-    override val progressWeight: Double,
     file2Writer: File2Writer,
     logic: StepLogic,
     paralellism: Int
   )(implicit mat: Materializer) extends Step {
+    override val id = logic.id
+    override val progressWeight = logic.progressWeight
     override val flow: Flow[WrittenFile2, ConvertOutputElement, Route] = {
       new StepLogicFlow(logic, file2Writer, paralellism)
         .flow
@@ -60,7 +60,7 @@ object Step {
     }
 
     private def buildStep(stepId: String, progressWeight: Double, actorRefFactory: ActorRefFactory): Step = {
-      val fragmentCollector = new StepOutputFragmentCollector(file2Writer, stepId)
+      val fragmentCollector = new StepOutputFragmentCollector(file2Writer, stepId, progressWeight)
       val taskServer = new HttpStepHandler(stepId, file2Writer.blobStorage, fragmentCollector, maxNWorkers, workerIdleTimeout, httpCreateIdleTimeout)
       SimpleStep(stepId, progressWeight, taskServer.flow(actorRefFactory))
     }
@@ -72,10 +72,10 @@ object Step {
     workerIdleTimeout: FiniteDuration,
     httpCreateIdleTimeout: FiniteDuration
   )(implicit mat: ActorMaterializer): Vector[Step] = Vector(
-    new StepLogicStep("SplitExtract", 1.0, file2Writer, new SplitExtractStepLogic, maxNWorkers),
-    new StepLogicStep("Ocr", 0.9, file2Writer, new OcrStepLogic, maxNWorkers),
-    new StepLogicStep("Office", 0.9, file2Writer, new OfficeStepLogic, maxNWorkers),
-    new StepLogicStep("Unhandled", 1.0, file2Writer, new UnhandledStepLogic, 1),
+    new StepLogicStep(file2Writer, new SplitExtractStepLogic, maxNWorkers),
+    new StepLogicStep(file2Writer, new OcrStepLogic, maxNWorkers),
+    new StepLogicStep(file2Writer, new OfficeStepLogic, maxNWorkers),
+    new StepLogicStep(file2Writer, new UnhandledStepLogic, 1),
   ) ++ new HttpSteps(
     Vector(
       "Archive" -> 0.1

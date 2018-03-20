@@ -15,7 +15,7 @@ import com.overviewdocs.blobstorage.{BlobBucketId,BlobStorage}
 import com.overviewdocs.database.Database
 import com.overviewdocs.models.{BlobStorageRef,File2}
 import com.overviewdocs.models.tables.File2s
-import com.overviewdocs.ingest.model.{BlobStorageRefWithSha1,CreatedFile2,WrittenFile2,ProcessedFile2,IngestedRootFile2}
+import com.overviewdocs.ingest.model.{BlobStorageRefWithSha1,CreatedFile2,WrittenFile2,ProcessedFile2,IngestedRootFile2,ProgressPiece}
 import com.overviewdocs.util.{TempFiles,Textify}
 
 class File2Writer(
@@ -78,7 +78,7 @@ class File2Writer(
     } yield CreatedFile2(
       file2.id,
       parentFile2.fileGroupJob,
-      parentFile2.onProgress, // TODO do better -- use new progress reporter
+      ProgressPiece.Null, // at time of creation, we don't know enough to report progress
       file2.rootFile2Id,
       file2.parentFile2Id,
       file2.indexInParent,

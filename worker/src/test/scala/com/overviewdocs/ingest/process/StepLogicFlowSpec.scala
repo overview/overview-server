@@ -13,7 +13,7 @@ import scala.concurrent.{ExecutionContext,Future,Promise,blocking}
 
 import com.overviewdocs.blobstorage.BlobStorage
 import com.overviewdocs.ingest.File2Writer
-import com.overviewdocs.ingest.model.{BlobStorageRefWithSha1,ConvertOutputElement,CreatedFile2,WrittenFile2,ProcessedFile2}
+import com.overviewdocs.ingest.model.{BlobStorageRefWithSha1,ConvertOutputElement,CreatedFile2,WrittenFile2,ProcessedFile2,ProgressPiece}
 import com.overviewdocs.models.BlobStorageRef
 import com.overviewdocs.test.ActorSystemContext
 
@@ -21,6 +21,8 @@ class StepLogicFlowSpec extends Specification with Mockito {
   sequential
 
   class MockStepLogic(fragments: Vector[StepOutputFragment]) extends StepLogic {
+    override val id = "Mock"
+    override val progressWeight = 0.4
     override def toChildFragments(
       blobStorage: BlobStorage,
       file2: WrittenFile2,
@@ -35,9 +37,10 @@ class StepLogicFlowSpec extends Specification with Mockito {
     implicit val ec = system.dispatcher
 
     // Mock File2Writer: all methods (except createChild) just return the input File2
-    val onProgressCalls = ArrayBuffer[Double]()
+    val onProgressCalls = ArrayBuffer.empty[(Double,Double)]
+    val progressPiece = new ProgressPiece((d1, d2) => onProgressCalls.+=((d1, d2)), 0.0, 1.0)
     val parentFile2 = mock[WrittenFile2]
-    parentFile2.onProgress returns onProgressCalls.+= _
+    parentFile2.progressPiece returns progressPiece
     // Stuff for logger
     parentFile2.id returns 1L
     parentFile2.filename returns "filename.blob"
@@ -46,7 +49,9 @@ class StepLogicFlowSpec extends Specification with Mockito {
     parentFile2.wantSplitByPage must beEqualTo(false)
     var nCreates = 0
     val createdFile2 = mock[CreatedFile2]
+    createdFile2.progressPiece returns progressPiece.slice(0.9, 1.0)
     val writtenFile2 = mock[WrittenFile2]
+    writtenFile2.copy(any, any, any, any, any, any, any, any, any, any, any, any) returns writtenFile2
     val processedFile2 = mock[ProcessedFile2]
     val processedParent = mock[ProcessedFile2]
 
@@ -85,11 +90,11 @@ class StepLogicFlowSpec extends Specification with Mockito {
 
     lazy val resultFuture: Future[(Vector[WrittenFile2], Vector[ProcessedFile2])] = {
       for {
-        output <- source.via(flow).runWith(Sink.seq[ConvertOutputElement])
+        output <- source.via(flow).runWith(Sink.collection[ConvertOutputElement, Vector[_]])
       } yield (
         // Split WrittenFile2s and ProcessedFile2s
-        output.collect { case ConvertOutputElement.ToProcess(w) => w }.to[Vector],
-        output.collect { case ConvertOutputElement.ToIngest(p) => p }.to[Vector]
+        output.collect { case ConvertOutputElement.ToProcess(w) => w },
+        output.collect { case ConvertOutputElement.ToIngest(p) => p }
       )
     }
 
@@ -247,7 +252,7 @@ class StepLogicFlowSpec extends Specification with Mockito {
       )
 
       result
-      there was one(mockFile2Writer).setProcessed(parentFile2, 0, Some("logic error in com.overviewdocs.ingest.process.StepLogicFlowSpec$MockStepLogic: tried to write child without blob data"))
+      there was one(mockFile2Writer).setProcessed(parentFile2, 0, Some("logic error in Mock: tried to write child without blob data"))
     }
 
     "error when there is no blob at the start of another file" in new BaseScope {
@@ -258,7 +263,7 @@ class StepLogicFlowSpec extends Specification with Mockito {
       )
 
       result
-      there was one(mockFile2Writer).setProcessed(parentFile2, 0, Some("logic error in com.overviewdocs.ingest.process.StepLogicFlowSpec$MockStepLogic: tried to write child without blob data"))
+      there was one(mockFile2Writer).setProcessed(parentFile2, 0, Some("logic error in Mock: tried to write child without blob data"))
     }
 
     "error when a blob comes without a file" in new BaseScope {
@@ -268,7 +273,7 @@ class StepLogicFlowSpec extends Specification with Mockito {
       )
 
       result
-      there was one(mockFile2Writer).setProcessed(parentFile2, 0, Some("logic error in com.overviewdocs.ingest.process.StepLogicFlowSpec$MockStepLogic: unexpected fragment class com.overviewdocs.ingest.process.StepOutputFragment$Blob"))
+      there was one(mockFile2Writer).setProcessed(parentFile2, 0, Some("logic error in Mock: unexpected fragment class com.overviewdocs.ingest.process.StepOutputFragment$Blob"))
     }
 
     "allows inheriting a blob from the parent" in new BaseScope {
@@ -329,7 +334,7 @@ class StepLogicFlowSpec extends Specification with Mockito {
         StepOutputFragment.Done
       )
       result
-      onProgressCalls must beEqualTo(Vector(0.1))
+      onProgressCalls must beEqualTo(Vector((0.0, 0.4 * 0.1), (0.0, 0.4 * 1.0)))
     }
   }
 }

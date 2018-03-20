@@ -58,7 +58,9 @@ import com.overviewdocs.util.Logger
   */
 class StepLogicFlow(logic: StepLogic, file2Writer: File2Writer, parallelism: Int) {
   private val logger = Logger.forClass(getClass)
-  private val stepOutputFragmentCollector = new StepOutputFragmentCollector(file2Writer, logic.getClass.getName)
+  private val stepOutputFragmentCollector = {
+    new StepOutputFragmentCollector(file2Writer, logic.id, logic.progressWeight)
+  }
 
   def flow(implicit mat: Materializer): Flow[WrittenFile2, ConvertOutputElement, akka.NotUsed] = {
     Flow.apply[WrittenFile2]

@@ -36,7 +36,7 @@ class FileGroupFile2Graph(
       WrittenFile2(
         file2.id,
         fileGroupJob,
-        progressPiece.onProgress,
+        progressPiece,
         file2.rootFile2Id,
         file2.parentFile2Id,
         file2.filename,
@@ -122,8 +122,8 @@ class FileGroupFile2Graph(
     file2: File2,
     fileGroupJob: ResumedFileGroupJob
   )(implicit ec: ExecutionContext): Future[Vector[InternalFile2]] = {
-    val progressPiece = fileGroupJob.progressState.buildFile2Progress(file2)
-    internalizeOne(file2, fileGroupJob, progressPiece)
+    val file2Progress = fileGroupJob.progressState.buildFile2Progress(file2)
+    internalizeOne(file2, fileGroupJob, file2Progress.progressPiece)
   }
 
   private def internalizeChildren(
@@ -131,7 +131,7 @@ class FileGroupFile2Graph(
     fileGroupJob: ResumedFileGroupJob
   )(implicit ec: ExecutionContext): Future[Vector[InternalFile2]] = {
     // Icky code: will run lots of queries on resume
-    val progressPiece = new ProgressPiece { override def onPieceProgress(begin: Double, end: Double): Unit = {} }
+    val progressPiece = new ProgressPiece((_, _) => (), 0.0, 1.0) // TODO reconsider: think of the (unprocessed) children
     Future.sequence(file2s.map(file2 => internalizeOne(file2, fileGroupJob, progressPiece)))
       .map(vectors => vectors.flatMap(identity))
   }

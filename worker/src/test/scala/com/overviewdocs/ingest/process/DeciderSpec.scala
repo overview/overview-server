@@ -10,7 +10,7 @@ import org.specs2.specification.Scope
 import scala.concurrent.{ExecutionContext,Future}
 
 import com.overviewdocs.blobstorage.BlobStorage
-import com.overviewdocs.ingest.model.{BlobStorageRefWithSha1,ConvertOutputElement,WrittenFile2,ResumedFileGroupJob}
+import com.overviewdocs.ingest.model.{BlobStorageRefWithSha1,ConvertOutputElement,WrittenFile2,ResumedFileGroupJob,ProgressPiece}
 import com.overviewdocs.models.BlobStorageRef
 import com.overviewdocs.test.ActorSystemContext
 import com.overviewdocs.util.AwaitMethod
@@ -29,7 +29,7 @@ class DeciderSpec extends Specification with Mockito {
     ) = WrittenFile2(
       0L,
       mock[ResumedFileGroupJob],
-      _ => (),
+      mock[ProgressPiece],
       None,
       None,
       filename,

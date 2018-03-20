@@ -11,8 +11,8 @@ import play.api.libs.json.JsObject
   */
 case class CreatedFile2(
   id: Long,
-  fileGroupJob: ResumedFileGroupJob,       // for progress, cancel, ingest and post-ingest
-  onProgress: Double => Unit,              // for progress
+  fileGroupJob: ResumedFileGroupJob,       // for cancel, ingest and post-ingest
+  progressPiece: ProgressPiece,            // for progress (and progress of children)
   rootId: Option[Long],                    // to create children while processing
   parentId: Option[Long],                  // to create children while processing
   indexInParent: Int,                      // to delete, in case of processing error
@@ -28,7 +28,7 @@ case class CreatedFile2(
   ownsThumbnail: Boolean                   // for delete/resume
 ) {
   def asWrittenFile2Opt: Option[WrittenFile2] = blobOpt match {
-    case Some(blob) => Some(WrittenFile2(id, fileGroupJob, onProgress, rootId, parentId, filename, contentType, languageCode, metadata, wantOcr, wantSplitByPage, blob))
+    case Some(blob) => Some(WrittenFile2(id, fileGroupJob, progressPiece, rootId, parentId, filename, contentType, languageCode, metadata, wantOcr, wantSplitByPage, blob))
     case None => None
   }
 

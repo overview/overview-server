@@ -18,7 +18,7 @@ import com.overviewdocs.models.{BlobStorageRef,File2}
 case class WrittenFile2(
   id: Long,
   fileGroupJob: ResumedFileGroupJob, // for cancel, ingest and post-ingest
-  onProgress: Double => Unit,        // for progress
+  progressPiece: ProgressPiece,      // for progress (and progress of children)
   rootId: Option[Long],              // to create children while processing
   parentId: Option[Long],            // to create children while processing
   filename: String,                  // for processing

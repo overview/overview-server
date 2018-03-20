@@ -11,6 +11,9 @@ import com.overviewdocs.ingest.process.{StepLogic,StepOutputFragment}
 /** Declares that we have no handler for this file.
   */
 class UnhandledStepLogic extends StepLogic {
+  override val id = "Unhandled"
+  override val progressWeight = 1.0
+
   override def toChildFragments(
     blobStorage: BlobStorage,
     input: WrittenFile2

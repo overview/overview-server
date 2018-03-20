@@ -65,7 +65,7 @@ class HttpWorker(
     lastActivityAt.plus(timeoutTemporalAmount).isBefore(Instant.now)
   }
 
-  override def receive = idle(Instant.now, StepOutputFragmentCollector.State.Start(task))
+  override def receive = idle(Instant.now, stepOutputFragmentCollector.initialStateForInput(task))
 
   def idle(lastActivityAt: Instant, state: StepOutputFragmentCollector.State): Receive = {
     case HttpWorker.Tick => {

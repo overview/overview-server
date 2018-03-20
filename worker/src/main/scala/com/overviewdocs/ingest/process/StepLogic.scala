@@ -14,6 +14,10 @@ import com.overviewdocs.models.File2
   * conversion implementations.
   */
 trait StepLogic {
+  val id: String
+
+  val progressWeight: Double
+
   /** Streams the data needed to convert a WRITTEN File2 to a PROCESSED one. */
   def toChildFragments(
     blobStorage: BlobStorage,

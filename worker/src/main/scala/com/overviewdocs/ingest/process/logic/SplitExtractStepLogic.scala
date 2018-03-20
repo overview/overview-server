@@ -20,6 +20,9 @@ class SplitExtractStepLogic(
 ) extends StepLogic {
   private val logger = Logger.forClass(getClass)
 
+  override val id = "SplitExtract"
+  override val progressWeight = 1.0
+
   override def toChildFragments(
     blobStorage: BlobStorage,
     input: WrittenFile2
