@@ -1,4 +1,4 @@
-package com.overviewdocs.ingest.process.convert
+package com.overviewdocs.ingest.process
 
 import akka.actor.ActorSystem
 import akka.event.Logging
@@ -40,8 +40,8 @@ import scala.concurrent.Future
   * Create the server like this:
   *
   * {{{
-  * val server = HttpConvertServer("0.0.0.0", 9032)
-  * val route = materializeAGraphWithHttpTaskHandlerRoutesConcatenated
+  * val server = HttpWorkerServer("0.0.0.0", 9032)
+  * val route = materializeAGraphWithHttpStepHandlerRoutesConcatenated
   * val futureHttpBinding = server.bindAndHandle(route)
   * def shutdown = for {
   *   httpBinding <- futureHttpBinding
@@ -49,7 +49,7 @@ import scala.concurrent.Future
   * } yield akka.Done
   * }}}
   */
-class HttpConvertServer(
+class HttpWorkerServer(
   actorSystem: ActorSystem,
   routingSettings: RoutingSettings,
   parserSettings: ParserSettings,
@@ -71,17 +71,17 @@ class HttpConvertServer(
   }
 }
 
-object HttpConvertServer {
+object HttpWorkerServer {
   def apply(
     actorSystem: ActorSystem,
     interface: String,
     port: Int
-  ): HttpConvertServer = {
+  ): HttpWorkerServer = {
     val routingSettings = RoutingSettings(actorSystem)
     val parserSettings = ParserSettings(actorSystem)
     val routingLog = RoutingLog.fromActorSystem(actorSystem)
 
-    new HttpConvertServer(
+    new HttpWorkerServer(
       actorSystem,
       routingSettings,
       parserSettings,

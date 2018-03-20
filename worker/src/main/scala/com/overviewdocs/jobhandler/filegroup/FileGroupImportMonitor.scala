@@ -13,9 +13,8 @@ import com.overviewdocs.blobstorage.BlobStorage
 import com.overviewdocs.database.Database
 import com.overviewdocs.ingest.ingest.Ingester
 import com.overviewdocs.ingest.model.{ResumedFileGroupJob,WrittenFile2,ProcessedFile2,IngestedRootFile2,FileGroupProgressState}
-import com.overviewdocs.ingest.process.{Processor,Step}
-import com.overviewdocs.ingest.process.convert.HttpConvertServer
 import com.overviewdocs.ingest.create.GroupedFileUploadToFile2
+import com.overviewdocs.ingest.process.{Processor,Step,HttpWorkerServer}
 import com.overviewdocs.ingest.File2Writer
 import com.overviewdocs.models.FileGroup
 import com.overviewdocs.models.tables.{FileGroups,GroupedFileUploads}
@@ -24,7 +23,7 @@ import com.overviewdocs.util.{AddDocumentsCommon,Logger}
 
 class FileGroupImportMonitor(
   val file2Writer: File2Writer,
-  val httpConvertServer: HttpConvertServer,
+  val httpWorkerServer: HttpWorkerServer,
   val documentSetReindexer: DocumentSetReindexer,
   val steps: Vector[Step],
   val progressReporter: ActorRef,
@@ -147,7 +146,7 @@ class FileGroupImportMonitor(
   private def isInProgress(job: ResumedFileGroupJob): Boolean = synchronized { inProgress.contains(job) }
 
   private def startHttpServer(route: Route): Future[Http.ServerBinding] = {
-    httpConvertServer.bindAndHandle(route)
+    httpWorkerServer.bindAndHandle(route)
   }
 
   def run: Future[akka.Done] = {
@@ -191,7 +190,7 @@ object FileGroupImportMonitor {
       config.getInt("max_n_chars_per_document"),
     )
 
-    val httpConvertServer = HttpConvertServer(
+    val httpWorkerServer = HttpWorkerServer(
       actorSystem,
       config.getString("ingest.broker_http_address"),
       config.getInt("ingest.broker_http_port")
@@ -199,7 +198,7 @@ object FileGroupImportMonitor {
 
     new FileGroupImportMonitor(
       file2Writer,
-      httpConvertServer,
+      httpWorkerServer,
       DocumentSetReindexer,
       Step.all(
         file2Writer,

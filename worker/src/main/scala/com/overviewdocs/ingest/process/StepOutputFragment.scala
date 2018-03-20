@@ -1,4 +1,4 @@
-package com.overviewdocs.ingest.model
+package com.overviewdocs.ingest.process
 
 import akka.stream.scaladsl.Source
 import akka.util.ByteString

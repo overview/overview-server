@@ -9,8 +9,7 @@ import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext,Future}
 
 import com.overviewdocs.ingest.File2Writer
-import com.overviewdocs.ingest.model.{ConvertOutputElement,WrittenFile2,StepOutputFragment}
-import com.overviewdocs.ingest.process.convert.HttpTaskHandler
+import com.overviewdocs.ingest.model.{ConvertOutputElement,WrittenFile2}
 import com.overviewdocs.ingest.process.logic._
 
 trait Step {
@@ -41,7 +40,7 @@ object Step {
     }
   }
 
-  class HttpConverter(
+  class HttpSteps(
     stepIds: Vector[String],
     file2Writer: File2Writer,
     maxNWorkers: Int,
@@ -59,7 +58,7 @@ object Step {
 
     private def buildStep(stepId: String, actorRefFactory: ActorRefFactory): Step = {
       val fragmentCollector = new StepOutputFragmentCollector(file2Writer, stepId)
-      val taskServer = new HttpTaskHandler(stepId, file2Writer.blobStorage, fragmentCollector, maxNWorkers, workerIdleTimeout, httpCreateIdleTimeout)
+      val taskServer = new HttpStepHandler(stepId, file2Writer.blobStorage, fragmentCollector, maxNWorkers, workerIdleTimeout, httpCreateIdleTimeout)
       SimpleStep(stepId, taskServer.flow(actorRefFactory))
     }
   }
@@ -74,5 +73,5 @@ object Step {
     new StepLogicStep("Ocr", file2Writer, new OcrStepLogic, maxNWorkers),
     new StepLogicStep("Office", file2Writer, new OfficeStepLogic, maxNWorkers),
     new StepLogicStep("Unhandled", file2Writer, new UnhandledStepLogic, 1),
-  ) ++ new HttpConverter(Vector("Archive"), file2Writer, maxNWorkers, workerIdleTimeout, httpCreateIdleTimeout).steps
+  ) ++ new HttpSteps(Vector("Archive"), file2Writer, maxNWorkers, workerIdleTimeout, httpCreateIdleTimeout).steps
 }

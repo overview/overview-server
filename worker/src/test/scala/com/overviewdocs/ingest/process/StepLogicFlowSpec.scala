@@ -13,7 +13,7 @@ import scala.concurrent.{ExecutionContext,Future,Promise,blocking}
 
 import com.overviewdocs.blobstorage.BlobStorage
 import com.overviewdocs.ingest.File2Writer
-import com.overviewdocs.ingest.model.{BlobStorageRefWithSha1,ConvertOutputElement,CreatedFile2,WrittenFile2,ProcessedFile2,StepOutputFragment}
+import com.overviewdocs.ingest.model.{BlobStorageRefWithSha1,ConvertOutputElement,CreatedFile2,WrittenFile2,ProcessedFile2}
 import com.overviewdocs.models.{BlobStorageRef,File2}
 import com.overviewdocs.test.ActorSystemContext
 
@@ -270,7 +270,7 @@ class StepLogicFlowSpec extends Specification with Mockito {
       )
 
       result
-      there was one(mockFile2Writer).setProcessed(parentFile2, 0, Some("logic error in com.overviewdocs.ingest.process.StepLogicFlowSpec$MockStepLogic: unexpected fragment class com.overviewdocs.ingest.model.StepOutputFragment$Blob"))
+      there was one(mockFile2Writer).setProcessed(parentFile2, 0, Some("logic error in com.overviewdocs.ingest.process.StepLogicFlowSpec$MockStepLogic: unexpected fragment class com.overviewdocs.ingest.process.StepOutputFragment$Blob"))
     }
 
     "allows inheriting a blob from the parent" in new BaseScope {

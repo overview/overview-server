@@ -5,8 +5,8 @@ import akka.stream.scaladsl.Source
 import scala.concurrent.ExecutionContext
 
 import com.overviewdocs.blobstorage.BlobStorage
-import com.overviewdocs.ingest.model.{StepOutputFragment,WrittenFile2}
-import com.overviewdocs.ingest.process.StepLogic
+import com.overviewdocs.ingest.model.WrittenFile2
+import com.overviewdocs.ingest.process.{StepLogic,StepOutputFragment}
 
 /** Declares that we have no handler for this file.
   */

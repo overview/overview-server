@@ -1,4 +1,4 @@
-package com.overviewdocs.ingest.process.convert
+package com.overviewdocs.ingest.process
 
 import akka.actor.{Actor,ActorRef,DeadLetter,Props,Status,Terminated}
 import akka.http.scaladsl.model.{HttpRequest,HttpResponse,StatusCodes}
@@ -8,11 +8,10 @@ import java.util.UUID
 import scala.concurrent.duration.FiniteDuration
 
 import com.overviewdocs.ingest.model.WrittenFile2
-import com.overviewdocs.ingest.process.StepOutputFragmentCollector
 
 /** Holds the server's references to (HTTP-client) workers and their Tasks.
   */
-class WorkerTaskPool(
+class HttpWorkerPool(
   val stepOutputFragmentCollector: StepOutputFragmentCollector,
 
   /** Maximum number of workers to track. If we try to create another worker,
@@ -49,14 +48,14 @@ class WorkerTaskPool(
   private var nChildren = 0
 
   override def receive = {
-    case WorkerTaskPool.Create(task) => {
+    case HttpWorkerPool.Create(task) => {
       if (nChildren >= maxNWorkers) {
         sender ! Status.Failure(new RuntimeException("Reached maxNWorkers"))
       } else {
         // TODO handle task.isCanceled?
         val uuid = UUID.randomUUID
         val child = context.actorOf(
-          WorkerTask.props(stepOutputFragmentCollector, task, workerIdleTimeout, timeoutActorRef),
+          HttpWorker.props(stepOutputFragmentCollector, task, workerIdleTimeout, timeoutActorRef),
           uuid.toString
         )
         context.watch(child)
@@ -65,15 +64,15 @@ class WorkerTaskPool(
       }
     }
 
-    case WorkerTaskPool.Get(uuid) => {
+    case HttpWorkerPool.Get(uuid) => {
       context.child(uuid.toString) match {
         // TODO handle task.isCanceled?
-        case Some(child) => child ! WorkerTask.GetForAsker(sender)
+        case Some(child) => child ! HttpWorker.GetForAsker(sender)
         case None => sender ! None
       }
     }
 
-    case DeadLetter(WorkerTask.GetForAsker(asker), `self`, _) => {
+    case DeadLetter(HttpWorker.GetForAsker(asker), `self`, _) => {
       asker ! None
     }
 
@@ -86,8 +85,8 @@ class WorkerTaskPool(
   context.system.eventStream.subscribe(self, classOf[DeadLetter])
 }
 
-object WorkerTaskPool {
-  /** Creates a WorkerTask child and responds with
+object HttpWorkerPool {
+  /** Creates a HttpWorker child and responds with
     * `Status.Success(UUID)` or `Status.Failure()`.
     *
     * `Create()` askers that receive a Failure should complete the Task with a
@@ -101,7 +100,7 @@ object WorkerTaskPool {
   /** Responds with a `Status.Success(Option[(WrittenFile2,ActorRef)])`.
     *
     * The caller is responsible for keeping the ActorRef alive: it should send
-    * periodic `WorkerTask.Heartbeat` messages during activity.
+    * periodic `HttpWorker.Heartbeat` messages during activity.
     */
   case class Get(id: UUID)
 
@@ -111,7 +110,7 @@ object WorkerTaskPool {
     workerIdleTimeout: FiniteDuration,
     timeoutActorRef: ActorRef
   ) = Props(
-    classOf[WorkerTaskPool],
+    classOf[HttpWorkerPool],
     stepOutputFragmentCollector,
     maxNWorkers,
     workerIdleTimeout,

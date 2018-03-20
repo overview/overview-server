@@ -1,4 +1,4 @@
-package com.overviewdocs.ingest.process.convert
+package com.overviewdocs.ingest.process
 
 import akka.actor.{Actor,ActorRef,ActorRefFactory,Props}
 import akka.http.scaladsl.marshalling.ToResponseMarshallable
@@ -19,11 +19,10 @@ import scala.util.{Try,Success,Failure}
 
 import com.overviewdocs.blobstorage.BlobStorage
 import com.overviewdocs.ingest.File2Writer
-import com.overviewdocs.ingest.model.{WrittenFile2,ConvertOutputElement,StepOutputFragment}
-import com.overviewdocs.ingest.process.StepOutputFragmentCollector
+import com.overviewdocs.ingest.model.{WrittenFile2,ConvertOutputElement}
 import com.overviewdocs.models.File2
 
-class HttpTaskHandler(
+class HttpStepHandler(
   stepId: String,
   blobStorage: BlobStorage,
   stepOutputFragmentCollector: StepOutputFragmentCollector,
@@ -51,12 +50,12 @@ class HttpTaskHandler(
     actorRefFactory: ActorRefFactory
   ): Flow[WrittenFile2, ConvertOutputElement, Route] = {
     // taskProviderRef: responds to Asks with an Option[WrittenFile2]
-    val taskProviderRef = actorRefFactory.actorOf(TaskProvider.props(httpCreateIdleTimeout))
+    val taskProviderRef = actorRefFactory.actorOf(HttpTaskProvider.props(httpCreateIdleTimeout))
     val taskProviderSink = Sink.actorRefWithAck[WrittenFile2](
       taskProviderRef,
-      TaskProvider.Init,
-      TaskProvider.Ack,
-      TaskProvider.Complete
+      HttpTaskProvider.Init,
+      HttpTaskProvider.Ack,
+      HttpTaskProvider.Complete
     )
 
     val graph = GraphDSL.create(
@@ -79,7 +78,7 @@ class HttpTaskHandler(
       .watchTermination() { (tuple: (Sink[ConvertOutputElement, akka.NotUsed], ActorRef), futureDone: Future[akka.Done]) =>
         // Spin up actors
         val (outputSink, timeoutActorRef) = tuple
-        val workerTaskPoolRef = actorRefFactory.actorOf(WorkerTaskPool.props(
+        val workerTaskPoolRef = actorRefFactory.actorOf(HttpWorkerPool.props(
           stepOutputFragmentCollector,
           maxNWorkers,
           workerIdleTimeout,
@@ -121,14 +120,14 @@ class HttpTaskHandler(
       implicit val ec = ctx.executionContext
 
       drainEntity(ctx.request.entity).flatMap { _ =>
-        ask(taskProviderRef, TaskProvider.Ask)(Timeout(httpCreateIdleTimeout + unresponsiveTimeout)).mapTo[Option[WrittenFile2]].flatMap(_ match {
+        ask(taskProviderRef, HttpTaskProvider.Ask)(Timeout(httpCreateIdleTimeout + unresponsiveTimeout)).mapTo[Option[WrittenFile2]].flatMap(_ match {
           case None => {
             ctx.complete(StatusCodes.NoContent)
           }
           case Some(task) => {
             // At this point, the task is in neither the Source[WrittenFile2, _] nor the
-            // WorkerTaskPool. Place it in the WorkerTaskPool, before we lose it.
-            ask(workerTaskPoolRef, WorkerTaskPool.Create(task))(Timeout(unresponsiveTimeout)).mapTo[UUID].transformWith {
+            // HttpWorkerPool. Place it in the HttpWorkerPool, before we lose it.
+            ask(workerTaskPoolRef, HttpWorkerPool.Create(task))(Timeout(unresponsiveTimeout)).mapTo[UUID].transformWith {
               case Success(uuid) => {
                 taskEntity(ctx, uuid, task).flatMap(e => ctx.complete(HttpResponse(StatusCodes.Created, Nil, e)))
               }
@@ -147,7 +146,7 @@ class HttpTaskHandler(
       entity.discardBytes(mat).future
     }
 
-    /** Fetches the Task and its WorkerTask actor.
+    /** Fetches the Task and its HttpWorkerPool actor.
       *
       * If the Task cannot be found, responds with 404 and never calls `fn()`.
       *
@@ -158,7 +157,7 @@ class HttpTaskHandler(
       implicit val mat = ctx.materializer
       implicit val ec = ctx.executionContext
 
-      ask(workerTaskPoolRef, WorkerTaskPool.Get(uuid))(Timeout(unresponsiveTimeout)).mapTo[Option[(WrittenFile2,ActorRef)]].flatMap(_ match {
+      ask(workerTaskPoolRef, HttpWorkerPool.Get(uuid))(Timeout(unresponsiveTimeout)).mapTo[Option[(WrittenFile2,ActorRef)]].flatMap(_ match {
         case Some((task, workerTaskRef)) => {
           fn(task, workerTaskRef)
         }
@@ -331,7 +330,7 @@ class HttpTaskHandler(
       withTask(uuid, ctx)(() => drainEntity(ctx.request.entity)) { (task, workerTaskRef) =>
         for {
           fragment <- partToFragment(name, ctx.request.entity)
-          _ <- ask(workerTaskRef, WorkerTask.ProcessFragments(Source.single(fragment), outputSink))(postTimeout)
+          _ <- ask(workerTaskRef, HttpWorker.ProcessFragments(Source.single(fragment), outputSink))(postTimeout)
           routeResult <- ctx.complete(StatusCodes.Accepted)
         } yield routeResult
       }
@@ -347,7 +346,7 @@ class HttpTaskHandler(
         val fragments: Source[StepOutputFragment, _] = formData.parts
           .mapAsync(1) { part => partToFragment(part.name, part.entity) }
         for {
-          _ <- ask(workerTaskRef, WorkerTask.ProcessFragments(fragments, outputSink))(postMultipartTimeout)
+          _ <- ask(workerTaskRef, HttpWorker.ProcessFragments(fragments, outputSink))(postMultipartTimeout)
           routeResult <- ctx.complete(StatusCodes.Accepted)
         } yield routeResult
       }

@@ -5,7 +5,7 @@ import akka.stream.scaladsl.Source
 import scala.concurrent.{ExecutionContext,Future}
 
 import com.overviewdocs.blobstorage.BlobStorage
-import com.overviewdocs.ingest.model.{WrittenFile2,StepOutputFragment}
+import com.overviewdocs.ingest.model.WrittenFile2
 import com.overviewdocs.models.File2
 
 /** Produces StepOutputFragments from a File2.

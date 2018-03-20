@@ -1,4 +1,4 @@
-package com.overviewdocs.ingest.process.convert
+package com.overviewdocs.ingest.process
 
 import akka.http.scaladsl.model.{ContentTypes,HttpEntity,HttpHeader,Multipart,RequestEntity,StatusCodes}
 import akka.http.scaladsl.server.Route
@@ -16,14 +16,13 @@ import scala.concurrent.duration.{Duration,FiniteDuration}
 import scala.concurrent.{Future,Promise,blocking}
 
 import com.overviewdocs.blobstorage.BlobStorage
-import com.overviewdocs.ingest.model.{BlobStorageRefWithSha1,ResumedFileGroupJob,ConvertOutputElement,WrittenFile2,StepOutputFragment}
-import com.overviewdocs.ingest.process.StepOutputFragmentCollector
+import com.overviewdocs.ingest.model.{BlobStorageRefWithSha1,ResumedFileGroupJob,ConvertOutputElement,WrittenFile2}
 import com.overviewdocs.models.{BlobStorageRef,File2}
 import com.overviewdocs.test.ActorSystemContext
 
 // Kinda an integration test: tests WorkerTask and WorkerTaskPool as well as
-// HttpTaskHandler.route.
-class HttpTaskHandlerSpec extends Specification with Specs2RouteTest with Mockito with JsonMatchers {
+// HttpStepHandler.route.
+class HttpStepHandlerSpec extends Specification with Specs2RouteTest with Mockito with JsonMatchers {
   // Specs2RouteTest conflicts with ActorSystemContext. But we can at least
   // share their confits.
   override def testConfigSource = ActorSystemContext.testConfigSource
@@ -79,7 +78,7 @@ class HttpTaskHandlerSpec extends Specification with Specs2RouteTest with Mockit
     val mockBlobStorage = mock[BlobStorage]
     mockBlobStorage.getUrlOpt(any[String], any[String]) returns Future.successful[Option[String]](None)
 
-    // Keep Source alive: HttpTaskHandler shuts down when it's completed
+    // Keep Source alive: HttpStepHandler shuts down when it's completed
     val endPromise = Promise[Source[WrittenFile2, akka.NotUsed]]()
     def end: Unit = {
       endPromise.trySuccess(Source.empty[WrittenFile2])
@@ -91,7 +90,7 @@ class HttpTaskHandlerSpec extends Specification with Specs2RouteTest with Mockit
     val readTimeout: FiniteDuration = Duration(1, "s")
     val httpCreateTimeout: FiniteDuration = Duration(1, "s")
 
-    lazy val server = new HttpTaskHandler(
+    lazy val server = new HttpStepHandler(
       "Step",
       mockBlobStorage,
       mockStepOutputFragmentCollector,
@@ -136,7 +135,7 @@ class HttpTaskHandlerSpec extends Specification with Specs2RouteTest with Mockit
     }
   }
 
-  "HttpTaskHandlerSpec" should {
+  "HttpStepHandler" should {
     "create a task" in new BaseScope {
       httpCreate ~> check {
         status must beEqualTo(StatusCodes.Created)

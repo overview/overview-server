@@ -11,8 +11,8 @@ import com.overviewdocs.blobstorage.BlobStorage
 import com.overviewdocs.jobhandler.filegroup.task.OfficeDocumentConverter
 import com.overviewdocs.jobhandler.filegroup.task.OfficeDocumentConverter.LibreOfficeFailedException
 import com.overviewdocs.jobhandler.filegroup.task.OfficeDocumentConverter.LibreOfficeTimedOutException
-import com.overviewdocs.ingest.process.StepLogic
-import com.overviewdocs.ingest.model.{StepOutputFragment,WrittenFile2}
+import com.overviewdocs.ingest.process.{StepLogic,StepOutputFragment}
+import com.overviewdocs.ingest.model.WrittenFile2
 
 /** Converts Office documents to PDF.
   *

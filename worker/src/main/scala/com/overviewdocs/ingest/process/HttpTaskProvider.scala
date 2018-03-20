@@ -1,4 +1,4 @@
-package com.overviewdocs.ingest.process.convert
+package com.overviewdocs.ingest.process
 
 import akka.actor.{Actor,ActorRef,Props,Timers}
 import java.time.Instant
@@ -8,20 +8,20 @@ import scala.concurrent.duration.FiniteDuration
 
 import com.overviewdocs.ingest.model.WrittenFile2
 
-/** TaskProvider: respond to Asks with an Option[WrittenFile2] (backed by a
+/** Respond to Asks with an Option[WrittenFile2] (backed by a
   * Source[WrittenFile2])
   *
   * Why not just use a Source? Because these are connected to incoming
   * HttpRequests. An HttpRequest only lasts a certain amount of time, after
   * which its connection times out and any answers to it are lost. The outcome
-  * in HttpTaskServer would be that newly-provided Tasks would be sent as
+  * in HttpStepHandler would be that newly-provided Tasks would be sent as
   * responses to timed-out HttpRequests, which would in turn make the Tasks
   * time out, as no workers would ever receive their IDs.
   *
-  * Instead, TaskProvider replies within `timeout`. That means each HttpRequest
-  * will receive a timely response, even if that response is `None`.
+  * Instead, HttpTaskProvider replies within `timeout`. That means each
+  * HttpRequest will receive a timely response, even if that response is `None`.
   */
-class TaskProvider(
+class HttpTaskProvider(
   timeout: FiniteDuration
 ) extends Actor with Timers {
   import context._
@@ -32,26 +32,26 @@ class TaskProvider(
   }
 
   def empty(queuedAsks: Queue[QueuedAsk]): Receive = {
-    case TaskProvider.Init => {
-      sender ! TaskProvider.Ack
+    case HttpTaskProvider.Init => {
+      sender ! HttpTaskProvider.Ack
     }
     case task: WrittenFile2 => queuedAsks.dequeueOption match {
       case Some((firstQueuedAsk, nextAskers)) => {
         timers.cancel(firstQueuedAsk.id.toString)
         firstQueuedAsk.asker ! Some(task)
-        sender ! TaskProvider.Ack
+        sender ! HttpTaskProvider.Ack
         become(empty(nextAskers))
       }
       case None => {
         become(full(task, sender))
       }
     }
-    case TaskProvider.Ask => {
+    case HttpTaskProvider.Ask => {
       val queuedAsk = QueuedAsk(sender)
-      timers.startSingleTimer(queuedAsk.id.toString, TaskProvider.Tick, timeout)
+      timers.startSingleTimer(queuedAsk.id.toString, HttpTaskProvider.Tick, timeout)
       become(empty(queuedAsks.enqueue(queuedAsk)))
     }
-    case TaskProvider.Tick => {
+    case HttpTaskProvider.Tick => {
       // timers.cancel() guarantees the Tick never arrives here. So we know
       // this Tick is for a QueuedAsk that was never received. It must be the
       // oldest QueuedAsk -- otherwise, another Tick would have arrived first.
@@ -59,7 +59,7 @@ class TaskProvider(
       firstAsker.asker ! None
       become(empty(nextAskers))
     }
-    case TaskProvider.Complete => {
+    case HttpTaskProvider.Complete => {
       timers.cancelAll
       queuedAsks.foreach(queuedAsk => queuedAsk.asker ! None)
       context.stop(self)
@@ -67,16 +67,16 @@ class TaskProvider(
   }
 
   def full(task: WrittenFile2, sinkActor: ActorRef): Receive = {
-    case TaskProvider.Complete => become(draining(task))
-    case TaskProvider.Ask => {
+    case HttpTaskProvider.Complete => become(draining(task))
+    case HttpTaskProvider.Ask => {
       sender ! Some(task)
-      sinkActor ! TaskProvider.Ack
+      sinkActor ! HttpTaskProvider.Ack
       become(empty(Queue.empty[QueuedAsk]))
     }
   }
 
   def draining(task: WrittenFile2): Receive = {
-    case TaskProvider.Ask => {
+    case HttpTaskProvider.Ask => {
       sender ! Some(task)
       context.stop(self)
     }
@@ -85,12 +85,12 @@ class TaskProvider(
   override def receive = empty(Queue.empty)
 }
 
-object TaskProvider {
+object HttpTaskProvider {
   case object Init
   case object Ack
   case object Complete
   case object Ask
   case object Tick
 
-  def props(timeout: FiniteDuration) = Props(classOf[TaskProvider], timeout)
+  def props(timeout: FiniteDuration) = Props(classOf[HttpTaskProvider], timeout)
 }

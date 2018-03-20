@@ -1,4 +1,4 @@
-package com.overviewdocs.ingest.process.convert
+package com.overviewdocs.ingest.process
 
 import akka.actor.{Actor,ActorRef,Props,Status,Timers}
 import akka.http.scaladsl.model.{HttpRequest,HttpResponse}
@@ -10,8 +10,7 @@ import scala.concurrent.{ExecutionContext,Future}
 import scala.util.{Success,Failure}
 
 import com.overviewdocs.ingest.File2Writer
-import com.overviewdocs.ingest.model.{WrittenFile2,StepOutputFragment,ConvertOutputElement}
-import com.overviewdocs.ingest.process.StepOutputFragmentCollector
+import com.overviewdocs.ingest.model.{WrittenFile2,ConvertOutputElement}
 
 /** The server's understanding of the state of a (HTTP-client) worker.
   *
@@ -26,7 +25,7 @@ import com.overviewdocs.ingest.process.StepOutputFragmentCollector
   *           `timeoutActorRef` or generate a `StepOutputFragment.Canceled`.
   * * stop -- when the parent stops this Actor, the job is complete.
   */
-class WorkerTask(
+class HttpWorker(
   stepOutputFragmentCollector: StepOutputFragmentCollector,
   task: WrittenFile2,
 
@@ -50,7 +49,7 @@ class WorkerTask(
 
 
   private val tickInterval = workerIdleTimeout / 10
-  timers.startPeriodicTimer("tick", WorkerTask.Tick, tickInterval)
+  timers.startPeriodicTimer("tick", HttpWorker.Tick, tickInterval)
 
   private var processingFragments: Boolean = false
   private var fragmentCollectorState: StepOutputFragmentCollector.State = StepOutputFragmentCollector.State.Start(task)
@@ -66,19 +65,19 @@ class WorkerTask(
   }
 
   override def receive = {
-    case WorkerTask.Tick => {
+    case HttpWorker.Tick => {
       if (isTimedOut) {
         timeoutActorRef ! task
         context.stop(self)
       }
     }
 
-    case WorkerTask.GetForAsker(asker) => {
+    case HttpWorker.GetForAsker(asker) => {
       updateLastActivity
       asker ! Some((task, self))
     }
 
-    case WorkerTask.ProcessFragments(fragments, sink) => {
+    case HttpWorker.ProcessFragments(fragments, sink) => {
       updateLastActivity
       val asker = sender
       val decider: Supervision.Decider = {
@@ -97,7 +96,7 @@ class WorkerTask(
             // state back into scanAsync(), which emits its initial state on
             // start. If we don't clear toEmit here, we'll end up emitting
             // elements twice.
-            self ! WorkerTask.UpdateState(state match {
+            self ! HttpWorker.UpdateState(state match {
               case s: StepOutputFragmentCollector.State.Start => s
               case StepOutputFragmentCollector.State.AtChild(p, c, _) => StepOutputFragmentCollector.State.AtChild(p, c, Nil)
               case StepOutputFragmentCollector.State.End(_) => StepOutputFragmentCollector.State.End(Nil)
@@ -110,7 +109,7 @@ class WorkerTask(
           // the POST, we've read all the bytes from it
           .watchTermination() { (mat, doneFuture) =>
             doneFuture.onComplete {
-              case Success(_) => self ! WorkerTask.DoneProcessingFragments(mat, asker)
+              case Success(_) => self ! HttpWorker.DoneProcessingFragments(mat, asker)
               case Failure(err) => err.printStackTrace(); asker ! Status.Failure(err)
             }
           }
@@ -118,12 +117,12 @@ class WorkerTask(
       }
     }
 
-    case WorkerTask.UpdateState(state) => {
+    case HttpWorker.UpdateState(state) => {
       updateLastActivity
       fragmentCollectorState = state
     }
 
-    case WorkerTask.DoneProcessingFragments(materializedValue, asker) => {
+    case HttpWorker.DoneProcessingFragments(materializedValue, asker) => {
       processingFragments = false
       asker ! Status.Success(materializedValue)
       updateLastActivity
@@ -134,7 +133,7 @@ class WorkerTask(
   }
 }
 
-object WorkerTask {
+object HttpWorker {
   private case object Tick
   case class GetForAsker(asker: ActorRef)
   case class ProcessFragments(fragments: Source[StepOutputFragment, Any], sink: Sink[ConvertOutputElement, akka.NotUsed])
@@ -147,7 +146,7 @@ object WorkerTask {
     workerIdleTimeout: FiniteDuration,
     timeoutActorRef: ActorRef
   ) = Props(
-    classOf[WorkerTask],
+    classOf[HttpWorker],
     stepOutputFragmentCollector,
     task,
     workerIdleTimeout,

@@ -6,7 +6,7 @@ import akka.util.ByteString
 import scala.concurrent.{ExecutionContext,Future}
 
 import com.overviewdocs.ingest.File2Writer
-import com.overviewdocs.ingest.model.{ConvertOutputElement,CreatedFile2,WrittenFile2,ProcessedFile2,StepOutputFragment}
+import com.overviewdocs.ingest.model.{ConvertOutputElement,CreatedFile2,WrittenFile2,ProcessedFile2}
 import com.overviewdocs.util.Logger
 
 /** Feeds input StepOutputFragments to file2Writer and emits resulting

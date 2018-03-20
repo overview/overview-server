@@ -9,8 +9,8 @@ import java.nio.file.{Files,Path}
 import scala.concurrent.{ExecutionContext,Future,blocking}
 
 import com.overviewdocs.blobstorage.BlobStorage
-import com.overviewdocs.ingest.model.{StepOutputFragment,WrittenFile2}
-import com.overviewdocs.ingest.process.StepLogic
+import com.overviewdocs.ingest.model.WrittenFile2
+import com.overviewdocs.ingest.process.{StepLogic,StepOutputFragment}
 import com.overviewdocs.models.File2
 import com.overviewdocs.pdfocr.PdfNormalizer
 import com.overviewdocs.util.Logger

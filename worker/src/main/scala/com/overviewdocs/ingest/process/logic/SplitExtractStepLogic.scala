@@ -10,8 +10,8 @@ import play.api.libs.json.{JsNumber,JsTrue}
 import scala.concurrent.{Future,blocking}
 
 import com.overviewdocs.blobstorage.BlobStorage
-import com.overviewdocs.ingest.model.{StepOutputFragment,WrittenFile2}
-import com.overviewdocs.ingest.process.StepLogic
+import com.overviewdocs.ingest.model.WrittenFile2
+import com.overviewdocs.ingest.process.{StepLogic,StepOutputFragment}
 import com.overviewdocs.models.File2
 import com.overviewdocs.pdfocr.{PdfSplitter,SplitPdfAndExtractTextParser}
 import com.overviewdocs.util.Logger
