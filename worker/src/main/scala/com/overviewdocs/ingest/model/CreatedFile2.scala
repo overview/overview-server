@@ -1,8 +1,6 @@
 package com.overviewdocs.ingest.model
 
-import scala.concurrent.Future
-
-import com.overviewdocs.models.{BlobStorageRef,File2}
+import play.api.libs.json.JsObject
 
 /** File2: we know it has been Created, but nothing else.
   *
@@ -21,15 +19,16 @@ case class CreatedFile2(
   filename: String,                        // for processing
   contentType: String,                     // for processing
   languageCode: String,                    // for processing
-  metadata: File2.Metadata,                // to create children while processing
-  pipelineOptions: File2.PipelineOptions,  // for processing
+  metadata: JsObject,                      // to create children while processing
+  wantOcr: Boolean,                        // for processing
+  wantSplitByPage: Boolean,                // for processing
   blobOpt: Option[BlobStorageRefWithSha1], // for processing
   ownsBlob: Boolean,                       // for delete/resume
   thumbnailLocationOpt: Option[String],    // for delete/resume
   ownsThumbnail: Boolean                   // for delete/resume
 ) {
   def asWrittenFile2Opt: Option[WrittenFile2] = blobOpt match {
-    case Some(blob) => Some(WrittenFile2(id, fileGroupJob, onProgress, rootId, parentId, filename, contentType, languageCode, metadata, pipelineOptions, blob))
+    case Some(blob) => Some(WrittenFile2(id, fileGroupJob, onProgress, rootId, parentId, filename, contentType, languageCode, metadata, wantOcr, wantSplitByPage, blob))
     case None => None
   }
 

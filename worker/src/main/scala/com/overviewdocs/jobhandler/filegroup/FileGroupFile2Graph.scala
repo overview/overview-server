@@ -42,8 +42,9 @@ class FileGroupFile2Graph(
         file2.filename,
         file2.contentType,
         file2.languageCode,
-        file2.metadata,
-        file2.pipelineOptions,
+        file2.metadata.jsObject,
+        file2.wantOcr,
+        file2.wantSplitByPage,
         BlobStorageRefWithSha1(file2.blob.get, file2.blobSha1)
       ),
       file2.processedAt.map(_ => ProcessedFile2(

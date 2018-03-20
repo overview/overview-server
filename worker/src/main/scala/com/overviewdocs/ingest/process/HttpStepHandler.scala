@@ -80,6 +80,7 @@ class HttpStepHandler(
         val (outputSink, timeoutActorRef) = tuple
         val workerTaskPoolRef = actorRefFactory.actorOf(HttpWorkerPool.props(
           stepOutputFragmentCollector,
+          outputSink,
           maxNWorkers,
           workerIdleTimeout,
           timeoutActorRef
@@ -97,8 +98,7 @@ class HttpStepHandler(
           stepOutputFragmentCollector,
           taskProviderRef,
           workerTaskPoolRef,
-          actorRefFactory,
-          outputSink
+          actorRefFactory
         ).route
       }
   }
@@ -108,8 +108,7 @@ class HttpStepHandler(
     stepOutputFragmentCollector: StepOutputFragmentCollector,
     taskProviderRef: ActorRef, 
     workerTaskPoolRef: ActorRef,
-    actorRefFactory: ActorRefFactory,
-    outputSink: Sink[ConvertOutputElement, akka.NotUsed]
+    actorRefFactory: ActorRefFactory
   ) {
     import scala.language.implicitConversions
     implicit def executionContext(ctx: RequestContext): ExecutionContext = ctx.executionContext
@@ -205,8 +204,6 @@ class HttpStepHandler(
     private def taskEntity(ctx: RequestContext, uuid: UUID, task: WrittenFile2): Future[ResponseEntity] = {
       implicit val ec = ctx.executionContext
 
-      implicit val pipelineOptionsWrites = Json.writes[File2.PipelineOptions]
-
       for {
         externalBlobUrl <- blobStorage.getUrlOpt(task.blob.location, task.contentType)
       } yield {
@@ -219,8 +216,9 @@ class HttpStepHandler(
           "filename" -> task.filename,
           "contentType" -> task.contentType,
           "languageCode" -> task.languageCode,
-          "metadata" -> task.metadata.jsObject,
-          "pipelineOptions" -> task.pipelineOptions,
+          "metadata" -> task.metadata,
+          "wantOcr" -> task.wantOcr,
+          "wantSplitByPage" -> task.wantSplitByPage,
           "blob" -> Json.obj(
             "url" -> blobUrl,
             "nBytes" -> task.blob.nBytes,
@@ -241,7 +239,6 @@ class HttpStepHandler(
     }
 
     implicit val file2MetadataReads: Reads[File2.Metadata] = Reads.JsObjectReads.map(File2.Metadata.apply _)
-    implicit val pipelineOptionsReads: Reads[File2.PipelineOptions] = Json.reads[File2.PipelineOptions]
     implicit val file2HeaderReads: Reads[StepOutputFragment.File2Header] = Json.reads[StepOutputFragment.File2Header]
     implicit val progressChildrenReads: Reads[StepOutputFragment.ProgressChildren] = (
       (JsPath \ "children" \ "nProcessed").read[Int] and
@@ -330,7 +327,7 @@ class HttpStepHandler(
       withTask(uuid, ctx)(() => drainEntity(ctx.request.entity)) { (task, workerTaskRef) =>
         for {
           fragment <- partToFragment(name, ctx.request.entity)
-          _ <- ask(workerTaskRef, HttpWorker.ProcessFragments(Source.single(fragment), outputSink))(postTimeout)
+          _ <- ask(workerTaskRef, HttpWorker.ProcessFragments(Source.single(fragment)))(postTimeout)
           routeResult <- ctx.complete(StatusCodes.Accepted)
         } yield routeResult
       }
@@ -346,7 +343,7 @@ class HttpStepHandler(
         val fragments: Source[StepOutputFragment, _] = formData.parts
           .mapAsync(1) { part => partToFragment(part.name, part.entity) }
         for {
-          _ <- ask(workerTaskRef, HttpWorker.ProcessFragments(fragments, outputSink))(postMultipartTimeout)
+          _ <- ask(workerTaskRef, HttpWorker.ProcessFragments(fragments))(postMultipartTimeout)
           routeResult <- ctx.complete(StatusCodes.Accepted)
         } yield routeResult
       }

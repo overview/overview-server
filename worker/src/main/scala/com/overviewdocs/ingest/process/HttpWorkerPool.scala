@@ -7,12 +7,13 @@ import akka.stream.scaladsl.Sink
 import java.util.UUID
 import scala.concurrent.duration.FiniteDuration
 
-import com.overviewdocs.ingest.model.WrittenFile2
+import com.overviewdocs.ingest.model.{WrittenFile2,ConvertOutputElement}
 
 /** Holds the server's references to (HTTP-client) workers and their Tasks.
   */
 class HttpWorkerPool(
   val stepOutputFragmentCollector: StepOutputFragmentCollector,
+  val sink: Sink[ConvertOutputElement, akka.NotUsed],
 
   /** Maximum number of workers to track. If we try to create another worker,
     * we'll see a Status.Failure.
@@ -55,7 +56,7 @@ class HttpWorkerPool(
         // TODO handle task.isCanceled?
         val uuid = UUID.randomUUID
         val child = context.actorOf(
-          HttpWorker.props(stepOutputFragmentCollector, task, workerIdleTimeout, timeoutActorRef),
+          HttpWorker.props(stepOutputFragmentCollector, task, sink, workerIdleTimeout, timeoutActorRef),
           uuid.toString
         )
         context.watch(child)
@@ -66,7 +67,6 @@ class HttpWorkerPool(
 
     case HttpWorkerPool.Get(uuid) => {
       context.child(uuid.toString) match {
-        // TODO handle task.isCanceled?
         case Some(child) => child ! HttpWorker.GetForAsker(sender)
         case None => sender ! None
       }
@@ -106,12 +106,14 @@ object HttpWorkerPool {
 
   def props(
     stepOutputFragmentCollector: StepOutputFragmentCollector,
+    sink: Sink[ConvertOutputElement, akka.NotUsed],
     maxNWorkers: Int,
     workerIdleTimeout: FiniteDuration,
     timeoutActorRef: ActorRef
   ) = Props(
     classOf[HttpWorkerPool],
     stepOutputFragmentCollector,
+    sink,
     maxNWorkers,
     workerIdleTimeout,
     timeoutActorRef

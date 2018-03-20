@@ -75,11 +75,8 @@ class GroupedFileUploadToFile2(database: Database, blobStorage: BlobStorage) {
     val contentType = groupedFileUpload.contentType
     val languageCode = fileGroup.lang.getOrElse("en")
     val metadata = File2.Metadata(groupedFileUpload.documentMetadataJson.getOrElse(fileGroup.metadataJson))
-    val pipelineOptions = File2.PipelineOptions(
-      fileGroup.ocr.getOrElse(false),
-      fileGroup.splitDocuments.getOrElse(false),
-      Vector()
-    )
+    val wantOcr = fileGroup.ocr.getOrElse(false)
+    val wantSplitByPage = fileGroup.splitDocuments.getOrElse(false)
     val createdAt=Instant.now()
 
     val action = (for {
@@ -89,7 +86,8 @@ class GroupedFileUploadToFile2(database: Database, blobStorage: BlobStorage) {
         contentType,
         languageCode,
         metadata,
-        pipelineOptions,
+        wantOcr,
+        wantSplitByPage,
         Array[Byte](),
         createdAt
       )
@@ -238,7 +236,8 @@ object GroupedFileUploadToFile2 {
     f.contentType,
     f.languageCode,
     f.metadata,
-    f.pipelineOptions,
+    f.wantOcr,
+    f.wantSplitByPage,
     f.blobSha1,
     f.createdAt
   )) returning File2s)

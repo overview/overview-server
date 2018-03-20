@@ -11,7 +11,7 @@ import scala.concurrent.{ExecutionContext,Future}
 
 import com.overviewdocs.blobstorage.BlobStorage
 import com.overviewdocs.ingest.model.{BlobStorageRefWithSha1,ConvertOutputElement,WrittenFile2,ResumedFileGroupJob}
-import com.overviewdocs.models.{BlobStorageRef,File2}
+import com.overviewdocs.models.BlobStorageRef
 import com.overviewdocs.test.ActorSystemContext
 import com.overviewdocs.util.AwaitMethod
 
@@ -35,8 +35,9 @@ class DeciderSpec extends Specification with Mockito {
       filename,
       contentType,
       "en",
-      File2.Metadata(JsObject(Seq())),
-      File2.PipelineOptions(ocr, false, stepsRemaining),
+      JsObject(Seq()),
+      ocr,
+      false,
       BlobStorageRefWithSha1(BlobStorageRef("foo", 10), "abc".getBytes)
     )
 
@@ -95,32 +96,27 @@ class DeciderSpec extends Specification with Mockito {
     "#getStepsRemaining" should {
       "detect Office steps" in new BaseScope {
         val input = writtenFile2("file.docx", "application/octet-stream", false, Vector())
-        await(decider.ensurePipelineStepsRemaining(input)).pipelineOptions.stepsRemaining must beEqualTo(Vector("Office", "SplitExtract"))
-      }
-
-      "no-op when input has pipeline steps remaining" in new BaseScope {
-        val input = writtenFile2("file.pdf", "application/pdf", false, Vector("SplitExtract"))
-        await(decider.ensurePipelineStepsRemaining(input)) must beEqualTo(input)
+        await(decider.getNextStep(input).map(_.id)) must beEqualTo("Office")
       }
 
       "detect Pdf steps with OCR" in new BaseScope {
         val input = writtenFile2("file.pdf", "application/octet-stream", true, Vector())
-        await(decider.ensurePipelineStepsRemaining(input)).pipelineOptions.stepsRemaining must beEqualTo(Vector("Ocr", "SplitExtract"))
+        await(decider.getNextStep(input).map(_.id)) must beEqualTo("Ocr")
       }
 
       "skip OCR when option is disabled" in new BaseScope {
         val input = writtenFile2("file.pdf", "application/octet-stream", false, Vector())
-        await(decider.ensurePipelineStepsRemaining(input)).pipelineOptions.stepsRemaining must beEqualTo(Vector("SplitExtract"))
+        await(decider.getNextStep(input).map(_.id)) must beEqualTo("SplitExtract")
       }
 
       "do something for text/*, where * is something we don't handle explicitly" in new BaseScope {
         val input = writtenFile2("image.ascii", "text/vnd.ascii-art", false, Vector())
-        await(decider.ensurePipelineStepsRemaining(input)).pipelineOptions.stepsRemaining must not(beEqualTo(Vector("Unhandled")))
+        await(decider.getNextStep(input).map(_.id)) must not(beEqualTo("Unhandled"))
       }
 
       "default to Unhandled" in new BaseScope {
         val input = writtenFile2("weird.3mf", "model/3mf", false, Vector())
-        await(decider.ensurePipelineStepsRemaining(input)).pipelineOptions.stepsRemaining must beEqualTo(Vector("Unhandled"))
+        await(decider.getNextStep(input).map(_.id)) must beEqualTo("Unhandled")
       }
     }
   }

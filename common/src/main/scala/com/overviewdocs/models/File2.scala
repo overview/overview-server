@@ -66,8 +66,13 @@ case class File2(
   /** Metadata supplied by user, augmented by pipeline. */
   metadata: File2.Metadata,
 
-  /** Options supplied by user, augmented by pipeline. */
-  pipelineOptions: File2.PipelineOptions,
+  /** Iff true, user has requested OCR and we have not done OCR yet. */
+  wantOcr: Boolean,
+
+  /** Iff true, user has requested to split into one document per page, and we
+    * have not done so yet.
+    */
+  wantSplitByPage: Boolean,
 
   /** Reference to "main" file data.
     *
@@ -186,12 +191,6 @@ case class File2(
 
 object File2 {
   case class Metadata(jsObject: JsObject) // indirection fools Slick into treating this like a separate type
-
-  case class PipelineOptions(
-    ocr: Boolean,                  // user has requested OCR, and we have not done it yet
-    splitByPage: Boolean,          // user has requested split-by-page, and we have not done it yet
-    stepsRemaining: Vector[String] // sequence of processing steps that remain
-  )
 
   sealed trait State
   object State {

@@ -81,7 +81,8 @@ class OcrStepLogic(
                     input.contentType,
                     input.languageCode,
                     input.metadata,
-                    input.pipelineOptions.copy(ocr=false, stepsRemaining=input.pipelineOptions.stepsRemaining.tail)
+                    input.wantOcr,
+                    input.wantSplitByPage
                   ),
                   StepOutputFragment.Blob(0, blob),
                   StepOutputFragment.Done

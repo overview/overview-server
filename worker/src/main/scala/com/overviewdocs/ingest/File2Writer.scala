@@ -39,7 +39,8 @@ class File2Writer(
     f.contentType,
     f.languageCode,
     f.metadata,
-    f.pipelineOptions,
+    f.wantOcr,
+    f.wantSplitByPage,
     f.blobSha1,
     f.createdAt
   )) returning File2s)
@@ -50,8 +51,9 @@ class File2Writer(
     filename: String,
     contentType: String,
     languageCode: String,
-    metadata: File2.Metadata,
-    pipelineOptions: File2.PipelineOptions
+    metadata: JsObject,
+    wantOcr: Boolean,
+    wantSplitByPage: Boolean
   )(implicit ec: ExecutionContext): Future[CreatedFile2] = {
     // INSERT IGNORE
     val childFile2Future = database.option(lookupChildCompiled(parentFile2.id, indexInParent)).flatMap(_ match {
@@ -62,8 +64,9 @@ class File2Writer(
         filename,
         contentType,
         languageCode,
-        metadata,
-        pipelineOptions,
+        File2.Metadata(metadata),
+        wantOcr,
+        wantSplitByPage,
         Array[Byte](),
         Instant.now()
       )))
@@ -82,8 +85,9 @@ class File2Writer(
       file2.filename,
       file2.contentType,
       file2.languageCode,
-      file2.metadata,
-      file2.pipelineOptions,
+      file2.metadata.jsObject,
+      file2.wantOcr,
+      file2.wantSplitByPage,
       None,
       false,
       None,

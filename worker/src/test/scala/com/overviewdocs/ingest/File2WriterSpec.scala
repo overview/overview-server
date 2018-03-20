@@ -74,8 +74,9 @@ class File2WriterSpec extends DbSpecification with Mockito {
           dbParent.filename,
           dbParent.contentType,
           dbParent.languageCode,
-          dbParent.metadata,
-          dbParent.pipelineOptions,
+          dbParent.metadata.jsObject,
+          dbParent.wantOcr,
+          dbParent.wantSplitByPage,
           BlobStorageRefWithSha1(parentBlob, parentBlobSha1)
         )
 
@@ -117,8 +118,9 @@ class File2WriterSpec extends DbSpecification with Mockito {
             "child.pdf",
             "application/child",
             "fr",
-            File2.Metadata(Json.obj("foo" -> "bar")),
-            File2.PipelineOptions(true, false, Vector("foo", "bar"))
+            Json.obj("foo" -> "bar"),
+            true,
+            false
           ))
 
           def dbChildOpt = lookupFile2(child.id)
@@ -137,7 +139,8 @@ class File2WriterSpec extends DbSpecification with Mockito {
           val dbChild = dbChildOpt.get
           dbChild.filename must beEqualTo("child.pdf")
           dbChild.metadata must beEqualTo(File2.Metadata(Json.obj("foo" -> "bar")))
-          dbChild.pipelineOptions must beEqualTo(File2.PipelineOptions(true, false, Vector("foo", "bar")))
+          dbChild.wantOcr must beEqualTo(true)
+          dbChild.wantSplitByPage must beEqualTo(false)
         }
 
         "#writeBlob() with a blob" in new CreatedChildScope {

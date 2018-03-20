@@ -2,8 +2,7 @@ package com.overviewdocs.ingest.process
 
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
-
-import com.overviewdocs.models.File2
+import play.api.libs.json.JsObject
 
 /** Part of the output of a Step: something we should write somewhere.
   *
@@ -86,8 +85,9 @@ object StepOutputFragment {
     filename: String,
     contentType: String,
     languageCode: String,
-    metadata: File2.Metadata,
-    pipelineOptions: File2.PipelineOptions
+    metadata: JsObject,
+    wantOcr: Boolean,
+    wantSplitByPage: Boolean
   ) extends StepOutputFragment
 
   /** Blob data for the current File2.

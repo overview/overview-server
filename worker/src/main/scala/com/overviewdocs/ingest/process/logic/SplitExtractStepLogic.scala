@@ -6,13 +6,12 @@ import akka.util.ByteString
 import com.google.common.io.ByteStreams
 import java.io.{IOException,InputStream}
 import java.nio.file.{Files,Path}
-import play.api.libs.json.{JsNumber,JsTrue}
+import play.api.libs.json.{JsNumber,JsObject,JsTrue}
 import scala.concurrent.{Future,blocking}
 
 import com.overviewdocs.blobstorage.BlobStorage
 import com.overviewdocs.ingest.model.WrittenFile2
 import com.overviewdocs.ingest.process.{StepLogic,StepOutputFragment}
-import com.overviewdocs.models.File2
 import com.overviewdocs.pdfocr.{PdfSplitter,SplitPdfAndExtractTextParser}
 import com.overviewdocs.util.Logger
 
@@ -32,7 +31,7 @@ class SplitExtractStepLogic(
     //    emit exactly one output file.
     // 2. Split-and-extract: executable will give us files and blobs, and we are
     //    to emit them as they come.
-    val extractOnly = !input.pipelineOptions.splitByPage
+    val extractOnly = !input.wantSplitByPage
     var allPagesText = ByteString.empty
 
     case class State(
@@ -43,23 +42,18 @@ class SplitExtractStepLogic(
     var pageNumber: Int = 0   // icky hack
     var nPagesTotal: Int = 0 // icky hack
 
-    val augmentedPipelineOptions: File2.PipelineOptions = input.pipelineOptions.copy(
-      splitByPage=false,
-      stepsRemaining=input.pipelineOptions.stepsRemaining.tail
-    )
-
-    def augmentedMetadata(isFromOcr: Boolean, pageNumber: Int): File2.Metadata = {
-      var json = input.metadata.jsObject
+    def augmentedMetadata(isFromOcr: Boolean, pageNumber: Int): JsObject = {
+      var json = input.metadata
 
       if (isFromOcr) {
         json.+=("isFromOcr" -> JsTrue)
       }
 
-      if (input.pipelineOptions.splitByPage && nPagesTotal > 1) {
+      if (input.wantSplitByPage && nPagesTotal > 1) {
         json.+=("pageNumber" -> JsNumber(pageNumber))
       }
 
-      File2.Metadata(json)
+      json
     }
 
     def open: Future[State] = {
@@ -70,8 +64,7 @@ class SplitExtractStepLogic(
 
         // 2. Launch pdfocr-native process and connect to its output
         process <- Future(blocking {
-          val splitByPage = input.pipelineOptions.splitByPage
-          val cmd = PdfSplitter.command(tempFilePath, splitByPage)
+          val cmd = PdfSplitter.command(tempFilePath, input.wantSplitByPage)
           logger.info(cmd.mkString(" "))
 
           val process = new ProcessBuilder(cmd: _*)
@@ -109,7 +102,8 @@ class SplitExtractStepLogic(
               "application/pdf",
               input.languageCode,
               augmentedMetadata(isOcr, pageNumber),
-              augmentedPipelineOptions
+              false,
+              false
             ))
           } else {
             Vector()

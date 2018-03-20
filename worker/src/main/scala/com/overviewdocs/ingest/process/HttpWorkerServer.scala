@@ -14,7 +14,7 @@ import scala.concurrent.Future
   * An "Ocr" worker will do this, on repeat:
   *
   * 1. POST /Ocr => expected 201 Created with JSON
-  *    `{ id, filename, contentType, languageCode, blobUrl, metadata, pipelineOptions }`
+  *    `{ id, filename, contentType, languageCode, blobUrl, metadata, wantOcr, wantSplitByPage }`
   *    (the server will pause a few seconds before returning 204 No Content if
   *    there is no task to complete; so workers can request on a loop until a
   *    non-empty response.
@@ -22,7 +22,7 @@ import scala.concurrent.Future
   *    location is S3, `blobUrl` will be a pre-signed URL, not this one, so the
   *    worker will never hit this path.)
   * 3. PUT /Ocr/:id/0.json with
-  *    `{ id, filename, contentType, languageCode, metadata, pipelineOptions }`
+  *    `{ id, filename, contentType, languageCode, metadata, wantOcr, wantSplitByPage }`
   *    => 202 Accepted starts creating a child
   * 4. PUT /Ocr/:id/0.blob, streaming bytes to BlobStorage => 202 Accepted child
   *    bytes (now the child is valid)

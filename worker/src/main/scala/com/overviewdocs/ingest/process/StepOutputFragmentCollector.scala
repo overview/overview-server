@@ -7,6 +7,7 @@ import scala.concurrent.{ExecutionContext,Future}
 
 import com.overviewdocs.ingest.File2Writer
 import com.overviewdocs.ingest.model.{ConvertOutputElement,CreatedFile2,WrittenFile2,ProcessedFile2}
+import com.overviewdocs.models.File2
 import com.overviewdocs.util.Logger
 
 /** Feeds input StepOutputFragments to file2Writer and emits resulting
@@ -151,7 +152,7 @@ class StepOutputFragmentCollector(file2Writer: File2Writer, logicName: String) {
   )(implicit ec: ExecutionContext): Future[List[ConvertOutputElement]] = {
     lastChildOpt match {
       case Some(child) => {
-        if (child.pipelineOptions.stepsRemaining.isEmpty && child.contentType == "application/pdf") {
+        if (isCreatedFileProcessed(child)) {
           file2Writer.setWrittenAndProcessed(child).map(p => List(ConvertOutputElement.ToIngest(p)))
         } else {
           file2Writer.setWritten(child).map(w => List(ConvertOutputElement.ToProcess(w)))
@@ -159,6 +160,17 @@ class StepOutputFragmentCollector(file2Writer: File2Writer, logicName: String) {
       }
       case None => Future.successful(Nil)
     }
+  }
+
+  private def isCreatedFileProcessed(file: CreatedFile2): Boolean = {
+    (
+      file.contentType == "application/pdf"
+      && !file.wantOcr
+      && !file.wantSplitByPage
+      && file.thumbnailLocationOpt.nonEmpty
+      && file.blobOpt.nonEmpty
+      // TODO: && file.hasText
+    )
   }
 
   private def createChild(
@@ -178,7 +190,8 @@ class StepOutputFragmentCollector(file2Writer: File2Writer, logicName: String) {
           header.contentType,
           header.languageCode,
           header.metadata,
-          header.pipelineOptions
+          header.wantOcr,
+          header.wantSplitByPage
         )
       } yield State.AtChild(parentFile2, nextChild, lastChildWritten)
     }

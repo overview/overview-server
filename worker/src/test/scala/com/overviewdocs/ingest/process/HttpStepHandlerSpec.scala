@@ -17,12 +17,14 @@ import scala.concurrent.{Future,Promise,blocking}
 
 import com.overviewdocs.blobstorage.BlobStorage
 import com.overviewdocs.ingest.model.{BlobStorageRefWithSha1,ResumedFileGroupJob,ConvertOutputElement,WrittenFile2}
-import com.overviewdocs.models.{BlobStorageRef,File2}
+import com.overviewdocs.models.BlobStorageRef
 import com.overviewdocs.test.ActorSystemContext
 
 // Kinda an integration test: tests WorkerTask and WorkerTaskPool as well as
 // HttpStepHandler.route.
 class HttpStepHandlerSpec extends Specification with Specs2RouteTest with Mockito with JsonMatchers {
+  sequential
+
   // Specs2RouteTest conflicts with ActorSystemContext. But we can at least
   // share their confits.
   override def testConfigSource = ActorSystemContext.testConfigSource
@@ -69,8 +71,9 @@ class HttpStepHandlerSpec extends Specification with Specs2RouteTest with Mockit
         filename="file.name",
         contentType="application/test",
         languageCode="fr",
-        metadata=File2.Metadata(Json.obj("foo" -> "bar")),
-        pipelineOptions=File2.PipelineOptions(true, false, Vector("Next")),
+        metadata=Json.obj("foo" -> "bar"),
+        wantOcr=true,
+        wantSplitByPage=false,
         blob=BlobStorageRefWithSha1(BlobStorageRef("loc:123", 20), ByteString("abcdabcdabcdabcdabcd").toArray)
       )
     }
@@ -169,7 +172,8 @@ class HttpStepHandlerSpec extends Specification with Specs2RouteTest with Mockit
       taskJson.value("contentType").as[String] must beEqualTo("application/test")
       taskJson.value("languageCode").as[String] must beEqualTo("fr")
       taskJson.value("metadata") must beEqualTo(Json.obj("foo" -> "bar"))
-      taskJson.value("pipelineOptions") must beEqualTo(Json.obj("ocr" -> true, "splitByPage" -> false, "stepsRemaining" -> Json.arr("Next")))
+      taskJson.value("wantOcr").as[Boolean] must beEqualTo(true)
+      taskJson.value("wantSplitByPage").as[Boolean] must beEqualTo(false)
       val blobJson = taskJson.value("blob").as[JsObject]
       blobJson.value("url").as[String] must beEqualTo("http://example.com/Step/" + taskId + "/blob")
       blobJson.value("nBytes").as[Int] must beEqualTo(20)
@@ -221,7 +225,8 @@ class HttpStepHandlerSpec extends Specification with Specs2RouteTest with Mockit
         "contentType" -> "foo/bar",
         "languageCode" -> "fr",
         "metadata" -> Json.obj("foo" -> "bar"),
-        "pipelineOptions" -> Json.obj("ocr" -> true, "splitByPage" -> false, "stepsRemaining" -> Json.arr())
+        "wantOcr" -> true,
+        "wantSplitByPage" -> false
       )))
 
       httpPost(taskId, "/0.blob", ByteString("blob"))
@@ -245,8 +250,9 @@ class HttpStepHandlerSpec extends Specification with Specs2RouteTest with Mockit
         "aFilename",
         "foo/bar",
         "fr",
-        File2.Metadata(Json.obj("foo" -> "bar")),
-        File2.PipelineOptions(true, false, Vector())
+        Json.obj("foo" -> "bar"),
+        true,
+        false
       ))
       fragments.next must beLike { case StepOutputFragment.Blob(i, b) =>
         i must beEqualTo(0)
@@ -341,7 +347,8 @@ class HttpStepHandlerSpec extends Specification with Specs2RouteTest with Mockit
             "contentType" -> "foo/bar",
             "languageCode" -> "fr",
             "metadata" -> Json.obj("foo" -> "bar"),
-            "pipelineOptions" -> Json.obj("ocr" -> true, "splitByPage" -> false, "stepsRemaining" -> Json.arr())
+            "wantOcr" -> true,
+            "wantSplitByPage" -> false
           ))))
         ),
         Multipart.FormData.BodyPart(
@@ -396,8 +403,9 @@ class HttpStepHandlerSpec extends Specification with Specs2RouteTest with Mockit
         "aFilename",
         "foo/bar",
         "fr",
-        File2.Metadata(Json.obj("foo" -> "bar")),
-        File2.PipelineOptions(true, false, Vector())
+        Json.obj("foo" -> "bar"),
+        true,
+        false
       ))
       fragments.next must beLike { case StepOutputFragment.Blob(i, b) =>
         i must beEqualTo(0)
