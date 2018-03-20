@@ -14,6 +14,7 @@ import com.overviewdocs.ingest.process.logic._
 
 trait Step {
   val id: String
+  val progressWeight: Double
   val flow: Flow[WrittenFile2, ConvertOutputElement, Route]
 
   // We treat some Steps specially, based on their IDs:
@@ -24,11 +25,13 @@ trait Step {
 object Step {
   case class SimpleStep(
     override val id: String,
+    override val progressWeight: Double,
     override val flow: Flow[WrittenFile2, ConvertOutputElement, Route]
   ) extends Step
 
   class StepLogicStep(
     override val id: String,
+    override val progressWeight: Double,
     file2Writer: File2Writer,
     logic: StepLogic,
     paralellism: Int
@@ -41,7 +44,7 @@ object Step {
   }
 
   class HttpSteps(
-    stepIds: Vector[String],
+    stepSpecs: Vector[(String,Double)],
     file2Writer: File2Writer,
     maxNWorkers: Int,
     workerIdleTimeout: FiniteDuration,
@@ -53,13 +56,13 @@ object Step {
       * materialization, which is wrong.
       */
     def steps(implicit mat: ActorMaterializer): Vector[Step] = {
-      stepIds.map(stepId => buildStep(stepId, mat.system))
+      stepSpecs.map(spec => buildStep(spec._1, spec._2, mat.system))
     }
 
-    private def buildStep(stepId: String, actorRefFactory: ActorRefFactory): Step = {
+    private def buildStep(stepId: String, progressWeight: Double, actorRefFactory: ActorRefFactory): Step = {
       val fragmentCollector = new StepOutputFragmentCollector(file2Writer, stepId)
       val taskServer = new HttpStepHandler(stepId, file2Writer.blobStorage, fragmentCollector, maxNWorkers, workerIdleTimeout, httpCreateIdleTimeout)
-      SimpleStep(stepId, taskServer.flow(actorRefFactory))
+      SimpleStep(stepId, progressWeight, taskServer.flow(actorRefFactory))
     }
   }
 
@@ -69,9 +72,17 @@ object Step {
     workerIdleTimeout: FiniteDuration,
     httpCreateIdleTimeout: FiniteDuration
   )(implicit mat: ActorMaterializer): Vector[Step] = Vector(
-    new StepLogicStep("SplitExtract", file2Writer, new SplitExtractStepLogic, maxNWorkers),
-    new StepLogicStep("Ocr", file2Writer, new OcrStepLogic, maxNWorkers),
-    new StepLogicStep("Office", file2Writer, new OfficeStepLogic, maxNWorkers),
-    new StepLogicStep("Unhandled", file2Writer, new UnhandledStepLogic, 1),
-  ) ++ new HttpSteps(Vector("Archive"), file2Writer, maxNWorkers, workerIdleTimeout, httpCreateIdleTimeout).steps
+    new StepLogicStep("SplitExtract", 1.0, file2Writer, new SplitExtractStepLogic, maxNWorkers),
+    new StepLogicStep("Ocr", 0.9, file2Writer, new OcrStepLogic, maxNWorkers),
+    new StepLogicStep("Office", 0.9, file2Writer, new OfficeStepLogic, maxNWorkers),
+    new StepLogicStep("Unhandled", 1.0, file2Writer, new UnhandledStepLogic, 1),
+  ) ++ new HttpSteps(
+    Vector(
+      "Archive" -> 0.1
+    ),
+    file2Writer,
+    maxNWorkers,
+    workerIdleTimeout,
+    httpCreateIdleTimeout
+  ).steps
 }

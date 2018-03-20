@@ -43,6 +43,7 @@ class DeciderSpec extends Specification with Mockito {
 
     val mockBlobStorage = mock[BlobStorage]
     case class MockStep(override val id: String) extends Step {
+      override val progressWeight: Double = 1.0
       override val flow = Flow[WrittenFile2]
         .collect(PartialFunction.empty[WrittenFile2,ConvertOutputElement])
         .mapMaterializedValue { _ =>
