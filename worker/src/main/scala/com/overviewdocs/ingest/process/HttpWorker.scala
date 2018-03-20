@@ -47,25 +47,27 @@ class HttpWorker(
   val timeoutActorRef: ActorRef
 ) extends Actor with Timers {
   implicit val ec: ExecutionContext = context.dispatcher
-
+  implicit val mat = {
+    val decider: Supervision.Decider = {
+      case ex: RuntimeException => {
+        ex.printStackTrace()
+        Supervision.Stop
+      }
+    }
+    ActorMaterializer(ActorMaterializerSettings(context.system).withSupervisionStrategy(decider))
+  }
 
   private val tickInterval = workerIdleTimeout / 10
   timers.startPeriodicTimer("tick", HttpWorker.Tick, tickInterval)
-
-  private var processingFragments: Boolean = false
-  private var fragmentCollectorState: StepOutputFragmentCollector.State = StepOutputFragmentCollector.State.Start(task)
-  private var lastActivityAt = Instant.now
 
   private def isTimedOut(lastActivityAt: Instant): Boolean = {
     val timeoutTemporalAmount = JDuration.ofNanos(workerIdleTimeout.toNanos)
     lastActivityAt.plus(timeoutTemporalAmount).isBefore(Instant.now)
   }
 
-  override def receive = become(idle(Instant.now, StepOutputFragmentCollector.State.Start(task)))
+  override def receive = idle(Instant.now, StepOutputFragmentCollector.State.Start(task))
 
   def idle(lastActivityAt: Instant, state: StepOutputFragmentCollector.State): Receive = {
-    case HttpWorker.Canceled => context.stop(self)
-
     case HttpWorker.Tick => {
       if (isTimedOut(lastActivityAt)) {
         timeoutActorRef ! task
@@ -75,70 +77,78 @@ class HttpWorker(
 
     case HttpWorker.GetForAsker(asker) => {
       if (task.isCanceled) {
+        // This is a common place the HTTP client will check for cancelation:
+        // during a large POST. The HTTP client should respond to the 404 we
+        // return here by ending the HTTP POST early. That's why we transition
+        // to "canceling": we want to keep consuming the POST until the client
+        // is done.
         asker ! None
-        startCancel
-        become(canceling(None))
+        startCancel(state)
+        context.become(canceling)
       } else {
         asker ! Some((task, self))
-        become(idle(Instant.now, state))
+        context.become(idle(Instant.now, state))
       }
     }
 
     case HttpWorker.ProcessFragments(fragments) => {
-      processFragments(fragments)
-      become(processingFragments(state, sender))
+      context.become(processingFragments(state, sender))
+      processFragments(state, fragments)
     }
   }
 
   def processingFragments(state: StepOutputFragmentCollector.State, asker: ActorRef): Receive = {
-    case Tick => {} // We never timeout while there's an HTTP connection open
+    case HttpWorker.Tick => {} // We never timeout while there's an HTTP connection open
+    case HttpWorker.UpdateState(state) => {
+      context.become(processingFragments(state, asker))
+    }
 
     case HttpWorker.GetForAsker(asker) => {
       if (task.isCanceled) {
         asker ! None
-        become(canceling(Some(asker)))
+        context.become(wantCancel(state, asker))
       } else {
         asker ! Some((task, self))
       }
     }
 
-    case HttpWorker.UpdateState(state) => {
-      updateLastActivity
-      fragmentCollectorState = state
-    }
-
     case HttpWorker.ProcessFragments(fragments) => {
-      sender ! Status.Failure("You are already POSTing from this worker. Don't POST twice simultaneously.")
+      sender ! Status.Failure(new RuntimeException("You are already POSTing from this worker. Don't POST twice simultaneously."))
     }
 
     case HttpWorker.DoneProcessingFragments => {
       asker ! Status.Success(akka.Done)
-      if (fragmentCollectorState.isInstanceOf[StepOutputFragmentCollector.State.End]) {
+      if (state.isInstanceOf[StepOutputFragmentCollector.State.End]) {
         context.stop(self)
       } else {
-        become(idle(Instant.now, state))
+        context.become(idle(Instant.now, state))
       }
     }
   }
 
-  def canceling(askerOpt: Option[ActorRef]): Receive = {
-    case Tick => {}
+  def wantCancel(state: StepOutputFragmentCollector.State, asker: ActorRef): Receive = {
+    case HttpWorker.Tick => {} // We never timeout while there's an HTTP connection open
+    case HttpWorker.UpdateState(state) => context.become(wantCancel(state, asker))
     case HttpWorker.GetForAsker(asker) => asker ! None
-    case HttpWorker.UpdateState(_) => {}
     case HttpWorker.ProcessFragments(_) => {
-      sender ! Status.Failure("You are already POSTing from this worker. Don't POST twice simultaneously.")
+      sender ! Status.Failure(new RuntimeException("You are already POSTing from this worker. Don't POST twice simultaneously."))
     }
     case HttpWorker.DoneProcessingFragments => {
-
+      asker ! Status.Success(akka.Done)
+      startCancel(state)
+      context.become(canceling)
     }
   }
 
-  private def processFragments(fragments): Unit = {
-    val decider: Supervision.Decider = {
-      case ex: RuntimeException => ex.printStackTrace(); Supervision.Stop
+  def canceling: Receive = {
+    case HttpWorker.Tick => {}
+    case HttpWorker.GetForAsker(asker) => asker ! None
+    case HttpWorker.ProcessFragments(_) => {
+      sender ! Status.Failure(new RuntimeException("Canceling")) // will this race ever happen, in practice?
     }
-    implicit val mat = ActorMaterializer(ActorMaterializerSettings(context.system).withSupervisionStrategy(decider))
+  }
 
+  private def processFragments(state: StepOutputFragmentCollector.State, fragments: Source[StepOutputFragment, akka.NotUsed]): Unit = {
     fragments
       .scanAsync[StepOutputFragmentCollector.State](state)(stepOutputFragmentCollector.transitionState)
       .drop(1) // scanAsync outputs its initial State; we don't want it
@@ -152,27 +162,47 @@ class HttpWorker(
       // the POST, we've read all the bytes from it
       .watchTermination() { (mat, doneFuture) =>
         doneFuture.onComplete {
-          case Success(_) => self ! HttpWorker.DoneProcessingFragments
+          case Success(_) => {
+            self ! HttpWorker.DoneProcessingFragments
+          }
           case Failure(err) => {
             // This is a critical error. We have no idea what to do.
             err.printStackTrace()
-            asker ! Status.Failure(err)
-            timeoutActorRef ! task
-            context.stop(self)
+            self ! HttpWorker.DoneProcessingFragments
           }
         }
       }
       .runWith(sink)
+  }
+
+  private def startCancel(state: StepOutputFragmentCollector.State): Unit = {
+    state match {
+      case StepOutputFragmentCollector.State.End(_) => context.stop(self)
+      case _ => stepOutputFragmentCollector.transitionState(state, StepOutputFragment.Canceled).onComplete {
+        case Success(newState) => {
+          Source(newState.toEmit)
+            .watchTermination() { (_, futureDone) =>
+              futureDone.onComplete {
+                case _ => context.stop(self)
+              }
+            }
+            .runWith(sink)
+        }
+        case Failure(ex) => {
+          ex.printStackTrace()
+          ???
+        }
+      }
+    }
   }
 }
 
 object HttpWorker {
   private case object Tick
   case class GetForAsker(asker: ActorRef)
-  case class ProcessFragments(fragments: Source[StepOutputFragment, Any])
+  case class ProcessFragments(fragments: Source[StepOutputFragment, akka.NotUsed])
   private case class UpdateState(state: StepOutputFragmentCollector.State)
   private case object DoneProcessingFragments
-  private case object Canceled
 
   def props(
     stepOutputFragmentCollector: StepOutputFragmentCollector,

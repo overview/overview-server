@@ -1,6 +1,6 @@
 package com.overviewdocs.ingest.process
 
-import akka.actor.{Actor,ActorRef,ActorRefFactory,Props}
+import akka.actor.{Actor,ActorRef,ActorRefFactory,Props,Status}
 import akka.http.scaladsl.marshalling.ToResponseMarshallable
 import akka.http.scaladsl.model.{ContentTypes,HttpEntity,HttpResponse,Multipart,ResponseEntity,RequestEntity,StatusCodes,Uri}
 import akka.http.scaladsl.server.{RequestContext,Route,RouteResult}
@@ -46,38 +46,52 @@ class HttpStepHandler(
   // reality will be kinder.)
   private val maxNTimedOutTasks = maxNWorkers * 2
 
+  private def retryFlow: Flow[WrittenFile2, WrittenFile2, ActorRef] = {
+    val graph = GraphDSL.create(Source.actorRef(maxNTimedOutTasks, OverflowStrategy.fail)) { implicit builder => timeoutTaskSource =>
+      import GraphDSL.Implicits._
+
+      val retry = builder.add(MergePreferred[WrittenFile2](1, eagerComplete=true))
+
+      timeoutTaskSource ~> retry.preferred
+      new FlowShape(retry.in(0), retry.out)
+    }
+
+    Flow.fromGraph(graph)
+  }
+
   def flow(
     actorRefFactory: ActorRefFactory
   ): Flow[WrittenFile2, ConvertOutputElement, Route] = {
     // taskProviderRef: responds to Asks with an Option[WrittenFile2]
     val taskProviderRef = actorRefFactory.actorOf(HttpTaskProvider.props(httpCreateIdleTimeout))
-    val taskProviderSink = Sink.actorRefWithAck[WrittenFile2](
-      taskProviderRef,
-      HttpTaskProvider.Init,
-      HttpTaskProvider.Ack,
-      HttpTaskProvider.Complete
-    )
 
-    val graph = GraphDSL.create(
-      MergeHub.source[ConvertOutputElement],
-      Source.actorRef(maxNTimedOutTasks, OverflowStrategy.fail)
-    )(Tuple2.apply _) { implicit builder => (outputHub, timeoutTaskSource) =>
-      import GraphDSL.Implicits._
+    // coupledFlow:
+    //
+    // 1. Retries, using retryFlow -- materializing to an ActorRef (timeoutActorRef)
+    // 2. Emits WrittenFile2s to taskProviderRef, on demand -- this is how the
+    //    Route finds tasks.
+    // 3. Outputs ConvertOutputElements from a MergeHub; the materialized value
+    //    is the reusable Sink[ConvertOutputElement, akka.NotUsed]
+    // 4. Is "coupled": when input completes, output completes
+    val coupledFlow: Flow[WrittenFile2, ConvertOutputElement, (ActorRef, Sink[ConvertOutputElement, akka.NotUsed])] = {
+      val taskProviderSink = Sink.actorRefWithAck[WrittenFile2](
+        taskProviderRef,
+        HttpTaskProvider.Init,
+        HttpTaskProvider.Ack,
+        HttpTaskProvider.Complete
+      )
 
-      val normal = builder.add(Flow.apply[WrittenFile2])
-      val retry = builder.add(MergePreferred[WrittenFile2](1, eagerComplete=true))
-      val taskProvider = builder.add(taskProviderSink)
+      val sink: Sink[WrittenFile2, ActorRef] = retryFlow
+        .toMat(taskProviderSink)(Keep.left)
 
-      normal            ~> retry ~> taskProvider
-      timeoutTaskSource ~> retry.preferred
-
-      new FlowShape(normal.in, outputHub.out)
+      val source = MergeHub.source[ConvertOutputElement]
+      Flow.fromSinkAndSourceCoupledMat(sink, source)(Keep.both)
     }
 
-    Flow.fromGraph(graph)
-      .watchTermination() { (tuple: (Sink[ConvertOutputElement, akka.NotUsed], ActorRef), futureDone: Future[akka.Done]) =>
+    coupledFlow
+      .watchTermination() { (tuple: (ActorRef, Sink[ConvertOutputElement, akka.NotUsed]), futureDone: Future[akka.Done]) =>
         // Spin up actors
-        val (outputSink, timeoutActorRef) = tuple
+        val (timeoutActorRef, outputSink) = tuple
         val workerTaskPoolRef = actorRefFactory.actorOf(HttpWorkerPool.props(
           stepOutputFragmentCollector,
           outputSink,
@@ -88,10 +102,16 @@ class HttpStepHandler(
 
         // Shut down when there's no more input.
         def shutdown = {
-          actorRefFactory.stop(timeoutActorRef)
+          timeoutActorRef ! Status.Success(akka.Done)
           actorRefFactory.stop(workerTaskPoolRef)
         }
-        futureDone.onComplete { case _ => shutdown }(actorRefFactory.dispatcher)
+        futureDone.onComplete {
+          case Success(_) => shutdown
+          case Failure(ex) => {
+            ex.printStackTrace()
+            shutdown
+          }
+        }(actorRefFactory.dispatcher)
 
         new StepRouteFactory(
           stepId,
@@ -149,21 +169,28 @@ class HttpStepHandler(
       *
       * If the Task cannot be found, responds with 404 and never calls `fn()`.
       *
-      * If the Task is found to have been canceled, emits a `Canceled` fragment
-      * to its Sink, responds with 404 and never calls `fn()`.
+      * If the Task is found to have been canceled, HttpWorker will be prompted
+      * to send the proper messages downstream and exit; drain() will be called
+      * here.
       */
     private def withTask(uuid: UUID, ctx: RequestContext)(drain: () => Future[akka.Done])(fn: (WrittenFile2, ActorRef) => Future[RouteResult]): Future[RouteResult] = {
       implicit val mat = ctx.materializer
       implicit val ec = ctx.executionContext
 
-      ask(workerTaskPoolRef, HttpWorkerPool.Get(uuid))(Timeout(unresponsiveTimeout)).mapTo[Option[(WrittenFile2,ActorRef)]].flatMap(_ match {
-        case Some((task, workerTaskRef)) => {
-          fn(task, workerTaskRef)
+      ask(workerTaskPoolRef, HttpWorkerPool.Get(uuid))(Timeout(unresponsiveTimeout))
+        .mapTo[Option[(WrittenFile2,ActorRef)]]
+        .recover { case ex: Exception =>
+          ex.printStackTrace()
+          None
         }
-        case None => {
-          drain().flatMap(_ => ctx.complete(StatusCodes.NotFound))
-        }
-      })
+        .flatMap(_ match {
+          case Some((task, workerTaskRef)) => {
+            fn(task, workerTaskRef)
+          }
+          case None => {
+            drain().flatMap(_ => ctx.complete(StatusCodes.NotFound))
+          }
+        })
     }
 
     private def handleGetBlob(uuid: UUID)(ctx: RequestContext): Future[RouteResult] = {
@@ -340,8 +367,9 @@ class HttpStepHandler(
       case class State(lastReadCompleted: Future[akka.Done], fragments: List[StepOutputFragment])
 
       withTask(uuid, ctx)(() => formData.parts.flatMapConcat(part => part.entity.dataBytes).runWith(Sink.ignore)) { (task, workerTaskRef) =>
-        val fragments: Source[StepOutputFragment, _] = formData.parts
+        val fragments: Source[StepOutputFragment, akka.NotUsed] = formData.parts
           .mapAsync(1) { part => partToFragment(part.name, part.entity) }
+          .mapMaterializedValue(_ => akka.NotUsed)
         for {
           _ <- ask(workerTaskRef, HttpWorker.ProcessFragments(fragments))(postMultipartTimeout)
           routeResult <- ctx.complete(StatusCodes.Accepted)
