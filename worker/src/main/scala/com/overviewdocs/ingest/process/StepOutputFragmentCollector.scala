@@ -157,7 +157,7 @@ class StepOutputFragmentCollector(file2Writer: File2Writer, logicName: String, p
   )(implicit ec: ExecutionContext): Future[List[ConvertOutputElement]] = {
     lastChildOpt match {
       case Some(child) => {
-        val childProgress = parent.childProgressPiece(child.copy(childrenProgressRight=1.0))
+        val childProgress = parent.childProgressPiece(child)
 
         if (isChildAlreadyProcessed(child)) {
           file2Writer.setWrittenAndProcessed(child.file)
@@ -210,8 +210,8 @@ class StepOutputFragmentCollector(file2Writer: File2Writer, logicName: String, p
         parent,
         Child(
           nextChild,
-          lastChild.map(_.childrenProgressRight).getOrElse(0),
-          lastChild.map(_.childrenProgressRight).getOrElse(0) // progress size 0, to start
+          lastChild.map(_.childrenProgressRight).getOrElse(0.0),
+          lastChild.map(_.childrenProgressRight).getOrElse(0.0) // progress size 0, to start
         ),
         lastChildWritten
       )
@@ -273,7 +273,7 @@ class StepOutputFragmentCollector(file2Writer: File2Writer, logicName: String, p
       case (_, StepOutputFragment.Canceled) => error(parent, "canceled", lastChildOpt)
       case (Some(child), _) if (child.file.blobOpt.isEmpty) => missingBlobError(parent, child)
       case (_, StepOutputFragment.Done) => for {
-        lastChildWritten: List[ConvertOutputElement] <- writeLastChildOpt(parent, lastChildOpt)
+        lastChildWritten: List[ConvertOutputElement] <- writeLastChildOpt(parent, lastChildOpt.map(_.copy(childrenProgressRight=1.0)))
         parentProcessed <- writeParent(parent, lastChildOpt.map(_.file.indexInParent + 1).getOrElse(0), None)
       } yield State.End(lastChildWritten :+ parentProcessed)
     }
