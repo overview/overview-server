@@ -74,7 +74,7 @@ class FileGroupProgressState(
     val inverseFraction = nBytesTotal / scala.math.max(nBytes, 1)
     val elapsedMilli = Instant.now.toEpochMilli - startedAt.toEpochMilli
     val expectedMilli = (elapsedMilli * inverseFraction).toLong
-    val estimatedCompletionTime = Instant.ofEpochMilli(expectedMilli)
+    val estimatedCompletionTime = Instant.ofEpochMilli(startedAt.toEpochMilli + expectedMilli)
 
     FileGroupProgressState.ProgressReport(
       nFilesIngested,
