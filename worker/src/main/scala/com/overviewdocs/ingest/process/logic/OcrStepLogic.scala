@@ -84,7 +84,7 @@ class OcrStepLogic(
                     input.contentType,
                     input.languageCode,
                     input.metadata,
-                    input.wantOcr,
+                    false,
                     input.wantSplitByPage
                   ),
                   StepOutputFragment.Blob(0, blob),
