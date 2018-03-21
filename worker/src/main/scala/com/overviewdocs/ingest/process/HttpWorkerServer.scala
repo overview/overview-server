@@ -3,11 +3,14 @@ package com.overviewdocs.ingest.process
 import akka.actor.ActorSystem
 import akka.event.Logging
 import akka.http.scaladsl.{Http,HttpExt}
-import akka.http.scaladsl.server.{Route,RoutingLog}
-import akka.http.scaladsl.server.directives.DebuggingDirectives
+import akka.http.scaladsl.model.HttpRequest
+import akka.http.scaladsl.server.{Route,RoutingLog,RouteResult}
+import akka.http.scaladsl.server.directives.{DebuggingDirectives,LogEntry}
 import akka.http.scaladsl.settings.{ParserSettings,RoutingSettings}
 import akka.stream.Materializer
 import scala.concurrent.Future
+
+import com.overviewdocs.util.Logger
 
 /** Creates an HTTP server that manages workers and tasks.
   *
@@ -57,6 +60,18 @@ class HttpWorkerServer(
   interface: String,
   port: Int
 ) {
+  private val logger = Logger.forClass(getClass)
+
+  private def log(req: HttpRequest): RouteResult => Option[LogEntry] = {
+    case RouteResult.Complete(resp) => {
+      // akka's logging is ugly. It has lots of benefits, but it's ugly.
+      //Some(LogEntry(s"HttpWorkerServer: ${req.method} ${req.uri} -> ${resp.status}", Logging.InfoLevel))
+      logger.info("{} {} -> {}", req.method.name, req.uri, resp.status)
+      None
+    }
+    case _ => None
+  }
+
   def bindAndHandle(
     route: Route
   )(implicit mat: Materializer): Future[Http.ServerBinding] = {
@@ -64,7 +79,7 @@ class HttpWorkerServer(
     implicit val rs = routingSettings
     implicit val ps = parserSettings
     implicit val rl = routingLog
-    val logging = DebuggingDirectives.logRequestResult("http-convert", Logging.InfoLevel)
+    val logging = DebuggingDirectives.logRequestResult(log _)
     val sealedRoute = Route.seal(logging { route })
     val handler = Route.asyncHandler(sealedRoute)
     httpExt.bindAndHandleAsync(handler, interface, port)
