@@ -43,6 +43,10 @@ services:
     networks: [ 'database' ]
     depends_on: [ 'overview-database' ]
 
+  overview-convert-archive:
+    image: overview-convert-archive:2.0.2
+    networks: [ 'worker' ]
+
   # === The integration-test runner ===
   integration-test:
     image: overview/overview-integration-tester:${OVERVIEW_INTEGRATION_TESTER_VERSION}

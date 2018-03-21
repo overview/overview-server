@@ -22,10 +22,12 @@ services:
   dev:
     build: ./docker/overview-dev
     stdin_open: true
+    depends_on: [ redis, database ]
     networks:
       default:
         aliases:
           - overview-web # so integration tests can see it
+          - overview-worker # so converters can see it
     volumes:
       - search-data:/var/lib/overview/search
       - blob-storage-data:/var/lib/overview/blob-storage
@@ -34,4 +36,10 @@ services:
       - .:/app # we can't go "ro" because Webpack writes to the source directory for now
     ports:
       - '127.0.0.1:3333:3333' # port 3333 is useful when running integration-test/mock-plugins/standalone
+      - '127.0.0.1:9032:9032' # port 9032 is useful when developing converters
       - '127.0.0.1:9000:80'
+
+  convert-archive:
+    image: overview/overview-convert-archive:2.0.2
+    environment:
+      POLL_URL: 'http://overview-worker:9032/Archive'
