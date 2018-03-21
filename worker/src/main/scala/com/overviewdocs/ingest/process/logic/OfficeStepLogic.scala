@@ -29,7 +29,7 @@ import com.overviewdocs.ingest.model.WrittenFile2
   * 5. On Source complete, delete outputTempfile
   */
 class OfficeStepLogic extends StepLogic {
-  override val id = "Unhandled"
+  override val id = "Office"
   override val progressWeight = 0.9
 
   override def toChildFragments(
