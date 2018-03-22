@@ -36,7 +36,7 @@ spec:
         app: postgres
     spec:
       containers:
-      - image: REPOSITORY/overview-database:latest
+      - image: overview/overview-database:latest
         # Use :latest, not SHA1, so we don't try to roll over if we re-run ./start.sh
         name: postgres
         ports:
@@ -52,6 +52,19 @@ spec:
         env:
         - name: PGDATA
           value: /var/lib/postgresql/data/9.4
+        args:
+          - postgres
+          - -ccheckpoint_segments=100
+          - -cdynamic_shared_memory_type=posix
+          - -ctimezone=UTC
+          - -clog_min_duration_statement=500
+          - -clog_timezone=UTC
+          - -clog_destination=stderr
+          - -cmaintenance_work_mem=1GB
+          - -cmax_connections=50
+          - -cshared_buffers=128MB
+          - -csynchronous_commit=off
+          - -cwork_mem=128MB
       volumes:
       - name: postgres-storage
         persistentVolumeClaim:
