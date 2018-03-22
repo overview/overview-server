@@ -18,7 +18,7 @@ spec:
         image: overview/overview-convert-archive:2.0.2
         env:
         - name: POLL_URL
-          value: http://overview-worker/Archive
+          value: http://overview-worker:9032/Archive
         resources:
           requests:
             cpu: 50m
