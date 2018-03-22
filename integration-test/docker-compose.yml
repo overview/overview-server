@@ -44,7 +44,7 @@ services:
     depends_on: [ 'overview-database' ]
 
   overview-convert-archive:
-    image: overview-convert-archive:2.0.2
+    image: overview/overview-convert-archive:2.0.2
     networks: [ 'worker' ]
     environment:
       POLL_URL: 'http://overview-worker:9032/Archive'
