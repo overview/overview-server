@@ -1,0 +1,61 @@
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: worker-deployment
+spec:
+  selector:
+    matchLabels:
+      app: worker
+  strategy:
+    type: Recreate
+  replicas: 1
+  revisionHistoryLimit: 20
+  template:
+    metadata:
+      labels:
+        app: worker
+      annotations:
+        iam.amazonaws.com/role: overview-ENVIRONMENT-worker
+    spec:
+      containers:
+      - name: worker
+        image: REPOSITORY/overview-worker:VERSION
+        volumeMounts:
+        - name: searchindex
+          mountPath: /var/lib/overview/searchindex
+        ports:
+        - containerPort: 9030 # communicate with web
+        - containerPort: 9032 # listen for converters
+        env:
+        - name: MESSAGE_BROKER_HOSTNAME
+          value: overview-worker
+          # TODO Rearchitect message broker. Should it be a stateful service?
+          # Whatever the case, this will break if we have two message brokers
+          # running concurrently.
+        - name: MESSAGE_BROKER_BIND_HOSTNAME
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: BLOB_STORAGE_FILE_CONTENTS_LOCATION
+          value: s3:BLOB_STORAGE_FILE_CONTENTS_S3_BUCKET
+        - name: BLOB_STORAGE_FILE_VIEW_LOCATION
+          value: s3:BLOB_STORAGE_FILE_VIEW_S3_BUCKET
+      volumes:
+      - name: searchindex
+        hostPath:
+          path: /data/searchindex
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: overview-worker
+  labels:
+    app: worker
+spec:
+  ports:
+  - port: 9030
+    protocol: TCP
+  - port: 9032
+    protocol: TCP
+  selector:
+    app: worker

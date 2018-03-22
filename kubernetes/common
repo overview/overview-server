@@ -1,0 +1,49 @@
+#!/bin/bash
+
+REPOSITORY="overview"
+VERSION=${1:-latest}
+
+if [ "$ENVIRONMENT" = "staging" ]; then
+  BLOB_STORAGE_FILE_CONTENTS_S3_BUCKET="overview-staging-file-contents"
+  BLOB_STORAGE_FILE_VIEW_S3_BUCKET="overview-staging-file-view"
+  OV_GOOGLE_ANALYTICS_ID="UA-34992611-2"
+  OV_CANONICAL_URL="https://staging.overviewdocs.com"
+elif [ "$ENVIRONMENT" = "production" ]; then
+  BLOB_STORAGE_FILE_CONTENTS_S3_BUCKET=overview-production-file-contents
+  BLOB_STORAGE_FILE_VIEW_S3_BUCKET=overview-production-file-view
+  OV_GOOGLE_ANALYTICS_ID="UA-34992611-1"
+  OV_CANONICAL_URL="https://www.overviewdocs.com"
+else
+  echo "Must call with ENVIRONMENT=staging or ENVIRONMENT=production" >&2
+  exit 1
+fi
+
+pipe_template() {
+  cat "$DIR"/"$1" \
+    | sed -e "s@ENVIRONMENT@$ENVIRONMENT@" \
+    | sed -e "s@REPOSITORY@$REPOSITORY@" \
+    | sed -e "s@VERSION@$VERSION@" \
+    | sed -e "s@BLOB_STORAGE_FILE_CONTENTS_S3_BUCKET@$BLOB_STORAGE_FILE_CONTENTS_S3_BUCKET@" \
+    | sed -e "s@BLOB_STORAGE_FILE_VIEW_S3_BUCKET@$BLOB_STORAGE_FILE_VIEW_S3_BUCKET@" \
+    | sed -e "s@OV_GOOGLE_ANALYTICS_ID@$OV_GOOGLE_ANALYTICS_ID@" \
+    | sed -e "s@OV_CANONICAL_URL@$OV_CANONICAL_URL@"
+}
+
+apply_template() {
+  pipe_template "$@" | kubectl apply -f -
+}
+
+replace_template() {
+  pipe_template "$@" | kubectl replace -f -
+}
+
+evolve_database() {
+  echo "Evolving database..."
+  echo "For detailed status, run 'kubectl attach jobs/db-evolution-applier"
+  kubectl delete job db-evolution-applier || true
+  kubectl delete pod -lapp=db-evolution-applier || true
+  apply_template db-evolution-applier.yml
+  until [ "$(kubectl get jobs db-evolution-applier --no-headers -o custom-columns=status:status.succeeded)" = "1" ]; do
+    sleep 1
+  done
+}

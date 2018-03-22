@@ -1,0 +1,4 @@
+ENVIRONMENT=staging
+DNS_NAME=staging.overviewdocs.com
+CLUSTER_NAME=staging.overviewdocs.com
+VPC_ID=vpc-5c3fd138

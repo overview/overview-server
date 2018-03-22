@@ -1,0 +1,29 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+				"acm:ListCertificates",
+				"acm:DescribeCertificate",
+				"autoscaling:DescribeAutoScalingGroups",
+        "autoscaling:DescribeLoadBalancerTargetGroups",
+				"autoscaling:AttachLoadBalancers",
+				"autoscaling:DetachLoadBalancers",
+				"autoscaling:DetachLoadBalancerTargetGroups",
+				"autoscaling:AttachLoadBalancerTargetGroups",
+				"cloudformation:*",
+				"elasticloadbalancing:*",
+				"elasticloadbalancingv2:*",
+				"ec2:DescribeInstances",
+				"ec2:DescribeSubnets",
+				"ec2:DescribeSecurityGroups",
+				"ec2:DescribeRouteTables",
+				"ec2:DescribeVpcs",
+				"iam:GetServerCertificate",
+				"iam:ListServerCertificates"
+			],
+			"Resource": [ "*" ]
+		}
+  ]
+}

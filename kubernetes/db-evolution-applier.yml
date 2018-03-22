@@ -1,0 +1,14 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: db-evolution-applier
+spec:
+  template:
+    metadata:
+      labels:
+        app: db-evolution-applier
+    spec:
+      containers:
+      - name: db-evolution-applier
+        image: REPOSITORY/overview-db-evolution-applier:VERSION
+      restartPolicy: Never

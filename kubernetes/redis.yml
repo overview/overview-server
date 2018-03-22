@@ -1,0 +1,35 @@
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: redis
+spec:
+  selector:
+    matchLabels:
+      app: redis
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+      - image: REPOSITORY/overview-redis:latest
+        # Use :latest, not SHA1, so we don't try to roll over if we re-run ./start.sh
+        name: redis
+        ports:
+        - containerPort: 6379
+          name: redis
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: overview-redis
+  labels:
+    app: redis
+spec:
+  ports:
+  - port: 6379
+    protocol: TCP
+  selector:
+    app: redis

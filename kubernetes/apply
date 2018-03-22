@@ -1,0 +1,20 @@
+#!/bin/sh
+
+set -e
+
+DIR="$(dirname "$0")"
+. "$DIR"/common
+
+echo "Starting Postgres..."
+apply_template postgres.yml 
+
+#evolve_database
+#echo "Database evolved. Starting Overview..."
+
+apply_template redis.yml
+apply_template worker.yml
+apply_template web.yml
+apply_template convert-archive.yml
+
+echo "Building ingress..."
+apply_template ingress.yml

@@ -1,0 +1,6 @@
+#!/bin/bash
+
+./create-cluster
+./create-roles
+./create-ingress-security-group
+./load-k8s-config

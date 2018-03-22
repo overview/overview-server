@@ -1,0 +1,42 @@
+#!/bin/bash
+
+source "$(dirname "$0")"/common
+
+: ${ENVIRONMENT?You must set ENVIRONMENT}
+: ${CLUSTER_NAME?You must set CLUSTER_NAME}
+: ${DNS_NAME?You must set DNS_NAME}
+: ${VPC_ID?You must set VPC_ID}
+
+STATE_BUCKET="s3://kops-state.$CLUSTER_NAME"
+
+callaws s3 mb "$STATE_BUCKET"
+
+if ! (kops get clusters --state "$STATE_BUCKET" | grep -q ^$CLUSTER_NAME); then
+  kops create cluster \
+    --state="$STATE_BUCKET" \
+    --name=$CLUSTER_NAME \
+    --authorization=RBAC \
+    --zones=us-east-1b,us-east-1d \
+    --master-size=t2.micro \
+    --node-count=1 \
+    --node-size=r3.xlarge \
+    --cloud-labels Environment=$ENVIRONMENT,kubernetes.io/cluster/$CLUSTER_NAME=owned \
+    --dns-zone $DNS_ZONE \
+    --vpc=$VPC_ID \
+    --yes
+fi
+
+EDITOR="$(dirname "$0")/_edit-cluster-config" \
+kops edit cluster \
+  --state="$STATE_BUCKET" \
+  --name=$CLUSTER_NAME
+
+kops update cluster \
+  --state="$STATE_BUCKET" \
+  --name=$CLUSTER_NAME \
+  --yes
+
+kops rolling-update cluster \
+  --state="$STATE_BUCKET"
+
+kubectl apply -f "$(dirname "$0")"/kube2iam-ds.yaml

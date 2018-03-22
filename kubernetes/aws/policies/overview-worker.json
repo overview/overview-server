@@ -1,0 +1,25 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "OverviewWorkerS3GetListBucket",
+      "Effect": "Allow",
+      "Action": [ "s3:GetBucketLocation", "s3:ListBucket" ],
+      "Resource": [
+        "arn:aws:s3:::overview-$ENVIRONMENT-file-contents",
+        "arn:aws:s3:::overview-$ENVIRONMENT-file-view",
+        "arn:aws:s3:::overview-$ENVIRONMENT-page-data"
+      ]
+    },
+    {
+      "Sid": "OverviewWorkerS3GetPutObjectBucket",
+      "Effect": "Allow",
+      "Action": [ "s3:GetObject", "s3:PutObject", "s3:DeleteObject", "s3:ListBucketMultipartUploads" ],
+      "Resource": [
+        "arn:aws:s3:::overview-$ENVIRONMENT-file-contents/*",
+        "arn:aws:s3:::overview-$ENVIRONMENT-file-view/*",
+        "arn:aws:s3:::overview-$ENVIRONMENT-page-data/*"
+      ]
+    }
+  ]
+}

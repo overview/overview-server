@@ -1,0 +1,107 @@
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: web-deployment
+spec:
+  selector:
+    matchLabels:
+      app: web
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+  replicas: 1
+  revisionHistoryLimit: 20
+  template:
+    metadata:
+      labels:
+        app: web
+      annotations:
+        iam.amazonaws.com/role: overview-ENVIRONMENT-web
+    spec:
+      containers:
+      - name: web
+        image: REPOSITORY/overview-web:VERSION
+        ports:
+        - containerPort: 80
+        - containerPort: 9031
+        env:
+        - name: MESSAGE_BROKER_HOSTNAME
+          value: overview-worker
+        - name: MESSAGE_BROKER_CLIENT_HOSTNAME
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: SMTP_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: smtp
+              key: username
+        - name: SMTP_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: smtp
+              key: password
+        - name: SMTP_HOST
+          valueFrom:
+            secretKeyRef:
+              name: smtp
+              key: host
+        - name: SMTP_HOST
+          valueFrom:
+            secretKeyRef:
+              name: smtp
+              key: host
+        - name: SMTP_PORT
+          valueFrom:
+            secretKeyRef:
+              name: smtp
+              key: port
+        - name: SMTP_SSL
+          valueFrom:
+            secretKeyRef:
+              name: smtp
+              key: ssl
+        - name: SMTP_TLS
+          valueFrom:
+            secretKeyRef:
+              name: smtp
+              key: tls
+        - name: MAIL_FROM
+          valueFrom:
+            secretKeyRef:
+              name: smtp
+              key: mail_from
+        - name: MAILCHIMP_LIST_ID
+          valueFrom:
+            secretKeyRef:
+              name: mailchimp
+              key: listId
+        - name: MAILCHIMP_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: mailchimp
+              key: apiKey
+        - name: OV_APPLICATION_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: play
+              key: application_secret
+        - name: GOOGLE_ANALYTICS_ID
+          value: OV_GOOGLE_ANALYTICS_ID
+        - name: OV_URL
+          value: OV_CANONICAL_URL
+        - name: BLOB_STORAGE_FILE_CONTENTS_LOCATION
+          value: s3:BLOB_STORAGE_FILE_CONTENTS_S3_BUCKET
+        - name: BLOB_STORAGE_FILE_VIEW_LOCATION
+          value: s3:BLOB_STORAGE_FILE_VIEW_S3_BUCKET
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: overview-web
+spec:
+  ports:
+  - port: 80
+    protocol: TCP
+  selector:
+    app: web

@@ -1,0 +1,25 @@
+#!/bin/bash
+#
+# This is run by Jenkins. It should update the Overview cluster to the latest version
+
+set -e
+set -x
+
+kops export kubecfg \
+  --state s3://kops-state.production.overviewdocs.com \
+  --name production.cluster.overviewdocs.com
+
+DIR="$(dirname "$0")"
+. "$DIR"/common
+# We're in Jenkins, so HEAD is the version we want to push.
+# Jenkins guarantees that at the time we call this, images have been pushed to
+# Docker Hub.
+VERSION=$(git rev-parse HEAD)
+
+echo "Updating db-evolution-applier, web and worker to version ${SHA1}"
+
+evolve_database
+
+apply_template web.yml
+apply_template worker.yml
+apply_template convert-archive.yml
