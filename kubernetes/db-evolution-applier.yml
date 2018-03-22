@@ -10,5 +10,5 @@ spec:
     spec:
       containers:
       - name: db-evolution-applier
-        image: REPOSITORY/overview-db-evolution-applier:VERSION
+        image: overview/overview-db-evolution-applier:VERSION
       restartPolicy: Never

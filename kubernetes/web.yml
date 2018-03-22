@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
       - name: web
-        image: REPOSITORY/overview-web:VERSION
+        image: overview/overview-web:VERSION
         ports:
         - containerPort: 80
         - containerPort: 9031

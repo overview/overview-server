@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
       - name: worker
-        image: REPOSITORY/overview-worker:VERSION
+        image: overview/overview-worker:VERSION
         volumeMounts:
         - name: searchindex
           mountPath: /var/lib/overview/searchindex
@@ -55,7 +55,9 @@ spec:
   ports:
   - port: 9030
     protocol: TCP
+    name: akka-message-broker
   - port: 9032
     protocol: TCP
+    name: http-convert-server
   selector:
     app: worker
