@@ -8,8 +8,8 @@ DIR="$(dirname "$0")"
 echo "Starting Postgres..."
 apply_template postgres.yml 
 
-#evolve_database
-#echo "Database evolved. Starting Overview..."
+evolve_database
+echo "Database evolved. Starting Overview..."
 
 apply_template redis.yml
 apply_template worker.yml
