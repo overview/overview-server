@@ -14,7 +14,7 @@ spec:
         app: redis
     spec:
       containers:
-      - image: REPOSITORY/overview-redis:latest
+      - image: overview/overview-redis:latest
         # Use :latest, not SHA1, so we don't try to roll over if we re-run ./start.sh
         name: redis
         ports:
