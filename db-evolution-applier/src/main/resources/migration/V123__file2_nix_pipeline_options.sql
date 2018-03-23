@@ -7,10 +7,6 @@
 -- We're nixing "pipelineOptions.stepsRemaining," too. [adam, 2018-03-20] It
 -- seems useful in my mind, but at this stage it just adds complexity without
 -- giving anything in return.
-BEGIN;
-
-LOCK TABLE file2;
-
 ALTER TABLE file2
 ADD COLUMN want_ocr BOOLEAN,
 ADD COLUMN want_split_by_page BOOLEAN
@@ -27,5 +23,3 @@ ALTER COLUMN want_ocr SET NOT NULL,
 ALTER COLUMN want_split_by_page SET NOT NULL,
 DROP COLUMN pipeline_options_json_utf8
 ;
-
-COMMIT;
