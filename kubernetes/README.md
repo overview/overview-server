@@ -6,6 +6,9 @@ To set up
 1. Log in to AWS using `aws configure`
 1. `aws/create-staging-cluster`
 
+On production, we also followed instructions in `production/` to add logging,
+backups and load monitoring.
+
 To change cluster configuration
 -------------------------------
 
