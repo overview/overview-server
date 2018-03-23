@@ -17,13 +17,13 @@ fi
 DIR="$(dirname "$0")"
 
 # Set up DNS:
-# 1. Create "$DNS_ZONE", an ALIAS record pointed at the new Elastic Load Balancer
+# 1. Create "$DNS_NAME", an ALIAS record pointed at the new Elastic Load Balancer
 
 SMTP_HOST=email-smtp.us-east-1.amazonaws.com
 SMTP_PORT=465
 SMTP_TLS=no
 SMTP_SSL=yes
-MAIL_FROM=no-reply@$DNS_ZONE
+MAIL_FROM=no-reply@overviewdocs.com
 
 # Create SMTP secret
 echo "Creating smtp secret..."
