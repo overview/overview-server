@@ -71,15 +71,18 @@ spec:
       # Note that this does not guarantee admission on the nodes (#40573).
       annotations:
         scheduler.alpha.kubernetes.io/critical-pod: ''
+        iam.amazonaws.com/role: production-fluentd-es
     spec:
       priorityClassName: system-node-critical
       serviceAccountName: fluentd-es
       containers:
       - name: fluentd-es
-        image: k8s.gcr.io/fluentd-elasticsearch:v2.0.4
+        image: overview/overview-fluentd-es:0.0.5
         env:
         - name: FLUENTD_ARGS
           value: --no-supervisor -q
+        - name: AWS_REGION
+          value: us-east-1
         resources:
           limits:
             memory: 500Mi

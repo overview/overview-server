@@ -404,6 +404,46 @@ data:
       @type kubernetes_metadata
     </filter>
 
+    # Some events should be notified. We do that by sending kubernetes.**
+    # through: "is this an error? then tag it "notify". Then the "notify"
+    # matcher will both send it to SNS and re-tag it "any". Otherwise, we
+    # skip that step and just re-tag it "any"
+    <match kubernetes.**>
+      @type rewrite_tag_filter
+      <rule>
+        key log
+        pattern ^(ERR|[0-9a-z.]*?(Exception|Error):)
+        tag notify
+      </rule>
+      <rule>
+        key log
+        pattern .*
+        tag any
+      </rule>
+    </match>
+    <match notify>
+      @type copy
+      <store>
+        @id overview_sns
+        @type overview_sns
+        <buffer>
+          @type memory
+          chunk_limit_size 2M
+          total_limit_size 10M
+          flush_mode immediate
+          overflow_action drop_oldest_chunk
+        </buffer>
+      </store>
+      <store>
+        @type rewrite_tag_filter
+        <rule>
+          key log
+          pattern .*
+          tag any
+        </rule>
+      </store>
+    </match>
+
     <match **>
       @id elasticsearch
       @type elasticsearch
