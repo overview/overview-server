@@ -1,0 +1,18 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: k8s-snapshots
+  namespace: kube-system
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: k8s-snapshots
+      annotations:
+        iam.amazonaws.com/role: production-k8s-snapshots
+    spec:
+      serviceAccountName: k8s-snapshots
+      containers:
+      - name: k8s-snapshots
+        image: elsdoerfer/k8s-snapshots:dev # v2.0 doesn't parse aws region properly for old-style volumeID

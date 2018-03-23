@@ -1,0 +1,9 @@
+#!/bin/sh
+
+PATCH='{"metadata":{"annotations":{"backup.kubernetes.io/deltas":"PT12H P14D P360D"}}}'
+PATCH2='{"metadata":{"labels":{"failure-domain.beta.kubernetes.io/region":"us-east-1"}}}'
+
+kubectl patch pv postgres-pv -p "$PATCH"
+kubectl patch pv searchindex-pv -p "$PATCH"
+kubectl patch pv postgres-pv -p "$PATCH2"
+kubectl patch pv searchindex-pv -p "$PATCH2"
