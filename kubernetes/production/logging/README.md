@@ -26,7 +26,7 @@ We log from every node: This is a small cluster.
 # Deploy
 
 1. Log into AWS (e.g., `aws configure`) and then run `./configure-aws`
-1. `cd fluentd-elasticsearch/fluentd-es-image && docker build . -t overview/overview-fluentd-es:latest && docker push overview/overview-fluentd-es:latest`
+1. `cd fluentd-elasticsearch/fluentd-es-image && docker build . -t overview/overview-fluentd-es:0.0.5 && docker push overview/overview-fluentd-es:0.0.5`
 1. `kubectl apply -f fluentd-elasticsearch/`
 1. `kubectl proxy`
 1. Browse to http://localhost:8001/api/v1/namespaces/kube-system/services/kibana-logging/proxy
