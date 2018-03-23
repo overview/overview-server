@@ -15,3 +15,5 @@ kops delete cluster \
   --state="$STATE_BUCKET" \
   --name=$CLUSTER_NAME \
   "$@" # force user to add "--yes"
+
+aws s3 rb "$STATE_BUCKET"

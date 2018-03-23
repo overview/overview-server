@@ -5,6 +5,9 @@ set -e
 DIR="$(dirname "$0")"
 . "$DIR"/common
 
+echo "Specifying volumes..."
+apply_template $ENVIRONMENT-volumes.yml
+
 echo "Starting Postgres..."
 apply_template postgres.yml 
 
@@ -17,4 +20,4 @@ apply_template web.yml
 apply_template convert-archive.yml
 
 echo "Building ingress..."
-apply_template ingress.yml
+apply_template $ENVIRONMENT-ingress.yml

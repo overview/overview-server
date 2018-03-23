@@ -6,6 +6,8 @@ DIR="$(dirname "$0")"
 
 set -e
 
+: ${ENVIRONMENT?You must set ENVIRONMENT environment variable}
+
 echo "Creating buckets..."
 
 callaws s3 mb s3://overview-$ENVIRONMENT-file-contents
@@ -20,46 +22,55 @@ POLICY="$(cat "$DIR"/policies/overview-web.json | sed -e "s/\$ENVIRONMENT/$ENVIR
 callaws iam create-role \
   --role-name=overview-$ENVIRONMENT-web \
   --assume-role-policy-document="$ASSUME_ROLE_POLICY"
-
+callaws iam update-assume-role-policy \
+  --role-name=overview-$ENVIRONMENT-web \
+  --policy-document="$ASSUME_ROLE_POLICY"
 callaws iam put-role-policy \
   --role-name overview-$ENVIRONMENT-web \
   --policy-name overview-$ENVIRONMENT-web-policy \
   --policy-document "$POLICY"
 
+POLICY="$(cat "$DIR"/policies/overview-worker.json | sed -e "s/\$ENVIRONMENT/$ENVIRONMENT/g")"
 callaws iam create-role \
   --role-name=overview-$ENVIRONMENT-worker \
   --assume-role-policy-document="$ASSUME_ROLE_POLICY"
-
-POLICY="$(cat "$DIR"/policies/overview-worker.json | sed -e "s/\$ENVIRONMENT/$ENVIRONMENT/g")"
+callaws iam update-assume-role-policy \
+  --role-name=overview-$ENVIRONMENT-worker \
+  --policy-document="$ASSUME_ROLE_POLICY"
 callaws iam put-role-policy \
   --role-name overview-$ENVIRONMENT-worker \
   --policy-name overview-$ENVIRONMENT-worker-policy \
   --policy-document "$POLICY"
 
-# Our "kube-ingress-alb" role spans all clusters.
-callaws iam create-role \
-  --role-name=kube-ingress-alb \
-  --assume-role-policy-document="$ASSUME_ROLE_POLICY"
-
 POLICY="$(cat "$DIR"/policies/kube-ingress-alb.json)"
+callaws iam create-role \
+  --role-name=$ENVIRONMENT-kube-ingress-alb \
+  --assume-role-policy-document="$ASSUME_ROLE_POLICY"
+callaws iam update-assume-role-policy \
+  --role-name=$ENVIRONMENT-kube-ingress-alb \
+  --policy-document="$ASSUME_ROLE_POLICY"
 callaws iam put-role-policy \
-  --role-name kube-ingress-alb \
-  --policy-name kube-ingress-alb-policy \
+  --role-name $ENVIRONMENT-kube-ingress-alb \
+  --policy-name $ENVIRONMENT-kube-ingress-alb \
   --policy-document "$POLICY"
 
-# Our "extenral-dns" role spans all clusters.
-callaws iam create-role \
-  --role-name=external-dns \
-  --assume-role-policy-document="$ASSUME_ROLE_POLICY"
-
 POLICY="$(cat "$DIR"/policies/external-dns.json)"
+callaws iam create-role \
+  --role-name=$ENVIRONMENT-external-dns \
+  --assume-role-policy-document="$ASSUME_ROLE_POLICY"
+callaws iam update-assume-role-policy \
+  --role-name=$ENVIRONMENT-external-dns \
+  --policy-document="$ASSUME_ROLE_POLICY"
 callaws iam put-role-policy \
-  --role-name external-dns \
-  --policy-name external-dns-policy \
+  --role-name $ENVIRONMENT-external-dns \
+  --policy-name $ENVIRONMENT-external-dns-policy \
   --policy-document "$POLICY"
 
 # And a default role, with no permissions, for all the pods that should run
 # without any AWS API access at all:
 callaws iam create-role \
-  --role-name=overview-default-role \
+  --role-name=$ENVIRONMENT-overview-default-role \
   --assume-role-policy-document="$ASSUME_ROLE_POLICY"
+callaws iam update-assume-role-policy \
+  --role-name=$ENVIRONMENT-overview-default-role \
+  --policy-document="$ASSUME_ROLE_POLICY"

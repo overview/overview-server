@@ -29,7 +29,7 @@ spec:
             - "--host-interface=cbr0"
             - "--host-ip=$(HOST_IP)"
             - "--iptables=true"
-            - "--default-role=overview-default-role"
+            - "--default-role=$ENVIRONMENT-overview-default-role"
           env:
             - name: HOST_IP
               valueFrom:

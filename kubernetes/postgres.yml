@@ -6,39 +6,28 @@ spec:
   ports:
   - port: 5432
   selector:
-    app: postgres
+    app: overview-database
   clusterIP: None
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: postgres-pv-claim
-spec:
-  accessModes:
-  - ReadWriteOnce
-  resources:
-    requests:
-      storage: 100Gi
 ---
 apiVersion: apps/v1beta2
 kind: Deployment
 metadata:
-  name: postgres
+  name: overview-database
 spec:
   selector:
     matchLabels:
-      app: postgres
+      app: overview-database
   strategy:
     type: Recreate
   template:
     metadata:
       labels:
-        app: postgres
+        app: overview-database
     spec:
       containers:
       - image: overview/overview-database:latest
         # Use :latest, not SHA1, so we don't try to roll over if we re-run ./start.sh
-        name: postgres
+        name: overview-database
         ports:
         - containerPort: 5432
           name: postgres
@@ -54,6 +43,7 @@ spec:
           value: /var/lib/postgresql/data/9.4
         args:
           - postgres
+          - "-clisten_addresses=*"
           - -ccheckpoint_segments=100
           - -cdynamic_shared_memory_type=posix
           - -ctimezone=UTC

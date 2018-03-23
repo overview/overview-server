@@ -1,0 +1,60 @@
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: postgres-pv
+  labels:
+    overview-service: postgres
+spec:
+  capacity:
+    storage: "500Gi"
+  accessModes:
+    - ReadWriteOnce
+  awsElasticBlockStore:
+    volumeID: vol-0e3e8d8260c1d37f4
+    fsType: ext4
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: searchindex-pv
+  labels:
+    overview-service: searchindex
+spec:
+  capacity:
+    storage: "300Gi"
+  accessModes:
+    - ReadWriteOnce
+  awsElasticBlockStore:
+    volumeID: vol-0bda1ad6874e35659
+    fsType: ext4
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pv-claim
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 500Gi
+  selector:
+    matchLabels:
+      overview-service: postgres
+  storageClassName: '' # https://bugzilla.redhat.com/show_bug.cgi?id=1464036
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: searchindex-pv-claim
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 300Gi
+  selector:
+    matchLabels:
+      overview-service: searchindex
+  storageClassName: '' # https://bugzilla.redhat.com/show_bug.cgi?id=1464036

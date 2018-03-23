@@ -5,6 +5,7 @@
 : ${MAILCHIMP_LIST_ID?You must set MAILCHIMP_LIST_ID and MAILCHIMP_API_KEY}
 : ${MAILCHIMP_API_KEY?You must set MAILCHIMP_LIST_ID and MAILCHIMP_API_KEY}
 : ${APPLICATION_SECRET?You must set APPLICATION_SECRET}
+: ${ENVIRONMENT?You must set ENVIRONMENT=staging or production}
 
 if [ -z "$APPLICATION_SECRET" ]; then
   echo 'Generating OV_APPLICATION_SECRET because you did not provide one'
@@ -79,8 +80,15 @@ EOT
 )
 echo $json | kubectl apply -f -
 
-kubectl apply -f "$DIR"/kube-ingress-aws-controller.yml
-kubectl apply -f "$DIR"/skipper-ingress.yml
-kubectl apply -f "$DIR"/external-dns.yml
+apply_template() {
+  cat "$DIR"/"$1" \
+    | sed -e "s@ENVIRONMENT@$ENVIRONMENT@" \
+    | kubectl apply -f -
+}
+
+apply_template kube2iam-ds.yml
+apply_template kube-ingress-aws-controller.yml
+apply_template skipper-ingress.yml
+apply_template external-dns.yml
 
 "$DIR"/../apply

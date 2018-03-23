@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -x
+
 source "$(dirname "$0")"/common
 
 : ${ENVIRONMENT?You must set ENVIRONMENT}
@@ -16,12 +18,12 @@ if ! (kops get clusters --state "$STATE_BUCKET" | grep -q ^$CLUSTER_NAME); then
     --state="$STATE_BUCKET" \
     --name=$CLUSTER_NAME \
     --authorization=RBAC \
-    --zones=us-east-1b,us-east-1d \
+    --zones=us-east-1a \
     --master-size=t2.micro \
     --node-count=1 \
     --node-size=r3.xlarge \
     --cloud-labels Environment=$ENVIRONMENT,kubernetes.io/cluster/$CLUSTER_NAME=owned \
-    --dns-zone $DNS_ZONE \
+    --dns-zone=$DNS_NAME \
     --vpc=$VPC_ID \
     --yes
 fi
@@ -36,7 +38,11 @@ kops update cluster \
   --name=$CLUSTER_NAME \
   --yes
 
-kops rolling-update cluster \
-  --state="$STATE_BUCKET"
+echo "Waiting for cluster to start..."
+until kops validate cluster --state=s3://kops-state.production.overviewdocs.com --name=production.overviewdocs.com; do
+  echo "Will retry in 60s..."
+  sleep 60
+done
 
-kubectl apply -f "$(dirname "$0")"/kube2iam-ds.yaml
+kops rolling-update cluster \
+  --state="$STATE_BUCKET" \

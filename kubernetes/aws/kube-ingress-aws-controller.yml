@@ -25,7 +25,7 @@ spec:
         application: kube-ingress-aws-controller
         component: ingress
       annotations:
-        iam.amazonaws.com/role: kube-ingress-alb
+        iam.amazonaws.com/role: ENVIRONMENT-kube-ingress-alb
     spec:
       serviceAccountName: kube-ingress-aws-controller-serviceaccount
       tolerations:

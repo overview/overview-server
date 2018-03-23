@@ -1,4 +1,4 @@
-ENVIRONMENT=staging
-DNS_NAME=staging.overviewdocs.com
-CLUSTER_NAME=staging.overviewdocs.com
+: ${ENVIRONMENT?You must set the ENVIRONMENT environment variable to staging or production}
+CLUSTER_NAME=$ENVIRONMENT.overviewdocs.com
+DNS_ZONE=$ENVIRONMENT.overviewdocs.com
 VPC_ID=vpc-5c3fd138

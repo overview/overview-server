@@ -42,8 +42,8 @@ spec:
           value: s3:BLOB_STORAGE_FILE_VIEW_S3_BUCKET
       volumes:
       - name: searchindex
-        hostPath:
-          path: /data/searchindex
+        persistentVolumeClaim:
+          claimName: searchindex-pv-claim
 ---
 apiVersion: v1
 kind: Service
