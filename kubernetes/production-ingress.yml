@@ -16,3 +16,15 @@ spec:
       - backend:
           serviceName: overview-web
           servicePort: 80
+  - host: www.overviewproject.org
+    http:
+      paths:
+      - backend:
+          serviceName: overview-web
+          servicePort: 80
+  - host: overviewproject.org
+    http:
+      paths:
+      - backend:
+          serviceName: overview-web
+          servicePort: 80
