@@ -412,7 +412,7 @@ data:
       @type rewrite_tag_filter
       <rule>
         key log
-        pattern ^(ERR|[0-9a-z.]*?(Exception|Error):)
+        pattern ^(\[?[Ee][Rr][Rr]|[0-9a-zA-Z.]*?(Exception|Error):)
         tag notify
       </rule>
       <rule>
