@@ -225,8 +225,8 @@ class HttpStepHandlerSpec extends Specification with Specs2RouteTest with Mockit
       )))
 
       httpPost(taskId, "/0.blob", ByteString("blob"))
-      httpPost(taskId, "/0.png", ByteString("thumb-png"))
-      httpPost(taskId, "/0.jpg", ByteString("thumb-jpg"))
+      httpPost(taskId, "/0-thumbnail.png", ByteString("thumb-png"))
+      httpPost(taskId, "/0-thumbnail.jpg", ByteString("thumb-jpg"))
       httpPost(taskId, "/0.txt", ByteString("text"))
       httpPost(taskId, "/progress", Json.toBytes(Json.obj(
         "children" -> Json.obj("nProcessed" -> 1, "nTotal" -> 5)
@@ -339,101 +339,101 @@ class HttpStepHandlerSpec extends Specification with Specs2RouteTest with Mockit
     //  taskId2 must not(beEqualTo(taskId))
     //}
 
-    //"allow to POST all fragments at once with multipart/form-data" in new BaseScope {
-    //  val taskId = createWorkerTask
+    "allow to POST all fragments at once with multipart/form-data" in new BaseScope {
+      val taskId = createWorkerTask
 
-    //  httpPost(taskId, "", Multipart.FormData(Source(Vector(
-    //    Multipart.FormData.BodyPart.Strict(
-    //      // Strict
-    //      "0.json",
-    //      HttpEntity.Strict(ContentTypes.`application/json`, ByteString(Json.toBytes(Json.obj(
-    //        "filename" -> "aFilename",
-    //        "contentType" -> "foo/bar",
-    //        "languageCode" -> "fr",
-    //        "metadata" -> Json.obj("foo" -> "bar"),
-    //        "wantOcr" -> true,
-    //        "wantSplitByPage" -> false
-    //      ))))
-    //    ),
-    //    Multipart.FormData.BodyPart(
-    //      // indefinite-length; also, ignore the content-type
-    //      "0.blob",
-    //      HttpEntity.IndefiniteLength(ContentTypes.`application/octet-stream`, Source.single(ByteString("blob")))
-    //    ),
-    //    Multipart.FormData.BodyPart(
-    //      // multiple chunks
-    //      "0.png",
-    //      HttpEntity.IndefiniteLength(ContentTypes.NoContentType, Source(Vector(
-    //        ByteString("thumb"),
-    //        ByteString("-png")
-    //      )))
-    //    ),
-    //    Multipart.FormData.BodyPart(
-    //      // ignore content-type; stream
-    //      "0.jpg",
-    //      HttpEntity.Default(ContentTypes.`application/octet-stream`, 9, Source.single(ByteString("thumb-jpg")))
-    //    ),
-    //    Multipart.FormData.BodyPart(
-    //      "0.txt",
-    //      HttpEntity.IndefiniteLength(ContentTypes.`text/plain(UTF-8)`, Source.single(ByteString("text")))
-    //    ),
-    //    Multipart.FormData.BodyPart(
-    //      "progress",
-    //      HttpEntity.IndefiniteLength(ContentTypes.NoContentType, Source.single(ByteString(Json.toBytes(
-    //        Json.obj("children" -> Json.obj("nProcessed" -> 1, "nTotal" -> 5))
-    //      ))))
-    //    ),
-    //    Multipart.FormData.BodyPart(
-    //      "progress",
-    //      HttpEntity.IndefiniteLength(ContentTypes.`application/json`, Source.single(ByteString(Json.toBytes(
-    //        Json.obj("bytes" -> Json.obj("nProcessed" -> 100, "nTotal" -> 10000))
-    //      ))))
-    //    ),
-    //    Multipart.FormData.BodyPart(
-    //      "progress",
-    //      HttpEntity.IndefiniteLength(ContentTypes.`application/json`, Source.single(ByteString("23.1312")))
-    //    ),
-    //    Multipart.FormData.BodyPart.Strict(
-    //      "done",
-    //      HttpEntity.Strict(ContentTypes.NoContentType, ByteString(""))
-    //    )
-    //  ))).toEntity)
+      httpPost(taskId, "", Multipart.FormData(Source(Vector(
+        Multipart.FormData.BodyPart.Strict(
+          // Strict
+          "0.json",
+          HttpEntity.Strict(ContentTypes.`application/json`, ByteString(Json.toBytes(Json.obj(
+            "filename" -> "aFilename",
+            "contentType" -> "foo/bar",
+            "languageCode" -> "fr",
+            "metadata" -> Json.obj("foo" -> "bar"),
+            "wantOcr" -> true,
+            "wantSplitByPage" -> false
+          ))))
+        ),
+        Multipart.FormData.BodyPart(
+          // indefinite-length; also, ignore the content-type
+          "0.blob",
+          HttpEntity.IndefiniteLength(ContentTypes.`application/octet-stream`, Source.single(ByteString("blob")))
+        ),
+        Multipart.FormData.BodyPart(
+          // multiple chunks
+          "0-thumbnail.png",
+          HttpEntity.IndefiniteLength(ContentTypes.NoContentType, Source(Vector(
+            ByteString("thumb"),
+            ByteString("-png")
+          )))
+        ),
+        Multipart.FormData.BodyPart(
+          // ignore content-type; stream
+          "0-thumbnail.jpg",
+          HttpEntity.Default(ContentTypes.`application/octet-stream`, 9, Source.single(ByteString("thumb-jpg")))
+        ),
+        Multipart.FormData.BodyPart(
+          "0.txt",
+          HttpEntity.IndefiniteLength(ContentTypes.`text/plain(UTF-8)`, Source.single(ByteString("text")))
+        ),
+        Multipart.FormData.BodyPart(
+          "progress",
+          HttpEntity.IndefiniteLength(ContentTypes.NoContentType, Source.single(ByteString(Json.toBytes(
+            Json.obj("children" -> Json.obj("nProcessed" -> 1, "nTotal" -> 5))
+          ))))
+        ),
+        Multipart.FormData.BodyPart(
+          "progress",
+          HttpEntity.IndefiniteLength(ContentTypes.`application/json`, Source.single(ByteString(Json.toBytes(
+            Json.obj("bytes" -> Json.obj("nProcessed" -> 100, "nTotal" -> 10000))
+          ))))
+        ),
+        Multipart.FormData.BodyPart(
+          "progress",
+          HttpEntity.IndefiniteLength(ContentTypes.`application/json`, Source.single(ByteString("23.1312")))
+        ),
+        Multipart.FormData.BodyPart.Strict(
+          "done",
+          HttpEntity.Strict(ContentTypes.NoContentType, ByteString(""))
+        )
+      ))).toEntity)
 
-    //  end
+      end
 
-    //  val fragments = postedFragments.toIterator
-    //  fragments.next must beEqualTo(StepOutputFragment.File2Header(
-    //    0,
-    //    "aFilename",
-    //    "foo/bar",
-    //    "fr",
-    //    Json.obj("foo" -> "bar"),
-    //    true,
-    //    false
-    //  ))
-    //  fragments.next must beLike { case StepOutputFragment.Blob(i, b) =>
-    //    i must beEqualTo(0)
-    //    sourceToBytes(b) must beEqualTo("blob".getBytes("utf-8"))
-    //  }
-    //  fragments.next must beLike { case StepOutputFragment.Thumbnail(i, c, b) =>
-    //    i must beEqualTo(0)
-    //    c must beEqualTo("image/png")
-    //    sourceToBytes(b) must beEqualTo("thumb-png".getBytes("utf-8"))
-    //  }
-    //  fragments.next must beLike { case StepOutputFragment.Thumbnail(i, c, b) =>
-    //    i must beEqualTo(0)
-    //    c must beEqualTo("image/jpeg")
-    //    sourceToBytes(b) must beEqualTo("thumb-jpg".getBytes("utf-8"))
-    //  }
-    //  fragments.next must beLike { case StepOutputFragment.Text(i, b) =>
-    //    i must beEqualTo(0)
-    //    sourceToBytes(b) must beEqualTo("text".getBytes("utf-8"))
-    //  }
-    //  fragments.next must beEqualTo(StepOutputFragment.ProgressChildren(1, 5))
-    //  fragments.next must beEqualTo(StepOutputFragment.ProgressBytes(100, 10000))
-    //  fragments.next must beEqualTo(StepOutputFragment.ProgressFraction(23.1312))
-    //  fragments.next must beEqualTo(StepOutputFragment.Done)
-    //  fragments.hasNext must beFalse
-    //}.pendingUntilFixed // bug in Flow.scanAsync() makes it not complete upon upstream complete, in this test. TODO debug it!
+      val fragments = postedFragments.toIterator
+      fragments.next must beEqualTo(StepOutputFragment.File2Header(
+        0,
+        "aFilename",
+        "foo/bar",
+        "fr",
+        Json.obj("foo" -> "bar"),
+        true,
+        false
+      ))
+      fragments.next must beLike { case StepOutputFragment.Blob(i, b) =>
+        i must beEqualTo(0)
+        sourceToBytes(b) must beEqualTo("blob".getBytes("utf-8"))
+      }
+      fragments.next must beLike { case StepOutputFragment.Thumbnail(i, c, b) =>
+        i must beEqualTo(0)
+        c must beEqualTo("image/png")
+        sourceToBytes(b) must beEqualTo("thumb-png".getBytes("utf-8"))
+      }
+      fragments.next must beLike { case StepOutputFragment.Thumbnail(i, c, b) =>
+        i must beEqualTo(0)
+        c must beEqualTo("image/jpeg")
+        sourceToBytes(b) must beEqualTo("thumb-jpg".getBytes("utf-8"))
+      }
+      fragments.next must beLike { case StepOutputFragment.Text(i, b) =>
+        i must beEqualTo(0)
+        sourceToBytes(b) must beEqualTo("text".getBytes("utf-8"))
+      }
+      fragments.next must beEqualTo(StepOutputFragment.ProgressChildren(1, 5))
+      fragments.next must beEqualTo(StepOutputFragment.ProgressBytes(100, 10000))
+      fragments.next must beEqualTo(StepOutputFragment.ProgressFraction(23.1312))
+      fragments.next must beEqualTo(StepOutputFragment.Done)
+      fragments.hasNext must beFalse
+    }
   }
 }
