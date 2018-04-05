@@ -80,6 +80,7 @@ class FileGroupImportMonitor(
       SELECT ${documentSetId}, file2_id
       FROM grouped_file_upload
       WHERE file_group_id = ${fileGroupId}
+        AND file2_id IS NOT NULL
         AND NOT EXISTS (SELECT 1 FROM document_set_file2 WHERE document_set_file2.file2_id = grouped_file_upload.file2_id)
     """
   }
