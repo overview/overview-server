@@ -21,6 +21,7 @@ import com.overviewdocs.blobstorage.BlobStorage
 import com.overviewdocs.ingest.File2Writer
 import com.overviewdocs.ingest.model.{WrittenFile2,ConvertOutputElement}
 import com.overviewdocs.models.File2
+import com.overviewdocs.util.Logger
 
 class HttpStepHandler(
   stepId: String,
@@ -30,6 +31,7 @@ class HttpStepHandler(
   workerIdleTimeout: FiniteDuration,
   httpCreateIdleTimeout: FiniteDuration
 ) {
+  private val logger = Logger.forClass(getClass)
   private val unresponsiveTimeout = Duration(2, "s") // for ask()
   private val postTimeout = Duration(30, "minutes")
   private val postMultipartTimeout = Duration(6, "hours")
@@ -86,7 +88,7 @@ class HttpStepHandler(
 
       val source = MergeHub.source[ConvertOutputElement]
       Flow.fromSinkAndSourceCoupledMat(sink, source)(Keep.both)
-    }
+    }.named("HttpStepHandler.coupledFlow")
 
     coupledFlow
       .watchTermination() { (tuple: (ActorRef, Sink[ConvertOutputElement, akka.NotUsed]), futureDone: Future[akka.Done]) =>
@@ -106,8 +108,12 @@ class HttpStepHandler(
           actorRefFactory.stop(workerTaskPoolRef)
         }
         futureDone.onComplete {
-          case Success(_) => shutdown
+          case Success(_) => {
+            logger.info("shutdown from successful coupledFlow termination")
+            shutdown
+          }
           case Failure(ex) => {
+            logger.info("shutdown from coupledFlow failure")
             ex.printStackTrace()
             shutdown
           }
