@@ -43,6 +43,10 @@ services:
     networks: [ 'database' ]
     depends_on: [ 'overview-database' ]
 
+  # === Converters: needed for tests to pass ===
+  #
+  # We want to test that Overview coexists with its recommended converter
+  # versions. That's why all these converters are here.
   overview-convert-archive:
     image: "${CONVERT_ARCHIVE_IMAGE}"
     networks: [ 'worker' ]
@@ -72,7 +76,7 @@ services:
     image: overview/overview-integration-tester:${OVERVIEW_INTEGRATION_TESTER_VERSION}
     command: sh -c "xvfb-run -a -s '-screen 0 1200x900x24' ./all-tests"
     shm_size: 2g
-    depends_on: [ 'overview-web', 'overview-convert-archive', 'overview-convert-image', 'overview-convert-office' ]
+    depends_on: [ 'overview-web', 'overview-convert-archive', 'overview-convert-image', 'overview-convert-office', 'overview-convert-pdfocr' ]
     environment:
       OVERVIEW_URL: http://overview-web
       WAIT_FOR_URLS: ${WAIT_FOR_URLS}
