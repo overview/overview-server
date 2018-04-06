@@ -40,6 +40,6 @@ services:
       - '127.0.0.1:9000:80'
 
   convert-archive:
-    image: "${CONVERT_ARCHIVE_VERSION}"
+    image: "${CONVERT_ARCHIVE_IMAGE}"
     environment:
       POLL_URL: 'http://overview-worker:9032/Archive'

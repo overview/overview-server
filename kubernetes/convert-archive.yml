@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: convert-archive
-        image: overview/overview-convert-archive:2.0.2
+        image: $CONVERT_ARCHIVE_IMAGE
         env:
         - name: POLL_URL
           value: http://overview-worker:9032/Archive

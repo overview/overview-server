@@ -1,6 +1,8 @@
 #!/bin/bash
 
-VERSION=${1:-latest}
+if [ -z "$VERSION" ]; then
+  VERSION=${1:-latest}
+fi
 
 if [ "$ENVIRONMENT" = "staging" ]; then
   BLOB_STORAGE_FILE_CONTENTS_S3_BUCKET="overview-staging-file-contents"
@@ -27,7 +29,7 @@ pipe_template() {
     | sed -e "s@BLOB_STORAGE_FILE_VIEW_S3_BUCKET@$BLOB_STORAGE_FILE_VIEW_S3_BUCKET@" \
     | sed -e "s@OV_GOOGLE_ANALYTICS_ID@$OV_GOOGLE_ANALYTICS_ID@" \
     | sed -e "s@OV_CANONICAL_URL@$OV_CANONICAL_URL@" \
-    | sed -e "s@CONVERT_ARCHIVE_VERSION@$CONVERT_ARCHIVE_VERSION@"
+    | sed -e "s@CONVERT_ARCHIVE_IMAGE@$CONVERT_ARCHIVE_IMAGE@"
 }
 
 apply_template() {
