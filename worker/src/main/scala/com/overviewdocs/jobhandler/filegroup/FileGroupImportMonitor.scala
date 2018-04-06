@@ -204,6 +204,7 @@ object FileGroupImportMonitor {
       Step.all(
         file2Writer,
         config.getInt("ingest.n_document_converters"),
+        config.getInt("ingest.max_n_http_workers_per_step"),
         Duration.fromNanos(config.getDuration("ingest.worker_idle_timeout").toNanos),
         Duration.fromNanos(config.getDuration("ingest.worker_http_create_timeout").toNanos)
       ),

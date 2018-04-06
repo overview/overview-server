@@ -69,6 +69,7 @@ object Step {
   def all(
     file2Writer: File2Writer,
     maxNWorkers: Int,
+    maxNHttpWorkers: Int,
     workerIdleTimeout: FiniteDuration,
     httpCreateIdleTimeout: FiniteDuration
   )(implicit mat: ActorMaterializer): Vector[Step] = Vector(
@@ -81,7 +82,7 @@ object Step {
       "Archive" -> 0.1
     ),
     file2Writer,
-    maxNWorkers,
+    maxNHttpWorkers,
     workerIdleTimeout,
     httpCreateIdleTimeout
   ).steps
