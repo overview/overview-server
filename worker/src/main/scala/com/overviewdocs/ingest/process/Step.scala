@@ -16,10 +16,6 @@ trait Step {
   val id: String
   val progressWeight: Double
   val flow: Flow[WrittenFile2, ConvertOutputElement, Route]
-
-  // We treat some Steps specially, based on their IDs:
-  // "Ocr": skip this Step if the user didn't ask for OCR
-  val isOcr: Boolean = (id == "Ocr")
 }
 
 object Step {
@@ -74,13 +70,13 @@ object Step {
     httpCreateIdleTimeout: FiniteDuration
   )(implicit mat: ActorMaterializer): Vector[Step] = Vector(
     new StepLogicStep(file2Writer, new SplitExtractStepLogic, maxNWorkers),
-    new StepLogicStep(file2Writer, new OcrStepLogic, maxNWorkers),
     new StepLogicStep(file2Writer, new UnhandledStepLogic, 1),
   ) ++ new HttpSteps(
     Vector(
       "Archive" -> 0.1,
       "Image" -> 1.0,
-      "Office" -> 0.75
+      "Office" -> 0.75,
+      "PdfOcr" -> 0.75
     ),
     file2Writer,
     maxNHttpWorkers,

@@ -1,0 +1,43 @@
+---
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: convert-pdfocr-deployment
+spec:
+  selector:
+    matchLabels:
+      app: convert-pdfocr
+  replicas: 1
+  revisionHistoryLimit: 20
+  template:
+    metadata:
+      labels:
+        app: convert-pdfocr
+    spec:
+      containers:
+      - name: convert-pdfocr
+        image: CONVERT_PDFOCR_IMAGE
+        env:
+        - name: POLL_URL
+          value: http://overview-worker:9032/PdfOcr
+        resources:
+          requests:
+            cpu: 50m
+            memory: 50Mi
+          limits:
+            cpu: 1
+            memory: 500Mi # total guess
+---
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: convert-pdfocr
+  namespace: default
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1beta2
+    kind: Deployment
+    name: convert-pdfocr-deployment
+  minReplicas: 1
+  maxReplicas: 4
+  targetCPUUtilizationPercentage: 50

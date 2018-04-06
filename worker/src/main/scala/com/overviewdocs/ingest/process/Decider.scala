@@ -48,7 +48,7 @@ class Decider(
     }
 
     case object PdfStep extends NextStep {
-      val ocrStep = steps.find(_.id == "Ocr").get
+      val ocrStep = steps.find(_.id == "PdfOcr").get
       val noOcrStep = steps.find(_.id == "SplitExtract").get
 
       override def forFile(file: WrittenFile2) = {

@@ -53,3 +53,8 @@ services:
     image: "${CONVERT_OFFICE_IMAGE}"
     environment:
       POLL_URL: 'http://overview-worker:9032/Office'
+
+  convert-pdfocr:
+    image: "${CONVERT_PDFOCR_IMAGE}"
+    environment:
+      POLL_URL: 'http://overview-worker:9032/PdfOcr'
