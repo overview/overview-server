@@ -41,7 +41,7 @@ spec:
         - name: BLOB_STORAGE_FILE_VIEW_LOCATION
           value: s3:BLOB_STORAGE_FILE_VIEW_S3_BUCKET
         - name: OV_N_DOCUMENT_CONVERTERS
-          value: 3
+          value: "3"
       volumes:
       - name: searchindex
         persistentVolumeClaim:

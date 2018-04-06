@@ -6,7 +6,7 @@ metadata:
 spec:
   selector:
     matchLabels:
-      app: convert-archive
+      app: convert-image
   replicas: 1
   revisionHistoryLimit: 20
   template:

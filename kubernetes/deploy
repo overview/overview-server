@@ -3,7 +3,7 @@
 # This is run by Jenkins. It should update the Overview cluster to the latest version
 
 set -e
-set -x
+#set -x
 
 if [ ! -d ~/bin ]; then
   mkdir -p ~/bin
