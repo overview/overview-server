@@ -7,9 +7,8 @@ set -x
 
 if [ ! -d ~/bin ]; then
   mkdir -p ~/bin
-  export PATH="$HOME/bin:$PATH"
-  # else hope $HOME/bin is already part of $PATH (see ~/.profile)
 fi
+export PATH="$HOME/bin:$PATH"
 
 if [ ! -x ~/bin/kops ]; then
   curl -L https://github.com/kubernetes/kops/releases/download/1.8.1/kops-linux-amd64 > ~/bin/kops
