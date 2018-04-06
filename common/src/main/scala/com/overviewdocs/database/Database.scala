@@ -209,7 +209,7 @@ object Database {
         poolName: "$path",
         numThreads: 5,
         registerMbeans: false,
-        queueSize: 1000
+        queueSize: -1
       """))
 
     while (true) {
