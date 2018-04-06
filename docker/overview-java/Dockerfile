@@ -19,6 +19,7 @@ RUN set -x \
         ttf-freefont \
         msttcorefonts-installer \
         runit \
+        tini \
       && update-ms-fonts && fc-cache -f \
       && wget -P /usr/share/tessdata \
         https://github.com/tesseract-ocr/tessdata/raw/3.04.00/osd.traineddata \
