@@ -2,7 +2,7 @@
 apiVersion: apps/v1beta2
 kind: Deployment
 metadata:
-  name: convert-archive-deployment
+  name: convert-image-deployment
 spec:
   selector:
     matchLabels:
@@ -12,32 +12,32 @@ spec:
   template:
     metadata:
       labels:
-        app: convert-archive
+        app: convert-image
     spec:
       containers:
-      - name: convert-archive
-        image: CONVERT_ARCHIVE_IMAGE
+      - name: convert-image
+        image: CONVERT_IMAGE_IMAGE
         env:
         - name: POLL_URL
-          value: http://overview-worker:9032/Archive
+          value: http://overview-worker:9032/Image
         resources:
           requests:
             cpu: 50m
             memory: 50Mi
           limits:
             cpu: 1
-            memory: 100Mi # convert-archive should always use next to nothing
+            memory: 200Mi # total guess
 ---
 apiVersion: autoscaling/v1
 kind: HorizontalPodAutoscaler
 metadata:
-  name: convert-archive
+  name: convert-image
   namespace: default
 spec:
   scaleTargetRef:
     apiVersion: apps/v1beta2
     kind: Deployment
-    name: convert-archive-deployment
+    name: convert-image-deployment
   minReplicas: 1
   maxReplicas: 4
   targetCPUUtilizationPercentage: 50

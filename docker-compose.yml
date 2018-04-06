@@ -43,3 +43,13 @@ services:
     image: "${CONVERT_ARCHIVE_IMAGE}"
     environment:
       POLL_URL: 'http://overview-worker:9032/Archive'
+
+  convert-image:
+    image: "${CONVERT_IMAGE_IMAGE}"
+    environment:
+      POLL_URL: 'http://overview-worker:9032/Image'
+
+  convert-office:
+    image: "${CONVERT_OFFICE_IMAGE}"
+    environment:
+      POLL_URL: 'http://overview-worker:9032/Office'

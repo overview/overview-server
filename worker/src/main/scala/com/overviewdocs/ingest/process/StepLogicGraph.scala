@@ -71,7 +71,7 @@ class StepLogicFlow(logic: StepLogic, file2Writer: File2Writer, parallelism: Int
     parentFile2: WrittenFile2
   )(implicit mat: Materializer): Source[ConvertOutputElement, akka.NotUsed] = {
     implicit val ec = mat.executionContext
-    logger.info("Processing file2 {} ({}, {} bytes", parentFile2.id, parentFile2.filename, parentFile2.blob.nBytes)
+    logger.info("Processing file2 {} ({}, {} bytes)", parentFile2.id, parentFile2.filename, parentFile2.blob.nBytes)
 
     logic.toChildFragments(file2Writer.blobStorage, parentFile2)
       .via(stepOutputFragmentCollector.flowForParent(parentFile2))

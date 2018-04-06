@@ -3,9 +3,9 @@
 # tar -c ./* -C $SOME_OTHER_DIRECTORY some_files_from_other_directory | docker build -
 FROM alpine:3.7
 
-# libreoffice+tesseract are only for worker. Since Docker will only
+# tesseract is only for worker. Since Docker will only
 # keep one copy of this image, it actually _saves_ space to include
-# libreoffice+tesseract in the web+db-evolution-applier images
+# tesseract in the web+db-evolution-applier images
 #
 # runit's `chpst` is used by the worker to limit subprocess sizes.
 # TODO make each subprocess a separate Docker container
@@ -13,7 +13,6 @@ RUN set -x \
       && apk add --update --no-cache \
         openjdk8-jre-base \
         ca-certificates \
-        libreoffice \
         openssl \
         tesseract-ocr \
         ttf-freefont \

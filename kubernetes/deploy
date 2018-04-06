@@ -39,3 +39,5 @@ evolve_database
 apply_template web.yml
 apply_template worker.yml
 apply_template convert-archive.yml
+apply_template convert-image.yml
+apply_template convert-office.yml

@@ -75,11 +75,12 @@ object Step {
   )(implicit mat: ActorMaterializer): Vector[Step] = Vector(
     new StepLogicStep(file2Writer, new SplitExtractStepLogic, maxNWorkers),
     new StepLogicStep(file2Writer, new OcrStepLogic, maxNWorkers),
-    new StepLogicStep(file2Writer, new OfficeStepLogic, maxNWorkers),
     new StepLogicStep(file2Writer, new UnhandledStepLogic, 1),
   ) ++ new HttpSteps(
     Vector(
-      "Archive" -> 0.1
+      "Archive" -> 0.1,
+      "Image" -> 1.0,
+      "Office" -> 0.75
     ),
     file2Writer,
     maxNHttpWorkers,

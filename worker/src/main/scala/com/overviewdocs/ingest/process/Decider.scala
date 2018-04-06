@@ -61,8 +61,9 @@ class Decider(
     }
 
     val Pdf = PdfStep
-    val Office = SimpleStep("Office")
     val Archive = SimpleStep("Archive")
+    val Image = SimpleStep("Image")
+    val Office = SimpleStep("Office")
     val Unhandled = SimpleStep("Unhandled")
   }
 
@@ -86,6 +87,9 @@ class Decider(
     "application/x-xz" -> NextStep.Archive,
     "application/x-xz-compressed-tar" -> NextStep.Archive,
     "application/zip" -> NextStep.Archive,
+
+    "image/jpeg" -> NextStep.Image,
+    "image/png" -> NextStep.Image,
 
     "application/clarisworks" -> NextStep.Office,
     "application/excel" -> NextStep.Office,

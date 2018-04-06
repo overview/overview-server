@@ -51,7 +51,7 @@ class DeciderSpec extends Specification with Mockito {
           (ctx: RequestContext) => Future.successful(RouteResult.Rejected(Nil))
         }
     }
-    val steps = Vector("Ocr", "SplitExtract", "Office", "Archive", "Unhandled").map(MockStep.apply _)
+    val steps = Vector("Ocr", "SplitExtract", "Office", "Archive", "Image", "Unhandled").map(MockStep.apply _)
     val decider = new Decider(steps, mockBlobStorage)
   }
 

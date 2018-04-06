@@ -18,6 +18,8 @@ apply_template redis.yml
 apply_template worker.yml
 apply_template web.yml
 apply_template convert-archive.yml
+apply_template convert-image.yml
+apply_template convert-office.yml
 
 echo "Building ingress..."
 apply_template $ENVIRONMENT-ingress.yml

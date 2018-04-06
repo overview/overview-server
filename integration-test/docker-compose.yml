@@ -49,12 +49,24 @@ services:
     environment:
       POLL_URL: 'http://overview-worker:9032/Archive'
 
+  overview-convert-image:
+    image: "${CONVERT_IMAGE_IMAGE}"
+    networks: [ 'worker' ]
+    environment:
+      POLL_URL: 'http://overview-worker:9032/Image'
+
+  overview-convert-office:
+    image: "${CONVERT_OFFICE_IMAGE}"
+    networks: [ 'worker' ]
+    environment:
+      POLL_URL: 'http://overview-worker:9032/Office'
+
   # === The integration-test runner ===
   integration-test:
     image: overview/overview-integration-tester:${OVERVIEW_INTEGRATION_TESTER_VERSION}
     command: sh -c "xvfb-run -a -s '-screen 0 1200x900x24' ./all-tests"
     shm_size: 2g
-    depends_on: [ 'overview-web', 'overview-convert-archive' ]
+    depends_on: [ 'overview-web', 'overview-convert-archive', 'overview-convert-image', 'overview-convert-office' ]
     environment:
       OVERVIEW_URL: http://overview-web
       WAIT_FOR_URLS: ${WAIT_FOR_URLS}
