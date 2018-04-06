@@ -22,7 +22,7 @@ fi
 
 kops export kubecfg \
   --state s3://kops-state.production.overviewdocs.com \
-  --name production.cluster.overviewdocs.com
+  --name production.overviewdocs.com
 
 DIR="$(dirname "$0")"
 . "$DIR"/common
