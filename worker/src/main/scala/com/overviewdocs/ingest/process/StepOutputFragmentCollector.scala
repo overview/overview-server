@@ -38,11 +38,24 @@ class StepOutputFragmentCollector(file2Writer: File2Writer, logicName: String, p
   )(implicit mat: Materializer): Flow[StepOutputFragment, ConvertOutputElement, akka.NotUsed] = {
     implicit val ec = mat.executionContext
 
-    val initialState = initialStateForInput(parentFile2)
-
+    //.scanAsync does not complete for us, akka-streams 2.5.11.
+    // Perhaps https://github.com/akka/akka/pull/24817 fixes it?
+    // In the meantime, we'll use .mapAsync()+.mapConcat(identity)
+    //val initialState = initialStateForInput(parentFile2)
+    //Flow[StepOutputFragment]
+    //  .scanAsync(initialState)((state, fragment) => transitionState(state, fragment))
+    //  .mapConcat(_.toEmit) // ConvertOutputElement
+    var hackyMutatingState = initialStateForInput(parentFile2)
     Flow[StepOutputFragment]
-      .scanAsync(initialState)((state, fragment) => transitionState(state, fragment))
-      .mapConcat(_.toEmit) // ConvertOutputElement
+      .mapAsync(1) { fragment =>
+        for {
+          newState <- transitionState(hackyMutatingState, fragment)
+        } yield {
+          hackyMutatingState = newState
+          hackyMutatingState.toEmit
+        }
+      }
+      .mapConcat(identity _)
   }
 
   def transitionState(
