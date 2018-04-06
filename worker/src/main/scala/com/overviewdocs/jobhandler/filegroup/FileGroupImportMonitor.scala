@@ -94,9 +94,9 @@ class FileGroupImportMonitor(
     for {
       _ <- database.runUnit(addFileGroupFilesToDocumentSetFiles(fileGroup.id, documentSetId))
       _ <- database.delete(compiledGroupedFileUploadsForFileGroup(fileGroup.id))
-      _ <- database.delete(compiledFileGroup(fileGroup.id))
       _ <- reindexFuture
       _ <- AddDocumentsCommon.afterAddDocuments(documentSetId)
+      _ <- database.delete(compiledFileGroup(fileGroup.id)) // lets user navigate to docset
     } yield {
       fileGroupJob.onComplete()
 
