@@ -222,7 +222,7 @@ object Database {
 				// Copied from Slick's internals
 				val poolName = config.getString("poolName")
 				val numThreads = config.getInt("numThreads")
-				val maxConnections = jdbcDataSource.maxConnections.fold(numThreads*5)(identity)
+				val maxConnections = jdbcDataSource.maxConnections.getOrElse(numThreads)
 				val registerMbeans = config.getBoolean("registerMbeans")
 				val executor = AsyncExecutor(poolName, numThreads, numThreads, config.getInt("queueSize"),
 					maxConnections, registerMbeans = registerMbeans)
