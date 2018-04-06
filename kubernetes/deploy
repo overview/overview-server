@@ -5,6 +5,22 @@
 set -e
 set -x
 
+if [ ! -d ~/bin ]; then
+  mkdir -p ~/bin
+  export PATH="$HOME/bin:$PATH"
+  # else hope $HOME/bin is already part of $PATH (see ~/.profile)
+fi
+
+if [ ! -x ~/bin/kops ]; then
+  curl -L https://github.com/kubernetes/kops/releases/download/1.8.1/kops-linux-amd64 > ~/bin/kops
+  chmod +x ~/bin/kops
+fi
+
+if [ ! -x ~/bin/kubectl ]; then
+  curl -L https://storage.googleapis.com/kubernetes-release/release/v1.9.1/bin/linux/amd64/kubectl > ~/bin/kubectl
+  chmod +x ~/bin/kubectl
+fi
+
 kops export kubecfg \
   --state s3://kops-state.production.overviewdocs.com \
   --name production.cluster.overviewdocs.com
