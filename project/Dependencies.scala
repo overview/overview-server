@@ -40,8 +40,8 @@ object Dependencies {
     val postgresql = "org.postgresql" % "postgresql" % "42.1.1"
     val re2j = "com.google.re2j" % "re2j" % "1.1"
     val redis = "com.github.etaty" %% "rediscala" % "1.8.0"
-    val slick = "com.typesafe.slick" %% "slick" % "3.2.2"
-    val slickHikariCp = "com.typesafe.slick" %% "slick-hikaricp" % "3.2.2"
+    val slick = "com.typesafe.slick" %% "slick" % "3.2.3"
+    val slickHikariCp = "com.typesafe.slick" %% "slick-hikaricp" % "3.2.3"
     val specs2Core = "org.specs2" %% "specs2-core" % "3.8.9"
     val specs2Junit = "org.specs2" %% "specs2-junit" % "3.8.9" // for XML reporting, for Jenkins
     val specs2MatcherExtra = "org.specs2" %% "specs2-matcher-extra" % "3.8.9"
