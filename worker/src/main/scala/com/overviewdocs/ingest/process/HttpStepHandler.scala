@@ -373,10 +373,7 @@ class HttpStepHandler(
         for {
           _ <- ask(workerTaskRef, HttpWorker.ProcessFragments(fragments))(postMultipartTimeout)
           routeResult <- ctx.complete(StatusCodes.Accepted)
-        } yield {
-          System.err.println("Done! Route result: " + routeResult)
-          routeResult
-        }
+        } yield routeResult
       }
     }
 
