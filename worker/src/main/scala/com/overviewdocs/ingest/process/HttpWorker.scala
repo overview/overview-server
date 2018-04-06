@@ -149,13 +149,26 @@ class HttpWorker(
   }
 
   private def processFragments(state: StepOutputFragmentCollector.State, fragments: Source[StepOutputFragment, akka.NotUsed]): Unit = {
+    var hackyMutatingState = state
     fragments
-      .scanAsync[StepOutputFragmentCollector.State](state)(stepOutputFragmentCollector.transitionState)
-      .drop(1) // scanAsync outputs its initial State; we don't want it
-      .mapConcat { state =>
-        self ! HttpWorker.UpdateState(state)
-        state.toEmit
+      //.scanAsync does not complete for us, akka-streams 2.5.11.
+      // Perhaps https://github.com/akka/akka/pull/24817 fixes it?
+      // In the meantime, we'll use .mapAsync()+.mapConcat(identity)
+      //BROKEN: .scanAsync[StepOutputFragmentCollector.State](state)(stepOutputFragmentCollector.transitionState)
+      //BROKEN: .drop(1) // scanAsync outputs its initial State; we don't want it
+      //BROKEN: .mapConcat { state =>
+      //BROKEN:   self ! HttpWorker.UpdateState(state)
+      //BROKEN:   state.toEmit
+      //BROKEN: }
+      .mapAsync(1) { fragment =>
+        for {
+          newState <- stepOutputFragmentCollector.transitionState(hackyMutatingState, fragment)
+        } yield {
+          hackyMutatingState = newState
+          hackyMutatingState.toEmit
+        }
       }
+      .mapConcat(identity _)
       // Any ConvertOutputElement at this point is "safe" to read -- it
       // does not depend on upstream HTTP POST request bytes like a
       // StepOutputFragment does. So once we've seen the final fragment in
@@ -163,11 +176,13 @@ class HttpWorker(
       .watchTermination() { (mat, doneFuture) =>
         doneFuture.onComplete {
           case Success(_) => {
+            self ! HttpWorker.UpdateState(hackyMutatingState)
             self ! HttpWorker.DoneProcessingFragments
           }
           case Failure(err) => {
             // This is a critical error. We have no idea what to do.
             err.printStackTrace()
+            self ! HttpWorker.UpdateState(hackyMutatingState)
             self ! HttpWorker.DoneProcessingFragments
           }
         }

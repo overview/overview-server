@@ -294,7 +294,7 @@ class HttpStepHandler(
       val JsonPattern = """([0-9]{1,8}).json""".r
       val BlobPattern = """([0-9]{1,8}).blob""".r
       val TextPattern = """([0-9]{1,8}).txt""".r
-      val ThumbnailPattern = """([0-9]{1,8}).(png|jpg)""".r
+      val ThumbnailPattern = """([0-9]{1,8})-thumbnail.(png|jpg)""".r
 
       name match {
         case JsonPattern(indexInParent) => {
@@ -373,7 +373,10 @@ class HttpStepHandler(
         for {
           _ <- ask(workerTaskRef, HttpWorker.ProcessFragments(fragments))(postMultipartTimeout)
           routeResult <- ctx.complete(StatusCodes.Accepted)
-        } yield routeResult
+        } yield {
+          System.err.println("Done! Route result: " + routeResult)
+          routeResult
+        }
       }
     }
 
