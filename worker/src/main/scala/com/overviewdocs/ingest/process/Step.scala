@@ -66,7 +66,6 @@ object Step {
 
   def all(
     file2Writer: File2Writer,
-    maxNWorkers: Int,
     maxNHttpWorkers: Int,
     workerIdleTimeout: FiniteDuration,
     httpCreateIdleTimeout: FiniteDuration
