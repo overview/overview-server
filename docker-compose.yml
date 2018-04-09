@@ -54,6 +54,11 @@ services:
     environment:
       POLL_URL: 'http://overview-worker:9032/Office'
 
+  convert-pdf:
+    image: "${CONVERT_PDF_IMAGE}"
+    environment:
+      POLL_URL: 'http://overview-worker:9032/Pdf'
+
   convert-pdfocr:
     image: "${CONVERT_PDFOCR_IMAGE}"
     environment:

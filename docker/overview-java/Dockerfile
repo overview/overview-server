@@ -3,20 +3,10 @@
 # tar -c ./* -C $SOME_OTHER_DIRECTORY some_files_from_other_directory | docker build -
 FROM alpine:3.7
 
-# runit's `chpst` is used by the worker to limit subprocess sizes.
-# fonts are because pdfocr-native needs them (maybe? -- that's untested)
-# TODO make each subprocess a separate Docker container
 RUN set -x \
       && apk add --update --no-cache \
         openjdk8-jre-base \
-        ca-certificates \
-        openssl \
-        tesseract-ocr \
-        ttf-freefont \
-        msttcorefonts-installer \
-        runit \
-        tini \
-      && update-ms-fonts && fc-cache -f
+        ca-certificates
 
 WORKDIR /opt/overview
 

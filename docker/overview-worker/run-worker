@@ -17,6 +17,6 @@ MESSAGE_BROKER_CLIENT_HOSTNAME=${MESSAGE_BROKER_CLIENT_HOSTNAME:-overview-web} \
 MESSAGE_BROKER_CLIENT_PORT=${MESSAGE_BROKER_CLIENT_PORT:-9031} \
 BLOB_STORAGE_FILE_BASE_DIRECTORY=${BLOB_STORAGE_FILE_BASE_DIRECTORY:-/var/lib/overview/blob-storage/prod} \
 OV_SEARCH_DIRECTORY=${OV_SEARCH_DIRECTORY:-/var/lib/overview/searchindex/prod} \
-exec /sbin/tini -- java -cp 'worker/*' \
+exec java -cp 'worker/*' \
   -Xmx$OV_WORKER_HEAP_MEMORY \
   com.overviewdocs.Worker

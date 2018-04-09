@@ -339,6 +339,9 @@ class HttpStepHandler(
             }
           }
         }
+        case "inherit-blob" => {
+          entity.discardBytes(mat).future.map(_ => StepOutputFragment.InheritBlob)
+        }
         case "done" => {
           entity.discardBytes(mat).future.map(_ => StepOutputFragment.Done)
         }

@@ -18,6 +18,8 @@ services:
     image: overview-web:latest
     networks: [ 'default', 'database', 'redis', 'worker' ]
     depends_on: [ 'overview-database', 'overview-redis', 'overview-worker' ]
+    environment:
+      OV_APPLICATION_SECRET: "asdkgjhalsdkghasldkghasdfsd"
     volumes:
       - blob-storage:/var/lib/overview/blob-storage
 
@@ -65,6 +67,12 @@ services:
     environment:
       POLL_URL: 'http://overview-worker:9032/Office'
 
+  overview-convert-pdf:
+    image: "${CONVERT_PDF_IMAGE}"
+    networks: [ 'worker' ]
+    environment:
+      POLL_URL: 'http://overview-worker:9032/Pdf'
+
   overview-convert-pdfocr:
     image: "${CONVERT_PDFOCR_IMAGE}"
     networks: [ 'worker' ]
@@ -76,7 +84,7 @@ services:
     image: overview/overview-integration-tester:${OVERVIEW_INTEGRATION_TESTER_VERSION}
     command: sh -c "xvfb-run -a -s '-screen 0 1200x900x24' ./all-tests"
     shm_size: 2g
-    depends_on: [ 'overview-web', 'overview-convert-archive', 'overview-convert-image', 'overview-convert-office', 'overview-convert-pdfocr' ]
+    depends_on: [ 'overview-web', 'overview-convert-archive', 'overview-convert-image', 'overview-convert-office', 'overview-convert-pdf', 'overview-convert-pdfocr' ]
     environment:
       OVERVIEW_URL: http://overview-web
       WAIT_FOR_URLS: ${WAIT_FOR_URLS}

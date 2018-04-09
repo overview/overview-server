@@ -10,7 +10,6 @@ import scala.concurrent.{ExecutionContext,Future}
 
 import com.overviewdocs.ingest.File2Writer
 import com.overviewdocs.ingest.model.{ConvertOutputElement,WrittenFile2}
-import com.overviewdocs.ingest.process.logic._
 
 trait Step {
   val id: String
@@ -25,16 +24,19 @@ object Step {
     override val flow: Flow[WrittenFile2, ConvertOutputElement, Route]
   ) extends Step
 
-  class StepLogicStep(
-    file2Writer: File2Writer,
-    logic: StepLogic,
-    paralellism: Int
-  )(implicit mat: Materializer) extends Step {
-    override val id = logic.id
-    override val progressWeight = logic.progressWeight
+  case class UnhandledStep(file2Writer: File2Writer)(implicit ec: ExecutionContext) extends Step {
+    override val id = "Unhandled"
+    override val progressWeight = 1.0
     override val flow: Flow[WrittenFile2, ConvertOutputElement, Route] = {
-      new StepLogicFlow(logic, file2Writer, paralellism)
-        .flow
+      Flow.apply[WrittenFile2]
+        .mapAsync(1) { writtenFile =>
+          for {
+            processedFile <- file2Writer.setProcessed(writtenFile, 0, Some("unhandled"))
+          } yield {
+            writtenFile.progressPiece.report(1.0)
+            ConvertOutputElement.ToIngest(processedFile)
+          }
+        }
         .mapMaterializedValue(_ => Directives.reject)
     }
   }
@@ -68,19 +70,19 @@ object Step {
     maxNHttpWorkers: Int,
     workerIdleTimeout: FiniteDuration,
     httpCreateIdleTimeout: FiniteDuration
-  )(implicit mat: ActorMaterializer): Vector[Step] = Vector(
-    new StepLogicStep(file2Writer, new SplitExtractStepLogic, maxNWorkers),
-    new StepLogicStep(file2Writer, new UnhandledStepLogic, 1),
-  ) ++ new HttpSteps(
-    Vector(
-      "Archive" -> 0.1,
-      "Image" -> 1.0,
-      "Office" -> 0.75,
-      "PdfOcr" -> 0.75
-    ),
-    file2Writer,
-    maxNHttpWorkers,
-    workerIdleTimeout,
-    httpCreateIdleTimeout
-  ).steps
+  )(implicit mat: ActorMaterializer): Vector[Step] = {
+    new HttpSteps(
+      Vector(
+        "Archive" -> 0.1,
+        "Image" -> 1.0,
+        "Office" -> 0.75,
+        "Pdf" -> 1.0,
+        "PdfOcr" -> 0.75
+      ),
+      file2Writer,
+      maxNHttpWorkers,
+      workerIdleTimeout,
+      httpCreateIdleTimeout
+    ).steps ++ Vector(UnhandledStep(file2Writer)(mat.executionContext))
+  }
 }

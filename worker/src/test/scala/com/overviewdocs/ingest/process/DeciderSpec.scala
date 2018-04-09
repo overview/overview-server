@@ -51,7 +51,7 @@ class DeciderSpec extends Specification with Mockito {
           (ctx: RequestContext) => Future.successful(RouteResult.Rejected(Nil))
         }
     }
-    val steps = Vector("PdfOcr", "SplitExtract", "Office", "Archive", "Image", "Unhandled").map(MockStep.apply _)
+    val steps = Vector("PdfOcr", "Pdf", "Office", "Archive", "Image", "Unhandled").map(MockStep.apply _)
     val decider = new Decider(steps, mockBlobStorage)
   }
 
@@ -107,7 +107,7 @@ class DeciderSpec extends Specification with Mockito {
 
       "skip OCR when option is disabled" in new BaseScope {
         val input = writtenFile2("file.pdf", "application/octet-stream", false, Vector())
-        await(decider.getNextStep(input).map(_.id)) must beEqualTo("SplitExtract")
+        await(decider.getNextStep(input).map(_.id)) must beEqualTo("Pdf")
       }
 
       "do something for text/*, where * is something we don't handle explicitly" in new BaseScope {

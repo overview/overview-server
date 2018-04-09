@@ -1,6 +1,6 @@
 package com.overviewdocs.ingest.process
 
-import akka.stream.{ActorMaterializer,ClosedShape,Materializer}
+import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{GraphDSL,Keep,RunnableGraph,Sink,Source}
 import akka.util.ByteString
 import org.mockito.invocation.InvocationOnMock
@@ -17,17 +17,8 @@ import com.overviewdocs.ingest.model.{BlobStorageRefWithSha1,ConvertOutputElemen
 import com.overviewdocs.models.BlobStorageRef
 import com.overviewdocs.test.ActorSystemContext
 
-class StepLogicFlowSpec extends Specification with Mockito {
+class StepOutputFragmentCollectorSpec extends Specification with Mockito {
   sequential
-
-  class MockStepLogic(fragments: Vector[StepOutputFragment]) extends StepLogic {
-    override val id = "Mock"
-    override val progressWeight = 0.4
-    override def toChildFragments(
-      blobStorage: BlobStorage,
-      file2: WrittenFile2,
-    )(implicit mat: Materializer) = Source(fragments)
-  }
 
   protected def await[T](future: Future[T]): T = {
     blocking(scala.concurrent.Await.result(future, scala.concurrent.duration.Duration("2s")))
@@ -81,16 +72,15 @@ class StepLogicFlowSpec extends Specification with Mockito {
     mockFile2Writer.setProcessed(any, any, any)(any) returns Future.successful(processedParent) // input is parentFile2
 
     val fragments: Vector[StepOutputFragment]
-    lazy val mockLogic = new MockStepLogic(fragments)
 
     val returnedParentPromise = Promise[ProcessedFile2]()
 
-    val source = Source.single(parentFile2)
-    lazy val flow = new StepLogicFlow(mockLogic, mockFile2Writer, 2).flow
+    lazy val flow = new StepOutputFragmentCollector(mockFile2Writer, "Mock", 0.4)
+      .flowForParent(parentFile2)
 
     lazy val resultFuture: Future[(Vector[WrittenFile2], Vector[ProcessedFile2])] = {
       for {
-        output <- source.via(flow).runWith(Sink.collection[ConvertOutputElement, Vector[_]])
+        output <- Source(fragments).via(flow).runWith(Sink.collection[ConvertOutputElement, Vector[_]])
       } yield (
         // Split WrittenFile2s and ProcessedFile2s
         output.collect { case ConvertOutputElement.ToProcess(w) => w },
