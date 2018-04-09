@@ -24,14 +24,13 @@ object Step {
     override val flow: Flow[WrittenFile2, ConvertOutputElement, Route]
   ) extends Step
 
-  case class UnhandledStep(file2Writer: File2Writer)(implicit ec: ExecutionContext) extends Step {
-    override val id = "Unhandled"
+  case class ErrorStep(override val id: String, errorMessage: String, file2Writer: File2Writer)(implicit ec: ExecutionContext) extends Step {
     override val progressWeight = 1.0
     override val flow: Flow[WrittenFile2, ConvertOutputElement, Route] = {
       Flow.apply[WrittenFile2]
         .mapAsync(1) { writtenFile =>
           for {
-            processedFile <- file2Writer.setProcessed(writtenFile, 0, Some("unhandled"))
+            processedFile <- file2Writer.setProcessed(writtenFile, 0, Some(errorMessage))
           } yield {
             writtenFile.progressPiece.report(1.0)
             ConvertOutputElement.ToIngest(processedFile)
@@ -82,6 +81,9 @@ object Step {
       maxNHttpWorkers,
       workerIdleTimeout,
       httpCreateIdleTimeout
-    ).steps ++ Vector(UnhandledStep(file2Writer)(mat.executionContext))
+    ).steps ++ Vector(
+      ErrorStep("Unhandled", "unhandled", file2Writer)(mat.executionContext),
+      ErrorStep("Canceled", "canceled", file2Writer)(mat.executionContext)
+    )
   }
 }

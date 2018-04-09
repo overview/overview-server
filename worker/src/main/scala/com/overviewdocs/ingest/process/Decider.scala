@@ -15,6 +15,12 @@ import org.overviewproject.mime_types.MimeTypeDetector
 /** Ensures a valid `contentType` for each input WrittenFile2; emits to the
   * appropriate Step.
   *
+  * Some Steps have special considerations:
+  *
+  * * "Canceled" is selected if the job is canceled
+  * * "Unhandled" is the default Step
+  * * "PdfOcr" is selected over "Pdf" if wantOcr is true
+  *
   * This Graph has `steps.size` outlets: one per (hard-coded) Step. Outputs
   * on outlet 0 should connect to `Step.all(0)`'s inlet. Outputs on outlet 1
   * should connect to `Step.all(1)`'s inlet. And so on.
@@ -24,9 +30,6 @@ import org.overviewproject.mime_types.MimeTypeDetector
   * extension. Only rarely does it use magic numbers from BlobStorage. Plus,
   * if there's a large backlog of magic-number detection to handle, that means
   * downstream isn't processing files quickly enough.
-  *
-  * HACK: while the caller passes in Steps, it doesn't pass in Pipelines. This
-  * is janky, and it should be fixed.
   */
 class Decider(
   steps: Vector[Step],
@@ -64,6 +67,7 @@ class Decider(
     val Archive = SimpleStep("Archive")
     val Image = SimpleStep("Image")
     val Office = SimpleStep("Office")
+    val Canceled = SimpleStep("Canceled")
     val Unhandled = SimpleStep("Unhandled")
   }
 
@@ -250,6 +254,8 @@ class Decider(
     input: WrittenFile2
   )(implicit mat: Materializer): Future[Step] = {
     implicit val ec = mat.executionContext
+
+    if (input.isCanceled) return Future.successful(NextStep.Canceled.forFile(input))
 
     for {
       detectedContentType <- getContentTypeNoParameters(input)

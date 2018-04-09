@@ -21,6 +21,9 @@ class DeciderSpec extends Specification with Mockito {
   trait BaseScope extends Scope with ActorSystemContext with AwaitMethod {
     implicit val ec: ExecutionContext = system.dispatcher
 
+    val mockResumedFileGroupJob = mock[ResumedFileGroupJob]
+    mockResumedFileGroupJob.isCanceled returns false
+
     def writtenFile2(
       filename: String,
       contentType: String,
@@ -28,7 +31,7 @@ class DeciderSpec extends Specification with Mockito {
       stepsRemaining: Vector[String]
     ) = WrittenFile2(
       0L,
-      mock[ResumedFileGroupJob],
+      mockResumedFileGroupJob,
       mock[ProgressPiece],
       None,
       None,
@@ -51,7 +54,7 @@ class DeciderSpec extends Specification with Mockito {
           (ctx: RequestContext) => Future.successful(RouteResult.Rejected(Nil))
         }
     }
-    val steps = Vector("PdfOcr", "Pdf", "Office", "Archive", "Image", "Unhandled").map(MockStep.apply _)
+    val steps = Vector("PdfOcr", "Pdf", "Office", "Archive", "Image", "Unhandled", "Canceled").map(MockStep.apply _)
     val decider = new Decider(steps, mockBlobStorage)
   }
 
@@ -118,6 +121,12 @@ class DeciderSpec extends Specification with Mockito {
       "default to Unhandled" in new BaseScope {
         val input = writtenFile2("weird.3mf", "model/3mf", false, Vector())
         await(decider.getNextStep(input).map(_.id)) must beEqualTo("Unhandled")
+      }
+
+      "choose Canceled when job.isCanceled" in new BaseScope {
+        val input = writtenFile2("weird.3mf", "model/3mf", false, Vector())
+        mockResumedFileGroupJob.isCanceled returns true
+        await(decider.getNextStep(input).map(_.id)) must beEqualTo("Canceled")
       }
     }
   }
