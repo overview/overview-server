@@ -34,18 +34,6 @@ class FileGroupSource(
     * all FileGroups sent to `.enqueue`.
     */
   val source: Source[ResumedFileGroupJob, akka.NotUsed] = {
-    //val resumeSourceFuture: Future[Source[FileGroup, akka.NotUsed]] = for {
-    //  fileGroups <- toResume
-    //} yield Source(fileGroups)
-
-    //val actorSource = Source.actorRef[FileGroup](bufferSize, OverflowStrategy.fail)
-    //  .mapMaterializedValue(mat => { sourceActorRef = mat; akka.NotUsed })
-
-    //Source.fromFutureSource(resumeSourceFuture)
-    //  .mapMaterializedValue(_ => akka.NotUsed)
-    //  .concat(actorSource)
-    //  .mapAsync(1)(resumeFileGroupJob _)
-
     Source.actorRef[(FileGroup,() => Unit)](bufferSize, OverflowStrategy.fail)
       .mapMaterializedValue(mat => { sourceActorRef = mat; akka.NotUsed })
       .mapAsync(1)((resumeFileGroupJob _).tupled)
@@ -57,15 +45,6 @@ class FileGroupSource(
     * producing the given fileGroup.
     */
   lazy val enqueue: ActorRef = sourceActorRef
-
-  private def toResume: Future[Vector[FileGroup]] = {
-    // No need to Compile this query: we only run it once, on startup
-    import database.api._
-    val query = FileGroups
-      .filter(_.deleted === false)
-      .filter(_.addToDocumentSetId.nonEmpty)
-    database.seq(query)
-  }
 
   private lazy val fileGroupIngestStatsCompiled = {
     import database.api._
