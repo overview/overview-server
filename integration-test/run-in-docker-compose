@@ -10,7 +10,6 @@ DIR="$(dirname "$0")"
 . "$DIR"/config
 
 docker_compose() {
-  OVERVIEW_VERSION="$OVERVIEW_VERSION" \
   OVERVIEW_INTEGRATION_TESTER_VERSION="$OVERVIEW_INTEGRATION_TESTER_VERSION" \
   WAIT_FOR_URLS="$WAIT_FOR_URLS" \
   docker-compose \
@@ -26,9 +25,19 @@ docker_compose pull integration-test
 
 # Run oververview-db-evolution-applier first, so we don't request from
 # overview-web too early.
+#
+# It isn't in docker-compose.yml, because
+# `docker-compose up --abort-on-container-exit` aborts when it's done.
+#
+# And we don't just run `docker-compose up integration-test` below, because that
+# doesn't output all the log messages. And we want all the log messages, because
+# they help us debug problems on Jenkins.
 docker_compose up -d overview-database
-docker_compose run overview-db-evolution-applier # upon exit, DB is up-to-date
+docker run --rm \
+  --network ${DOCKER_COMPOSE_PROJECT_NAME}_database \
+  overview-db-evolution-applier:latest
 
+# Delete tests from previous run
 find "$DIR"/reports -name '*.xml' -exec rm -f {} \;
 
 # integration-test will end, and one of three things will have happened:
@@ -40,8 +49,7 @@ find "$DIR"/reports -name '*.xml' -exec rm -f {} \;
 # We'll report the exit code after we `docker-compose down -v`.
 set +e
 docker_compose up \
-  --abort-on-container-exit \
-  integration-test
+  --exit-code-from integration-test
 EXIT_CODE=$?
 set -e
 

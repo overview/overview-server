@@ -40,11 +40,6 @@ services:
     image: overview-redis:latest
     networks: [ 'redis' ]
 
-  overview-db-evolution-applier:
-    image: overview-db-evolution-applier:latest
-    networks: [ 'database' ]
-    depends_on: [ 'overview-database' ]
-
   # === Converters: needed for tests to pass ===
   #
   # We want to test that Overview coexists with its recommended converter
