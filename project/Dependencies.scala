@@ -16,7 +16,13 @@ object Dependencies {
     val awsS3 = "com.amazonaws" % "aws-java-sdk-s3" % "1.11.232"
     val bcrypt = "com.github.t3hnar" %% "scala-bcrypt" % "3.1"
     val config = "com.typesafe" % "config" % "1.3.0"
-    val flywayDb = "org.flywaydb" % "flyway-core" % "3.2.1"
+    // Watch out for Flyway 5.0.0. From docs at
+    // https://flywaydb.org/documentation/releaseNotes we see:
+    // This release no longer supports a schema history table upgrade from Flyway 3.x.
+    // You must upgrade to Flyway 4.2.0 first before upgrading to Flyway 5.0.0.
+    // ... we started upgrading to Flyway 4.2.0 on April 10, 2018. How long
+    // shall we wait until we assume our users have upgraded to 5.0.0? Years?
+    val flywayDb = "org.flywaydb" % "flyway-core" % "4.2.0"
     val guava = "com.google.guava" % "guava" % "23.5-jre"
     val icu4j = "com.ibm.icu" % "icu4j" % "56.1"
     val janino = "org.codehaus.janino" % "janino" % "2.7.8" // Runtime Java compiler -- for logback-test.xml

@@ -5,7 +5,6 @@ import java.sql.{Connection,SQLException}
 import java.util.logging.{Logger,Level}
 import org.flywaydb.core.Flyway
 import org.postgresql.ds.PGSimpleDataSource
-import scala.util.Try
 
 /** Simple program to run Play evolutions.
   *
@@ -55,7 +54,7 @@ object Main {
   }
 
   def main(args: Array[String]) : Unit = {
-    migrateToFlyway
+    connect.close // Wait for database to spin up
     migrate
   }
 
@@ -87,46 +86,6 @@ object Main {
     }
 
     ret.get
-  }
-
-  /** Convert a Play Evolutions-style schema to a Flyway-style one.
-    *
-    * Steps:
-    *
-    * 1. Check if there's a play_evolutions table.
-    * 2. If there is, use the final applied ID as the Flyway baseline version.
-    * 3. Delete the play_evolutions table.
-    */
-  private def migrateToFlyway: Unit = {
-    val connection = connect
-
-    val maybePlayEvolutionVersion: Try[Int] = Try {
-      val statement = connection.createStatement
-      try {
-        // Fail if the play_evolutions table doesn't exist ... which is okay;
-        // it just means we ran migrateToFlyway before.
-        val resultSet = statement.executeQuery("SELECT MAX(id) AS v FROM play_evolutions WHERE state = 'applied'")
-        resultSet.next
-        resultSet.getInt("v")
-      } finally {
-        statement.close
-      }
-    }
-
-    maybePlayEvolutionVersion.foreach { playEvolutionVersion =>
-      System.out.println(s"Migrating database from Play Evolutions (v$playEvolutionVersion) to Flyway...")
-      val flyway = new Flyway
-      flyway.setDataSource(dataSource)
-      flyway.setLocations("migration")
-      flyway.setBaselineVersionAsString(playEvolutionVersion.toString)
-      flyway.baseline
-
-      val dropStatement = connection.createStatement
-      dropStatement.execute("DROP TABLE play_evolutions")
-      dropStatement.close
-    }
-
-    connection.close
   }
 
   /** Call Flyway's migration code.
