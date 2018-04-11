@@ -17,6 +17,7 @@ module SessionHelpers
         # Wait for focus: that's when the dialog is open
         wait_for_javascript_to_return_true('document.querySelector("#import-options-name") === document.activeElement', wait: WAIT_FAST)
         fill_in('Document set name', with: folder)
+        choose('Assume documents are already text (faster import)')
         click_on('Import documents')
       end
     end
