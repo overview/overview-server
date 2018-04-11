@@ -31,7 +31,9 @@ node('test-slave') {
     }
 
     stage('Integration test') {
-      sh 'integration-test/run-in-docker-compose'
+      ansiColor('xterm') {
+        sh 'integration-test/run-in-docker-compose'
+      }
       junit 'integration-test/reports/**/*.xml'
     }
 
