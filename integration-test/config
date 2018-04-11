@@ -20,7 +20,7 @@ DEVELOPMENT_PROJECT_NAME=overviewserver
 
 # Docker container version. We use semantic versioning; only the major version
 # matters, but you can be paranoid and add minor and patch versions, too.
-OVERVIEW_INTEGRATION_TESTER_VERSION=1.1.0
+OVERVIEW_INTEGRATION_TESTER_VERSION=2.0.0
 
 # Stall `run` and `run-in-docker-compose` on startup until these URLs are
 # available.
