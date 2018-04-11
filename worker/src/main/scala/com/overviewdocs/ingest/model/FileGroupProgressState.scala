@@ -125,8 +125,17 @@ case class File2Progress(
   private val d = endBytePlusOne - beginByte
 
   private def color(begin: Double, end: Double): Unit = {
-    val a = (beginByte + d * begin).toLong
-    val b = (beginByte + d * end).toLong
+    // Clamp. Inputs should never be out of range. But [2018-04-10, adamhooper]
+    // maybe they are during integration tests on
+    // 2849608dd70ab3357f7f01a70a075da1b7420342.
+    val saneBegin = Math.min(1.0, Math.max(0.0, Math.min(begin, end)))
+    val saneEnd = Math.min(1.0, Math.max(0.0, Math.max(begin, end)))
+    // On a lazy Sunday, intrepid interns are encouraged to checkout
+    // 2849608dd70ab3357f7f01a70a075da1b7420342, delete the above lines, and
+    // figure out what's causing the errors.
+
+    val a = (beginByte + d * saneBegin).toLong
+    val b = (beginByte + d * saneEnd).toLong
     fileGroupProgressState.setBytesProcessed(a, b)
   }
 

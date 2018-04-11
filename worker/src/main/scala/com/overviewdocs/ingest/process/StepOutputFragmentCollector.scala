@@ -69,7 +69,7 @@ class StepOutputFragmentCollector(file2Writer: File2Writer, logicName: String, p
         fragment match {
           // Progress reporting: call the callback; don't change state.
           case p: StepOutputFragment.Progress => {
-            parent.selfProgress.report(p.fraction)
+            parent.selfProgress.report(Math.max(0.0, Math.min(1.0, p.fraction)))
             Future.successful(state)
           }
 
@@ -83,7 +83,7 @@ class StepOutputFragmentCollector(file2Writer: File2Writer, logicName: String, p
         fragment match {
           // Progress reporting: call the callback; don't change state.
           case p: StepOutputFragment.Progress => {
-            parent.selfProgress.report(p.fraction)
+            parent.selfProgress.report(Math.max(0.0, Math.min(1.0, p.fraction)))
             Future.successful(AtChild(parent, child.copy(childrenProgressRight=p.fraction), Nil))
           }
 
