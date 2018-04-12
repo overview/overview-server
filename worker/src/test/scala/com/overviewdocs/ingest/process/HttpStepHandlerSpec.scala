@@ -355,6 +355,11 @@ class HttpStepHandlerSpec extends Specification with Specs2RouteTest with Mockit
             "wantSplitByPage" -> false
           ))))
         ),
+        Multipart.FormData.BodyPart.Strict(
+          // heartbeat (no fragment)
+          "heartbeat",
+          HttpEntity.Strict(ContentTypes.NoContentType, ByteString(""))
+        ),
         Multipart.FormData.BodyPart(
           // indefinite-length; also, ignore the content-type
           "0.blob",

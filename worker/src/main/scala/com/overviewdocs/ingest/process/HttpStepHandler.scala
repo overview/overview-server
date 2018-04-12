@@ -292,9 +292,12 @@ class HttpStepHandler(
 
     /** Turns an input into a fragment.
       *
+      * It's an Option[fragment] because a "heartbeat" can arrive over HTTP,
+      * and the caller should ignore it.
+      *
       * If the input is invalid, the fragment is a StepError.
       */
-    private def partToFragment(name: String, entity: HttpEntity)(implicit mat: Materializer): Future[StepOutputFragment] = {
+    private def partToFragment(name: String, entity: HttpEntity)(implicit mat: Materializer): Future[Option[StepOutputFragment]] = {
       implicit val ec = mat.executionContext
 
       val JsonPattern = """([0-9]{1,8}).json""".r
@@ -310,17 +313,17 @@ class HttpStepHandler(
                 Try(jsObject.+("indexInParent" -> JsNumber(indexInParent.toInt)).as[StepOutputFragment.File2Header])
               }
               match {
-                case Success(fragment) => fragment
-                case Failure(ex: Exception) => StepOutputFragment.StepError(ex)
+                case Success(fragment) => Some(fragment)
+                case Failure(ex: Exception) => Some(StepOutputFragment.StepError(ex))
                 case Failure(tr: Throwable) => ???
               }
           }
         }
         case BlobPattern(indexInParent) => {
-          Future.successful(StepOutputFragment.Blob(indexInParent.toInt, entity.dataBytes))
+          Future.successful(Some(StepOutputFragment.Blob(indexInParent.toInt, entity.dataBytes)))
         }
         case TextPattern(indexInParent) => {
-          Future.successful(StepOutputFragment.Text(indexInParent.toInt, entity.dataBytes))
+          Future.successful(Some(StepOutputFragment.Text(indexInParent.toInt, entity.dataBytes)))
         }
         case ThumbnailPattern(indexInParent, ext) => {
           val contentType = ext match {
@@ -328,29 +331,32 @@ class HttpStepHandler(
             case "jpg" => "image/jpeg"
             case _ => ???
           }
-          Future.successful(StepOutputFragment.Thumbnail(indexInParent.toInt, contentType, entity.dataBytes))
+          Future.successful(Some(StepOutputFragment.Thumbnail(indexInParent.toInt, contentType, entity.dataBytes)))
         }
         case "progress" => {
           entity.toStrict(workerIdleTimeout).map { e =>
             Try(Json.parse(e.data.toArray).as[StepOutputFragment.Progress]) match {
-              case Success(fragment) => fragment
-              case Failure(ex: Exception) => StepOutputFragment.StepError(ex)
+              case Success(fragment) => Some(fragment)
+              case Failure(ex: Exception) => Some(StepOutputFragment.StepError(ex))
               case Failure(tr: Throwable) => ???
             }
           }
         }
         case "inherit-blob" => {
-          entity.discardBytes(mat).future.map(_ => StepOutputFragment.InheritBlob)
+          entity.discardBytes(mat).future.map(_ => Some(StepOutputFragment.InheritBlob))
         }
         case "done" => {
-          entity.discardBytes(mat).future.map(_ => StepOutputFragment.Done)
+          entity.discardBytes(mat).future.map(_ => Some(StepOutputFragment.Done))
         }
         case "error" => {
-          entity.toStrict(workerIdleTimeout).map(e => StepOutputFragment.FileError(e.data.decodeString(UTF_8)))
+          entity.toStrict(workerIdleTimeout).map(e => Some(StepOutputFragment.FileError(e.data.decodeString(UTF_8))))
+        }
+        case "heartbeat" => {
+          entity.discardBytes(mat).future.map(_ => None)
         }
         case _ => {
           entity.discardBytes(mat).future.map { _ =>
-            StepOutputFragment.StepError(new RuntimeException("Unrecognized input name: " + name))
+            Some(StepOutputFragment.StepError(new RuntimeException("Unrecognized input name: " + name)))
           }
         }
       }
@@ -361,11 +367,14 @@ class HttpStepHandler(
       implicit val ec = ctx.executionContext
 
       withTask(uuid, ctx)(() => drainEntity(ctx.request.entity)) { (task, workerTaskRef) =>
-        for {
-          fragment <- partToFragment(name, ctx.request.entity)
-          _ <- ask(workerTaskRef, HttpWorker.ProcessFragments(Source.single(fragment)))(postTimeout)
-          routeResult <- ctx.complete(StatusCodes.Accepted)
-        } yield routeResult
+        partToFragment(name, ctx.request.entity).flatMap(_ match {
+          case Some(fragment) => {
+            val source = Source.single(fragment)
+            ask(workerTaskRef, HttpWorker.ProcessFragments(source))(postTimeout)
+              .flatMap(_ => ctx.complete(StatusCodes.Accepted))
+          }
+          case None => ctx.complete(StatusCodes.Accepted)
+        })
       }
     }
 
@@ -378,6 +387,7 @@ class HttpStepHandler(
       withTask(uuid, ctx)(() => formData.parts.flatMapConcat(part => part.entity.dataBytes).runWith(Sink.ignore)) { (task, workerTaskRef) =>
         val fragments: Source[StepOutputFragment, akka.NotUsed] = formData.parts
           .mapAsync(1) { part => partToFragment(part.name, part.entity) }
+          .collect { case Some(f) => f } // Option[fragment] => fragment, ignoring None
           .mapMaterializedValue(_ => akka.NotUsed)
         for {
           _ <- ask(workerTaskRef, HttpWorker.ProcessFragments(fragments))(postMultipartTimeout)
