@@ -14,7 +14,7 @@ trait File2Backend extends Backend {
   def lookupBlob(file2Id: Long): Future[Option[BlobStorageRef]]
 
   /** Returns a BlobStorageRef to the given File2's Thumbnail. */
-  def lookupThumbnailBlob(file2Id: Long): Future[Option[BlobStorageRef]]
+  def lookupThumbnailBlobAndContentType(file2Id: Long): Future[Option[(BlobStorageRef,String)]]
 }
 
 class DbFile2Backend @Inject() (val database: Database) extends File2Backend with DbBackend {
@@ -30,7 +30,7 @@ class DbFile2Backend @Inject() (val database: Database) extends File2Backend wit
   private lazy val lookupThumbnailBlobCompiled = Compiled { file2Id: Rep[Long] =>
     File2s
       .filter(_.id === file2Id)
-      .map(f2 => (f2.thumbnailBlobLocation, f2.thumbnailBlobNBytes))
+      .map(f2 => (f2.thumbnailBlobLocation, f2.thumbnailBlobNBytes, f2.thumbnailContentType.getOrElse("image/png")))
   }
 
   private def blobify(tuple: Option[Tuple2[Option[String], Option[Int]]]): Option[BlobStorageRef] = {
@@ -44,7 +44,12 @@ class DbFile2Backend @Inject() (val database: Database) extends File2Backend wit
     database.option(lookupBlobCompiled(file2Id)).map(blobify _)
   }
 
-  override def lookupThumbnailBlob(file2Id: Long) = {
-    database.option(lookupThumbnailBlobCompiled(file2Id)).map(blobify _)
+  override def lookupThumbnailBlobAndContentType(file2Id: Long) = {
+    database.option(lookupThumbnailBlobCompiled(file2Id)).map(_ match {
+      case Some((Some(location), Some(nBytes), contentType)) => {
+        Some((BlobStorageRef(location, nBytes), contentType))
+      }
+      case _ => None
+    })
   }
 }

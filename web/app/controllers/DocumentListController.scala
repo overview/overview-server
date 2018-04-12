@@ -79,18 +79,18 @@ class DocumentListController @Inject() (
   }
 
   private def lookupThumbnailUrl(document: DocumentHeader): Future[Option[(Long,String)]] = {
-    val futureLocation: Future[Option[String]] = document.file2Id match {
-      case None => Future.successful(document.thumbnailLocation)
+    val futureLocationAndContentTypeOpt: Future[Option[(String,String)]] = document.file2Id match {
+      case None => Future.successful(document.thumbnailLocation.map(loc => (loc, "image/png")))
       case Some(file2Id) => {
-        file2Backend.lookupThumbnailBlob(file2Id)
-          .map(option => option.map(_.location))
+        file2Backend.lookupThumbnailBlobAndContentType(file2Id)
+          .map(option => option.map(t => (t._1.location, t._2)))
       }
     }
 
-    futureLocation.flatMap(_ match {
+    futureLocationAndContentTypeOpt.flatMap(_ match {
       case None => Future.successful(None)
-      case Some(location) => {
-        blobStorage.getUrl(location, "image/png").transform(_ match {
+      case Some((location, contentType)) => {
+        blobStorage.getUrl(location, contentType).transform(_ match {
           case Success(url) => Success(Some((document.id, url)))
           case Failure(ex) => {
             // Error in blob storage? Log it, then pretend there's no thumbnail.
