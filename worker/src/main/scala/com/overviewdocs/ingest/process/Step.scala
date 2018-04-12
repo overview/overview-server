@@ -75,7 +75,8 @@ object Step {
         "Image" -> 1.0,
         "Office" -> 0.75,
         "Pdf" -> 1.0,
-        "PdfOcr" -> 0.75
+        "PdfOcr" -> 0.75,
+        "Text" -> 0.75 // 1.0 if !wantSplitByPage, 0.5 otherwise
       ),
       file2Writer,
       maxNHttpWorkers,

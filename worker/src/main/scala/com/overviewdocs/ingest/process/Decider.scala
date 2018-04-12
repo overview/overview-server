@@ -69,6 +69,7 @@ class Decider(
     val Office = SimpleStep("Office")
     val Canceled = SimpleStep("Canceled")
     val Unhandled = SimpleStep("Unhandled")
+    val Text = SimpleStep("Text")
   }
 
   private val handlers = Map[String,NextStep](
@@ -180,12 +181,15 @@ class Decider(
     // https://www.pivotaltracker.com/story/show/76453196
     // https://www.pivotaltracker.com/story/show/76453264
     "application/csv" -> NextStep.Office,
-    "application/javascript" -> NextStep.Office,
-    "application/json" -> NextStep.Office,
-    "application/xml" -> NextStep.Office,
     "text/comma-separated-values" -> NextStep.Office,
     "text/html" -> NextStep.Office, // TODO anything else: LibreOffice is uniquely inept with HTML
-    "text/*" -> NextStep.Office
+
+    "application/javascript" -> NextStep.Text,
+    "application/json" -> NextStep.Text,
+    "application/x-python" -> NextStep.Text,
+    "application/x-ruby" -> NextStep.Text,
+    "application/xml" -> NextStep.Text,
+    "text/*" -> NextStep.Text // Lots of source code in this category
   )
 
   def graph(implicit mat: Materializer): Graph[UniformFanOutShape[WrittenFile2, WrittenFile2], akka.NotUsed] = {

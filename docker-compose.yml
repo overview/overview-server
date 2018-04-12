@@ -63,3 +63,8 @@ services:
     image: "${CONVERT_PDFOCR_IMAGE}"
     environment:
       POLL_URL: 'http://overview-worker:9032/PdfOcr'
+
+  convert-text:
+    image: "${CONVERT_TEXT_IMAGE}"
+    environment:
+      POLL_URL: 'http://overview-worker:9032/Text'

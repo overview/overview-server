@@ -54,7 +54,7 @@ class DeciderSpec extends Specification with Mockito {
           (ctx: RequestContext) => Future.successful(RouteResult.Rejected(Nil))
         }
     }
-    val steps = Vector("PdfOcr", "Pdf", "Office", "Archive", "Image", "Unhandled", "Canceled").map(MockStep.apply _)
+    val steps = Vector("PdfOcr", "Pdf", "Office", "Archive", "Image", "Text", "Unhandled", "Canceled").map(MockStep.apply _)
     val decider = new Decider(steps, mockBlobStorage)
   }
 
@@ -103,6 +103,11 @@ class DeciderSpec extends Specification with Mockito {
         await(decider.getNextStep(input).map(_.id)) must beEqualTo("Office")
       }
 
+      "detect Image steps" in new BaseScope {
+        val input = writtenFile2("file.jpg", "application/octet-stream", false, Vector())
+        await(decider.getNextStep(input).map(_.id)) must beEqualTo("Image")
+      }
+
       "detect Pdf steps with OCR" in new BaseScope {
         val input = writtenFile2("file.pdf", "application/octet-stream", true, Vector())
         await(decider.getNextStep(input).map(_.id)) must beEqualTo("PdfOcr")
@@ -113,9 +118,9 @@ class DeciderSpec extends Specification with Mockito {
         await(decider.getNextStep(input).map(_.id)) must beEqualTo("Pdf")
       }
 
-      "do something for text/*, where * is something we don't handle explicitly" in new BaseScope {
+      "do Text for text/*, where * is something we don't handle explicitly" in new BaseScope {
         val input = writtenFile2("image.ascii", "text/vnd.ascii-art", false, Vector())
-        await(decider.getNextStep(input).map(_.id)) must not(beEqualTo("Unhandled"))
+        await(decider.getNextStep(input).map(_.id)) must beEqualTo("Text")
       }
 
       "default to Unhandled" in new BaseScope {
