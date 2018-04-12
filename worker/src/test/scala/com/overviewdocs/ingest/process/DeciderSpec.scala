@@ -108,6 +108,11 @@ class DeciderSpec extends Specification with Mockito {
         await(decider.getNextStep(input).map(_.id)) must beEqualTo("Image")
       }
 
+      "send .csv to Office (because it's a spreadsheet)" in new BaseScope {
+        val input = writtenFile2("file.csv", "application/octet-stream", false, Vector())
+        await(decider.getNextStep(input).map(_.id)) must beEqualTo("Office")
+      }
+
       "detect Pdf steps with OCR" in new BaseScope {
         val input = writtenFile2("file.pdf", "application/octet-stream", true, Vector())
         await(decider.getNextStep(input).map(_.id)) must beEqualTo("PdfOcr")

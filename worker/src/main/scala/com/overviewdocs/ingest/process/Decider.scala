@@ -181,7 +181,7 @@ class Decider(
     // https://www.pivotaltracker.com/story/show/76453196
     // https://www.pivotaltracker.com/story/show/76453264
     "application/csv" -> NextStep.Office,
-    "text/comma-separated-values" -> NextStep.Office,
+    "text/csv" -> NextStep.Office,
     "text/html" -> NextStep.Office, // TODO anything else: LibreOffice is uniquely inept with HTML
 
     "application/javascript" -> NextStep.Text,
