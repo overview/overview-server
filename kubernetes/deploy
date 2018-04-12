@@ -43,3 +43,4 @@ apply_template convert-image.yml
 apply_template convert-office.yml
 apply_template convert-pdf.yml
 apply_template convert-pdfocr.yml
+apply_template convert-text.yml
