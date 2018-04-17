@@ -63,13 +63,15 @@ class Decider(
       }
     }
 
-    val Pdf = PdfStep
     val Archive = SimpleStep("Archive")
+    val Html = SimpleStep("Html")
     val Image = SimpleStep("Image")
     val Office = SimpleStep("Office")
+    val Pdf = PdfStep
+    val Text = SimpleStep("Text")
+
     val Canceled = SimpleStep("Canceled")
     val Unhandled = SimpleStep("Unhandled")
-    val Text = SimpleStep("Text")
   }
 
   private val handlers = Map[String,NextStep](
@@ -103,7 +105,6 @@ class Decider(
     "application/mspowerpoint" -> NextStep.Office,
     "application/msword" -> NextStep.Office,
     "application/prs.plucker" -> NextStep.Office,
-    "application/rtf" -> NextStep.Office,
     "application/tab-separated-values" -> NextStep.Office,
     "application/vnd.corel-draw" -> NextStep.Office,
     "application/vnd.lotus-1-2-3" -> NextStep.Office,
@@ -177,12 +178,13 @@ class Decider(
     "application/x-wpg" -> NextStep.Office,
     "image/x-freehand" -> NextStep.Office,
 
-    // Text types: we're using Office now, but we probably shouldn't
-    // https://www.pivotaltracker.com/story/show/76453196
-    // https://www.pivotaltracker.com/story/show/76453264
+    // One can imagine better than LibreOffice for CSV
     "application/csv" -> NextStep.Office,
     "text/csv" -> NextStep.Office,
-    "text/html" -> NextStep.Office, // TODO anything else: LibreOffice is uniquely inept with HTML
+
+    "application/rtf" -> NextStep.Html,
+    "text/html" -> NextStep.Html,
+    "application/xhtml+xml" -> NextStep.Html,
 
     "application/javascript" -> NextStep.Text,
     "application/json" -> NextStep.Text,

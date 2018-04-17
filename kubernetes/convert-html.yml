@@ -1,0 +1,43 @@
+---
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: convert-html-deployment
+spec:
+  selector:
+    matchLabels:
+      app: convert-html
+  replicas: 1
+  revisionHistoryLimit: 20
+  template:
+    metadata:
+      labels:
+        app: convert-html
+    spec:
+      containers:
+      - name: convert-html
+        image: CONVERT_HTML_IMAGE
+        env:
+        - name: POLL_URL
+          value: http://overview-worker:9032/Html
+        resources:
+          requests:
+            cpu: 50m
+            memory: 200Mi
+          limits:
+            cpu: 1
+            memory: 1.5Gi # "large.html" in https://github.com/overview/html-to-pdf-benchmarks/blob/master/large.html costs 1GB
+---
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: convert-html
+  namespace: default
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1beta2
+    kind: Deployment
+    name: convert-html-deployment
+  minReplicas: 1
+  maxReplicas: 4
+  targetCPUUtilizationPercentage: 50

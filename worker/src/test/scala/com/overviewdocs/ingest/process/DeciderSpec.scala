@@ -54,7 +54,7 @@ class DeciderSpec extends Specification with Mockito {
           (ctx: RequestContext) => Future.successful(RouteResult.Rejected(Nil))
         }
     }
-    val steps = Vector("PdfOcr", "Pdf", "Office", "Archive", "Image", "Text", "Unhandled", "Canceled").map(MockStep.apply _)
+    val steps = Vector("PdfOcr", "Pdf", "Office", "Archive", "Html", "Image", "Text", "Unhandled", "Canceled").map(MockStep.apply _)
     val decider = new Decider(steps, mockBlobStorage)
   }
 
@@ -111,6 +111,16 @@ class DeciderSpec extends Specification with Mockito {
       "send .csv to Office (because it's a spreadsheet)" in new BaseScope {
         val input = writtenFile2("file.csv", "application/octet-stream", false, Vector())
         await(decider.getNextStep(input).map(_.id)) must beEqualTo("Office")
+      }
+
+      "send HTML to HTML" in new BaseScope {
+        val input = writtenFile2("file.html", "application/octet-stream", false, Vector())
+        await(decider.getNextStep(input).map(_.id)) must beEqualTo("Html")
+      }
+
+      "send RTF to HTML" in new BaseScope {
+        val input = writtenFile2("file.rtf", "application/octet-stream", false, Vector())
+        await(decider.getNextStep(input).map(_.id)) must beEqualTo("Html")
       }
 
       "detect Pdf steps with OCR" in new BaseScope {

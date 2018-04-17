@@ -44,6 +44,11 @@ services:
     environment:
       POLL_URL: 'http://overview-worker:9032/Archive'
 
+  convert-html:
+    image: "${CONVERT_HTML_IMAGE}"
+    environment:
+      POLL_URL: 'http://overview-worker:9032/Html'
+
   convert-image:
     image: "${CONVERT_IMAGE_IMAGE}"
     environment:
