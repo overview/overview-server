@@ -300,7 +300,11 @@ class StepOutputFragmentCollector(file2Writer: File2Writer, logicName: String, p
     for {
       f <- file2Writer.setProcessed(parent.file, nChildren, error)
     } yield {
-      parent.selfProgress.report(1.0)
+      if (nChildren == 0) {
+        parent.file.progressPiece.report(1.0)
+      } else {
+        parent.selfProgress.report(1.0)
+      }
       ConvertOutputElement.ToIngest(f)
     }
   }

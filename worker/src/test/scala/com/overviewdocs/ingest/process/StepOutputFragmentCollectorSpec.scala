@@ -321,10 +321,21 @@ class StepOutputFragmentCollectorSpec extends Specification with Mockito {
     "report progress" in new BaseScope {
       override val fragments = Vector(
         StepOutputFragment.ProgressFraction(0.1),
+        StepOutputFragment.File2Header(0, "foo", "text/csv", "en", Json.obj(), false, false),
+        StepOutputFragment.InheritBlob,
         StepOutputFragment.Done
       )
       result
       onProgressCalls must beEqualTo(Vector((0.0, 0.4 * 0.1), (0.0, 0.4 * 1.0)))
+    }
+
+    "report progress=1.0 if there are no children, regardless of weight" in new BaseScope {
+      override val fragments = Vector(
+        StepOutputFragment.ProgressFraction(0.1),
+        StepOutputFragment.Done
+      )
+      result
+      onProgressCalls must beEqualTo(Vector((0.0, 0.4 * 0.1), (0.0, 1.0)))
     }
   }
 }
