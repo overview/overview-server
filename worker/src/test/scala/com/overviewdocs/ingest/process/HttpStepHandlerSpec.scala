@@ -1,6 +1,6 @@
 package com.overviewdocs.ingest.process
 
-import akka.http.scaladsl.model.{ContentTypes,HttpEntity,HttpHeader,Multipart,RequestEntity,StatusCodes}
+import akka.http.scaladsl.model.{ContentType,ContentTypes,HttpEntity,HttpHeader,MediaType,Multipart,RequestEntity,StatusCodes}
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.Specs2RouteTest
 import akka.stream.scaladsl.{Keep,Sink,Source}
@@ -346,6 +346,7 @@ class HttpStepHandlerSpec extends Specification with Specs2RouteTest with Mockit
         Multipart.FormData.BodyPart.Strict(
           // Strict
           "0.json",
+
           HttpEntity.Strict(ContentTypes.`application/json`, ByteString(Json.toBytes(Json.obj(
             "filename" -> "aFilename",
             "contentType" -> "foo/bar",
@@ -438,6 +439,46 @@ class HttpStepHandlerSpec extends Specification with Specs2RouteTest with Mockit
       fragments.next must beEqualTo(StepOutputFragment.ProgressBytes(100, 10000))
       fragments.next must beEqualTo(StepOutputFragment.ProgressFraction(23.1312))
       fragments.next must beEqualTo(StepOutputFragment.Done)
+      fragments.hasNext must beFalse
+    }
+
+    "not crash on truncated input" in new BaseScope {
+      // Truncated input comes from a worker that dies abruptly -- such as a
+      // Kubernetes pod that's killed automatically
+      val taskId = createWorkerTask
+
+      httpPost(
+        taskId,
+        "",
+        HttpEntity.Strict(
+            ContentType.Binary(new MediaType.Multipart("form-data", Map()).withBoundary("MIME-BOUNDARY")),
+            (
+              ByteString("--MIME-BOUNDARY\r\nContent-Disposition: form-data; name=0.json\r\n\r\n")
+              ++ ByteString(Json.toBytes(Json.obj(
+                  "filename" -> "aFilename",
+                  "contentType" -> "foo/bar",
+                  "languageCode" -> "fr",
+                  "metadata" -> Json.obj("foo" -> "bar"),
+                  "wantOcr" -> true,
+                  "wantSplitByPage" -> false
+                )))
+              ++ ByteString("\r\n--MIME-BOUNDARY\r\nContent-Di")
+            )
+          )
+      )
+
+      end
+
+      val fragments = postedFragments.toIterator
+      fragments.next must beEqualTo(StepOutputFragment.File2Header(
+        0,
+        "aFilename",
+        "foo/bar",
+        "fr",
+        Json.obj("foo" -> "bar"),
+        true,
+        false
+      ))
       fragments.hasNext must beFalse
     }
   }

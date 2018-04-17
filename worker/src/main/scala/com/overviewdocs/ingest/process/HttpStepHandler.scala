@@ -5,7 +5,7 @@ import akka.http.scaladsl.marshalling.ToResponseMarshallable
 import akka.http.scaladsl.model.{ContentTypes,HttpEntity,HttpResponse,Multipart,ResponseEntity,RequestEntity,StatusCodes,Uri}
 import akka.http.scaladsl.server.{RequestContext,Route,RouteResult}
 import akka.pattern.ask
-import akka.stream.{FlowShape,OverflowStrategy,Materializer}
+import akka.stream.{ActorAttributes,FlowShape,OverflowStrategy,Materializer,Supervision}
 import akka.stream.scaladsl.{Flow,GraphDSL,Keep,MergeHub,MergePreferred,Sink,Source}
 import akka.util.{ByteString,Timeout}
 import com.google.common.hash.HashCode
@@ -382,10 +382,24 @@ class HttpStepHandler(
       implicit val mat = ctx.materializer
       implicit val ec = ctx.executionContext
 
+      val decider: Supervision.Decider = {
+        case ex: akka.http.scaladsl.model.ParsingException => {
+          logger.warn("Ignoring multipart POST error: {}", ex.getMessage)
+          Supervision.Resume
+        }
+        case _ => Supervision.Stop
+      }
+
       case class State(lastReadCompleted: Future[akka.Done], fragments: List[StepOutputFragment])
 
       withTask(uuid, ctx)(() => formData.parts.flatMapConcat(part => part.entity.dataBytes).runWith(Sink.ignore)) { (task, workerTaskRef) =>
-        val fragments: Source[StepOutputFragment, akka.NotUsed] = formData.parts
+        val fragments: Source[StepOutputFragment, akka.NotUsed] = formData.parts.withAttributes(ActorAttributes.supervisionStrategy(decider))
+          //.recover {
+          //  case ex: akka.http.scaladsl.model.ParsingException => {
+          //    // akka-streams forces us to output _something_
+          //    Multipart.FormData.BodyPart.Strict("heartbeat", HttpEntity.Strict(ContentTypes.NoContentType, ByteString("")))
+          //  }
+          //}
           .mapAsync(1) { part => partToFragment(part.name, part.entity) }
           .collect { case Some(f) => f } // Option[fragment] => fragment, ignoring None
           .mapMaterializedValue(_ => akka.NotUsed)
