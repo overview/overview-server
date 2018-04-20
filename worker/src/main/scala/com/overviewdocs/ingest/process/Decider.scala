@@ -64,6 +64,7 @@ class Decider(
     }
 
     val Archive = SimpleStep("Archive")
+    val Email = SimpleStep("Email")
     val Html = SimpleStep("Html")
     val Image = SimpleStep("Image")
     val Office = SimpleStep("Office")
@@ -94,6 +95,8 @@ class Decider(
     "application/x-xz" -> NextStep.Archive,
     "application/x-xz-compressed-tar" -> NextStep.Archive,
     "application/zip" -> NextStep.Archive,
+
+    "message/rfc822" -> NextStep.Email,
 
     "image/jpeg" -> NextStep.Image,
     "image/png" -> NextStep.Image,

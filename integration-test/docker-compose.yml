@@ -50,6 +50,12 @@ services:
     environment:
       POLL_URL: 'http://overview-worker:9032/Archive'
 
+  overview-convert-email:
+    image: "${CONVERT_EMAIL_IMAGE}"
+    networks: [ 'worker' ]
+    environment:
+      POLL_URL: 'http://overview-worker:9032/Email'
+
   overview-convert-html:
     image: "${CONVERT_HTML_IMAGE}"
     networks: [ 'worker' ]

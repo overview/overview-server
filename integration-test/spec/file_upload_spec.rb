@@ -117,7 +117,7 @@ describe 'FileUpload' do
 
   it 'should support all file types' do
     page.create_document_set_from_pdfs_in_folder('files/file-upload-spec')
-    for title in %w(Cat0.pdf Cat1.docx Cat2.txt Cat3.rtf Cat4.html Cats.zip/Cat0.pdf Cats.zip/Cat1.docx Image.jpg Image.png Jules1.doc Jules2.pptx Jules3.xlsx)
+    for title in %w(Cat0.pdf Cat1.docx Cat2.txt Cat3.rtf Cat4.html Cats.zip/Cat0.pdf Cats.zip/Cat1.docx Image.jpg Image.png Jules1.doc Jules2.pptx Jules3.xlsx email-with-attachment.eml email-with-attachment.eml/pngout.png)
       page.assert_selector('#document-list h3', text: title)
     end
   end

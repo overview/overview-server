@@ -72,6 +72,7 @@ object Step {
     new HttpSteps(
       Vector(
         "Archive" -> 0.1,
+        "Email" -> 0.1,
         "Html" -> 0.75, // 1.0 if !wantSplitByPage, 0.5 otherwise
         "Image" -> 1.0,
         "Office" -> 0.75,

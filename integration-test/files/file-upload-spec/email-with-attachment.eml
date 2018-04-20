@@ -1,0 +1,44 @@
+MIME-Version: 1.0
+Message-ID: <CAMWjz6Gz262Qn923aaSGRJzVo_-D_y2CV5JyKU+qMKW7SzFERw@mail.gmail.com>
+Date: Fri, 20 Apr 2018 20:54:59 +0000
+Subject: Test attachment
+From: Adam Hooper <adam@adamhooper.com>
+To: Adam Hooper <adam@adamhooper.com>
+Content-Type: multipart/mixed; boundary="94eb2c1cc8aabb009d056a4de605"
+
+--94eb2c1cc8aabb009d056a4de605
+Content-Type: multipart/alternative; boundary="94eb2c1cc8aabb0099056a4de603"
+
+--94eb2c1cc8aabb0099056a4de603
+Content-Type: text/plain; charset="UTF-8"; format=flowed; delsp=yes
+
+I've attached the image.
+
+Bye
+-- 
+Adam Hooper
+http://adamhooper.com
++1-929-332-3503
+
+--94eb2c1cc8aabb0099056a4de603
+Content-Type: text/html; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+
+<div dir=3D"ltr">I&#39;ve attached the image.<div><br></div><div>Bye</div><=
+/div>-- <br><div dir=3D"ltr" class=3D"gmail_signature" data-smartmail=3D"gm=
+ail_signature"><div dir=3D"ltr">Adam Hooper<div><a href=3D"http://adamhoope=
+r.com">http://adamhooper.com</a></div><div>+1-929-332-3503</div></div></div=
+>
+--94eb2c1cc8aabb0099056a4de603--
+--94eb2c1cc8aabb009d056a4de605
+Content-Type: image/png; name="pngout.png"
+Content-Disposition: attachment; filename="pngout.png"
+Content-Transfer-Encoding: base64
+X-Attachment-Id: 162e4d6a2951f1631401
+Content-ID: <162e4d6a2951f1631401>
+
+iVBORw0KGgoAAAANSUhEUgAAABkAAAAKCAAAAABkwKqKAAAAmElEQVQYV2P4jwswfGeAgMXIotKn
+gTIghvBuZGE0mRehQnJ9/+8Inv3/THR/MNCMyVCZf5Y5766rbvk/S+OrezGKngsCf/7/nxr//7+v
+ju4PFJmNDMxMjAxO//9vYpiFas85qX9gqz8rJUu9/f9fFiHz16Lw5eu5U/4nhf5PDf3/33jeP4Tb
+osXEkl9vAGr4rLzk/1ppxskAcLS0hUtJUT8AAAAASUVORK5CYII=
+--94eb2c1cc8aabb009d056a4de605--

@@ -54,14 +54,14 @@ class DeciderSpec extends Specification with Mockito {
           (ctx: RequestContext) => Future.successful(RouteResult.Rejected(Nil))
         }
     }
-    val steps = Vector("PdfOcr", "Pdf", "Office", "Archive", "Html", "Image", "Text", "Unhandled", "Canceled").map(MockStep.apply _)
+    val steps = Vector("PdfOcr", "Pdf", "Office", "Archive", "Email", "Html", "Image", "Text", "Unhandled", "Canceled").map(MockStep.apply _)
     val decider = new Decider(steps, mockBlobStorage)
   }
 
   "Decider" should {
     "#getContentType" should {
-      "return the content type, normally" in new BaseScope {
-        val input = writtenFile2("foo.csv", "text/csv", false, Vector())
+      "return the content type, when provided" in new BaseScope {
+        val input = writtenFile2("foo.doc", "text/csv", false, Vector())
         await(decider.getContentTypeNoParameters(input)) must beEqualTo("text/csv")
       }
 
@@ -106,6 +106,11 @@ class DeciderSpec extends Specification with Mockito {
       "detect Image steps" in new BaseScope {
         val input = writtenFile2("file.jpg", "application/octet-stream", false, Vector())
         await(decider.getNextStep(input).map(_.id)) must beEqualTo("Image")
+      }
+
+      "detect Email steps" in new BaseScope {
+        val input = writtenFile2("input.pst/Folder/3", "message/rfc822", false, Vector())
+        await(decider.getNextStep(input).map(_.id)) must beEqualTo("Email")
       }
 
       "send .csv to Office (because it's a spreadsheet)" in new BaseScope {

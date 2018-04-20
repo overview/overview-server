@@ -1,0 +1,43 @@
+---
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: convert-email-deployment
+spec:
+  selector:
+    matchLabels:
+      app: convert-email
+  replicas: 1
+  revisionHistoryLimit: 20
+  template:
+    metadata:
+      labels:
+        app: convert-email
+    spec:
+      containers:
+      - name: convert-email
+        image: CONVERT_EMAIL_IMAGE
+        env:
+        - name: POLL_URL
+          value: http://overview-worker:9032/Email
+        resources:
+          requests:
+            cpu: 50m
+            memory: 30Mi
+          limits:
+            cpu: 1
+            memory: 100Mi # convert-email should always use next to nothing
+---
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: convert-email
+  namespace: default
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1beta2
+    kind: Deployment
+    name: convert-email-deployment
+  minReplicas: 1
+  maxReplicas: 4
+  targetCPUUtilizationPercentage: 50
