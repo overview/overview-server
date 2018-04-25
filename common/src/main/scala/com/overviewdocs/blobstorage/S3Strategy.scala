@@ -4,8 +4,9 @@ import akka.stream.scaladsl.{Source,StreamConverters}
 import akka.util.ByteString
 import com.amazonaws.services.s3.{AmazonS3,AmazonS3Client,AmazonS3ClientBuilder}
 import com.amazonaws.services.s3.transfer.{TransferManager,TransferManagerBuilder}
-import com.amazonaws.services.s3.model.{AmazonS3Exception,DeleteObjectsRequest,GeneratePresignedUrlRequest,MultiObjectDeleteException,ObjectMetadata}
+import com.amazonaws.services.s3.model.{AmazonS3Exception,DeleteObjectsRequest,GetObjectRequest,GeneratePresignedUrlRequest,MultiObjectDeleteException,ObjectMetadata}
 import com.amazonaws.event.{ProgressEvent,ProgressEventType,ProgressListener}
+import com.google.common.io.ByteStreams
 import java.io.IOException
 import java.nio.file.{Files,Path}
 import java.util.UUID
@@ -50,6 +51,20 @@ trait S3Strategy extends BlobStorageStrategy {
     })
     Source.fromFutureSource(futureSource)
       .mapMaterializedValue(_ => akka.NotUsed)
+  }
+
+  override def getBytes(locationString: String, maxNBytes: Int): Future[Array[Byte]] = {
+    val location = stringToLocation(locationString)
+    val request = new GetObjectRequest(location.bucket, location.key)
+      .withRange(0, maxNBytes)
+
+    Future(blocking {
+      val s3Object = s3.getObject(location.bucket, location.key)
+      val inputStream = s3Object.getObjectContent()
+      val ret = ByteStreams.toByteArray(inputStream)
+      inputStream.close()
+      ret
+    })(scala.concurrent.ExecutionContext.Implicits.global)
   }
 
   override def getUrl(locationString: String, mimeType: String): Future[String] = {

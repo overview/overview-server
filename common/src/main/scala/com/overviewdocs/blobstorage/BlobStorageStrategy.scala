@@ -21,6 +21,19 @@ trait BlobStorageStrategy {
     */
   def get(location: String): Source[ByteString, akka.NotUsed]
 
+  /** Collects a few bytes of a blob.
+    *
+    * The <tt>location</tt> should look like <tt>"s3:bucket:key"</tt> or
+    * <tt>"pglo:123456"</tt>.
+    *
+    * This method checks <tt>location</tt> for syntax synchronously. The Source
+    * it returns may fail if there is a network error or permissions problem.
+    *
+    * @param location Something like <tt>"s3:bucket:key"</tt> or <tt>"pglo:123"</tt>
+    * @throws InvalidArgumentException if <tt>location</tt> is invalid
+    */
+  def getBytes(location: String, maxNBytes: Int): Future[Array[Byte]]
+
   /** Gets a public URL the end-user can use to access the blob for a while.
     *
     * The <tt>location</tt> should look like <tt>"s3:bucket:key"</tt> or

@@ -2,11 +2,13 @@ package com.overviewdocs.blobstorage
 
 import akka.stream.scaladsl.{FileIO,Source}
 import akka.util.ByteString
-import java.io.File
-import java.nio.file.{Files,Path}
+import java.io.{File,IOException}
+import java.nio.ByteBuffer
+import java.nio.channels.{AsynchronousFileChannel,CompletionHandler}
+import java.nio.file.{Files,Path,StandardOpenOption}
 import java.util.{Base64,UUID}
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{Future,blocking}
+import scala.concurrent.{Future,Promise,blocking}
 
 trait FileStrategy extends BlobStorageStrategy {
   protected val config: BlobStorageConfig
@@ -31,6 +33,35 @@ trait FileStrategy extends BlobStorageStrategy {
     val file = keyFile(location)
     FileIO.fromPath(file.toPath)
       .mapMaterializedValue(_ => akka.NotUsed)
+  }
+
+  override def getBytes(locationString: String, maxNBytes: Int): Future[Array[Byte]] = {
+    val location = stringToLocation(locationString)
+    val file = keyFile(location)
+
+    val channel = try {
+      AsynchronousFileChannel.open(file.toPath, StandardOpenOption.READ)
+    } catch {
+      case ex: IOException => return Future.failed(ex)
+    }
+
+    val ret = Promise.apply[Array[Byte]]
+
+    val buf = ByteBuffer.allocate(maxNBytes)
+    channel.read(buf, 0, ret, new CompletionHandler[Integer,Promise[Array[Byte]]] {
+      override def completed(nBytes: Integer, p: Promise[Array[Byte]]): Unit = {
+        val bytes = new Array[Byte](maxNBytes)
+        buf.rewind()
+        buf.get(bytes, 0, nBytes)
+        p.success(bytes)
+      }
+
+      override def failed(ex: Throwable, p: Promise[Array[Byte]]): Unit = {
+        p.failure(ex)
+      }
+    })
+
+    ret.future
   }
 
   override def getUrl(locationString: String, mimeType: String): Future[String] = {
