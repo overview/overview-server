@@ -41,40 +41,54 @@ services:
 
   convert-archive:
     image: "${CONVERT_ARCHIVE_IMAGE}"
+    depends_on: [ 'dev' ]
     environment:
       POLL_URL: 'http://overview-worker:9032/Archive'
 
   convert-email:
     image: "${CONVERT_EMAIL_IMAGE}"
+    depends_on: [ 'dev' ]
     environment:
       POLL_URL: 'http://overview-worker:9032/Email'
 
   convert-html:
     image: "${CONVERT_HTML_IMAGE}"
+    depends_on: [ 'dev' ]
     environment:
       POLL_URL: 'http://overview-worker:9032/Html'
 
   convert-image:
     image: "${CONVERT_IMAGE_IMAGE}"
+    depends_on: [ 'dev' ]
     environment:
       POLL_URL: 'http://overview-worker:9032/Image'
 
   convert-office:
     image: "${CONVERT_OFFICE_IMAGE}"
+    depends_on: [ 'dev' ]
     environment:
       POLL_URL: 'http://overview-worker:9032/Office'
 
   convert-pdf:
     image: "${CONVERT_PDF_IMAGE}"
+    depends_on: [ 'dev' ]
     environment:
       POLL_URL: 'http://overview-worker:9032/Pdf'
 
   convert-pdfocr:
     image: "${CONVERT_PDFOCR_IMAGE}"
+    depends_on: [ 'dev' ]
     environment:
       POLL_URL: 'http://overview-worker:9032/PdfOcr'
 
+  convert-pst:
+    image: "${CONVERT_PST_IMAGE}"
+    depends_on: [ 'dev' ]
+    environment:
+      POLL_URL: 'http://overview-worker:9032/Pst'
+
   convert-text:
     image: "${CONVERT_TEXT_IMAGE}"
+    depends_on: [ 'dev' ]
     environment:
       POLL_URL: 'http://overview-worker:9032/Text'

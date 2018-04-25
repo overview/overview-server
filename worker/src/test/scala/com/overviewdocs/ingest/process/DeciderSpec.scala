@@ -54,7 +54,7 @@ class DeciderSpec extends Specification with Mockito {
           (ctx: RequestContext) => Future.successful(RouteResult.Rejected(Nil))
         }
     }
-    val steps = Vector("PdfOcr", "Pdf", "Office", "Archive", "Email", "Html", "Image", "Text", "Unhandled", "Canceled").map(MockStep.apply _)
+    val steps = Vector("PdfOcr", "Pdf", "Pst", "Office", "Archive", "Email", "Html", "Image", "Text", "Unhandled", "Canceled").map(MockStep.apply _)
     val decider = new Decider(steps, mockBlobStorage)
   }
 
@@ -76,22 +76,9 @@ class DeciderSpec extends Specification with Mockito {
       }
 
       "detect using magic number" in new BaseScope {
-        mockBlobStorage.get(any) returns Source(Vector(
-          ByteString(Array(0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a).map(_.toByte))
-        ))
-        val input = writtenFile2("foo.blob", "application/octet-stream", false, Vector())
-        await(decider.getContentTypeNoParameters(input)) must beEqualTo("image/png")
-      }
-
-      "handle large blobs" in new BaseScope {
-        // We _assume_ the getBytes function truncates. We're only really
-        // testing that the truncation code doesn't _crash_.
-        mockBlobStorage.get(any) returns Source(Vector(
-          ByteString(Array(0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a).map(_.toByte)),
-          ByteString(Array.fill(Decider.mimeTypeDetector.getMaxGetBytesLength)(0x0a.toByte)),
-          ByteString(Array.fill(Decider.mimeTypeDetector.getMaxGetBytesLength)(0x0a.toByte)),
-          ByteString(Array.fill(Decider.mimeTypeDetector.getMaxGetBytesLength)(0x0a.toByte))
-        ))
+        mockBlobStorage.getBytes(any, any) returns Future.successful(
+          Array(0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a).map(_.toByte)
+        )
         val input = writtenFile2("foo.blob", "application/octet-stream", false, Vector())
         await(decider.getContentTypeNoParameters(input)) must beEqualTo("image/png")
       }
@@ -126,6 +113,11 @@ class DeciderSpec extends Specification with Mockito {
       "send RTF to HTML" in new BaseScope {
         val input = writtenFile2("file.rtf", "application/octet-stream", false, Vector())
         await(decider.getNextStep(input).map(_.id)) must beEqualTo("Html")
+      }
+
+      "send PST to HTML" in new BaseScope {
+        val input = writtenFile2("file.pst", "application/octet-stream", false, Vector())
+        await(decider.getNextStep(input).map(_.id)) must beEqualTo("Pst")
       }
 
       "detect Pdf steps with OCR" in new BaseScope {

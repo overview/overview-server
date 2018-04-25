@@ -33,7 +33,7 @@ object Dependencies {
     val lucene = "org.apache.lucene" % "lucene-core" % "6.5.1"
     val luceneAnalyzersIcu = "org.apache.lucene" % "lucene-analyzers-icu" % "6.5.1"
     val luceneHighlighter = "org.apache.lucene" % "lucene-highlighter" % "6.5.1"
-    val mimeTypes = "org.overviewproject" % "mime-types" % "0.0.2"
+    val mimeTypes = "org.overviewproject" % "mime-types" % "0.1.0"
     val mockito = "org.mockito" % "mockito-all" % "1.10.19"
     val owaspEncoder = "org.owasp.encoder" % "encoder" % "1.2.1"
     val parserCombinators = "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.6" // QueryParser

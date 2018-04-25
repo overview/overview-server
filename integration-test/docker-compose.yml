@@ -47,48 +47,63 @@ services:
   overview-convert-archive:
     image: "${CONVERT_ARCHIVE_IMAGE}"
     networks: [ 'worker' ]
+    depends_on: [ 'overview-worker' ]
     environment:
       POLL_URL: 'http://overview-worker:9032/Archive'
 
   overview-convert-email:
     image: "${CONVERT_EMAIL_IMAGE}"
     networks: [ 'worker' ]
+    depends_on: [ 'overview-worker' ]
     environment:
       POLL_URL: 'http://overview-worker:9032/Email'
 
   overview-convert-html:
     image: "${CONVERT_HTML_IMAGE}"
     networks: [ 'worker' ]
+    depends_on: [ 'overview-worker' ]
     environment:
       POLL_URL: 'http://overview-worker:9032/Html'
 
   overview-convert-image:
     image: "${CONVERT_IMAGE_IMAGE}"
     networks: [ 'worker' ]
+    depends_on: [ 'overview-worker' ]
     environment:
       POLL_URL: 'http://overview-worker:9032/Image'
 
   overview-convert-office:
     image: "${CONVERT_OFFICE_IMAGE}"
     networks: [ 'worker' ]
+    depends_on: [ 'overview-worker' ]
     environment:
       POLL_URL: 'http://overview-worker:9032/Office'
 
   overview-convert-pdf:
     image: "${CONVERT_PDF_IMAGE}"
     networks: [ 'worker' ]
+    depends_on: [ 'overview-worker' ]
     environment:
       POLL_URL: 'http://overview-worker:9032/Pdf'
 
   overview-convert-pdfocr:
     image: "${CONVERT_PDFOCR_IMAGE}"
     networks: [ 'worker' ]
+    depends_on: [ 'overview-worker' ]
     environment:
       POLL_URL: 'http://overview-worker:9032/PdfOcr'
+
+  overview-convert-pst:
+    image: "${CONVERT_PST_IMAGE}"
+    networks: [ 'worker' ]
+    depends_on: [ 'overview-worker' ]
+    environment:
+      POLL_URL: 'http://overview-worker:9032/Pst'
 
   overview-convert-text:
     image: "${CONVERT_TEXT_IMAGE}"
     networks: [ 'worker' ]
+    depends_on: [ 'overview-worker' ]
     environment:
       POLL_URL: 'http://overview-worker:9032/Text'
 
@@ -97,7 +112,7 @@ services:
     image: overview/overview-integration-tester:${OVERVIEW_INTEGRATION_TESTER_VERSION}
     command: sh -c "xvfb-run -a -s '-screen 0 1200x900x24' ./all-tests"
     shm_size: 2g
-    depends_on: [ 'overview-web', 'overview-convert-archive', 'overview-convert-html', 'overview-convert-image', 'overview-convert-office', 'overview-convert-pdf', 'overview-convert-pdfocr', 'overview-convert-text' ]
+    depends_on: [ 'overview-web', 'overview-convert-archive', 'overview-convert-html', 'overview-convert-image', 'overview-convert-office', 'overview-convert-pdf', 'overview-convert-pdfocr', 'overview-convert-pst', 'overview-convert-text' ]
     environment:
       OVERVIEW_URL: http://overview-web
       WAIT_FOR_URLS: ${WAIT_FOR_URLS}

@@ -78,6 +78,7 @@ object Step {
         "Office" -> 0.75,
         "Pdf" -> 1.0,
         "PdfOcr" -> 0.75,
+        "Pst" -> 0.1,
         "Text" -> 0.75 // 1.0 if !wantSplitByPage, 0.5 otherwise
       ),
       file2Writer,

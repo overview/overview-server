@@ -69,6 +69,7 @@ class Decider(
     val Image = SimpleStep("Image")
     val Office = SimpleStep("Office")
     val Pdf = PdfStep
+    val Pst = SimpleStep("Pst")
     val Text = SimpleStep("Text")
 
     val Canceled = SimpleStep("Canceled")
@@ -185,6 +186,8 @@ class Decider(
     "application/csv" -> NextStep.Office,
     "text/csv" -> NextStep.Office,
 
+    "application/vnd.ms-outlook" -> NextStep.Pst,
+
     "application/rtf" -> NextStep.Html,
     "text/html" -> NextStep.Html,
     "application/xhtml+xml" -> NextStep.Html,
@@ -221,30 +224,19 @@ class Decider(
     }
   }
 
-  private def buildGetBytes(
+  private def getBytes(
     blobLocation: String
-  )(implicit mat: Materializer): Callable[Array[Byte]] = { () =>
+  )(implicit mat: Materializer): Future[Array[Byte]] = {
     val maxNBytes = Decider.mimeTypeDetector.getMaxGetBytesLength
-    var nBytesSeen = 0 // icky way of tracking state
-    val byteStringFuture: Future[ByteString] = blobStorage.get(blobLocation)
-      .takeWhile(bs => {
-        nBytesSeen += bs.size
-        nBytesSeen < maxNBytes
-      })
-      .runWith(Sink.fold(ByteString.empty)(_ ++ _))
-
-    val byteString = await(byteStringFuture)
-    byteString.slice(0, maxNBytes).toArray
+    blobStorage.getBytes(blobLocation, maxNBytes)
   }
 
   private def detectMimeType(
     filename: String,
     blob: BlobStorageRef
   )(implicit mat: Materializer): Future[String] = {
-    implicit val ec = mat.executionContext
-    Future(blocking {
-      Decider.mimeTypeDetector.detectMimeType(filename, buildGetBytes(blob.location))
-    })
+    import scala.compat.java8.FutureConverters.{toJava,toScala}
+    toScala(Decider.mimeTypeDetector.detectMimeTypeAsync(filename, () => toJava(getBytes(blob.location))))
   }
 
   protected[ingest] def getContentTypeNoParameters(
