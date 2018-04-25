@@ -112,7 +112,7 @@ services:
     image: overview/overview-integration-tester:${OVERVIEW_INTEGRATION_TESTER_VERSION}
     command: sh -c "xvfb-run -a -s '-screen 0 1200x900x24' ./all-tests"
     shm_size: 2g
-    depends_on: [ 'overview-web', 'overview-convert-archive', 'overview-convert-html', 'overview-convert-image', 'overview-convert-office', 'overview-convert-pdf', 'overview-convert-pdfocr', 'overview-convert-pst', 'overview-convert-text' ]
+    depends_on: [ 'overview-web', 'overview-convert-archive', 'overview-convert-html', 'overview-convert-email', 'overview-convert-image', 'overview-convert-office', 'overview-convert-pdf', 'overview-convert-pdfocr', 'overview-convert-pst', 'overview-convert-text' ]
     environment:
       OVERVIEW_URL: http://overview-web
       WAIT_FOR_URLS: ${WAIT_FOR_URLS}
