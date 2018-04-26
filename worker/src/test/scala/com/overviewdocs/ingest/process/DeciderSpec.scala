@@ -135,6 +135,12 @@ class DeciderSpec extends Specification with Mockito {
         await(decider.getNextStep(input).map(_.id)) must beEqualTo("Text")
       }
 
+      "do Text for shell scripts" in new BaseScope {
+        mockBlobStorage.getBytes(any, any) returns Future.successful("#!/bin/sh\n\necho 'foo'\n".getBytes("utf-8"));
+        val input = writtenFile2("script.sh", "application/octet-stream", false, Vector())
+        await(decider.getNextStep(input).map(_.id)) must beEqualTo("Text")
+      }
+
       "default to Unhandled" in new BaseScope {
         val input = writtenFile2("weird.3mf", "model/3mf", false, Vector())
         await(decider.getNextStep(input).map(_.id)) must beEqualTo("Unhandled")

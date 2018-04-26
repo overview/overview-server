@@ -196,6 +196,7 @@ class Decider(
     "application/json" -> NextStep.Text,
     "application/x-python" -> NextStep.Text,
     "application/x-ruby" -> NextStep.Text,
+    "application/x-shellscript" -> NextStep.Text,
     "application/xml" -> NextStep.Text,
     "text/*" -> NextStep.Text // Lots of source code in this category
   )
