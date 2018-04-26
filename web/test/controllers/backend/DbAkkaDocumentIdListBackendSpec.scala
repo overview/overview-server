@@ -25,7 +25,7 @@ class DbAkkaDocumentIdListBackendSpec extends DbBackendSpecification with InAppS
     "show" should {
       "ignore the message broker" in new BaseScope {
         await(backend.show(1, "foo"))
-        brokerProbe.expectNoMsg(Duration.Zero)
+        brokerProbe.expectNoMessage(Duration.Zero)
       }
 
       "return None if the DocumentIdList does not exist" in new BaseScope {
@@ -101,7 +101,7 @@ class DbAkkaDocumentIdListBackendSpec extends DbBackendSpecification with InAppS
           VALUES (1, 2, 'foo', '{0,2,1}')
         """)
         await(backend.createIfMissing(2, "foo").runWith(Sink.ignore))
-        brokerProbe.expectNoMsg(Duration.Zero)
+        brokerProbe.expectNoMessage(Duration.Zero)
       }
 
       "crash on timeout" in new BaseScope {
