@@ -4,13 +4,13 @@ import play.sbt.PlayImport.{guice,filters,ws}
 object Dependencies {
   private object deps {
     // shared dependencies
-    val akka = "com.typesafe.akka" %% "akka-actor" % "2.5.3"
-    val akkaRemote = "com.typesafe.akka" %% "akka-remote" % "2.5.3"
-    val akkaTestkit = "com.typesafe.akka" %% "akka-testkit"  % "2.5.3"
-    val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.0.10"
-    val akkaHttpTestkit = "com.typesafe.akka" %% "akka-http-testkit" % "10.0.10"
-    val akkaStream = "com.typesafe.akka" %% "akka-stream" % "2.5.11"
-    val akkaStreamTestkit = "com.typesafe.akka" %% "akka-stream-testkit" % "2.5.11"
+    val akka = "com.typesafe.akka" %% "akka-actor" % "2.5.12"
+    val akkaRemote = "com.typesafe.akka" %% "akka-remote" % "2.5.12"
+    val akkaTestkit = "com.typesafe.akka" %% "akka-testkit"  % "2.5.12"
+    val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.1.1"
+    val akkaHttpTestkit = "com.typesafe.akka" %% "akka-http-testkit" % "10.1.1"
+    val akkaStream = "com.typesafe.akka" %% "akka-stream" % "2.5.12"
+    val akkaStreamTestkit = "com.typesafe.akka" %% "akka-stream-testkit" % "2.5.12"
     val asyncHttpClient = "com.ning" % "async-http-client" % "1.9.31"
     val awsCore = "com.amazonaws" % "aws-java-sdk-core" % "1.11.232"
     val awsS3 = "com.amazonaws" % "aws-java-sdk-s3" % "1.11.232"
@@ -39,7 +39,7 @@ object Dependencies {
     val parserCombinators = "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.6" // QueryParser
     val pgSlick = "com.github.tminglei" %% "slick-pg" % "0.16.0"
     val playIteratees = "com.typesafe.play" %% "play-iteratees" % "2.6.1" // DELETEME
-    val playJson = "com.typesafe.play" %% "play-json" % "2.6.8"
+    val playJson = "com.typesafe.play" %% "play-json" % "2.6.9"
     val playMailer = "com.typesafe.play" %% "play-mailer" % "6.0.1"
     val playMailerGuice = "com.typesafe.play" %% "play-mailer-guice" % "6.0.1"
     val playTest = "com.typesafe.play" %% "play-test" % play.core.PlayVersion.current
