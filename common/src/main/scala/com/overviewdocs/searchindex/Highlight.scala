@@ -25,12 +25,12 @@ case class Utf16Highlight(begin: Int, end: Int) extends Highlight {
 
     val result1 = encoder.encode(CharBuffer.wrap(text.substring(0, begin)), byteBuffer, false)
     assert(!result1.isError)
-    val utf8Begin = byteBuffer.position
+    val utf8Begin: Int = byteBuffer.position
 
     byteBuffer.position(0) // saves memory
     val result2 = encoder.encode(CharBuffer.wrap(text.substring(begin, end)), byteBuffer, true)
     assert(!result2.isError)
-    val utf8Length = byteBuffer.position
+    val utf8Length: Int = byteBuffer.position
 
     Utf8Highlight(utf8Begin, utf8Begin + utf8Length)
   }

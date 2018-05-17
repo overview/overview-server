@@ -1,10 +1,10 @@
-FROM openjdk:8u151-jdk
+FROM openjdk:10.0.1-10-jdk-sid
 
 # Deps:
 # nodejs+build-essential+xvfb+libxss1+libgconf-2-4: for web/js tests (which run Electron and Node)
 # zip+unzip: for ./build
 RUN true \
-      && curl -sL https://deb.nodesource.com/setup_8.x | bash \
+      && curl -sL https://deb.nodesource.com/setup_10.x | bash \
       && apt-get update \
       && apt-get -y install \
         nodejs \

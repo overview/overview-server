@@ -37,13 +37,13 @@ object Dependencies {
     val mockito = "org.mockito" % "mockito-all" % "1.10.19"
     val owaspEncoder = "org.owasp.encoder" % "encoder" % "1.2.1"
     val parserCombinators = "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.6" // QueryParser
-    val pgSlick = "com.github.tminglei" %% "slick-pg" % "0.16.0"
+    val pgSlick = "com.github.tminglei" %% "slick-pg" % "0.16.1"
     val playIteratees = "com.typesafe.play" %% "play-iteratees" % "2.6.1" // DELETEME
     val playJson = "com.typesafe.play" %% "play-json" % "2.6.9"
     val playMailer = "com.typesafe.play" %% "play-mailer" % "6.0.1"
     val playMailerGuice = "com.typesafe.play" %% "play-mailer-guice" % "6.0.1"
     val playTest = "com.typesafe.play" %% "play-test" % play.core.PlayVersion.current
-    val postgresql = "org.postgresql" % "postgresql" % "42.1.1"
+    val postgresql = "org.postgresql" % "postgresql" % "42.2.2"
     val re2j = "com.google.re2j" % "re2j" % "1.1"
     val redis = "com.github.etaty" %% "rediscala" % "1.8.0"
     val slick = "com.typesafe.slick" %% "slick" % "3.2.3"
@@ -100,7 +100,11 @@ object Dependencies {
     ws,
     deps.akkaHttp, // DbHttpViewFilterBackend
     deps.joddWot % "test",
-    deps.playTest % "test"
+    deps.playTest % "test",
+
+    // JDK10 w/ Play 2.6.6: java.lang.NoClassDefFoundError: javax/xml/bind/DatatypeConverter
+    // See https://github.com/playframework/playframework/issues/7879#issuecomment-379910392
+    "javax.xml.bind" % "jaxb-api" % "2.3.0"
   )
   
   val workerDependencies = Seq(

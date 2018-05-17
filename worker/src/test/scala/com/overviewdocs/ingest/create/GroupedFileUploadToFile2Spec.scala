@@ -1,6 +1,7 @@
 package com.overviewdocs.ingest.create
 
 import java.nio.file.Path
+import java.time.temporal.ChronoUnit
 import org.specs2.mock.Mockito
 import org.specs2.mutable.After
 import play.api.libs.json.{JsObject,JsString}
@@ -111,7 +112,7 @@ class GroupedFileUploadToFile2Spec extends DbSpecification with Mockito {
 
       dbFile2s.head.blob must beSome(BlobStorageRef("loc", 19))
       dbFile2s.head.blobSha1 must beEqualTo(sha1)
-      dbFile2s.head.writtenAt must beEqualTo(result.writtenAt)
+      dbFile2s.head.writtenAt must beEqualTo(result.writtenAt.map(_.truncatedTo(ChronoUnit.MILLIS)))
     }
 
     "resume a write" in new BaseScope {

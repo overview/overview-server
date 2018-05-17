@@ -53,7 +53,7 @@ class PageOnDiskSpec extends Specification with AwaitMethod {
         val bytes = Files.readAllBytes(pageOnDisk.path)
         val buf = ByteBuffer.wrap(bytes)
         buf.order(ByteOrder.nativeOrder)
-        buf.limit must beEqualTo(PageOnDisk.maxNBytesOnDiskPerRecord)
+        buf.limit() must beEqualTo(PageOnDisk.maxNBytesOnDiskPerRecord)
         buf.getInt
         buf.getInt
         buf.getInt must beEqualTo(PageOnDisk.maxNBytesOnDiskPerRecord - 12)
