@@ -2,4 +2,5 @@
 
 set -e
 
-exec docker-compose up --build --abort-on-container-exit --exit-code-from dev
+# --project-name because of https://github.com/docker/compose/issues/5874
+exec docker-compose --project-name overviewserver up --build --abort-on-container-exit --exit-code-from dev
