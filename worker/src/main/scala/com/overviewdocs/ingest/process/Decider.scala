@@ -9,7 +9,7 @@ import scala.concurrent.{ExecutionContext,Future,blocking}
 import com.overviewdocs.blobstorage.BlobStorage
 import com.overviewdocs.ingest.model.WrittenFile2
 import com.overviewdocs.models.BlobStorageRef
-import com.overviewdocs.util.AwaitMethod
+import com.overviewdocs.util.Logger
 import org.overviewproject.mime_types.MimeTypeDetector
 
 /** Ensures a valid `contentType` for each input WrittenFile2; emits to the
@@ -40,7 +40,9 @@ class Decider(
     * Usually, the slow part is reading from BlobStorage.
     */
   parallelism: Int = 2
-) extends AwaitMethod {
+) {
+  private val logger = Logger.forClass(getClass)
+
   sealed trait NextStep {
     def forFile(file: WrittenFile2): Step
   }
@@ -277,6 +279,7 @@ class Decider(
     for {
       step <- getNextStep(input)
     } yield {
+      logger.info("FileGroup {}: File {} '{}': ⇒ {}", input.fileGroupJob.fileGroupId, input.id, input.filename, step.id)
       steps.indexOf(step)
     }
   }
