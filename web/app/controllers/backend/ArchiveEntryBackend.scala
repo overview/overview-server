@@ -91,7 +91,7 @@ class DbArchiveEntryBackend @Inject() (
       assert(signature.sameElements("PGCOPY\n".getBytes("ascii") ++ Array(0xff, 0x0d, 0x0a, 0x00).map(_.toByte)))
       val flags = buf.getInt; assert(flags == 0)
       val headerExtensionLength = buf.getInt
-      buf.position(buf.position() + headerExtensionLength)
+      buf.position(buf.position + headerExtensionLength)
 
       val ret = new mutable.ArrayBuffer[ArchiveEntry](documentIds.length)
 

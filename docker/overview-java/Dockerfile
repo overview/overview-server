@@ -1,7 +1,12 @@
 # This build depends on "archive.tar.gz" being in the build context.
 # Something like https://github.com/moby/moby/issues/2745#issuecomment-319816125:
 # tar -c ./* -C $SOME_OTHER_DIRECTORY some_files_from_other_directory | docker build -
-FROM openjdk:10.0.1-10-jre-slim-sid
+FROM alpine:3.7
+
+RUN set -x \
+      && apk add --update --no-cache \
+        openjdk8-jre-base \
+        ca-certificates
 
 WORKDIR /opt/overview
 

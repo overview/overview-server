@@ -139,6 +139,7 @@ class ZipArchive(
       .putShort(0)
       .put(archiveEntry.filenameUtf8)
 
+    assert(buf.position == buf.limit)
     buf.array
   }
 
@@ -191,6 +192,7 @@ class ZipArchive(
       .putInt(localFileOffset)
       .put(archiveEntry.filenameUtf8)
 
+    assert(buf.position == buf.limit)
     buf.array
   }
 
@@ -215,6 +217,7 @@ class ZipArchive(
       .putInt(centralDirectoryStart)
       .putShort(0) // comment size
 
+    assert(buf.position == buf.limit)
     Source.single(ByteString(buf.array))
   }
 
