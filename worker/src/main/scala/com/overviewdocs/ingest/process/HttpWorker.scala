@@ -49,7 +49,7 @@ class HttpWorker(
   implicit val ec: ExecutionContext = context.dispatcher
   implicit val mat = {
     val decider: Supervision.Decider = {
-      case ex: RuntimeException => {
+      case ex: Throwable => {
         ex.printStackTrace()
         Supervision.Stop
       }
