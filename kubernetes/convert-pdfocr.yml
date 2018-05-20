@@ -26,7 +26,7 @@ spec:
             memory: 50Mi
           limits:
             cpu: 1
-            memory: 1024Mi # total guess
+            memory: 1536Mi # total guess
 ---
 apiVersion: autoscaling/v1
 kind: HorizontalPodAutoscaler
