@@ -99,6 +99,20 @@ class CsvDocumentWriterSpec extends DbSpecification {
       ))
     }
 
+    "truncate (and reuse) tags >100chars" in new BaseScope {
+      val tag = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      val tag1 = tag + "1"
+      val tag2 = tag + "2"
+      writer.add(doc.copy(tags=Set(tag1)))
+      writer.add(doc.copy(tags=Set(tag, tag2)))
+      await(writer.flush)
+      dbTags.map(_.name).toSet must beEqualTo(Set(tag))
+      dbDocumentTags must beEqualTo(Seq(
+        firstDocumentId -> tag,
+        firstDocumentId + 1 -> tag
+      ))
+    }
+
     "start after the given document ID" in new BaseScope {
       override lazy val writer = new CsvDocumentWriter(documentSet.id, Some(4L), Seq(), BulkDocumentWriter.forDatabase)
       writer.add(doc)

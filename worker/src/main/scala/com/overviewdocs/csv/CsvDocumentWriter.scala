@@ -37,6 +37,12 @@ class CsvDocumentWriter(
     csvDocuments.+=(csvDocument)
   }
 
+  /** Truncate tag names so they fit in the database (and in common sense).
+    */
+  private def truncate(tagName: String): String = {
+    tagName.take(100)
+  }
+
   /** Writes all documents and new tags to the database. */
   def flush: Future[Unit] = {
     val documentTags = mutable.Buffer[(Long,Long)]()  // document ID -> tag ID
@@ -48,7 +54,7 @@ class CsvDocumentWriter(
 
       bulkDocumentWriter.add(document)
 
-      csvDocument.tags.foreach { tagName =>
+      csvDocument.tags.map(truncate _).foreach { tagName =>
         tagNameToId.get(tagName) match {
           case None => newTags.getOrElseUpdate(tagName, mutable.Buffer[Long]()).+=(document.id)
           case Some(tagId) => documentTags.+=(document.id -> tagId)
