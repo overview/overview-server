@@ -50,7 +50,7 @@ define [
         it 'should begin false', -> expect(subject.get('split_documents')).to.be.false
 
       describe 'ocr', ->
-        it 'should begin true', -> expect(subject.get('ocr')).to.be.true
+        it 'should begin false', -> expect(subject.get('ocr')).to.be.false
 
       describe 'lang', ->
         it 'should begin as defaultLanguageCode', -> expect(subject.get('lang')).to.eq('en')
