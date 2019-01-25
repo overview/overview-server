@@ -40,8 +40,10 @@ object Step {
     }
   }
 
+  case class StepSpec(stepId: String, progressWeight: Double)
+
   class HttpSteps(
-    stepSpecs: Vector[(String,Double)],
+    stepSpecs: Vector[StepSpec],
     file2Writer: File2Writer,
     maxNWorkers: Int,
     workerIdleTimeout: FiniteDuration,
@@ -53,13 +55,14 @@ object Step {
       * materialization, which is wrong.
       */
     def steps(implicit mat: ActorMaterializer): Vector[Step] = {
-      stepSpecs.map(spec => buildStep(spec._1, spec._2, mat.system))
+      stepSpecs.map(spec => buildStep(spec, mat.system))
     }
 
-    private def buildStep(stepId: String, progressWeight: Double, actorRefFactory: ActorRefFactory): Step = {
-      val fragmentCollector = new StepOutputFragmentCollector(file2Writer, stepId, progressWeight)
-      val taskServer = new HttpStepHandler(stepId, file2Writer.blobStorage, fragmentCollector, maxNWorkers, workerIdleTimeout, httpCreateIdleTimeout)
-      SimpleStep(stepId, progressWeight, taskServer.flow(actorRefFactory))
+    private def buildStep(spec: StepSpec, actorRefFactory: ActorRefFactory): Step = {
+      val fragmentCollector = new StepOutputFragmentCollector(file2Writer, spec.stepId, spec.progressWeight)
+      val taskServer = new HttpStepHandler(spec.stepId, file2Writer.blobStorage, fragmentCollector, maxNWorkers, workerIdleTimeout, httpCreateIdleTimeout)
+      val flow = taskServer.flow(actorRefFactory)
+      SimpleStep(spec.stepId, spec.progressWeight, taskServer.flow(actorRefFactory))
     }
   }
 
@@ -71,15 +74,15 @@ object Step {
   )(implicit mat: ActorMaterializer): Vector[Step] = {
     new HttpSteps(
       Vector(
-        "Archive" -> 0.1,
-        "Email" -> 0.1,
-        "Html" -> 0.75, // 1.0 if !wantSplitByPage, 0.5 otherwise
-        "Image" -> 1.0,
-        "Office" -> 0.75,
-        "Pdf" -> 1.0,
-        "PdfOcr" -> 0.75,
-        "Pst" -> 0.1,
-        "Text" -> 0.75 // 1.0 if !wantSplitByPage, 0.5 otherwise
+        StepSpec("Archive", 0.1),
+        StepSpec("Email", 0.1),
+        StepSpec("Html", 0.75), // 1.0 if !wantSplitByPage, 0.5 otherwise
+        StepSpec("Image", 1.0),
+        StepSpec("Office", 0.75),
+        StepSpec("Pdf", 1.0),
+        StepSpec("PdfOcr", 0.75),
+        StepSpec("Pst", 0.1),
+        StepSpec("Text", 0.75) // 1.0 if !wantSplitByPage, 0.5 otherwise
       ),
       file2Writer,
       maxNHttpWorkers,

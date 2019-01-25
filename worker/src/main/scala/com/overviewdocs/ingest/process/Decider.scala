@@ -1,6 +1,6 @@
 package com.overviewdocs.ingest.process
 
-import akka.stream.{Graph,Materializer,Outlet,OverflowStrategy,UniformFanOutShape}
+import akka.stream.{Graph,Materializer,Outlet,UniformFanOutShape}
 import akka.stream.scaladsl.{Flow,GraphDSL,Partition,Sink}
 import akka.util.ByteString
 import java.util.concurrent.Callable

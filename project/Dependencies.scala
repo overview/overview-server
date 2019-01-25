@@ -2,15 +2,18 @@ import sbt._
 import play.sbt.PlayImport.{guice,filters,ws}
 
 object Dependencies {
+  val AkkaVersion = "2.5.19"
+
   private object deps {
     // shared dependencies
-    val akka = "com.typesafe.akka" %% "akka-actor" % "2.5.12"
-    val akkaRemote = "com.typesafe.akka" %% "akka-remote" % "2.5.12"
-    val akkaTestkit = "com.typesafe.akka" %% "akka-testkit"  % "2.5.12"
-    val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.1.1"
-    val akkaHttpTestkit = "com.typesafe.akka" %% "akka-http-testkit" % "10.1.1"
-    val akkaStream = "com.typesafe.akka" %% "akka-stream" % "2.5.12"
-    val akkaStreamTestkit = "com.typesafe.akka" %% "akka-stream-testkit" % "2.5.12"
+    val akka = "com.typesafe.akka" %% "akka-actor" % AkkaVersion
+    val akkaRemote = "com.typesafe.akka" %% "akka-remote" % AkkaVersion
+    val akkaTestkit = "com.typesafe.akka" %% "akka-testkit"  % AkkaVersion
+    val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.1.7"
+    val akkaHttpTestkit = "com.typesafe.akka" %% "akka-http-testkit" % "10.1.7"
+    val akkaStream = "com.typesafe.akka" %% "akka-stream" % AkkaVersion
+    val akkaStreamTestkit = "com.typesafe.akka" %% "akka-stream-testkit" % AkkaVersion
+    val akkaSlf4j = "com.typesafe.akka" %% "akka-slf4j" % AkkaVersion
     val asyncHttpClient = "com.ning" % "async-http-client" % "1.9.31"
     val awsCore = "com.amazonaws" % "aws-java-sdk-core" % "1.11.232"
     val awsS3 = "com.amazonaws" % "aws-java-sdk-s3" % "1.11.232"
@@ -33,7 +36,7 @@ object Dependencies {
     val lucene = "org.apache.lucene" % "lucene-core" % "6.5.1"
     val luceneAnalyzersIcu = "org.apache.lucene" % "lucene-analyzers-icu" % "6.5.1"
     val luceneHighlighter = "org.apache.lucene" % "lucene-highlighter" % "6.5.1"
-    val mimeTypes = "org.overviewproject" % "mime-types" % "0.1.0"
+    val mimeTypes = "org.overviewproject" % "mime-types" % "0.1.2"
     val mockito = "org.mockito" % "mockito-all" % "1.10.19"
     val owaspEncoder = "org.owasp.encoder" % "encoder" % "1.2.1"
     val parserCombinators = "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.6" // QueryParser
@@ -98,6 +101,7 @@ object Dependencies {
     filters,
     guice,
     ws,
+    deps.akkaSlf4j, // override Play dep's version -- just as we override the rest of Play's akka dep
     deps.akkaHttp, // DbHttpViewFilterBackend
     deps.joddWot % "test",
     deps.playTest % "test"
