@@ -1,14 +1,17 @@
 package com.overviewdocs.ingest.ingest
 
 import akka.stream.scaladsl.{Flow,Source}
-import scala.collection.{immutable,mutable}
+import scala.collection.mutable
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext,Future}
 
-import com.overviewdocs.ingest.model.{ProcessedFile2,IngestedRootFile2}
+import com.overviewdocs.ingest.model.{ProcessedFile2,IngestedRootFile2,ResumedFileGroupJob}
 import com.overviewdocs.ingest.File2Writer
+import com.overviewdocs.util.Logger
 
 object Ingester {
+  private val logger = Logger.forClass(getClass)
+
   /** Converts Processed File2s into Ingested ones by creating Documents and
     * DocumentProcessingErrors.
     *
@@ -53,31 +56,36 @@ object Ingester {
       nChildrenOfUnseenParents: mutable.LongMap[Int],
     )
 
-    var state = State(mutable.LongMap.empty, mutable.LongMap.empty)
-
-    // From a batch of processed files, returns (unwrittenParents, toWrite).
-    //
-    // Assumes it's called on parents before children ... but both parents and
-    // children can appear in the same input batch. The return value can include
-    // both parents and their children in the same batch, too, in _reverse_:
-    // children before parents.
+    /** From a batch of processed files, returns (state, toIngest).
+      *
+      * The return `toIngest` can include both parents and their children in the
+      * same batch.
+      */
     def fixHierarchy(
       state: State,
-      file2s: immutable.Seq[ProcessedFile2]
-    ): (State, immutable.Seq[ProcessedFile2]) = {
-      // A pool of ProcessedFile2s. invariant: areChildrenIngested == false
+      file2s: Vector[ProcessedFile2]
+    ): (State, Vector[ProcessedFile2]) = {
+      // A pool of ProcessedFile2s we have seen previously.
+      //
+      // invariant: areChildrenIngested == false.
+      //
+      // These are guaranteed to be different from `file2s`, because Overview
+      // doesn't process any file twice.
       val holding = state.unwrittenParents.clone
 
-      // Number of children written before we saw the parent
+      // Number of children of each `parent` that are already written.
+      //
+      // invariant: we haven't seen the parent yet.
       val nChildrenOfUnseenParents = state.nChildrenOfUnseenParents.clone
 
       // Focus ProcessedFile2s: we need to look at them to learn whether to
       // write or hold them.
       //
-      // The initial "staging" is our input. Side-effect: we clear entries
-      // from "nChildrenOfUnseenParents" when the input is a parent, and we
-      // update the parent's nIngestedChildren.
-      var staging: immutable.Seq[ProcessedFile2] = file2s
+      // The initial "staging" is our input `file2s`. We'll loop to change it.
+      //
+      // Side-effect: we clear entries from "nChildrenOfUnseenParents" when
+      // input is a parent, and we update the parent's nIngestedChildren.
+      var staging: Vector[ProcessedFile2] = file2s
         .map(file2 => nChildrenOfUnseenParents.remove(file2.id) match {
           case None => file2
           case Some(n) => file2.copy(nIngestedChildren=file2.nIngestedChildren + n)
@@ -86,27 +94,27 @@ object Ingester {
       // ProcessedFile2s with invariant: areChildrenIngested == true
       //
       // The children may be ingested within this very batch.
-      val writing: mutable.ArrayBuffer[immutable.Seq[ProcessedFile2]] = mutable.ArrayBuffer.empty
+      val ingesting: mutable.ArrayBuffer[Vector[ProcessedFile2]] = mutable.ArrayBuffer.empty
 
       while (staging.nonEmpty) {
-        // Move all entries from "staging" to either "writing" or "holding".
-        val (toWrite, toHold) = staging.partition(_.areChildrenIngested)
-        writing.+=(toWrite)
+        // Move all entries from "staging" to either "ingesting" or "holding".
+        val (toIngest, toHold) = staging.partition(_.areChildrenIngested)
+        ingesting.+=(toIngest)
         holding.++=(toHold.map(f => (f.id -> f)))
 
-        // Count the children we committed to writing this step
-        val focusParentCounts: Map[Long,Int] = toWrite
+        // Count the children we added to `ingesting` this iteration
+        val focusParentCounts: Map[Long,Int] = toIngest
           .flatMap(_.parentId)
           .groupBy(identity)
           .mapValues(_.size) // parentId => nChildrenWrittenThisStep
 
-        // For children we wrote, remove all parents from "holding", adjust
+        // For newly-`ingesting` children: remove parents from "holding", adjust
         // their counts, and store under "staging".
         //
-        // For each child we wrote without a parent, update
-        // "nChildrenWrittenThisStep".
+        // For each child we're `ingesting` without a parent, update
+        // "nChildrenOfUnseenParents".
         //
-        // "staging" will become empty iff "toWrite" only contains roots and
+        // "staging" will become empty iff "toIngest" only contains roots and
         // children of unseen parents.
         staging = focusParentCounts
           .flatMap((kv: Tuple2[Long,Int]) => holding.remove(kv._1) match {
@@ -129,30 +137,61 @@ object Ingester {
 
       holding.repack
       nChildrenOfUnseenParents.repack
-      (State(holding, nChildrenOfUnseenParents), writing.flatten.toVector)
+      (State(holding, nChildrenOfUnseenParents), ingesting.flatten.toVector)
+    }
+
+    def logStatus(fileGroupJob: ResumedFileGroupJob, file2s: Vector[ProcessedFile2]) {
+      val fileGroupId = fileGroupJob.fileGroupId
+      val nProcessedThisBatch = file2s.size
+      val nRootsThisBatch = file2s.filter(_.parentId.isEmpty).size
+      val nRootsTotal = fileGroupJob.fileGroup.nFiles.get
+
+      logger.info(
+        "FileGroup {}: batch-ingest {} Files, {} roots (group has {} roots)",
+        fileGroupId,
+        nProcessedThisBatch,
+        nRootsThisBatch,
+        nRootsTotal
+      )
     }
 
     def ingestBatch(
-      file2s: immutable.Seq[ProcessedFile2]
-    )(implicit ec: ExecutionContext): Future[immutable.Seq[IngestedRootFile2]] = {
+      state: State,
+      file2s: Vector[ProcessedFile2]
+    )(implicit ec: ExecutionContext): Future[Tuple2[State, Vector[IngestedRootFile2]]] = {
       // This is effectively synchronous: it's only called once at a time,
       // always from the same thread, waiting for the returned Future to
       // complete before calling again. (akka-streams ftw.)
-      val (nextState, toWrite) = fixHierarchy(state, file2s)
+      val (nextState, toIngest) = fixHierarchy(state, file2s)
 
-      state = nextState
+      toIngest
+        .groupBy(_.fileGroupJob)
+        .foreach((logStatus _).tupled)
 
       for {
-        _ <- if (toWrite.nonEmpty) { file2Writer.ingestBatch(toWrite) } else { Future.unit }
+        _ <- if (toIngest.nonEmpty) { file2Writer.ingestBatch(toIngest) } else { Future.unit }
       } yield {
-        val roots = toWrite.filter(_.parentId.isEmpty)
-        roots.map(root => IngestedRootFile2(root.id, root.fileGroupJob))
+        val roots = toIngest.filter(_.parentId.isEmpty)
+        val ingestedRoots = roots.map(root => IngestedRootFile2(root.id, root.fileGroupJob))
+        (nextState, ingestedRoots)
       }
     }
 
+    type StateWithOutput = Tuple2[State, Vector[IngestedRootFile2]]
+    def scanStep(
+      stateWithOutput: StateWithOutput,
+      file2s: Vector[ProcessedFile2]
+    )(implicit ec: ExecutionContext): Future[Tuple2[State, Vector[IngestedRootFile2]]] = {
+      ingestBatch(stateWithOutput._1, file2s)
+    }
+
+    val initialState = State(mutable.LongMap.empty, mutable.LongMap.empty)
+    val initialStateWithOutput = (initialState, Vector.empty[IngestedRootFile2])
+
     Flow[ProcessedFile2]
       .groupedWithin(batchSize, maxBatchWait)
-      .mapAsync(1)(ingestBatch _)
-      .mapConcat(identity)
+      .map(_.toVector)
+      .scanAsync(initialStateWithOutput)(scanStep)
+      .mapConcat(_._2)
   }
 }

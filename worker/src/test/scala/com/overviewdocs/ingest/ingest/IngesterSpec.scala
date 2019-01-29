@@ -29,7 +29,7 @@ class IngesterSpec extends Specification with Mockito {
     val maxBatchWait: FiniteDuration = FiniteDuration(1, "ms")
     lazy val ingester = Ingester.ingest(mockFile2Writer, batchSize, maxBatchWait)
 
-    val fileGroup = factory.fileGroup(addToDocumentSetId=Some(2L))
+    val fileGroup = factory.fileGroup(addToDocumentSetId=Some(2L), nFiles=Some(999))
     val fileGroupJob = ResumedFileGroupJob(
       fileGroup,
       new FileGroupProgressState(fileGroup, 0, 0L, Instant.now, _ => (), Promise[akka.Done]()),
