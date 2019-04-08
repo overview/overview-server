@@ -33,7 +33,7 @@ spec:
         operator: Exists
       containers:
       - name: controller
-        image: registry.opensource.zalan.do/teapot/kube-ingress-aws-controller:v0.6.6
+        image: registry.opensource.zalan.do/teapot/kube-ingress-aws-controller:v0.8.3
         args:
         - -stack-termination-protection
         env:

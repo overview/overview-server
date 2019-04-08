@@ -7,13 +7,16 @@ metadata:
   labels:
     app: kube2iam
 ---
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   name: kube2iam
   labels:
     app: kube2iam
 spec:
+  selector:
+    matchLabels:
+      name: kube2iam
   template:
     metadata:
       labels:
@@ -22,14 +25,14 @@ spec:
       serviceAccountName: kube2iam
       hostNetwork: true
       containers:
-        - image: jtblin/kube2iam:0.9.0
+        - image: jtblin/kube2iam:0.10.6
           name: kube2iam
           args:
             - "--auto-discover-base-arn"
             - "--host-interface=cbr0"
             - "--host-ip=$(HOST_IP)"
             - "--iptables=true"
-            - "--default-role=$ENVIRONMENT-overview-default-role"
+            - "--default-role=ENVIRONMENT-overview-default-role"
           env:
             - name: HOST_IP
               valueFrom:
@@ -42,7 +45,7 @@ spec:
                hostPort: 8181
                name: http
 ---
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: kube2iam
@@ -53,7 +56,7 @@ rules:
     resources: ["namespaces","pods"]
     verbs: ["get","watch","list"]
 ---
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: kube2iam
