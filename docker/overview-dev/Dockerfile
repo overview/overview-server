@@ -1,4 +1,4 @@
-FROM openjdk:8u151-jdk
+FROM openjdk:8u212-jdk
 
 # Deps:
 # nodejs+build-essential+xvfb+libxss1+libgconf-2-4: for web/js tests (which run Electron and Node)
