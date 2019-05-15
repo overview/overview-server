@@ -30,7 +30,7 @@ case class WrittenFile2(
   blob: BlobStorageRefWithSha1       // for processing, and to let children inherit
 ) {
   def blobLocation: String = blob.location
-  def blobNBytes: Int = blob.nBytes
+  def blobNBytes: Long = blob.nBytes
   def blobSha1: Array[Byte] = blob.sha1
 
   def isCanceled: Boolean = fileGroupJob.isCanceled

@@ -71,7 +71,7 @@ class HttpStepHandlerSpec extends Specification with Specs2RouteTest with Mockit
         metadata=Json.obj("foo" -> "bar"),
         wantOcr=true,
         wantSplitByPage=false,
-        blob=BlobStorageRefWithSha1(BlobStorageRef("loc:123", 20), ByteString("abcdabcdabcdabcdabcd").toArray)
+        blob=BlobStorageRefWithSha1(BlobStorageRef("loc:123", 20L), ByteString("abcdabcdabcdabcdabcd").toArray)
       )
     }
 

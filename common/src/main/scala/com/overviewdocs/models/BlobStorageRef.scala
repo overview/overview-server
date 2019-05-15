@@ -4,5 +4,5 @@ package com.overviewdocs.models
   */
 case class BlobStorageRef(
   location: String,
-  nBytes: Int
+  nBytes: Long
 )

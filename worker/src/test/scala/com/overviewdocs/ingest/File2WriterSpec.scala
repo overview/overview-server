@@ -43,7 +43,7 @@ class File2WriterSpec extends DbSpecification with Mockito {
           () => ()
         )
 
-        val parentBlob: BlobStorageRef = BlobStorageRef("foo", 10)
+        val parentBlob: BlobStorageRef = BlobStorageRef("foo", 10L)
         val parentBlobSha1: Array[Byte] = Array(1, 2, 3).map(_.toByte)
         val parentThumbnailOpt: Option[BlobStorageRef] = None
         val parentTextOpt: Option[String] = None
@@ -153,7 +153,7 @@ class File2WriterSpec extends DbSpecification with Mockito {
           mockBlobStorage.creates(0)._3 must beEqualTo("foobar".getBytes("utf-8"))
           Files.exists(mockBlobStorage.creates(0)._2) must beFalse // the file passed to BlobStorage is deleted
 
-          child2.blobOpt.map(_.ref) must beSome(BlobStorageRef("1", 6))
+          child2.blobOpt.map(_.ref) must beSome(BlobStorageRef("1", 6L))
           child2.blobOpt.map(_.sha1.toVector) must beSome(blobSha1.toVector)
           child2.ownsBlob must beTrue
           dbChildOpt.map(_.blob) must beSome(child2.blobOpt.map(_.ref))
@@ -212,7 +212,7 @@ class File2WriterSpec extends DbSpecification with Mockito {
           mockBlobStorage.creates(0)._3 must beEqualTo("foobar".getBytes("utf-8"))
           Files.exists(mockBlobStorage.creates(0)._2) must beFalse // the file passed to BlobStorage is deleted
           val dbChild = dbChildOpt.get
-          dbChild.thumbnailBlob must beSome(BlobStorageRef("1", 6))
+          dbChild.thumbnailBlob must beSome(BlobStorageRef("1", 6L))
           dbChild.thumbnailContentType must beSome("application/test")
         }
 

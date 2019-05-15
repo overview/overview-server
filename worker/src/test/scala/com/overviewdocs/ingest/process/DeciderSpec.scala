@@ -41,7 +41,7 @@ class DeciderSpec extends Specification with Mockito {
       JsObject(Seq()),
       ocr,
       false,
-      BlobStorageRefWithSha1(BlobStorageRef("foo", 10), "abc".getBytes)
+      BlobStorageRefWithSha1(BlobStorageRef("foo", 10L), "abc".getBytes)
     )
 
     val mockBlobStorage = mock[BlobStorage]

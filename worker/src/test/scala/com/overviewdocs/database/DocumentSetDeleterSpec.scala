@@ -196,7 +196,7 @@ class DocumentSetDeleterSpec extends DbSpecification with Mockito {
     }
 
     "delete file2s" in new BaseScope {
-      val file2 = factory.file2(blob=Some(BlobStorageRef("foo", 10)), thumbnailBlob=Some(BlobStorageRef("bar", 5)))
+      val file2 = factory.file2(blob=Some(BlobStorageRef("foo", 10L)), thumbnailBlob=Some(BlobStorageRef("bar", 5L)))
       factory.documentSetFile2(documentSet.id, file2.id)
 
       deleteDocumentSet

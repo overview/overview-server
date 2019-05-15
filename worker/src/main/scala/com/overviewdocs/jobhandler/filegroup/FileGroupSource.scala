@@ -61,13 +61,13 @@ class FileGroupSource(
     onComplete: () => Unit
   ): Future[ResumedFileGroupJob] = {
     for {
-      nBytesVec: Vector[Int] <- database.seq(fileGroupIngestStatsCompiled(fileGroup.id))
+      nBytesVec: Vector[Long] <- database.seq(fileGroupIngestStatsCompiled(fileGroup.id))
     } yield ResumedFileGroupJob(
       fileGroup,
       new FileGroupProgressState(
         fileGroup,
         nBytesVec.size,
-        nBytesVec.fold(0)(_ + _),
+        nBytesVec.fold(0L)(_ + _),
         Instant.now,
         onProgress,
         Promise[akka.Done]()

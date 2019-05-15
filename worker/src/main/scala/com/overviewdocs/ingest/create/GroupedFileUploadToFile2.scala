@@ -138,7 +138,7 @@ class GroupedFileUploadToFile2(database: Database, blobStorage: BlobStorage) {
     *
     * Returns: (location, nBytes, sha1)
     */
-  private def copyOidToBlobStorage(oid: Long)(implicit ec: ExecutionContext): Future[(String,Int,Array[Byte])] = {
+  private def copyOidToBlobStorage(oid: Long)(implicit ec: ExecutionContext): Future[(String,Long,Array[Byte])] = {
     TempFiles.withTempFileWithSuffix("grouped-file-upload-to-file2", tmpPath => {
       for {
         (nBytes, sha1) <- downloadLargeObjectAndCalculateSha1(oid, tmpPath)
@@ -147,7 +147,7 @@ class GroupedFileUploadToFile2(database: Database, blobStorage: BlobStorage) {
     })
   }
 
-  private def downloadLargeObjectAndCalculateSha1(loid: Long, destination: Path)(implicit ec: ExecutionContext): Future[(Int, Array[Byte])] = {
+  private def downloadLargeObjectAndCalculateSha1(loid: Long, destination: Path)(implicit ec: ExecutionContext): Future[(Long, Array[Byte])] = {
     val CopyBufferSize = 5 * 1024 * 1024
     val loManager = database.largeObjectManager
 
@@ -155,11 +155,11 @@ class GroupedFileUploadToFile2(database: Database, blobStorage: BlobStorage) {
     val channel = blocking { FileChannel.open(destination, StandardOpenOption.WRITE) }
 
     sealed trait State
-    case class NeedRead(nBytesRead: Int) extends State
-    case class NeedWrite(nBytesRead: Int, unwrittenBytes: ByteBuffer) extends State
-    case class Done(nBytes: Int) extends State
+    case class NeedRead(nBytesRead: Long) extends State
+    case class NeedWrite(nBytesRead: Long, unwrittenBytes: ByteBuffer) extends State
+    case class Done(nBytes: Long) extends State
 
-    def readBlock(nBytesRead: Int): Future[State] = {
+    def readBlock(nBytesRead: Long): Future[State] = {
       val action = for {
         lo <- loManager.open(loid, LargeObject.Mode.Read)
         _ <- lo.seek(nBytesRead)
@@ -177,7 +177,7 @@ class GroupedFileUploadToFile2(database: Database, blobStorage: BlobStorage) {
       database.run(action.transactionally)
     }
 
-    def writeBlock(nBytesRead: Int, buf: ByteBuffer): Future[State] = {
+    def writeBlock(nBytesRead: Long, buf: ByteBuffer): Future[State] = {
       for {
         _ <- Future(blocking { channel.write(buf) })
       } yield {
@@ -189,7 +189,7 @@ class GroupedFileUploadToFile2(database: Database, blobStorage: BlobStorage) {
       }
     }
 
-    def transferRemaining(state: State): Future[Int] = state match {
+    def transferRemaining(state: State): Future[Long] = state match {
       case NeedRead(nBytesRead) => readBlock(nBytesRead).flatMap(transferRemaining _)
       case NeedWrite(nBytesRead, unwrittenBytes) => writeBlock(nBytesRead, unwrittenBytes).flatMap(transferRemaining _)
       case Done(nBytes) => Future.successful(nBytes)

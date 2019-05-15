@@ -105,11 +105,11 @@ class GroupedFileUploadToFile2Spec extends DbSpecification with Mockito {
         0x34, 0x5e, 0x8c, 0x6a, 0xa0
       ).map(_.toByte)
 
-      result.blob must beSome(BlobStorageRef("loc", 19))
+      result.blob must beSome(BlobStorageRef("loc", 19L))
       result.blobSha1 must beEqualTo(sha1)
       result.writtenAt must beSome
 
-      dbFile2s.head.blob must beSome(BlobStorageRef("loc", 19))
+      dbFile2s.head.blob must beSome(BlobStorageRef("loc", 19L))
       dbFile2s.head.blobSha1 must beEqualTo(sha1)
       dbFile2s.head.writtenAt must beEqualTo(result.writtenAt)
     }
@@ -128,7 +128,7 @@ class GroupedFileUploadToFile2Spec extends DbSpecification with Mockito {
       await(subject.groupedFileUploadToFile2(fileGroup, groupedFileUploadForRestart))
 
       dbFile2s.length must beEqualTo(1)
-      dbFile2s.head.blob must beSome(BlobStorageRef("loc", 19))
+      dbFile2s.head.blob must beSome(BlobStorageRef("loc", 19L))
     }
 
     "unlinks the Large Object" in new BaseScope {

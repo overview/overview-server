@@ -170,7 +170,7 @@ class DocumentController @Inject() (
   private def file2IdToBodyAndLength(file2Id: Long): Future[Tuple2[Source[ByteString, _], Long]] = {
     file2Backend.lookupBlob(file2Id).map(_ match {
       case Some(BlobStorageRef(location, nBytes)) => (blobStorage.get(location), nBytes)
-      case None => (Source.empty, 0)
+      case None => (Source.empty, 0L)
     })
   }
 

@@ -18,7 +18,7 @@ class File2sImpl(tag: Tag) extends Table[File2](tag, "file2") {
   def wantOcr = column[Boolean]("want_ocr")
   def wantSplitByPage = column[Boolean]("want_split_by_page")
   def blobLocation = column[Option[String]]("blob_location")
-  def blobNBytes = column[Option[Int]]("blob_n_bytes")
+  def blobNBytes = column[Option[Long]]("blob_n_bytes")
   def blobSha1 = column[Array[Byte]]("blob_sha1")
   def thumbnailBlobLocation = column[Option[String]]("thumbnail_blob_location")
   def thumbnailBlobNBytes = column[Option[Int]]("thumbnail_blob_n_bytes")
@@ -31,19 +31,30 @@ class File2sImpl(tag: Tag) extends Table[File2](tag, "file2") {
   def processingError = column[Option[String]]("processing_error")
   def ingestedAt = column[Option[Instant]]("ingested_at")
 
-  private def optionTupleToBlobStorageRef(t: (Option[String],Option[Int])): Option[BlobStorageRef] = {
+  private def optionTupleToBlobStorageRef(t: (Option[String],Option[Long])): Option[BlobStorageRef] = {
     t match {
       case (Some(location), Some(nBytes)) => Some(BlobStorageRef(location, nBytes))
       case _ => None
     }
   }
 
-  private def blobStorageRefOptToOptionTuple(bsOpt: Option[BlobStorageRef]): Option[(Option[String],Option[Int])] = {
+  private def optionTupleIntToBlobStorageRef(t: (Option[String],Option[Int])): Option[BlobStorageRef] = {
+    t match {
+      case (Some(location), Some(nBytes)) => Some(BlobStorageRef(location, nBytes))
+      case _ => None
+    }
+  }
+
+  private def blobStorageRefOptToOptionTuple(bsOpt: Option[BlobStorageRef]): Option[(Option[String],Option[Long])] = {
     Some((bsOpt.map(_.location), bsOpt.map(_.nBytes)))
   }
 
+  private def blobStorageRefOptToOptionTupleInt(bsOpt: Option[BlobStorageRef]): Option[(Option[String],Option[Int])] = {
+    Some((bsOpt.map(_.location), bsOpt.map(_.nBytes.toInt))) // it's only for thumbnails -- they won't be >2GB
+  }
+
   def blob = (blobLocation, blobNBytes).<>(optionTupleToBlobStorageRef _, blobStorageRefOptToOptionTuple _)
-  def thumbnailBlob = (thumbnailBlobLocation, thumbnailBlobNBytes).<>(optionTupleToBlobStorageRef _, blobStorageRefOptToOptionTuple _)
+  def thumbnailBlob = (thumbnailBlobLocation, thumbnailBlobNBytes).<>(optionTupleIntToBlobStorageRef _, blobStorageRefOptToOptionTupleInt _)
 
   def * = (
     id,

@@ -35,7 +35,7 @@ class StepOutputFragmentCollectorSpec extends Specification with Mockito {
     // Stuff for logger
     parentFile2.id returns 1L
     parentFile2.filename returns "filename.blob"
-    parentFile2.blob returns BlobStorageRefWithSha1(BlobStorageRef("loc:parent", 10), Array.empty[Byte])
+    parentFile2.blob returns BlobStorageRefWithSha1(BlobStorageRef("loc:parent", 10L), Array.empty[Byte])
     parentFile2.wantOcr must beEqualTo(false)
     parentFile2.wantSplitByPage must beEqualTo(false)
     var nCreates = 0
@@ -58,7 +58,7 @@ class StepOutputFragmentCollectorSpec extends Specification with Mockito {
     }
     mockFile2Writer.delete(any)(any) returns Future.unit
     mockFile2Writer.writeBlob(any, any)(any, any) answers { _ =>
-      createdFile2.blobOpt returns Some(BlobStorageRefWithSha1(BlobStorageRef("written", 10), Array(1, 2, 3).map(_.toByte)))
+      createdFile2.blobOpt returns Some(BlobStorageRefWithSha1(BlobStorageRef("written", 10L), Array(1, 2, 3).map(_.toByte)))
       Future.successful(createdFile2)
     }
     mockFile2Writer.writeBlobStorageRef(any, any)(any) answers { args =>
@@ -267,7 +267,7 @@ class StepOutputFragmentCollectorSpec extends Specification with Mockito {
     }
 
     "allows inheriting a blob from the parent" in new BaseScope {
-      val blobStorageRef = BlobStorageRefWithSha1(BlobStorageRef("foo", 10), Array(1, 2, 3).map(_.toByte))
+      val blobStorageRef = BlobStorageRefWithSha1(BlobStorageRef("foo", 10L), Array(1, 2, 3).map(_.toByte))
       parentFile2.blob returns blobStorageRef
 
       override val fragments = Vector(

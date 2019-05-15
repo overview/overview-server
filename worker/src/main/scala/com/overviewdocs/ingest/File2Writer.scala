@@ -183,7 +183,8 @@ class File2Writer(
       case None => {
         for {
           ref <- createBlobStorageRef(data)
-          _ <- database.runUnit(writeThumbnailCompiled(file2.id).update((Some(ref.location), Some(ref.nBytes), Some(contentType))))
+          // casting Long nBytes to int. Assumes thumbnails are <2GB large.
+          _ <- database.runUnit(writeThumbnailCompiled(file2.id).update((Some(ref.location), Some(ref.nBytes.toInt), Some(contentType))))
         } yield file2.copy(ownsThumbnail=true, thumbnailLocationOpt=Some(ref.location))
       }
     }
@@ -291,7 +292,7 @@ class File2Writer(
         status = ioResult.status.get // crash on I/O error, before uploading to BlobStorage
         sha1 <- sha1Future
         location <- blobStorage.create(BlobBucketId.FileView, path)
-      } yield BlobStorageRefWithSha1(BlobStorageRef(location, ioResult.count.toInt), sha1)
+      } yield BlobStorageRefWithSha1(BlobStorageRef(location, ioResult.count), sha1)
     })
   }
 

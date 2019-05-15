@@ -33,7 +33,7 @@ class DbFile2Backend @Inject() (val database: Database) extends File2Backend wit
       .map(f2 => (f2.thumbnailBlobLocation, f2.thumbnailBlobNBytes, f2.thumbnailContentType.getOrElse("image/png")))
   }
 
-  private def blobify(tuple: Option[Tuple2[Option[String], Option[Int]]]): Option[BlobStorageRef] = {
+  private def blobify(tuple: Option[Tuple2[Option[String], Option[Long]]]): Option[BlobStorageRef] = {
     tuple match {
       case Some((Some(location), Some(nBytes))) => Some(BlobStorageRef(location, nBytes))
       case _ => None
