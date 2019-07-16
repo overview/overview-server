@@ -91,4 +91,7 @@ apply_template kube-ingress-aws-controller.yml
 apply_template skipper-ingress.yml
 apply_template external-dns.yml
 
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/kops/master/addons/metrics-server/v1.8.x.yaml
+kubectl apply -f kubelet-api-admin-cluster-role-binding.yml
+
 "$DIR"/../apply
