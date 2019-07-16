@@ -36,7 +36,7 @@
     "escape-html": "^1.0.3",
     "file-loader": "^0.11.2",
     "jssha": "^2.3.1",
-    "less": "^2.7.2",
+    "less": "^3.9.0",
     "less-loader": "^5.0.0",
     "loader-utils": "^1.1.0",
     "mini-css-extract-plugin": "^0.7.0",
