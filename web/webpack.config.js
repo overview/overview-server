@@ -2,7 +2,7 @@
 
 const path = require('path')
 const webpack = require('webpack')
-const ExtractTextPlugin = require('extract-text-webpack-plugin')
+const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 const WebpackCleanupPlugin = require('webpack-cleanup-plugin')
 
 const jsEntryPoints = [
@@ -100,7 +100,7 @@ for (const entryPoint of cssEntryPoints) {
 }
 entryPointsMap['tracking'] = 'tracking'
 
-const extractLess = new ExtractTextPlugin({
+const extractLess = new MiniCssExtractPlugin({
   filename: '[contenthash]-[name].css',
 })
 
@@ -118,7 +118,7 @@ const babelLoader = {
   options: {
     presets: [
       [ '@babel/preset-env', {
-        target: {
+        targets: {
           browsers: [ 'last 2 Chrome versions', 'last 2 Firefox versions', 'last 2 Edge versions', ],
         },
       } ],
@@ -192,17 +192,10 @@ module.exports = {
       },
       {
         test: /\.less$/,
-        use: extractLess.extract({use: [
-          cacheLoader,
-          {
-            loader: 'css-loader',
-            options: { sourceMap: true },
-          },
-          {
-            loader: 'less-loader',
-            options: { sourceMap: true },
-          },
-        ]}),
+        use: [
+          MiniCssExtractPlugin.loader,
+          'css-loader',
+        ],
       },
       {
         test: /\.(woff|svg|png|jpg)$/,

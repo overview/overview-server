@@ -1,5 +1,6 @@
 const webpack = require('webpack')
 const webpackConfig = require('../../webpack.config.js')
+webpackConfig.mode = 'development'
 webpackConfig.plugins = webpackConfig.plugins.filter(plugin => plugin.constructor.name === 'ProvidePlugin')
 webpackConfig.module.rules = webpackConfig.module.rules.map(rule => {
   const ret = Object.assign({}, rule)
