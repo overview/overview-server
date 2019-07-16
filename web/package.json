@@ -48,7 +48,7 @@
     "webpack-cleanup-plugin": "^0.5.1"
   },
   "devDependencies": {
-    "chai-jquery": "^2.0.0",
+    "chai-jquery": "^2.1.0",
     "electron": "^5.0.6",
     "jquery": "^3.4.1",
     "karma": "^4.2.0",
