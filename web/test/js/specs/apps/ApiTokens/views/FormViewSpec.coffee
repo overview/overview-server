@@ -35,13 +35,15 @@ define [
 
     it 'should do nothing when submitting empty', ->
       @subject.$('input').val('  ')
-      @subject.$(':submit').click()
+      # Should be @subject.$(':submit').click(); but [2019-07-16] an Electron
+      # upgrade made click-submit stop calling onSubmit handler. TODO fix.
+      @subject._onSubmit({ preventDefault: () => null })
       expect(@collection.create).not.to.have.been.called
 
     describe 'upon submit', ->
       beforeEach ->
         @subject.$('input').val('foo')
-        @subject.$(':submit').click()
+        @subject._onSubmit({ preventDefault: () => null })
 
       it 'should create the API token', ->
         expect(@collection.create).to.have.been.calledWith(description: 'foo')

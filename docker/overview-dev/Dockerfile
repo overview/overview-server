@@ -1,7 +1,7 @@
 FROM openjdk:8u212-jdk
 
 # Deps:
-# nodejs+build-essential+xvfb+libxss1+libgconf-2-4: for web/js tests (which run Electron and Node)
+# nodejs+build-essential+xvfb+libxss1+gtk3+nss3+asound+libgconf-2-4: for web/js tests (which run Electron and Node)
 # zip+unzip: for ./build
 RUN true \
       && curl -sL https://deb.nodesource.com/setup_8.x | bash \
@@ -10,8 +10,11 @@ RUN true \
         nodejs \
         build-essential \
         xvfb \
-        libxss1 \
+        libasound2 \
         libgconf-2-4 \
+        libgtk-3-0 \
+        libnss3 \
+        libxss1 \
         zip \
       && touch /this-is-overview-dev-on-docker
 

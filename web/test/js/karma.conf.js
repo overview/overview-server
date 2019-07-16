@@ -11,6 +11,8 @@ webpackConfig.module.rules = webpackConfig.module.rules.map(rule => {
 })
 delete webpackConfig.entry
 
+process.env.CHROME_BIN = require('electron')
+
 module.exports = function(config) {
   config.set({
     files: [
@@ -27,6 +29,12 @@ module.exports = function(config) {
     reportSlowerThan: 20,
     verbose: true,
     browsers: [ 'Electron' ],
+    customLaunchers: {
+      Electron: {
+        base: 'ChromeHeadless',
+        flags: ['--no-sandbox'],
+      }
+    },
     webpack: webpackConfig,
 
     junitReporter: {
