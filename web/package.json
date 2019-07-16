@@ -32,7 +32,6 @@
     "coffee-loader": "^0.9.0",
     "coffeescript": "^2.4.1",
     "css-loader": "^3.0.0",
-    "dot": "^1.1.2",
     "escape-html": "^1.0.3",
     "file-loader": "^4.0.0",
     "jssha": "^2.3.1",
