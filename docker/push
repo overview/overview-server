@@ -13,9 +13,6 @@
 set -e
 # make extra-sure we don't log passwords
 set +x
-# DEBUG -- reset password after this completes! Show password so we can copy/paste
-# this command and run it locally
-set -x
 
 fail() {
   echo "$1" >&2
