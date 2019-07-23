@@ -22,7 +22,7 @@ fail() {
 [ -n "$DOCKER_HUB_PASSWORD" ] || fail "DOCKER_HUB_PASSWORD environment variable is not set"
 
 docker --version
-docker login --username "$DOCKER_HUB_USERNAME" --password "$DOCKER_HUB_PASSWORD"
+echo "$DOCKER_HUB_PASSWORD" | docker login --username "$DOCKER_HUB_USERNAME" --password-stdin
 
 set -x
 
