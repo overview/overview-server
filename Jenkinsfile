@@ -32,12 +32,12 @@ node('test-slave') {
       junit 'unit-test-results/**/*.xml'
     }
 
-    //stage('Integration test') {
-    //  ansiColor('xterm') {
-    //    sh 'integration-test/run-in-docker-compose'
-    //  }
-    //  junit 'integration-test/reports/**/*.xml'
-    //}
+    stage('Integration test') {
+      ansiColor('xterm') {
+        sh 'integration-test/run-in-docker-compose'
+      }
+      junit 'integration-test/reports/**/*.xml'
+    }
 
     stage('Publish') {
       if (currentBuild.result == null || currentBuild.result == 'SUCCESS') {
