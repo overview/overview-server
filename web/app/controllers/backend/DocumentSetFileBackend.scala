@@ -5,7 +5,7 @@ import javax.inject.Inject
 import scala.concurrent.Future
 
 import com.overviewdocs.database.Database
-import com.overviewdocs.models.tables.{Documents,Files}
+import com.overviewdocs.models.tables.{Documents,DocumentSetFile2s,Files,File2s}
 
 @ImplementedBy(classOf[DbDocumentSetFileBackend])
 trait DocumentSetFileBackend extends Backend {
@@ -20,13 +20,26 @@ class DbDocumentSetFileBackend @Inject() (
   import database.executionContext
 
   lazy val byIdAndSha1 = Compiled { (documentSetId: Rep[Long], sha1: Rep[Array[Byte]]) =>
+    // file1 -- deprecated
     for {
       file <- Files.filter(_.contentsSha1 === sha1)
       documents <- Documents.filter(_.fileId === file.id).filter(_.documentSetId === documentSetId)
     } yield (())
   }
 
+  lazy val byIdAndSha1File2 = Compiled { (documentSetId: Rep[Long], sha1: Rep[Array[Byte]]) =>
+    for {
+      file2 <- File2s.filter(_.blobSha1 === sha1)
+      documents <- DocumentSetFile2s.filter(_.file2Id === file2.id).filter(_.documentSetId === documentSetId)
+    } yield (())
+  }
+
   override def existsByIdAndSha1(documentSetId: Long, sha1: Array[Byte]) = {
-    database.option(byIdAndSha1(documentSetId, sha1)).map(_.isDefined)
+    for {
+      deprecated <- database.option(byIdAndSha1(documentSetId, sha1)).map(_.isDefined)
+      current <- database.option(byIdAndSha1File2(documentSetId, sha1)).map(_.isDefined)
+    } yield {
+      deprecated || current
+    }
   }
 }
