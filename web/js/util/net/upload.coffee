@@ -14,7 +14,7 @@ define [ 'jquery', 'md5', 'util/shims/file' ], ($, md5) ->
   generate_uuid = (filename, file) ->
     # UUID v3: xxxxxxxx-xxxx-3xxx-yxxx-xxxxxxxxxxxx
     # where x is any hexadecimal digit and y is one of 8, 9, A, or B
-    hash = md5("#{filename}::#{file.lastModifiedDate.toString()}::#{file.size}").toString()
+    hash = md5("#{filename}::#{file.lastModified}::#{file.size}").toString()
     parts = []
     parts.push(hash[0...8])
     parts.push(hash[8...12])

@@ -49,7 +49,7 @@ define [
               name: file.name
               loaded: file.uploadedSize
               total: file.size
-              lastModifiedDate: new Date(file.lastModifiedDate)
+              lastModified: file.lastModified
           ))
         .fail (jqxhr, textStatus, errorThrown) ->
           error = new Error("AJAX error. #{textStatus}: #{errorThrown}")

@@ -21,8 +21,7 @@ define [
       @fakeFile =
         name: 'FOO bar "baz".pdf' # filename with spaces and quotes
         size: 1000
-        lastModifiedDate:
-          toString: sinon.stub().returns('last-modified-date')
+        lastModified: 123456789
         slice: sinon.stub().returns('a file blob')
 
       @mostRecentContentDisposition = =>
@@ -87,7 +86,7 @@ define [
         expect(@sandbox.server.requests[0].url).to.contain('/upload/')
 
       it 'computes a correct guid for the file', ->
-        expect(@sandbox.server.requests[0].url).to.contain(makeUUID('FOO bar "baz".pdf::last-modified-date::1000'))
+        expect(@sandbox.server.requests[0].url).to.contain(makeUUID('FOO bar "baz".pdf::123456789::1000'))
 
       it 'attempts to find the file before uploading', ->
         expect(@sandbox.server.requests[0].method).to.eq('HEAD')
@@ -153,7 +152,7 @@ define [
         upload.start()
 
       it 'computes a guid based on the relative path', ->
-        expect(@sandbox.server.requests[0].url).to.contain(makeUUID('foo/bar.txt::last-modified-date::1000'))
+        expect(@sandbox.server.requests[0].url).to.contain(makeUUID('foo/bar.txt::123456789::1000'))
 
       it 'sends the correct filename', ->
         @sandbox.server.requests[@sandbox.server.requests.length - 1].respond([ 404, {}, '' ]) # not found, go ahead and upload

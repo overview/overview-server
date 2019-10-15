@@ -35,7 +35,7 @@ define [
           files: [
             guid: 'foo'
             name: 'some-file.pdf'
-            lastModifiedDate: '2013-10-01T12:19:01Z'
+            lastModified: new Date('2013-10-01T12:19:01Z').valueOf()
             size: 10
             uploadedSize: 8
           ]
@@ -45,7 +45,7 @@ define [
           name: 'some-file.pdf',
           loaded: 8
           total: 10
-          lastModifiedDate: new Date('2013-10-01T12:19:01Z')
+          lastModified: new Date('2013-10-01T12:19:01Z').valueOf()
         ])
 
       it 'calls the error callback', ->
@@ -58,7 +58,7 @@ define [
         beforeEach ->
           @file =
             name: 'foo.pdf'
-            lastModifiedDate: new Date('2015-05-11T19:26:50Z')
+            lastModified: new Date('2015-05-11T19:26:50Z').valueOf()
           @upload = new Backbone.Model(file: @file)
           netUploadSpy = @sandbox.spy(NetUpload.prototype, 'start')
 
@@ -94,7 +94,7 @@ define [
         beforeEach ->
           @file = new Blob(['foo bar baz'])
           @file.name = 'foo.pdf'
-          @file.lastModifiedDate = new Date('2013-10-01T12:00:00Z')
+          @file.lastModified= new Date('2013-10-01T12:00:00Z').valueOf()
           @upload = new Backbone.Model(file: @file)
           @netUploadSpy = @sandbox.spy(NetUpload.prototype, 'start')
 
