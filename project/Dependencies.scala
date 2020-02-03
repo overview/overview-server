@@ -9,8 +9,8 @@ object Dependencies {
     val akka = "com.typesafe.akka" %% "akka-actor" % AkkaVersion
     val akkaRemote = "com.typesafe.akka" %% "akka-remote" % AkkaVersion
     val akkaTestkit = "com.typesafe.akka" %% "akka-testkit"  % AkkaVersion
-    val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.1.10"
-    val akkaHttpTestkit = "com.typesafe.akka" %% "akka-http-testkit" % "10.1.10"
+    val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.1.11"
+    val akkaHttpTestkit = "com.typesafe.akka" %% "akka-http-testkit" % "10.1.11"
     val akkaStream = "com.typesafe.akka" %% "akka-stream" % AkkaVersion
     val akkaStreamTestkit = "com.typesafe.akka" %% "akka-stream-testkit" % AkkaVersion
     val akkaSlf4j = "com.typesafe.akka" %% "akka-slf4j" % AkkaVersion
