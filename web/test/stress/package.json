@@ -27,6 +27,6 @@
     "debug": "^2.1.2",
     "ms": "^0.7.0",
     "request": "^2.53.0",
-    "tough-cookie": "^0.12.1"
+    "tough-cookie": "^3.0.1"
   }
 }
