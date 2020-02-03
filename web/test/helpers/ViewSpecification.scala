@@ -73,7 +73,7 @@ class ViewSpecification extends test.helpers.InAppSpecification with Mockito wit
     val factory = com.overviewdocs.test.factories.PodoFactory
     implicit def request: RequestHeader = FakeRequest()
     implicit def flash: Flash = Flash()
-    implicit def messages: Messages = new test.helpers.MockMessages(Lang("en"))
+    implicit def messages: Messages = test.helpers.MockMessages.default
 
     def result: Result
   }

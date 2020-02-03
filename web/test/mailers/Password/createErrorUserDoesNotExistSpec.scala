@@ -1,13 +1,13 @@
 package mailers.Password
 
-import controllers.util.NullMessagesApi
+import test.helpers.MockMessages
 
 class createErrorUserDoesNotExistSpec extends mailers.MailSpecification {
   trait OurContext extends MailScope {
     override def mail = createErrorUserDoesNotExist(
       "email@example.org",
       "http://example.org"
-    )(NullMessagesApi.messages)
+    )(MockMessages.default)
   }
 
   "createErrorUserAlreadyExists()" should {
