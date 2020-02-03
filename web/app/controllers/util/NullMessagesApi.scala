@@ -1,20 +1,10 @@
 package controllers.util
 
 import java.util.Locale
-import play.api.i18n.{Lang,Messages,MessagesApi}
+import play.api.i18n.{DefaultLangs,DefaultMessagesApi,Lang,Langs,Messages,MessagesApi,MessagesImpl}
 import play.api.mvc.{RequestHeader,Result}
 
-case class NullMessages(
-  lang: Lang
-) extends Messages {
-  override def apply(keys: Seq[String], args: Any*) = (keys ++ args).mkString(",")
-  override def apply(key: String, args: Any*) = (Seq(key) ++ args).mkString(",")
-  override def isDefinedAt(key: String) = false
-  override def translate(key: String, args: Seq[Any]) = None
-
-  override def messages = this
-}
-
+/*
 class NullMessagesApi(messages: () => Messages) extends MessagesApi {
   override def apply(keys: Seq[String], args: Any*)(implicit lang: Lang) = (keys ++ args).mkString(",")
   override def apply(key: String, args: Any*)(implicit lang: Lang) = (Seq(key) ++ args).mkString(",")
@@ -22,6 +12,7 @@ class NullMessagesApi(messages: () => Messages) extends MessagesApi {
   override def isDefinedAt(key: String)(implicit lang: Lang) = false
   override def langCookieHttpOnly = false
   override def langCookieName = ""
+  override def langCookieSameSite = None
   override def langCookieSecure = false
   override def messages = Map()
   override def preferred(request: play.mvc.Http.RequestHeader) = {
@@ -41,8 +32,11 @@ class NullMessagesApi(messages: () => Messages) extends MessagesApi {
   private val defaultLocale = Locale.ROOT
   private val defaultLang = Lang(defaultLocale)
 }
+*/
 
 object NullMessagesApi {
-  lazy val messagesApi: MessagesApi = new NullMessagesApi(() => messages)
-  lazy val messages: Messages = messagesApi.preferred(Seq())
+  val lang: Lang = Lang(Locale.ROOT)
+  val langs: Langs = new DefaultLangs(Seq(lang))
+  val messagesApi: MessagesApi = new DefaultMessagesApi(Map.empty[String,Map[String,String]], langs)
+  val messages: Messages = messagesApi.preferred(Seq(lang))
 }

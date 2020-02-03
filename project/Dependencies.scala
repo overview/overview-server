@@ -2,15 +2,15 @@ import sbt._
 import play.sbt.PlayImport.{guice,filters,ws}
 
 object Dependencies {
-  val AkkaVersion = "2.5.19"
+  val AkkaVersion = "2.5.26"
 
   private object deps {
     // shared dependencies
     val akka = "com.typesafe.akka" %% "akka-actor" % AkkaVersion
     val akkaRemote = "com.typesafe.akka" %% "akka-remote" % AkkaVersion
     val akkaTestkit = "com.typesafe.akka" %% "akka-testkit"  % AkkaVersion
-    val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.1.7"
-    val akkaHttpTestkit = "com.typesafe.akka" %% "akka-http-testkit" % "10.1.7"
+    val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.1.10"
+    val akkaHttpTestkit = "com.typesafe.akka" %% "akka-http-testkit" % "10.1.10"
     val akkaStream = "com.typesafe.akka" %% "akka-stream" % AkkaVersion
     val akkaStreamTestkit = "com.typesafe.akka" %% "akka-stream-testkit" % AkkaVersion
     val akkaSlf4j = "com.typesafe.akka" %% "akka-slf4j" % AkkaVersion

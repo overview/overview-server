@@ -8,6 +8,8 @@ import scala.concurrent.ExecutionContext
 /** Logs each request and how long it took.
   */
 class LoggingFilter @Inject() (implicit ec: ExecutionContext) extends EssentialFilter {
+  private val logger = Logger(getClass)
+
   // Copy/paste of http://www.playframework.com/documentation/2.2.1/ScalaHttpFilters
   def apply(nextFilter: EssentialAction) = new EssentialAction {
     def apply(requestHeader: RequestHeader) = {
@@ -15,7 +17,7 @@ class LoggingFilter @Inject() (implicit ec: ExecutionContext) extends EssentialF
       nextFilter(requestHeader).map { result =>
         val endTime = System.currentTimeMillis
         val requestTime = endTime - startTime
-        Logger.info(f"${requestTime}%3sms ${requestHeader.method}%s ${requestHeader.uri}%s -> ${result.header.status}%d")
+        logger.info(f"${requestTime}%3sms ${requestHeader.method}%s ${requestHeader.uri}%s -> ${result.header.status}%d")
         result.withHeaders("Request-Time" -> requestTime.toString)
       }
     }

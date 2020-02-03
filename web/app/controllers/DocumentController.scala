@@ -33,6 +33,8 @@ class DocumentController @Inject() (
   configuration: Configuration,
   documentShowHtml: views.html.Document.show
 ) extends BaseController {
+  private val logger = Logger(getClass)
+
   def showText(documentId: Long) = authorizedAction(userOwningDocument(documentId)).async { implicit request =>
     documentBackend.show(documentId).map(_ match {
       case Some(document) => {
@@ -55,7 +57,7 @@ class DocumentController @Inject() (
   // Handles file:// url by reading from local filesystem
   // We clean the filename first for security -- can only serve from specified directory
   def showFile(filename: String) = authorizedAction(anyUser).async { implicit request =>
-    Logger.info("Retrieving document file: " + filename)
+    logger.info("Retrieving document file: " + filename)
     externalFilePath(filename) match {
       case Some(path) => {
         try {

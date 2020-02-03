@@ -57,7 +57,7 @@ object PlayNpm extends AutoPlugin {
       run(List(npmPath, "install"), baseDirectory, logger)
     }
 
-    override def afterStarted(addr: InetSocketAddress): Unit = {
+    override def afterStarted(): Unit = {
       watchProcess = Some(start(List(npmPath, "run-script", "dev"), baseDirectory, logger))
     }
 
