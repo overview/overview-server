@@ -4,11 +4,13 @@
 FROM alpine:3.9.4
 
 # Need to install NSS manually -- https://bugs.alpinelinux.org/issues/10126
+# openssl is for FALLBACK_SECRET in run-web
 RUN set -x \
       && apk add --update --no-cache \
         openjdk8-jre-base \
         nss \
-        ca-certificates
+        ca-certificates \
+        openssl
 
 WORKDIR /opt/overview
 

@@ -2,7 +2,7 @@ import sbt._
 import play.sbt.PlayImport.{guice,filters,ws}
 
 object Dependencies {
-  val AkkaVersion = "2.5.26"
+  val AkkaVersion = "2.6.3"
 
   private object deps {
     // shared dependencies

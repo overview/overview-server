@@ -5,7 +5,6 @@ import javax.inject.Inject
 import play.api.i18n.MessagesApi
 import scala.concurrent.ExecutionContext.Implicits.global
 import play.api.libs.json.{JsError,JsObject,JsResult,JsSuccess}
-import play.api.mvc.BodyParsers.parse
 import scala.concurrent.Future
 
 import com.overviewdocs.database.HasBlockingDatabase

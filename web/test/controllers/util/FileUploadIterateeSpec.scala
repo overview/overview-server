@@ -7,7 +7,6 @@ import java.sql.{SQLException, Timestamp}
 import java.util.UUID
 import org.specs2.mock.Mockito
 import org.specs2.specification.Scope
-import play.api.libs.concurrent.Execution
 import play.api.libs.iteratee.Enumerator
 import play.api.mvc.{RequestHeader, Result}
 import play.api.test.{FakeHeaders, FakeRequest}

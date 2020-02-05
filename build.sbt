@@ -32,9 +32,9 @@ lazy val root = (project in file("."))
       scalaVersion := "2.12.4",
       scalacOptions := Seq("-deprecation", "-unchecked", "-feature", "-target:jvm-1.8", "-encoding", "UTF8"),
       resolvers := Seq(
-        "Typesafe repository" at "http://repo.typesafe.com/typesafe/releases/",
-        "jbig2 repository" at "http://jbig2-imageio.googlecode.com/svn/maven-repository",
-        "Oracle Released Java Packages" at "http://download.oracle.com/maven",
+        "Typesafe repository" at "https://repo.typesafe.com/typesafe/releases/",
+        "jbig2 repository" at "https://jbig2-imageio.googlecode.com/svn/maven-repository",
+        "Oracle Released Java Packages" at "https://download.oracle.com/maven",
         "scalaz-bintray" at "https://dl.bintray.com/scalaz/releases"
       ),
       logBuffered := false,

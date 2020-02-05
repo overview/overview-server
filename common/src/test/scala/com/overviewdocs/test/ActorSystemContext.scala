@@ -25,6 +25,7 @@ object ActorSystemContext {
 
       actor {
         provider: "akka.actor.LocalActorRefProvider"
+        allow-java-serialization: true  # FIXME should be false
       }
 
       remote {
