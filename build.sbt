@@ -29,7 +29,7 @@ lazy val root = (project in file("."))
       // Settings common to all projects
       organization := "com.overviewdocs",
       version := "1.0.0-SNAPSHOT",
-      scalaVersion := "2.12.4",
+      scalaVersion := "2.12.10",
       scalacOptions := Seq("-deprecation", "-unchecked", "-feature", "-target:jvm-1.8", "-encoding", "UTF8"),
       resolvers := Seq(
         "Typesafe repository" at "https://repo.typesafe.com/typesafe/releases/",
