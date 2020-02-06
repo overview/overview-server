@@ -16,6 +16,7 @@ import com.overviewdocs.ingest.model.{ResumedFileGroupJob,WrittenFile2,Processed
 import com.overviewdocs.ingest.create.GroupedFileUploadToFile2
 import com.overviewdocs.ingest.process.{Processor,Step,HttpWorkerServer}
 import com.overviewdocs.ingest.File2Writer
+import com.overviewdocs.jobhandler.documentset.DocumentSetMessageBroker
 import com.overviewdocs.models.FileGroup
 import com.overviewdocs.models.tables.{FileGroups,GroupedFileUploads}
 import com.overviewdocs.searchindex.DocumentSetReindexer
@@ -45,8 +46,15 @@ class FileGroupImportMonitor(
     progressReporter ! progressState
   }
 
-  def enqueueFileGroup(fileGroup: FileGroup, onComplete: () => Unit): Unit = {
-    fileGroupSource.enqueue.tell((fileGroup, onComplete), null)
+  def enqueueFileGroup(
+    fileGroup: FileGroup,
+    onCompleteSendToActor: ActorRef,
+    onCompleteMessage: DocumentSetMessageBroker.WorkerDoneDocumentSetCommand
+  ): Unit = {
+    fileGroupSource.enqueue.tell(
+      FileGroupSource.JobAndOnCompleteMessage(fileGroup, onCompleteSendToActor, onCompleteMessage),
+      null
+    )
   }
 
   private def markFileIngestedInJob(ingested: IngestedRootFile2): ResumedFileGroupJob = {
@@ -98,7 +106,7 @@ class FileGroupImportMonitor(
       _ <- AddDocumentsCommon.afterAddDocuments(documentSetId)
       _ <- database.delete(compiledFileGroup(fileGroup.id)) // lets user navigate to docset
     } yield {
-      fileGroupJob.onComplete()
+      fileGroupJob.onCompleteSendToActor.tell(fileGroupJob.onCompleteMessage, null)
 
       // If anything is somehow still waiting for this task to cancel (e.g.,
       // a confused worker long-polling MinimportHttpServer), wake it up.

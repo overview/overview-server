@@ -3,6 +3,7 @@ import play.sbt.PlayImport.{guice,filters,ws}
 
 object Dependencies {
   val AkkaVersion = "2.6.3"
+  val Specs2Version = "4.8.3"
 
   private object deps {
     // shared dependencies
@@ -51,10 +52,10 @@ object Dependencies {
     val redis = "com.github.etaty" %% "rediscala" % "1.8.0"
     val slick = "com.typesafe.slick" %% "slick" % "3.2.3"
     val slickHikariCp = "com.typesafe.slick" %% "slick-hikaricp" % "3.2.3"
-    val specs2Core = "org.specs2" %% "specs2-core" % "3.8.9"
-    val specs2Junit = "org.specs2" %% "specs2-junit" % "3.8.9" // for XML reporting, for Jenkins
-    val specs2MatcherExtra = "org.specs2" %% "specs2-matcher-extra" % "3.8.9"
-    val specs2Mock = "org.specs2" %% "specs2-mock" % "3.8.9"
+    val specs2Core = "org.specs2" %% "specs2-core" % Specs2Version
+    val specs2Junit = "org.specs2" %% "specs2-junit" % Specs2Version // for XML reporting, for Jenkins
+    val specs2MatcherExtra = "org.specs2" %% "specs2-matcher-extra" % Specs2Version
+    val specs2Mock = "org.specs2" %% "specs2-mock" % Specs2Version
   }
 
   // Dependencies for the project named 'common'. Not dependencies common to all projects...

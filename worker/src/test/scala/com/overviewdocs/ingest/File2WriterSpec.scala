@@ -1,5 +1,6 @@
 package com.overviewdocs.ingest
 
+import akka.actor.ActorRef
 import akka.util.ByteString
 import akka.stream.scaladsl.Source
 import java.nio.file.{Files,Path}
@@ -40,7 +41,8 @@ class File2WriterSpec extends DbSpecification with Mockito {
         val fileGroupJob = ResumedFileGroupJob(
           fileGroup,
           new FileGroupProgressState(fileGroup, 0, 0L, Instant.now, _ => (), Promise[akka.Done]()),
-          () => ()
+          mock[ActorRef],
+          "message"
         )
 
         val parentBlob: BlobStorageRef = BlobStorageRef("foo", 10L)
@@ -308,7 +310,8 @@ class File2WriterSpec extends DbSpecification with Mockito {
         val fileGroupJob = ResumedFileGroupJob(
           fileGroup,
           new FileGroupProgressState(fileGroup, 0, 0L, Instant.now, _ => (), Promise[akka.Done]()),
-          () => ()
+          mock[ActorRef],
+          "message"
         )
 
         lazy val dbDocumentsQuery = {
@@ -389,7 +392,8 @@ class File2WriterSpec extends DbSpecification with Mockito {
         val fileGroupJob2 = ResumedFileGroupJob(
           fileGroup2,
           new FileGroupProgressState(fileGroup2, 0, 0L, Instant.now, _ => (), Promise[akka.Done]()),
-          () => ()
+          mock[ActorRef],
+          "message"
         )
 
         ingest(Vector(

@@ -94,7 +94,7 @@ class DocumentSetCommandWorker(
         // downstream AddDocumentsWorkBroker can juggle all import jobs at
         // once, while this DocumentSetCommandWorker can work on other
         // commands.
-        fileGroupImportMonitor.enqueueFileGroup(addDocuments.fileGroup, () => sendDone(command.documentSetId))
+        fileGroupImportMonitor.enqueueFileGroup(addDocuments.fileGroup, broker, done(addDocuments.documentSetId))
         sendReady
       }
       case command: SortField => {

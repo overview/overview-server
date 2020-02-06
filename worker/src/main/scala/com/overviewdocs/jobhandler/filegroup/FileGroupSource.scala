@@ -7,6 +7,7 @@ import java.time.Instant
 import scala.concurrent.{ExecutionContext,Future,Promise}
 
 import com.overviewdocs.database.Database
+import com.overviewdocs.jobhandler.documentset.DocumentSetMessageBroker
 import com.overviewdocs.models.FileGroup
 import com.overviewdocs.models.tables.{File2s,FileGroups,GroupedFileUploads}
 import com.overviewdocs.ingest.model.{FileGroupProgressState,ResumedFileGroupJob}
@@ -37,14 +38,14 @@ class FileGroupSource(
     val matchSuccess: PartialFunction[Any, CompletionStrategy] = { case Status.Success(_) => CompletionStrategy.draining }
     val matchFailure: PartialFunction[Any, Throwable] = { case Status.Failure(ex) => ex }
 
-    Source.actorRef[(FileGroup,() => Unit)](
+    Source.actorRef[FileGroupSource.JobAndOnCompleteMessage](
       matchSuccess,
       matchFailure,
       bufferSize,
       OverflowStrategy.fail
     )
       .mapMaterializedValue(mat => { sourceActorRef = mat; akka.NotUsed })
-      .mapAsync(1)((resumeFileGroupJob _).tupled)
+      .mapAsync(1)(resumeFileGroupJob _)
   }
 
   /** Actor which accepts FileGroups for emitting.
@@ -65,22 +66,30 @@ class FileGroupSource(
   }
 
   private def resumeFileGroupJob(
-    fileGroup: FileGroup,
-    onComplete: () => Unit
+    job: FileGroupSource.JobAndOnCompleteMessage
   ): Future[ResumedFileGroupJob] = {
     for {
-      nBytesVec: Vector[Long] <- database.seq(fileGroupIngestStatsCompiled(fileGroup.id))
+      nBytesVec: Vector[Long] <- database.seq(fileGroupIngestStatsCompiled(job.fileGroup.id))
     } yield ResumedFileGroupJob(
-      fileGroup,
+      job.fileGroup,
       new FileGroupProgressState(
-        fileGroup,
+        job.fileGroup,
         nBytesVec.size,
         nBytesVec.fold(0L)(_ + _),
         Instant.now,
         onProgress,
         Promise[akka.Done]()
       ),
-      onComplete
+      job.onCompleteSendToActor,
+      job.onCompleteMessage
     )
   }
+}
+
+object FileGroupSource {
+  case class JobAndOnCompleteMessage(
+    val fileGroup: FileGroup,
+    val onCompleteSendToActor: ActorRef,
+    val onCompleteMessage: DocumentSetMessageBroker.WorkerDoneDocumentSetCommand
+  )
 }

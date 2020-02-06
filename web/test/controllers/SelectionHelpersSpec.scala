@@ -226,8 +226,8 @@ class SelectionHelpersSpec extends ControllerSpecification with Mockito with Awa
       val request = FakeRequest("POST", "").withFormUrlEncodedBody("q" -> "foo", "refresh" -> "true")
       await(controller.go(request)) must beEqualTo(Right(selection))
       there was one(mockSelectionBackend).create(
-        org.mockito.Matchers.eq(userEmail),
-        org.mockito.Matchers.eq(selectionRequest),
+        org.mockito.ArgumentMatchers.eq(userEmail),
+        org.mockito.ArgumentMatchers.eq(selectionRequest),
         any
       )
     }
@@ -238,9 +238,9 @@ class SelectionHelpersSpec extends ControllerSpecification with Mockito with Awa
       val request = FakeRequest("POST", "").withFormUrlEncodedBody("q" -> "foo")
       await(controller.go(request)) must beEqualTo(Right(selection))
       there was one(mockSelectionBackend).findOrCreate(
-        org.mockito.Matchers.eq(userEmail),
-        org.mockito.Matchers.eq(selectionRequest),
-        org.mockito.Matchers.eq(None),
+        org.mockito.ArgumentMatchers.eq(userEmail),
+        org.mockito.ArgumentMatchers.eq(selectionRequest),
+        org.mockito.ArgumentMatchers.eq(None),
         any
       )
     }

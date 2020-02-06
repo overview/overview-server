@@ -7,21 +7,19 @@ import org.specs2.specification.Scope
 import scala.concurrent.{Await,ExecutionContext,Future,blocking}
 import scala.concurrent.duration.Duration
 
-class TempFilesSpec extends Specification {
+class TempFilesSpec(implicit ec: ExecutionContext) extends Specification {
   sequential
-
-  type EE = ExecutionEnv
 
   private def await[A](f: => Future[A]): A = blocking(Await.result(f, Duration.Inf))
 
   "withTempFileWithSuffix()" should {
-    "create a tempfile" in { implicit ee: EE =>
+    "create a tempfile" in {
       def asyncExists(path: Path): Future[Boolean] = Future(Files.exists(path))
 
-      TempFiles.withTempFileWithSuffix(".foo", asyncExists) must beTrue.await
+      await(TempFiles.withTempFileWithSuffix(".foo", asyncExists)) must beTrue
     }
 
-    "delete the tempfile" in { implicit ee: EE =>
+    "delete the tempfile" in {
       var thePath: Option[Path] = None
       await(TempFiles.withTempFileWithSuffix(".foo", { path => thePath = Some(path); Future.unit }))
       Files.exists(thePath.get) must beFalse

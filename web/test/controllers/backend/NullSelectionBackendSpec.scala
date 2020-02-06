@@ -1,6 +1,7 @@
 package controllers.backend
 
 import java.util.Date
+import org.mockito.ArgumentMatchers
 import org.specs2.mock.Mockito
 import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.Future
@@ -47,7 +48,7 @@ class NullSelectionBackendSpec extends NullBackendSpecification with Mockito {
 
       "pass the SelectionRequest to the dsBackend" in new CreateScope {
         create
-        there was one(dsBackend).createSelection(org.mockito.Matchers.eq(request), any[Double => Unit])
+        there was one(dsBackend).createSelection(ArgumentMatchers.eq(request), any[Double => Unit])
       }
 
       "pass a failure back" in new CreateScope {

@@ -4,7 +4,7 @@ import akka.stream.scaladsl.Sink
 import akka.util.ByteString
 import java.sql.Timestamp
 import java.util.UUID
-import org.mockito.Matchers
+import org.mockito.ArgumentMatchers
 import org.specs2.mock.Mockito
 import org.specs2.specification.Scope
 import play.api.libs.streams.Accumulator
@@ -75,7 +75,7 @@ class UploadControllerSpec extends ControllerSpecification with Mockito {
         },
         beLike[String] { case s => s must beEqualTo(request.user.email) }
       )
-      there was one(components).createCsvImport(any, any, any, Matchers.eq("en"))
+      there was one(components).createCsvImport(any, any, any, ArgumentMatchers.eq("en"))
     }
 
     "not create a CsvImport if upload is not complete" in new StartClusteringScope {

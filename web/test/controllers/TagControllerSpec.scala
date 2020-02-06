@@ -113,7 +113,7 @@ class TagControllerSpec extends ControllerSpecification with JsonMatchers {
     class IndexJsonScope extends BaseScope {
       val documentSetId = 1L
       def tagsWithCounts : Vector[(Tag,Int)] = Vector()
-      mockTagBackend.indexWithCounts(anyInt) answers { (_) => Future.successful(tagsWithCounts) }
+      mockTagBackend.indexWithCounts(1L) returns Future.successful(tagsWithCounts)
       val result = controller.indexJson(documentSetId)(fakeAuthorizedRequest)
     }
 

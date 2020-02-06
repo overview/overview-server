@@ -1,6 +1,6 @@
 package controllers
 
-import org.mockito.Matchers
+import org.mockito.ArgumentMatchers
 import org.specs2.specification.Scope
 import scala.concurrent.Future
 
@@ -34,19 +34,19 @@ class DocumentSetUserControllerSpec extends ControllerSpecification {
     "set data-emails" in new IndexScope {
       mockBackend.index(documentSetId) returns Future.successful(Vector(factory.documentSetUser(1L, "user-x@example.org")))
       h.contentAsString(result)
-      there was one(controller.indexHtml).apply(any, any, Matchers.eq(Vector("user-x@example.org")), any)(any, any, any)
+      there was one(controller.indexHtml).apply(any, any, ArgumentMatchers.eq(Vector("user-x@example.org")), any)(any, any, any)
     }
 
     "set data-public=true" in new IndexScope {
       mockDocumentSetBackend.show(documentSetId) returns Future.successful(Some(factory.documentSet(isPublic=true)))
       h.contentAsString(result)
-      there was one(controller.indexHtml).apply(any, any, any, Matchers.eq(true))(any, any, any)
+      there was one(controller.indexHtml).apply(any, any, any, ArgumentMatchers.eq(true))(any, any, any)
     }
 
     "set data-public=false" in new IndexScope {
       mockDocumentSetBackend.show(documentSetId) returns Future.successful(Some(factory.documentSet(isPublic=false)))
       h.contentAsString(result)
-      there was one(controller.indexHtml).apply(any, any, any, Matchers.eq(false))(any, any, any)
+      there was one(controller.indexHtml).apply(any, any, any, ArgumentMatchers.eq(false))(any, any, any)
     }
   }
 

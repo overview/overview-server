@@ -1,5 +1,6 @@
 package com.overviewdocs.ingest.ingest
 
+import akka.actor.ActorRef
 import akka.stream.scaladsl.{Sink,Source}
 import java.time.Instant
 import org.specs2.mock.Mockito
@@ -33,7 +34,8 @@ class IngesterSpec extends Specification with Mockito {
     val fileGroupJob = ResumedFileGroupJob(
       fileGroup,
       new FileGroupProgressState(fileGroup, 0, 0L, Instant.now, _ => (), Promise[akka.Done]()),
-      () => ()
+      mock[ActorRef],
+      "message"
     )
     val input: Vector[ProcessedFile2]
 

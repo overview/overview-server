@@ -1,6 +1,6 @@
 package controllers
 
-import org.mockito.Matchers
+import org.mockito.ArgumentMatchers
 import org.specs2.matcher.{Expectable,JsonMatchers,Matcher}
 import org.specs2.specification.Scope
 import play.api.libs.json.{JsValue,Json}
@@ -215,7 +215,7 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
         job.csvImport returns factory.csvImport(documentSetId=1L, id=2L)
         mockImportJobBackend.indexByDocumentSet(documentSetId) returns Future.successful(Vector(job))
         h.status(result)
-        there was one(controller.showProgressHtml).apply(any, any, Matchers.eq(Vector(job)))(any, any, any)
+        there was one(controller.showProgressHtml).apply(any, any, ArgumentMatchers.eq(Vector(job)))(any, any, any)
       }
     }
 
@@ -255,7 +255,7 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
       "show page 1 if the page number is too low" in new IndexScope {
         override def pageNumber = 0
         h.status(result) must beEqualTo(h.OK) // load page
-        there was one(mockBackend).indexPageByOwner(Matchers.eq(request.user.email), any)
+        there was one(mockBackend).indexPageByOwner(ArgumentMatchers.eq(request.user.email), any)
       }
 
       "bind nViews to their document sets" in new IndexScope {
