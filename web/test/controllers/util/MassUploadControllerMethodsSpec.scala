@@ -3,7 +3,6 @@ package controllers.util
 import akka.stream.scaladsl.{Source,Sink}
 import akka.util.ByteString
 import java.util.UUID
-import play.api.libs.iteratee.{Iteratee}
 import play.api.libs.json.Json
 import play.api.test.FakeRequest
 import org.specs2.matcher.JsonMatchers

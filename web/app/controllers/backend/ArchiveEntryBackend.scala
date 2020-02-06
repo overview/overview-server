@@ -6,7 +6,6 @@ import com.google.inject.ImplementedBy
 import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
 import javax.inject.Inject
-import play.api.libs.iteratee.Enumerator
 import org.postgresql.PGConnection
 import scala.collection.{immutable,mutable}
 import scala.concurrent.Future

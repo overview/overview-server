@@ -3,7 +3,6 @@ package models.archive
 import akka.stream.scaladsl.{Sink,Source}
 import akka.stream.Materializer
 import akka.util.ByteString
-import play.api.libs.iteratee.{Enumerator,Iteratee}
 import java.nio.{ByteBuffer,ByteOrder}
 import java.util.HashSet
 import java.util.zip.CRC32

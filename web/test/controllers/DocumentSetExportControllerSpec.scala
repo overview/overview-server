@@ -2,7 +2,6 @@ package controllers
 
 import java.io.FileInputStream
 import org.specs2.specification.Scope
-import play.api.libs.iteratee.Enumerator
 import play.api.libs.json.Json
 import scala.concurrent.Future
 
