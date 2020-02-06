@@ -1,8 +1,8 @@
 package com.overviewdocs.blobstorage
 
 import akka.NotUsed
-import akka.actor.ActorRefFactory
-import akka.stream.{ActorMaterializer,IOResult}
+import akka.actor.ActorSystem
+import akka.stream.{Materializer,IOResult}
 import akka.stream.scaladsl.{FileIO,Source,Sink}
 import akka.util.ByteString
 import java.io.{File,InputStream}
@@ -105,7 +105,7 @@ trait BlobStorage {
     * If the caller is killed (or crashes) while executing the callback, the
     * temporary file will not be deleted.
     */
-  def withBlobInTempFile[A](location: String)(callback: File => Future[A])(implicit system: ActorRefFactory): Future[A] = {
+  def withBlobInTempFile[A](location: String)(callback: File => Future[A])(implicit system: ActorSystem): Future[A] = {
     import scala.concurrent.ExecutionContext.Implicits.global
 
     def callCallbackSafely(file: File): Future[A] = {
@@ -196,13 +196,10 @@ object BlobStorage extends BlobStorage {
   override protected val config = BlobStorageConfig
   override protected val strategyFactory = StrategyFactory
 
-  private def createTempFile(location: String, source: Source[ByteString, _])(implicit system: ActorRefFactory) : Future[File] = {
+  private def createTempFile(location: String, source: Source[ByteString, _])(implicit system: ActorSystem) : Future[File] = {
     import system.dispatcher
 
-    implicit val materializer = ActorMaterializer.create(system)
-
     val path: Path = Files.createTempFile("blob-storage-" + location, null)
-    source.runWith(FileIO.toPath(path))
-      .map(_.status.map(_ => path.toFile).get)
+    source.runWith(FileIO.toPath(path)).map(_ => path.toFile)
   }
 }

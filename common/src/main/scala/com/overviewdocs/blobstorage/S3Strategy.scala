@@ -49,7 +49,7 @@ trait S3Strategy extends BlobStorageStrategy {
       val inputStream = s3Object.getObjectContent()
       StreamConverters.fromInputStream(() => inputStream)
     })
-    Source.fromFutureSource(futureSource)
+    Source.futureSource(futureSource)
       .mapMaterializedValue(_ => akka.NotUsed)
   }
 
