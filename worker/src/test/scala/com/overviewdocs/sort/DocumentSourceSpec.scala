@@ -1,7 +1,6 @@
 package com.overviewdocs.sort
 
 import akka.stream.scaladsl.Sink
-import akka.stream.ActorMaterializer
 import play.api.libs.json.Json
 
 import com.overviewdocs.test.{ActorSystemContext,DbSpecification}
@@ -12,8 +11,6 @@ class DocumentSourceSpec extends DbSpecification with AwaitMethod {
   sequential
 
   trait BaseScope extends DbScope with ActorSystemContext {
-    implicit lazy val mat: ActorMaterializer = ActorMaterializer.create(system)
-
     val subject = new DocumentSource(database, 2)
 
     val documentSet = factory.documentSet()

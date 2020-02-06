@@ -3,7 +3,7 @@ package com.overviewdocs.jobhandler.filegroup
 import akka.actor.{ActorRef,ActorSystem}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Route
-import akka.stream.{ActorMaterializer,ActorMaterializerSettings,FlowShape,Graph,Materializer,Supervision}
+import akka.stream.{FlowShape,Graph,Materializer}
 import akka.stream.scaladsl.{Flow,GraphDSL,Keep,MergePreferred,Source,Sink}
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.duration.{Duration,FiniteDuration}
@@ -31,7 +31,7 @@ class FileGroupImportMonitor(
   val recurseBufferSize: Int,            // see Processor.scala docs
   val ingestBatchSize: Int,              // see Ingester.scala docs
   val ingestBatchMaxWait: FiniteDuration // see Ingester.scala docs
-)(implicit mat: ActorMaterializer) {
+)(implicit mat: Materializer) {
   implicit val ec = mat.executionContext
 
   private val database = file2Writer.database
@@ -153,6 +153,7 @@ class FileGroupImportMonitor(
   def run: Future[akka.Done] = {
     val (futureBinding: Future[Http.ServerBinding], futureDone: Future[akka.Done]) =
       fileGroupSource.source // ResumedFileGroupJob
+        .log("FileGroupImportMonitor.run start")
         .map { job => addInProgress(job); job }
         .viaMat(graph)((_, route) => startHttpServer(route)) // IngestedFile2Root
         .map(markFileIngestedInJob _)                        // ResumedFileGroupJob
@@ -160,6 +161,7 @@ class FileGroupImportMonitor(
         .filter(isInProgress _)                              // avoid a warning
         .map { job => removeInProgress(job); job }
         .mapAsync(1)(finishFileGroupJob _)                   // Unit -- now the FileGroup is deleted
+        .log("FileGroupImportMonitor.run finish")
         .toMat(Sink.ignore)(Keep.both)
         .run
 
@@ -176,13 +178,6 @@ object FileGroupImportMonitor {
     actorSystem: ActorSystem,
     progressReporter: ActorRef
   ): FileGroupImportMonitor = {
-    implicit val mat: ActorMaterializer = ActorMaterializer.apply(
-      ActorMaterializerSettings(actorSystem).withSupervisionStrategy { e =>
-        e.printStackTrace()
-        Supervision.Stop
-      }
-    )(actorSystem)
-
     import com.typesafe.config.ConfigFactory
     val config = ConfigFactory.load
     val file2Writer = new File2Writer(
@@ -190,6 +185,7 @@ object FileGroupImportMonitor {
       BlobStorage,
       config.getInt("max_n_chars_per_document"),
     )
+    implicit val materializer = Materializer.matFromSystem(actorSystem)
 
     val httpWorkerServer = HttpWorkerServer(
       actorSystem,

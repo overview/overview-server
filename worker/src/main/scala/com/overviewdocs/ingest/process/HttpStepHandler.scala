@@ -5,7 +5,7 @@ import akka.http.scaladsl.marshalling.ToResponseMarshallable
 import akka.http.scaladsl.model.{ContentTypes,HttpEntity,HttpResponse,Multipart,ResponseEntity,RequestEntity,StatusCodes,Uri}
 import akka.http.scaladsl.server.{RequestContext,Route,RouteResult}
 import akka.pattern.ask
-import akka.stream.{ActorAttributes,FlowShape,OverflowStrategy,Materializer,Supervision}
+import akka.stream.{ActorAttributes,FlowShape,OverflowStrategy,Materializer,Supervision,CompletionStrategy}
 import akka.stream.scaladsl.{Flow,GraphDSL,Keep,MergeHub,MergePreferred,Sink,Source}
 import akka.util.{ByteString,Timeout}
 import com.google.common.hash.HashCode
@@ -49,7 +49,16 @@ class HttpStepHandler(
   private val maxNTimedOutTasks = maxNWorkers * 2
 
   private def retryFlow: Flow[WrittenFile2, WrittenFile2, ActorRef] = {
-    val graph = GraphDSL.create(Source.actorRef(maxNTimedOutTasks, OverflowStrategy.fail).named("timeoutTaskSource")) { implicit builder => timeoutTaskSource =>
+    val matchSuccess: PartialFunction[Any, CompletionStrategy] = { case Status.Success(_) => CompletionStrategy.draining }
+    val matchFailure: PartialFunction[Any, Throwable] = { case Status.Failure(ex) => ex }
+
+    val timeoutActorRef = Source.actorRef(
+      matchSuccess,
+      matchFailure,
+      maxNTimedOutTasks,
+      OverflowStrategy.fail
+    ).named("timeoutTaskSource")
+    val graph = GraphDSL.create(timeoutActorRef) { implicit builder => timeoutTaskSource =>
       import GraphDSL.Implicits._
 
       val retry = builder.add(MergePreferred[WrittenFile2](1, eagerComplete=true).named("retry"))
@@ -76,11 +85,12 @@ class HttpStepHandler(
     //    is the reusable Sink[ConvertOutputElement, akka.NotUsed]
     // 4. Is "coupled": when input completes, output completes
     val coupledFlow: Flow[WrittenFile2, ConvertOutputElement, (ActorRef, Sink[ConvertOutputElement, akka.NotUsed])] = {
-      val taskProviderSink = Sink.actorRefWithAck[WrittenFile2](
+      val taskProviderSink = Sink.actorRefWithBackpressure[WrittenFile2](
         taskProviderRef,
         HttpTaskProvider.Init,
         HttpTaskProvider.Ack,
-        HttpTaskProvider.Complete
+        HttpTaskProvider.Complete,
+        Status.Failure(_)
       ).named("taskProviderSink")
 
       val sink: Sink[WrittenFile2, ActorRef] = retryFlow

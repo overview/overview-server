@@ -2,7 +2,6 @@ package com.overviewdocs.ingest.process
 
 import akka.actor.{Actor,ActorRef,DeadLetter,Props,Status,Terminated}
 import akka.http.scaladsl.model.{HttpRequest,HttpResponse,StatusCodes}
-import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.Sink
 import java.util.UUID
 import scala.concurrent.duration.FiniteDuration
@@ -43,8 +42,8 @@ class HttpWorkerPool(
   /** ActorRef where `WrittenFile2`s will be sent when they time out. */
   val timeoutActorRef: ActorRef
 ) extends Actor {
-  private implicit val ec = context.dispatcher
-  private implicit val mat = ActorMaterializer.create(context)
+  import context.dispatcher
+  import context.system
 
   private var nChildren = 0
 

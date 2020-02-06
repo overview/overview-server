@@ -289,7 +289,6 @@ class File2Writer(
 
       for {
         ioResult <- ioResultFuture
-        status = ioResult.status.get // crash on I/O error, before uploading to BlobStorage
         sha1 <- sha1Future
         location <- blobStorage.create(BlobBucketId.FileView, path)
       } yield BlobStorageRefWithSha1(BlobStorageRef(location, ioResult.count), sha1)

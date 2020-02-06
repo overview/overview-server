@@ -102,7 +102,7 @@ class HttpStepHandlerSpec extends Specification with Specs2RouteTest with Mockit
 
     lazy val (route: Route, futureDone: Future[akka.Done]) = {
       Source(tasks)
-        .concat(Source.fromFutureSource(endPromise.future)) // don't complete until `end`
+        .concat(Source.futureSource(endPromise.future)) // don't complete until `end`
         .viaMat(server.flow(system))(Keep.right)
         .toMat(Sink.ignore)(Keep.both)
         .run()

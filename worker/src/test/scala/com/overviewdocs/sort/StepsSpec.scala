@@ -1,6 +1,6 @@
 package com.overviewdocs.sort
 
-import akka.stream.ActorMaterializer
+import akka.stream.Materializer
 import akka.stream.scaladsl.{Flow,Sink,Source}
 import java.nio.file.{Files,Path}
 import org.specs2.mutable.{After,Specification}
@@ -14,7 +14,7 @@ import com.overviewdocs.test.ActorSystemContext
 class StepsSpec extends Specification with AwaitMethod {
   sequential
 
-  private def consumeRecordSource(recordSource: RecordSource)(implicit executionContext: ExecutionContext, mat: ActorMaterializer): Unit = {
+  private def consumeRecordSource(recordSource: RecordSource)(implicit executionContext: ExecutionContext, mat: Materializer): Unit = {
     // We need to wait for the RecordSource's materialized value (which tells us
     // cleanup has happened)_and_ the materialized value of Sink.ignore (which
     // tells us all elements have been read).
@@ -26,7 +26,6 @@ class StepsSpec extends Specification with AwaitMethod {
 
   trait BaseScope extends Scope with ActorSystemContext with After {
     implicit val ec = system.dispatcher
-    implicit val mat = ActorMaterializer.create(system)
     val tempDir: Path = Files.createTempDirectory("PageOnDiskSpec")
 
     // Relying on PageOnDisk makes this a bit more like an integration test

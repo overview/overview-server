@@ -95,7 +95,7 @@ class DocumentSetExportController @Inject() (
       Source(tuples.to[immutable.Iterable])
     }
 
-    Source.fromFutureSource(futureSource).mapMaterializedValue(_ => akka.NotUsed)
+    Source.futureSource(futureSource).mapMaterializedValue(_ => akka.NotUsed)
   }
 
   private def streamDocumentsWithTagIds(documentSetId: Long, selection: Selection): Source[(Document,Vector[Long]), akka.NotUsed] = {
@@ -106,6 +106,6 @@ class DocumentSetExportController @Inject() (
         .flatMapConcat(batch => documentsWithTagIdsSource(documentSetId, batch))
     }
 
-    Source.fromFutureSource(futureSource).mapMaterializedValue(_ => akka.NotUsed)
+    Source.futureSource(futureSource).mapMaterializedValue(_ => akka.NotUsed)
   }
 }

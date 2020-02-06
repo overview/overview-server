@@ -1,7 +1,7 @@
 package controllers.backend
 
-import akka.actor.{Actor,ActorRef,Props}
-import akka.stream.{OverflowStrategy,QueueOfferResult}
+import akka.actor.{Actor,ActorRef,Props,Status}
+import akka.stream.{CompletionStrategy,OverflowStrategy,QueueOfferResult}
 import akka.stream.scaladsl.{Keep,Sink,Source,SourceQueueWithComplete}
 import com.google.inject.ImplementedBy
 import javax.inject.{Inject,Singleton}
@@ -104,14 +104,21 @@ class DbAkkaDocumentIdListBackend @Inject() (
       case Some(_) => Source.empty
     })
 
-    Source.fromFutureSource(futureSource).mapMaterializedValue(_ => akka.NotUsed)
+    Source.futureSource(futureSource).mapMaterializedValue(_ => akka.NotUsed)
   }
 
   private def create(documentSetId: Int, fieldName: String): Source[Progress.Sorting, akka.NotUsed] = {
     // This queue will be consumed by the web browser. The user only cares
     // about the most recent value (which is closest to the current progress),
     // so we use the dropBuffer strategy.
-    val actorSource = Source.actorRef[Progress.SortProgress](maxNProgressEventsInBuffer, OverflowStrategy.dropBuffer)
+    val matchComplete: PartialFunction[Any, CompletionStrategy] = { case Status.Success(_: Unit) => CompletionStrategy.draining }
+    val matchFailure: PartialFunction[Any, Throwable] = { case Status.Failure(ex: Throwable) => ex }
+    val actorSource = Source.actorRef[Progress.SortProgress](
+      matchComplete,
+      matchFailure,
+      maxNProgressEventsInBuffer,
+      OverflowStrategy.dropBuffer
+    )
 
     // When this Source is materialized (connected to a Sink and run), our
     // actorRefPromise will resolve. That's when we'll ask the MessageBroker to
@@ -131,7 +138,7 @@ class DbAkkaDocumentIdListBackend @Inject() (
         for {
           actorRef <- actorRefPromise.future
         } yield {
-          actorRef.tell(akka.actor.Status.Success(()), actorRef)
+          actorRef.tell(Status.Success(()), actorRef)
         }
       }
       case _ =>
@@ -154,7 +161,7 @@ class DbAkkaDocumentIdListBackend @Inject() (
           .mapMaterializedValue { f: Future[akka.Done] => f.flatMap(_ => show(documentSetId, fieldName)) }
       }
     })
-    Source.fromFutureSource(futureSource)
+    Source.futureSource(futureSource)
       .mapMaterializedValue { f: Future[Future[Option[DocumentIdList]]] => f.flatMap(x => x) }
   }
 }

@@ -1,6 +1,5 @@
 package com.overviewdocs.sort
 
-import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.Sink
 import java.nio.file.{Files,Path}
 import java.nio.{ByteBuffer,ByteOrder}
@@ -17,7 +16,6 @@ class PageOnDiskSpec extends Specification with AwaitMethod {
 
   trait BaseScope extends Scope with ActorSystemContext with After {
     implicit val ec = system.dispatcher
-    implicit val mat = ActorMaterializer.create(system)
 
     val tempDir: Path = Files.createTempDirectory("PageOnDiskSpec")
 

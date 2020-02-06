@@ -113,8 +113,7 @@ class ZipArchive(
         .concat(backend.streamBytes(documentSetId, archiveEntry.documentId))
     }
 
-    Source.fromFutureSource(future)
-      .mapMaterializedValue( _ =>  akka.NotUsed)
+    Source.futureSource(future).mapMaterializedValue( _ =>  akka.NotUsed)
   }
 
   private def localFileHeader(archiveEntry: ArchiveEntry, crc: Int): Array[Byte] = {
@@ -146,8 +145,7 @@ class ZipArchive(
   private def streamCentralDirectory: Source[ByteString, akka.NotUsed] = {
     val futureSource = crcsAllCalculated.future.map(_ => streamCentralDirectoryFileHeaders)
 
-    Source.fromFutureSource(futureSource)
-      .mapMaterializedValue(_ => akka.NotUsed)
+    Source.futureSource(futureSource).mapMaterializedValue(_ => akka.NotUsed)
   }
 
   private def streamCentralDirectoryFileHeaders: Source[ByteString, akka.NotUsed] = {

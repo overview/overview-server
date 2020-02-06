@@ -2,7 +2,6 @@ package com.overviewdocs.ingest.process
 
 import akka.actor.{Actor,ActorRef,Props,Status,Timers}
 import akka.http.scaladsl.model.{HttpRequest,HttpResponse}
-import akka.stream.{ActorMaterializer,ActorMaterializerSettings,Supervision}
 import akka.stream.scaladsl.{Sink,Source}
 import java.time.{Duration=>JDuration,Instant}
 import scala.concurrent.duration.{Duration,FiniteDuration}
@@ -47,18 +46,9 @@ class HttpWorker(
   val timeoutActorRef: ActorRef
 ) extends Actor with Timers {
   implicit val ec: ExecutionContext = context.dispatcher
-  implicit val mat = {
-    val decider: Supervision.Decider = {
-      case ex: Throwable => {
-        ex.printStackTrace()
-        Supervision.Stop
-      }
-    }
-    ActorMaterializer(ActorMaterializerSettings(context.system).withSupervisionStrategy(decider))
-  }
 
   private val tickInterval = workerIdleTimeout / 10
-  timers.startPeriodicTimer("tick", HttpWorker.Tick, tickInterval)
+  timers.startTimerWithFixedDelay("tick", HttpWorker.Tick, tickInterval)
 
   private def isTimedOut(lastActivityAt: Instant): Boolean = {
     val timeoutTemporalAmount = JDuration.ofNanos(workerIdleTimeout.toNanos)
@@ -149,6 +139,8 @@ class HttpWorker(
   }
 
   private def processFragments(state: StepOutputFragmentCollector.State, fragments: Source[StepOutputFragment, akka.NotUsed]): Unit = {
+    import context.system // for materializer
+
     var hackyMutatingState = state
     fragments
       //.scanAsync does not complete for us, akka-streams 2.5.11.
@@ -173,7 +165,7 @@ class HttpWorker(
       // does not depend on upstream HTTP POST request bytes like a
       // StepOutputFragment does. So once we've seen the final fragment in
       // the POST, we've read all the bytes from it
-      .watchTermination() { (mat, doneFuture) =>
+      .watchTermination() { (_, doneFuture) =>
         doneFuture.onComplete {
           case Success(_) => {
             self ! HttpWorker.UpdateState(hackyMutatingState)
@@ -191,6 +183,8 @@ class HttpWorker(
   }
 
   private def startCancel(state: StepOutputFragmentCollector.State): Unit = {
+    import context.system // for materializer
+
     state match {
       case StepOutputFragmentCollector.State.End(_) => context.stop(self)
       case _ => stepOutputFragmentCollector.transitionState(state, StepOutputFragment.Canceled).onComplete {

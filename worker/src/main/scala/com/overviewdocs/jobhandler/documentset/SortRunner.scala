@@ -1,7 +1,7 @@
 package com.overviewdocs.jobhandler.documentset
 
 import akka.actor.{Actor,ActorRef,ActorSystem}
-import akka.stream.ActorMaterializer
+import akka.stream.Materializer
 import scala.collection.immutable
 import scala.concurrent.{ExecutionContext,Future}
 
@@ -21,7 +21,6 @@ class SortRunner(
   private val logger = Logger.forClass(getClass)
 
   def run(documentSetId: Long, fieldName: String, asker: ActorRef)(implicit system: ActorSystem): Future[Unit] = {
-    val materializer = ActorMaterializer.create(system)
     val blockingEc = system.dispatchers.lookup("blocking-io-dispatcher")
     import system.dispatcher
     logger.info("Sorting {}:{} for {}", documentSetId, fieldName, asker)
@@ -35,7 +34,7 @@ class SortRunner(
       case false => {
         for {
           recordSource <- documentSource.recordSourceByMetadata(documentSetId, fieldName)
-          ids <- sorter.sortIds(recordSource, (p) => asker.tell(Progress.Sorting(p), Actor.noSender))(materializer, blockingEc)
+          ids <- sorter.sortIds(recordSource, (p) => asker.tell(Progress.Sorting(p), Actor.noSender))(Materializer.matFromSystem, blockingEc)
           _ <- writeIds(documentSetId.toInt, fieldName, ids)
         } yield {
           logger.info("Sort finished")

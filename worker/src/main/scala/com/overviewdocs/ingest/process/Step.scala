@@ -3,7 +3,7 @@ package com.overviewdocs.ingest.process
 import akka.actor.ActorRefFactory
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.{Directives,RequestContext,Route,RouteResult}
-import akka.stream.{ActorMaterializer,Materializer}
+import akka.stream.Materializer
 import akka.stream.scaladsl.{Flow,Keep,MergeHub,Sink}
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext,Future}
@@ -54,7 +54,7 @@ object Step {
       * TODO avoid passing a Materializer here. We end up starting actors before
       * materialization, which is wrong.
       */
-    def steps(implicit mat: ActorMaterializer): Vector[Step] = {
+    def steps(implicit mat: Materializer): Vector[Step] = {
       stepSpecs.map(spec => buildStep(spec, mat.system))
     }
 
@@ -71,7 +71,7 @@ object Step {
     maxNHttpWorkers: Int,
     workerIdleTimeout: FiniteDuration,
     httpCreateIdleTimeout: FiniteDuration
-  )(implicit mat: ActorMaterializer): Vector[Step] = {
+  )(implicit mat: Materializer): Vector[Step] = {
     new HttpSteps(
       Vector(
         StepSpec("Archive", 0.1),

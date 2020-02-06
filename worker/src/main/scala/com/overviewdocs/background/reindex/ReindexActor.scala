@@ -1,6 +1,5 @@
 package com.overviewdocs.background.reindex
 
-import akka.stream.ActorMaterializer
 import akka.actor.{Actor,Props}
 import scala.util.{Failure,Success}
 
@@ -17,7 +16,7 @@ import com.overviewdocs.util.Logger
   */
 class ReindexActor(reindexer: Reindexer) extends Actor {
   import context.dispatcher
-  implicit val mat = ActorMaterializer.create(context)
+  import context.system
 
   private val logger = Logger.forClass(getClass)
 

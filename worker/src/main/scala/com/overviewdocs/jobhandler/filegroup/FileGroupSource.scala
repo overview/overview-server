@@ -1,7 +1,7 @@
 package com.overviewdocs.jobhandler.filegroup
 
-import akka.actor.ActorRef
-import akka.stream.{Materializer,OverflowStrategy}
+import akka.actor.{ActorRef,Status}
+import akka.stream.{CompletionStrategy,Materializer,OverflowStrategy}
 import akka.stream.scaladsl.Source
 import java.time.Instant
 import scala.concurrent.{ExecutionContext,Future,Promise}
@@ -34,7 +34,15 @@ class FileGroupSource(
     * all FileGroups sent to `.enqueue`.
     */
   val source: Source[ResumedFileGroupJob, akka.NotUsed] = {
-    Source.actorRef[(FileGroup,() => Unit)](bufferSize, OverflowStrategy.fail)
+    val matchSuccess: PartialFunction[Any, CompletionStrategy] = { case Status.Success(_) => CompletionStrategy.draining }
+    val matchFailure: PartialFunction[Any, Throwable] = { case Status.Failure(ex) => ex }
+
+    Source.actorRef[(FileGroup,() => Unit)](
+      matchSuccess,
+      matchFailure,
+      bufferSize,
+      OverflowStrategy.fail
+    )
       .mapMaterializedValue(mat => { sourceActorRef = mat; akka.NotUsed })
       .mapAsync(1)((resumeFileGroupJob _).tupled)
   }

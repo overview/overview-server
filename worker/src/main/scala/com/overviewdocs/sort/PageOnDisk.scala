@@ -28,17 +28,11 @@ case class PageOnDisk(
     */
   def toSourceDestructive(implicit blockingEc: ExecutionContext): Source[Record, Future[Unit]] = {
     FileIO.fromPath(path)
+      .watchTermination() { (_, done) =>
+        done.transformWith(_ => Future(blocking(Files.delete(path))))
+      }
       .via(Framing.lengthField(4, 8, 12 + PageOnDisk.maxNBytesOnDiskPerRecord, PageOnDisk.byteOrder))
       .map(PageOnDisk.byteStringToRecord _)
-      .mapMaterializedValue(_.flatMap { ioResult =>
-        Future {
-          blocking(Files.delete(path))
-          ioResult.status match {
-            case Success(akka.Done) => ()
-            case Failure(ex) => throw ex
-          }
-        }
-      })
   }
 }
 
@@ -78,10 +72,7 @@ object PageOnDisk {
     records
       .map(recordToByteString _)
       .runWith(FileIO.toPath(path))
-      .map(_.status match {
-        case Success(akka.Done) => ()
-        case Failure(e) => throw e
-      })
+      .map(_ => ())
   }
 
   /** Writes already-sorted records to disk, creating a PageOnDisk.

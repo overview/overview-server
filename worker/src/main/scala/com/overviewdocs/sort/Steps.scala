@@ -247,7 +247,7 @@ private[sort] object Steps {
 
     RecordSource(
       nRecords,
-      Source.fromFutureSource(futureSource)
+      Source.futureSource(futureSource)
         .mapMaterializedValue(f => f.flatMap(identity)) // Future[Future[Unit]] => Future[Unit]
     )
   }

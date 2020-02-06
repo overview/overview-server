@@ -57,7 +57,7 @@ class DocumentSource(
             val records = rows.map(tuple => rowToRecord(tuple._1, tuple._2))
             Source(records)
           }
-          Source.fromFutureSource[Record, akka.NotUsed](futurePageSource)
+          Source.futureSource[Record, akka.NotUsed](futurePageSource)
         }
         .mapMaterializedValue(_ => Future.unit)
 

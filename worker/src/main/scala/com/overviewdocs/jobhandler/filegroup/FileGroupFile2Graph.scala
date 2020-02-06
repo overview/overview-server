@@ -98,7 +98,7 @@ class FileGroupFile2Graph(
   private def loadInternalFile2s(
     job: ResumedFileGroupJob
   )(implicit ec: ExecutionContext): Source[InternalFile2, akka.NotUsed] = {
-    Source.fromFutureSource(database.seq(loadGroupedFileUploads(job.fileGroup.id)).map(Source.apply _))
+    Source.futureSource(database.seq(loadGroupedFileUploads(job.fileGroup.id)).map(Source.apply _))
       .flatMapConcat(gfu => loadFile2FromGroupedFileUpload(gfu, job))
       .mapMaterializedValue(_ => akka.NotUsed)
   }
@@ -114,8 +114,7 @@ class FileGroupFile2Graph(
       Source(internalFiles)
     }
 
-    Source.fromFutureSource(retFuture)
-      .mapMaterializedValue(_ => akka.NotUsed)
+    Source.futureSource(retFuture).mapMaterializedValue(_ => akka.NotUsed)
   }
 
   private def internalizeRoot(

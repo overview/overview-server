@@ -1,6 +1,5 @@
 package com.overviewdocs.ingest.process
 
-import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{GraphDSL,Keep,RunnableGraph,Sink,Source}
 import akka.util.ByteString
 import org.mockito.invocation.InvocationOnMock

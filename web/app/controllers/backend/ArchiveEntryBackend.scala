@@ -160,7 +160,7 @@ class DbArchiveEntryBackend @Inject() (
       case None => Source.empty
     })
 
-    Source.fromFutureSource(future)
+    Source.futureSource(future)
       .mapMaterializedValue(_ => akka.NotUsed)
   }
 }

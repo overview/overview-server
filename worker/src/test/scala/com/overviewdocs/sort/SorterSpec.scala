@@ -1,7 +1,6 @@
 package com.overviewdocs.sort
 
 import akka.stream.scaladsl.Source
-import akka.stream.ActorMaterializer
 import java.nio.file.{Files,Path}
 import org.specs2.mutable.{After,Specification}
 import org.specs2.specification.Scope
@@ -16,7 +15,6 @@ class SorterSpec extends Specification with AwaitMethod {
 
   trait BaseScope extends Scope with ActorSystemContext with After {
     implicit val ec = system.dispatcher
-    implicit val mat = ActorMaterializer.create(system)
 
     val tempDir: Path = Files.createTempDirectory("PageOnDiskSpec")
 

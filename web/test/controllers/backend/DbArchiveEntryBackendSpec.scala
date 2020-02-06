@@ -67,10 +67,9 @@ class DbArchiveEntryBackendSpec extends DbBackendSpecification with Mockito {
 
       def consume(documentSetId: Long, documentId: Long): String = {
         import akka.actor.ActorSystem
-        import akka.stream.ActorMaterializer
+        import akka.stream.Materializer
         import com.typesafe.config.ConfigFactory
         implicit val system = ActorSystem("DbArchiveEntryBackendSpec", ConfigFactory.empty)
-        implicit val mat = ActorMaterializer.create(system)
         import system.dispatcher
 
         val source = backend.streamBytes(documentSetId, documentId)
