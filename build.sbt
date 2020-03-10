@@ -49,8 +49,7 @@ lazy val root = (project in file("."))
         Tests.Argument("junitxml", "console")
       )
     )),
-    publish := (),
-    publishLocal := ()
+    publish / skip := true
   )
 
 // Runs database evolutions on prod+dev
