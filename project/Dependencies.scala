@@ -93,7 +93,6 @@ object Dependencies {
   val serverDependencies = Seq(
     deps.bcrypt,
     deps.owaspEncoder,
-    deps.playIteratees, // DELETEME
     deps.playMailer,
     deps.playMailerGuice,
     deps.re2j,
