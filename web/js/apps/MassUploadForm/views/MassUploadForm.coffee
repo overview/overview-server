@@ -51,6 +51,8 @@ define [
 
     events:
       'change .invisible-file-input': '_addFiles'
+      'drop .uploads': '_dropFiles'
+      'dragover .uploads': '_dragoverFiles'
       'mouseenter .invisible-file-input': '_addButtonHover'
       'mouseleave .invisible-file-input': '_removeButtonHover'
       'click .choose-options': '_requestOptions'
@@ -128,6 +130,64 @@ define [
 
     _addButtonHover: (e) -> @_setButtonHover(e, true)
     _removeButtonHover: (e) -> @_setButtonHover(e, false)
+
+    _dragoverFiles: (e) ->
+      e = e.originalEvent  # unwrap jQuery
+      for item in e.dataTransfer.items
+        if item.kind == "file" || item.webkitGetAsEntry?()
+          # User wants to drop files! That's okay.
+          e.preventDefault()  # prevent "no, can't drop" browser default
+          return
+
+    _dropFiles: (e) ->
+      e = e.originalEvent  # unwrap jQuery
+      e.preventDefault()  # prevent "view file contents" browser default
+
+      toAdd = []
+      for item in e.dataTransfer.items
+        # if item.webkitGetAsEntry exists, we support directory API
+        # if item.getWebkitAsEntry() returns an entry, this is a file or directory
+        # if item.getWebkitAsEntry().createReader exists, this is a directory
+        entry = item.webkitGetAsEntry?()
+        directoryReader = entry?.createReader?()
+        if directoryReader
+          @_addDirectoryAsync(directoryReader)
+        else
+          file = item.getAsFile()
+          if file
+            toAdd.push(file)
+
+      if toAdd.length
+        @model.addFiles(toAdd)
+
+    _addEntriesAsync: (entries) ->
+      # FileSystemFileEntry API
+      #
+      # Add files, and add dirs' files in the background with _addDirectoryAsync().
+      #
+      # Async may cause races ... but this isn't likely to affect most users.
+      addFile = (entry, file) =>
+        @model.uploads.addWithMerge([{ id: entry.fullPath.slice(1), file: file }])
+
+      entries.forEach (entry) =>
+        if entry.createReader  # it's a directory
+          @_addDirectoryAsync(entry.createReader())
+        else
+          entry.file(((f) => addFile(entry, f)), console.error)
+
+    _addDirectoryAsync: (reader) ->
+      # FileSystemFileEntry API
+      #
+      # Add a dir's files in the background. This can cause a race and a user
+      #
+      # Async may cause races ... but this isn't likely to affect most users.
+      onSuccess = (entries) =>
+        if entries.length == 0
+          return # No more files
+        @_addEntriesAsync(entries)
+        @_addDirectoryAsync(reader)  # call reader.readEntries() until empty
+
+      reader.readEntries(onSuccess, console.error)
 
     _requestOptions: (e) ->
       e.stopPropagation()

@@ -53,16 +53,7 @@ define [
       for upload in uploads
         status = upload_to_status(upload)
         icon_class = STATUS_ICONS[status]
-
-        filename = if upload.file?
-          if upload.file.webkitRelativePath
-            upload.file.webkitRelativePath
-          else
-            upload.file.name
-        else
-          upload.fileInfo.name
-
-        htmls.push(@templates.li(icon_class: icon_class, status: status, filename: filename))
+        htmls.push(@templates.li(icon_class: icon_class, status: status, filename: upload.id))
         @_idToIndex[upload.id] = index
         index += 1
 

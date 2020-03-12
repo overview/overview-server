@@ -15169,7 +15169,7 @@ module.exports = Upload = (function() {
       this.error = (ref2 = attributes.error) != null ? ref2 : null;
       this.uploading = attributes.uploading || false;
       this.deleting = attributes.deleting || false;
-      this.id = this.file != null ? this.file.webkitRelativePath || this.file.name : this.fileInfo.name;
+      this.id = attributes.id != null ? attributes.id : this.file != null ? this.file.webkitRelativePath || this.file.name : this.fileInfo.name;
       // Backbone.Model compatibility
       this.attributes = this;
     }
@@ -15448,33 +15448,24 @@ module.exports = UploadCollection = (function() {
       return (ref = this._idToModel[id]) != null ? ref : null;
     }
 
-    forFile(file) {
-      return this.get(file.webkitRelativePath || file.name);
-    }
-
-    forFileInfo(fileInfo) {
-      return this.get(fileInfo.name);
-    }
-
     // Adds some user-selected files to the collection.
 
     // Files of the same name will be matched up to their server-side fileInfo
     // objects. This may lead to conflict which must be resolved by the
     // developer or user.
     addFiles(files) {
-      var file, uploads;
-      uploads = (function() {
+      var file;
+      return this.addWithMerge((function() {
         var i, len, results;
         results = [];
         for (i = 0, len = files.length; i < len; i++) {
           file = files[i];
-          results.push(new Upload({
+          results.push({
             file: file
-          }));
+          });
         }
         return results;
-      })();
-      return this._addWithMerge(uploads);
+      })());
     }
 
     // Adds server-side fileInfo objects to the collection.
@@ -15483,19 +15474,18 @@ module.exports = UploadCollection = (function() {
     // will specify files through `addFiles()` which may be new or may be
     // joined through their filenames to these fileInfo objects.
     addFileInfos(fileInfos) {
-      var fileInfo, uploads;
-      uploads = (function() {
+      var fileInfo;
+      return this.addWithMerge((function() {
         var i, len, results;
         results = [];
         for (i = 0, len = fileInfos.length; i < len; i++) {
           fileInfo = fileInfos[i];
-          results.push(new Upload({
+          results.push({
             fileInfo: fileInfo
-          }));
+          });
         }
         return results;
-      })();
-      return this._addWithMerge(uploads);
+      })());
     }
 
     // Finds the next upload to handle.
@@ -15536,7 +15526,16 @@ module.exports = UploadCollection = (function() {
     }
 
     addBatch(uploads) {
-      var i, j, len, len1, upload;
+      var i, j, len, len1, u, upload;
+      uploads = (function() {
+        var i, len, results;
+        results = [];
+        for (i = 0, len = uploads.length; i < len; i++) {
+          u = uploads[i];
+          results.push(this._prepareModel(u));
+        }
+        return results;
+      }).call(this);
       for (i = 0, len = uploads.length; i < len; i++) {
         upload = uploads[i];
         this._idToModel[upload.id] = upload;
@@ -15563,10 +15562,19 @@ module.exports = UploadCollection = (function() {
 
     // Like add([...], merge: true), but it never subtracts attributes.
 
-    // In other words, _addWithMerge() will _set_ file or fileInfo on models,
+    // In other words, addWithMerge() will _set_ file or fileInfo on models,
     // but it will never _unset_ either property.
-    _addWithMerge(uploads) {
-      var existingUpload, file, fileInfo, i, len, toAdd, upload;
+    addWithMerge(uploads) {
+      var existingUpload, file, fileInfo, i, len, toAdd, u, upload;
+      uploads = (function() {
+        var i, len, results;
+        results = [];
+        for (i = 0, len = uploads.length; i < len; i++) {
+          u = uploads[i];
+          results.push(this._prepareModel(u));
+        }
+        return results;
+      }).call(this);
       toAdd = [];
       for (i = 0, len = uploads.length; i < len; i++) {
         upload = uploads[i];
