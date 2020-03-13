@@ -10,8 +10,12 @@ DIR="$(dirname "$0")"
 ABSOLUTE_DIR="$(realpath "$DIR"/..)"
 
 cleanup() {
-  docker network rm overview-unit-test 2>/dev/null || true
-  docker rm -f overview-unit-test-database overview-unit-test-redis overview-unit-test-db-evolution-applier overview-unit-test-dev 2>/dev/null || true
+  for container in $(docker ps -f name=overview-unit-test- -q); do
+    docker rm -f $container
+  done
+  for network in $(docker network ls -f name=overview-unit-test -q); do
+    docker network rm $network
+  done
 }
 
 fail() {
