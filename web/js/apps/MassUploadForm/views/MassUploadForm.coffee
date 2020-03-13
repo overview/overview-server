@@ -9,42 +9,40 @@ define [
 
   class MassUploadForm extends Backbone.View
     template: _.template('''
-      <div>
-        <div class='uploads'></div>
+      <div class="uploads"></div>
 
-        <div class='controls'>
-          <button type="button" class="btn cancel" disabled="disabled"><%- t('cancel') %></button>
-
-          <div class='right-controls'>
-            <div class="upload-prompt">
-              <button class="btn btn-primary select-files" type="button">
-                <i class="icon overview-icon-plus"></i>
-                <%- t('upload_prompt') %>
-              </button>
-              <input name="file" type="file" class="invisible-file-input" multiple="multiple" />
-            </div>
-
-            <% if (isFolderUploadSupported) { %>
-              <div class="upload-folder-prompt">
-                <button class="btn btn-primary select-folders" type="button">
-                  <i class="icon overview-icon-plus"></i>
-                  <%- t('upload_folder_prompt') %>
-                </button>
-                <input name="folder" type="file" class="invisible-file-input" multiple webkitdirectory />
-              </div>
-            <% } %>
-
-            <button type='button' class="btn btn-primary choose-options" disabled="disabled">
-              <i class="icon icon-play-circle"></i>
-              <%- t('choose_options') %>
+      <div class="controls">
+        <fieldset class="upload-buttons">
+          <div class="upload-prompt">
+            <button class="btn btn-primary select-files" type="button">
+              <i class="icon overview-icon-plus"></i>
+              <%- t('upload_prompt') %>
             </button>
+            <input name="file" type="file" class="invisible-file-input" multiple="multiple" />
           </div>
-        </div>
 
-        <p class="instructions"><%- t('explanation') %></p>        
-        <div class='progress-bar'></div>
+          <% if (isFolderUploadSupported) { %>
+            <div class="upload-folder-prompt">
+              <button class="btn btn-primary select-folders" type="button">
+                <i class="icon overview-icon-plus"></i>
+                <%- t('upload_folder_prompt') %>
+              </button>
+              <input name="folder" type="file" class="invisible-file-input" multiple webkitdirectory />
+            </div>
+          <% } %>
+        </fieldset>
 
+        <fieldset class="finish-buttons" disabled="disabled">
+          <button type="button" class="btn cancel"><%- t('cancel') %></button>
+
+          <button type='button' class="btn btn-primary choose-options">
+            <i class="icon icon-play-circle"></i>
+            <%- t('choose_options') %>
+          </button>
+        </fieldset>
       </div>
+
+      <div class='progress-bar'></div>
 
       <div class="wait-for-import">
         <%- t('wait_for_import') %>
@@ -53,6 +51,8 @@ define [
 
     events:
       'change .invisible-file-input': '_addFiles'
+      'drop .uploads': '_dropFiles'
+      'dragover .uploads': '_dragoverFiles'
       'mouseenter .invisible-file-input': '_addButtonHover'
       'mouseleave .invisible-file-input': '_removeButtonHover'
       'click .choose-options': '_requestOptions'
@@ -68,8 +68,8 @@ define [
       @collection = @model.uploads
       @listenTo(@collection, 'reset', @_onCollectionReset)
       @listenTo(@collection, 'add-batch', @_onCollectionAddBatch)
-      @finishEnabled = false
       @listenTo(@model, 'change', @_maybeSubmit)
+      @listenTo(@model, 'change', @_refreshFinishEnabled)
       @listenTo(@model, 'change', @_refreshProgressVisibility)
       @optionsSet = false
 
@@ -85,6 +85,7 @@ define [
         uploads: @$('.uploads')
         progressBar: @$('.progress-bar')
 
+      @_refreshFinishEnabled()
       @_refreshProgressVisibility()
       @_progressView = new UploadProgressView(model: @model, el: @_$els.progressBar)
       @_progressView.render()
@@ -114,17 +115,11 @@ define [
       input.value = '' # so the user can select files again
 
     _onCollectionReset: ->
-      @finishEnabled = false
       @_optionsSetDone(false)
-      @$('button.choose-options').prop('disabled', true)
-      @$('button.cancel').prop('disabled', true)
+      @_refreshFinishEnabled()
 
     _onCollectionAddBatch: ->
-      if !@finishEnabled && @collection.length > 0
-        @finishEnabled = true
-        @$('button.choose-options').prop('disabled', false)
-        @$('button.cancel').prop('disabled', false)
-
+      @_refreshFinishEnabled()
       @_refreshProgressVisibility()
 
     _setButtonHover: (event, isHovering) ->
@@ -135,6 +130,64 @@ define [
 
     _addButtonHover: (e) -> @_setButtonHover(e, true)
     _removeButtonHover: (e) -> @_setButtonHover(e, false)
+
+    _dragoverFiles: (e) ->
+      e = e.originalEvent  # unwrap jQuery
+      for item in e.dataTransfer.items
+        if item.kind == "file" || item.webkitGetAsEntry?()
+          # User wants to drop files! That's okay.
+          e.preventDefault()  # prevent "no, can't drop" browser default
+          return
+
+    _dropFiles: (e) ->
+      e = e.originalEvent  # unwrap jQuery
+      e.preventDefault()  # prevent "view file contents" browser default
+
+      toAdd = []
+      for item in e.dataTransfer.items
+        # if item.webkitGetAsEntry exists, we support directory API
+        # if item.getWebkitAsEntry() returns an entry, this is a file or directory
+        # if item.getWebkitAsEntry().createReader exists, this is a directory
+        entry = item.webkitGetAsEntry?()
+        directoryReader = entry?.createReader?()
+        if directoryReader
+          @_addDirectoryAsync(directoryReader)
+        else
+          file = item.getAsFile()
+          if file
+            toAdd.push(file)
+
+      if toAdd.length
+        @model.addFiles(toAdd)
+
+    _addEntriesAsync: (entries) ->
+      # FileSystemFileEntry API
+      #
+      # Add files, and add dirs' files in the background with _addDirectoryAsync().
+      #
+      # Async may cause races ... but this isn't likely to affect most users.
+      addFile = (entry, file) =>
+        @model.uploads.addWithMerge([{ id: entry.fullPath.slice(1), file: file }])
+
+      entries.forEach (entry) =>
+        if entry.createReader  # it's a directory
+          @_addDirectoryAsync(entry.createReader())
+        else
+          entry.file(((f) => addFile(entry, f)), console.error)
+
+    _addDirectoryAsync: (reader) ->
+      # FileSystemFileEntry API
+      #
+      # Add a dir's files in the background. This can cause a race and a user
+      #
+      # Async may cause races ... but this isn't likely to affect most users.
+      onSuccess = (entries) =>
+        if entries.length == 0
+          return # No more files
+        @_addEntriesAsync(entries)
+        @_addDirectoryAsync(reader)  # call reader.readEntries() until empty
+
+      reader.readEntries(onSuccess, console.error)
 
     _requestOptions: (e) ->
       e.stopPropagation()
@@ -157,6 +210,10 @@ define [
     _maybeSubmit: ->
       if @optionsSet && @_uploadDone()
         @$el.closest('form').submit()
+
+    _refreshFinishEnabled: ->
+      enabled = @model.uploads.length > 0
+      @$('fieldset.finish-buttons').prop('disabled', !enabled)
 
     _refreshProgressVisibility: ->
       @_progressIsVisible ?= true

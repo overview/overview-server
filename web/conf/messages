@@ -304,7 +304,6 @@ views.DocumentSet._massUploadForm.upload_folder_prompt=Add all files in a folder
 views.DocumentSet._massUploadForm.choose_options=Done adding files
 views.DocumentSet._massUploadForm.cancel=Cancel upload
 views.DocumentSet._massUploadForm.drop_target=Select files to upload
-views.DocumentSet._massUploadForm.explanation=BETA: Overview will automatically turn scanned documents into text
 views.DocumentSet._massUploadForm.wait_for_import=Your files will be imported after all uploads are complete
 views.DocumentSet._massUploadForm.confirm_cancel.title=Confirm Cancel
 views.DocumentSet._massUploadForm.confirm_cancel.prompt=Are you sure you want to cancel this upload and delete these files from the server?

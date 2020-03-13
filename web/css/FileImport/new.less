@@ -69,24 +69,10 @@ body.file-import-new {
   }
 
   .controls {
-    .clearfix();
+    display: flex;
+    justify-content: space-between;
 
-    .right-controls {
-      float: right;
-      margin-right: -2px; // because .uploads has a 1px border
-    }
-
-    .cancel {
-      display: inline-block;
-    }
-
-    .choose-options {
-      display: inline-block;
-      z-index: 10;
-      position: relative;
-    }
-
-    .upload-prompt, .upload-folder-prompt {
+    .upload-buttons>* {
       position: relative;
       display: inline-block;
 
@@ -103,8 +89,8 @@ body.file-import-new {
       }
     }
 
-    .upload-submit {
-      display: inline-block;
+    .finish-buttons:disabled {
+      opacity: .5; // (plus, the buttons are gray because they're disabled)
     }
   }
 

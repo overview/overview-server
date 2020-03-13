@@ -5,7 +5,6 @@ import akka.util.ByteString
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
-import play.api.libs.iteratee.Enumerator
 
 import models.export.rows.Rows
 import models.export.format.Format

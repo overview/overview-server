@@ -4,24 +4,28 @@ import javax.inject.{Inject,Provider}
 import play.api.{Configuration,Environment,Mode}
 import play.api.inject.{Module}
 import controllers.{Assets,AssetsMetadata,AssetsMetadataProvider,AssetsFinder,AssetsFinderProvider,AssetsConfiguration}
+import scala.concurrent.blocking
 
 /** AssetsConfiguration provider that assumes Mode.Prod.
   *
   * This undoes Play's default AssetsConfiguration, which treats test and dev
-  * differently.
+  * differently. We want cache-control: lots, always, because Webpack handles
+  * outputting md5s.
   */
-case class ConstantAssetsConfigurationProvider @Inject() (conf: Configuration) extends Provider[AssetsConfiguration] {
-  def get = AssetsConfiguration.fromConfiguration(conf, Mode.Prod)
+case class ConstantAssetsConfigurationProvider @Inject() (env: Environment, conf: Configuration) extends Provider[AssetsConfiguration] {
+  def get = {
+    AssetsConfiguration.fromConfiguration(conf, Mode.Prod).copy(
+      enableCaching = (env.mode != Mode.Dev),
+      checkForMinified = (env.mode != Mode.Dev)
+    )
+  }
 }
 
-/** Register AssetsConfiguration to always behave as though mode is Mode.Prod. */
 class ConstantAssetsModule extends Module {
   override def bindings(environment: Environment, configuration: Configuration) = Seq(
-    // These mimic controllers.AssetsModule:
     bind[Assets].toSelf,
     bind[AssetsMetadata].toProvider[AssetsMetadataProvider],
     bind[AssetsFinder].toProvider[AssetsFinderProvider],
-    // ... and this one is our override:
-    bind[AssetsConfiguration].toProvider[ConstantAssetsConfigurationProvider]
+    bind[AssetsConfiguration].toProvider[ConstantAssetsConfigurationProvider] // overridden
   )
 }
