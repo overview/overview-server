@@ -78,7 +78,10 @@ trait SelectionHelpers extends HeaderNames with Results { self: ControllerHelper
       case _ => None
     }
 
-    val sortByMetadataField = reqData.getString("sortByMetadataField")
+    val sortByMetadataField = reqData.getString("sortByMetadataField") match {
+      case Some("") => None
+      case x => x
+    }
 
     maybeQOrError
       .right.map(SelectionRequest(
