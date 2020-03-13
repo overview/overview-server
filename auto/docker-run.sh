@@ -17,13 +17,25 @@
 if [ ! -f /this-is-overview-dev-on-docker ]; then
   DIR="$(realpath "$(dirname "$0")"/..)"
 
-  RUNNING_CONTAINER=$(docker ps -q -f name=overviewserver_dev)
+  RUNNING_CONTAINER=$(docker ps -q -f name=overview-server_dev)
   if [ -z "$RUNNING_CONTAINER" ]; then
-    # If overviewserver_dev is not running, use `docker run`
-    CMD="docker run --rm -it --network overviewserver_default --volume overviewserver_database-data:/var/lib/postgresql/data --volume overviewserver_search-data:/var/lib/overview/search --volume overviewserver_blob-storage-data:/var/lib/overview/blob-storage --volume overviewserver_homedir:/root --volume $DIR:/app"
+    # If overview-server_dev is not running, use `docker run`
+
+    # [2020-03-13] support old volume names and new volume names
+    CMD="docker run --rm -it --network overview-server_default --volume $DIR:/app"
+    for vollink in database-data:/var/lib/postgresql/data  search-data:/var/lib/overview/search blob-storage-data:/var/lib/overview/blob-storage homedir:/root; do
+      volname="${vollink%%:*}"
+      volpath="${vollink#*:}"
+      volfullname="$(docker volume ls -f name="overview-server_$volname|overviewserver_$volname" -q | cut -d' ' -f1)"
+      if [ "x$volfullname" = "x" ]; then
+        docker volume create $volfullname
+        volfullname="overview-server_$volname"
+      fi
+      CMD="$CMD --volume $volfullname:$volpath"
+    done
 
     # Publish port 9000=>80, if nothing else is running on it
-    if [ -z "$(docker ps -q -f publish=80 -f ancestor=overviewserver_dev:latest)" ]; then
+    if [ -z "$(docker ps -q -f publish=80 -f ancestor=overview-server_dev:latest)" ]; then
       echo "Exposing localhost:9000" >&2
       CMD="$CMD --publish 127.0.0.1:9000:80"
     fi
@@ -35,7 +47,7 @@ if [ ! -f /this-is-overview-dev-on-docker ]; then
       shift
     done
 
-    CMD="$CMD $DOCKER_OPTIONS overviewserver_dev:latest"
+    CMD="$CMD $DOCKER_OPTIONS overview-server_dev:latest"
   else
     # overviewserver_dev is already running: use `docker exec` within it
     CMD="docker exec -it ${RUNNING_CONTAINER}"
