@@ -17,7 +17,7 @@
       iframeUrl: (document, showSidebar) => {
         if (!document) return 'about:blank'
 
-        return document.displayUrl.replace(/(#p\d+)?$/, (__, p) => `?sidebar=${String(showSidebar)}${p}`)
+        return document.displayUrl.replace(/(#p\d+)?$/, (__, p) => `?sidebar=${String(showSidebar)}${p || ''}`)
       }
     }
   }

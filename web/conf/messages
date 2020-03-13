@@ -252,6 +252,7 @@ views.DocumentProcessingError.index.close=Close
 views.DocumentSet._dcimport.import=Import
 views.DocumentSet._dcimport.preamble_html=Enter your <span class="documentcloud-logo">DocumentCloud</span> email and password to access your projects.
 views.DocumentSet._dcimport.error=You entered a wrong email address or password, or DocumentCloud is unavailable. Please try again.
+views.DocumentSet._dcimport.empty=You have no DocumentCloud projects. Please create a project in DocumentCloud, then refresh this page.
 views.DocumentSet._dcimport.labels.email=Email
 views.DocumentSet._dcimport.labels.password=Password
 views.DocumentSet._dcimport.placeholders.email=user@example.org

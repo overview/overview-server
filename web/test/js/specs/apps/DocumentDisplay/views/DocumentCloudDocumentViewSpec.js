@@ -32,4 +32,21 @@ describe('DocumentCloudDocumentView', function() {
     expect(iframe).not.to.be.null
     expect(iframe.src).to.eq('https://www.documentcloud.org/documents/675478-letter-from-glen-burnie-high-school-principalocum?sidebar=false#p23')
   })
+
+  it('should not allow no-page-specifieid on the iframe URL', function() {
+    this.view.set({
+      document: {
+        displayType: 'documentCloud',
+        displayUrl: 'https://www.documentcloud.org/documents/675478-letter-from-glen-burnie-high-school-principalocum',
+      },
+      preferences: {
+        sidebar: false,
+      },
+    })
+
+    const iframe = this.div.querySelector('iframe')
+
+    expect(iframe).not.to.be.null
+    expect(iframe.src).to.eq('https://www.documentcloud.org/documents/675478-letter-from-glen-burnie-high-school-principalocum?sidebar=false')
+  })
 })
