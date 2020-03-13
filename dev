@@ -3,14 +3,15 @@
 set -e
 
 # https://github.com/docker/compose/issues/5874: docker-compose chose
-# a different project name one day. It used to be "overview-server" and
-# now it's "overviewserver".
+# a different project name one day. It used to be "overviewserver" and
+# now it's "overview-server".
 #
-# [2020-03-13] delete the "overview-server" network and containers if
-# they exist; then we can create "overviewserver" network+containers
+# [2020-03-13] delete the "overviewserver" network and containers if
+# they exist; then we can create "overview-server" network+containers
 # without conflict.
 #
-# Luckily, _volumes_ names are unchanged. They were always "overviewserver".
+# Luckily, _volumes_ names don't need to change. "overviewserver" volumes
+# are picked up correctly.
 for deprecated_network in $(docker network ls -f name=overviewserver_default -q); do
   docker-compose --project-name overviewserver down --remove-orphans
 done
