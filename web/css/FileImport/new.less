@@ -4,19 +4,19 @@ body.file-import-new {
   }
 
   div.uploads {
-    overflow: auto;
     position: relative;
-    height: 23em;
     margin: 1em 0;
     background: @body-bg-dark;
     border: 1px solid @shade-muted;
-    padding: 0.5em;
 
     ul {
       margin: 0;
       padding: 0;
       list-style: none;
-      overflow: hidden;
+      overflow: auto;
+      overflow-x: hidden;
+      height: 23em;
+      padding: 0.5em;
     }
 
     li {
@@ -34,7 +34,9 @@ body.file-import-new {
       }
     }
 
-    .empty-upload {
+    .empty-upload, .drop-here {
+      display: none; // they only appear under certain circumstances
+      pointer-events: none; // showing/hiding must not fire drag events
       color: @shade-muted;
       position: absolute;
       top: 0;
@@ -52,6 +54,32 @@ body.file-import-new {
         float: none;
         font-size: 10em;
         color: #e1e0e0;
+      }
+    }
+
+    .drop-here {
+      color: @text-muted;
+
+      i {
+        color: @text-muted;
+      }
+    }
+
+    ul:empty + .empty-upload {
+      display: block;
+    }
+
+    &.ready-for-drop {
+      ul {
+        opacity: .5;
+      }
+
+      .empty-upload {
+        display: none;
+      }
+
+      .drop-here {
+        display: block;
       }
     }
   }

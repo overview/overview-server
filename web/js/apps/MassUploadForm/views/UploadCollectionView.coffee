@@ -30,6 +30,10 @@ define [
           <i class='icon icon-cloud-upload'></i>
           <div><%- t('drop_target') %></div>
         </div>
+        <div class="drop-here">
+          <i class='icon icon-cloud-upload'></i>
+          <div><%- t('drop_here') %></div>
+        </div>
       """)
       li: _.template('<li class="<%= status %>"><td><i class="<%= icon_class %>"></i></td><td><span class="filename"><%- filename %></span><span class="message"></span></li>')
 
@@ -43,10 +47,6 @@ define [
     _onAddBatch: (uploads) ->
       return if !uploads.length
 
-      if @_emptyUploadIsPresent
-        @_$emptyUpload.remove()
-        @_emptyUploadIsPresent = false
-
       htmls = []
 
       index = @_ul.childNodes.length
@@ -57,11 +57,7 @@ define [
         @_idToIndex[upload.id] = index
         index += 1
 
-      $(@_ul)
-        .append(htmls.join(''))
-        .height(index * @_ul.childNodes[0].clientHeight)
-
-      @_liHeight = @_ul.childNodes[0].clientHeight
+      $(@_ul).append(htmls.join(''))
 
     _onChange: (upload) ->
       index = @_idToIndex[upload.id]
@@ -84,25 +80,20 @@ define [
       #
       # We debounce, because .offsetTop is expensive. Only request an animation
       # frame if we haven't requested one yet.
-      if !@_currentIndex?
+      if !@_lastChangedLi?
         window.requestAnimationFrame =>
-          @el.scrollTop = @_liHeight * (@_currentIndex + 3) - @el.clientHeight
-          @_currentIndex = null
-      @_currentIndex = index
+          # Scroll such that @_lastChangedLi is centered 3/4 of the way down the list
+          @_ul.scrollTop = @_lastChangedLi.offsetTop + (@_lastChangedLi.clientHeight * 0.75) - (@_ul.clientHeight * 0.75)
+          @_lastChangedLi = null
+      @_lastChangedLi = li
 
     _onReset: ->
       @_idToIndex = {}
-      $(@_ul)
-        .empty()
-        .height(0)
-        .after(@_$emptyUpload)
-      @_emptyUploadIsPresent = true
+      $(@_ul).empty()
       @_onAddBatch(@collection.models)
 
     render: ->
       html = @templates.main(t: t)
       @$el.html(html)
       @_ul = @$('ul').get(0)
-      @_$emptyUpload = @$('.empty-upload')
-      @_emptyUploadIsPresent = true
       @_onReset()

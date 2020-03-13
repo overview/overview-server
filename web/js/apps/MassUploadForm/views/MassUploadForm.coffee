@@ -7,6 +7,16 @@ define [
 ], (_, Backbone, i18n, ImportOptionsApp, UploadProgressView) ->
   t = i18n.namespaced('views.DocumentSet._massUploadForm')
 
+  jqueryDragEventHasFiles = (e) ->
+    e = e.originalEvent  # unwrap jQuery
+    for item in e.dataTransfer.items
+      # webkitGetAsEntry() can return a file or directory. Or it could not
+      # exist at all.
+      if item.kind == "file" || item.webkitGetAsEntry?()
+        # User wants to drop files!
+        return true
+    return false
+
   class MassUploadForm extends Backbone.View
     template: _.template('''
       <div class="uploads"></div>
@@ -53,6 +63,8 @@ define [
       'change .invisible-file-input': '_addFiles'
       'drop .uploads': '_dropFiles'
       'dragover .uploads': '_dragoverFiles'
+      'dragenter .uploads': '_dragenterFiles'
+      'dragleave .uploads': '_dragleaveFiles'
       'mouseenter .invisible-file-input': '_addButtonHover'
       'mouseleave .invisible-file-input': '_removeButtonHover'
       'click .choose-options': '_requestOptions'
@@ -132,14 +144,31 @@ define [
     _removeButtonHover: (e) -> @_setButtonHover(e, false)
 
     _dragoverFiles: (e) ->
-      e = e.originalEvent  # unwrap jQuery
-      for item in e.dataTransfer.items
-        if item.kind == "file" || item.webkitGetAsEntry?()
-          # User wants to drop files! That's okay.
-          e.preventDefault()  # prevent "no, can't drop" browser default
-          return
+      if jqueryDragEventHasFiles(e)
+        e.preventDefault()  # prevent browser-default "no dragging" policy
+
+    _dragenterFiles: (e) ->
+      # dragenter must be paired with dragleave. This is hard to do. We can't set
+      # pointer-events: none on children, because users should be able to
+      # copy/paste upload names. Instead, let all the dragenter/dragleave events
+      # in the world fire.
+      #
+      # dragenter can happen on any element -- for instance, a <li>. If the user
+      # then drags over a second <li>, there will be a dragleave on the first
+      # (removing the class) and then a dragenter on the second (adding the
+      # class). Both events should happen during the same tick, so the user
+      # can't perceive a flicker: "ready-for-drop" will be removed and then
+      # re-added to the parent before render.
+      @_dragEnterTarget = e.target
+      $(e.currentTarget).toggleClass('ready-for-drop', jqueryDragEventHasFiles(e))
+
+    _dragleaveFiles: (e) ->
+      if e.target == @_dragEnterTarget
+        @_dragEnterTarget = null
+        $(e.currentTarget).toggleClass('ready-for-drop', false)
 
     _dropFiles: (e) ->
+      $(e.currentTarget).toggleClass('ready-for-drop', false)
       e = e.originalEvent  # unwrap jQuery
       e.preventDefault()  # prevent "view file contents" browser default
 
