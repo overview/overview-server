@@ -266,8 +266,8 @@ function parseSortByMetadataField(options) {
     if (options.sortByMetadataField === null) {
       return {}
     } else {
-      if (!_.isString(options.sortByMetadataField)) {
-        throw new Error('sortByMetadataField must be a String')
+      if (!_.isString(options.sortByMetadataField) || options.sortByMetadataField == '') {
+        throw new Error('sortByMetadataField must be a non-empty String')
       }
       return { sortByMetadataField: options.sortByMetadataField }
     }

@@ -13,11 +13,10 @@
 
     computed: {
       showSidebar: (preferences) => preferences && preferences.sidebar || false,
-
       iframeUrl: (document, showSidebar) => {
         if (!document) return 'about:blank'
 
-        return document.displayUrl.replace(/(#p\d+)?$/, (__, p) => `?sidebar=${String(showSidebar)}${p}`)
+        return document.displayUrl.replace(/(#p\d+)?$/, (__, p) => `?responsive=false&sidebar=${String(showSidebar)}${p || ''}`)
       }
     }
   }

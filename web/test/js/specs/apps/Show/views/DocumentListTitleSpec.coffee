@@ -93,6 +93,15 @@ define [
       # The params should change
       expect(@state.refineDocumentListParams).to.have.been.calledWith({ sortByMetadataField: 'foo' })
 
+    it 'should sort by default when clicking title', ->
+      @state.set(documentList: new DocumentList(length: 10))
+      @state.documentSet.set('metadataFields', [ 'foo' ])
+      @state.refineDocumentListParams = sinon.stub()
+      @view.$('a[data-sort-by-metadata-field=""]').click()
+      # The params should change
+      expect(@state.refineDocumentListParams).to.have.been.calledWith({ sortByMetadataField: null })
+
+
     it 'should render the sorted field name', ->
       list = new DocumentList(length: 10)
       list.params.sortByMetadataField = 'foo'

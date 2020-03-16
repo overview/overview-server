@@ -90,7 +90,7 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
       oldParams = @documentList?.params
       return if !oldParams
       @state.refineDocumentListParams
-        sortByMetadataField: ev.target.getAttribute('data-sort-by-metadata-field')
+        sortByMetadataField: ev.target.getAttribute('data-sort-by-metadata-field') || null
 
     onChangeReverse: ->
       oldParams = @documentList?.params

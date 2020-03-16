@@ -85,6 +85,10 @@ class SelectionHelpersSpec extends ControllerSpecification with Mockito with Awa
         test("/?sortByMetadataField=foo", Right(SelectionRequest(1L, sortByMetadataField=Some("foo"))))
       }
 
+      "make a SelectionRequest with sortMetadaField=''" in new SelectionScope {
+        test("/?sortByMetadataField=", Right(SelectionRequest(1L, sortByMetadataField=None)))
+      }
+
       "make a SelectionRequest with tagOperation=all" in new SelectionScope {
         test("/?tagOperation=all", Right(SelectionRequest(1L, tagOperation=SelectionRequest.TagOperation.All)))
       }
