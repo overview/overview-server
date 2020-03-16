@@ -348,7 +348,7 @@ The Document resource has the following attributes:
 - url: where to find the document on the Web (or your intranet)
 - suppliedId: a String you use to identify the document when you aren't using Overview
 - title: what to call the document in Overview's document list
-- page: if this document represents one page, the page number; `null` otherwise
+- pageNumber: if this document represents one page, the page number (first page is `1`); `null` otherwise
 - metadata: An Object containing extra-field values keyed by field name
 - tokens: A space-separated String listing every token in the document, according to [ElasticSearch's Standard Tokenizer](https://www.elastic.co/guide/en/elasticsearch/reference/current/analysis-standard-tokenizer.html)
 - text: The text of the document
