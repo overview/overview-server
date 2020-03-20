@@ -93,6 +93,7 @@ define [
         'views.Tree.show.helpers.DocumentHelper.title': 'title,{0}'
         'views.Tree.show.helpers.DocumentHelper.title.empty': 'title.empty'
         # ick ick ick...
+        'views.DocumentSet.show.DocumentDisplayPreferences.dropdown.title': 'dropdown.title'
         'views.DocumentSet.show.DocumentDisplayPreferences.text.false': 'prefs.text.false'
         'views.DocumentSet.show.DocumentDisplayPreferences.text.true': 'prefs.text.true'
         'views.DocumentSet.show.DocumentDisplayPreferences.sidebar': 'prefs.sidebar'

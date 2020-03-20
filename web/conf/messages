@@ -407,12 +407,14 @@ views.DocumentSet.show.NewViewDialog.url.readHtmlMessage=Cannot submit this URL
 views.DocumentSet.show.NewViewDialog.serverUrlFromPlugin.label=Overview’s URL from App server
 views.DocumentSet.show.NewViewDialog.serverUrlFromPlugin.help=Overview’s URL as seen from the App. Only set this if you are hosting this App on a private computer or intranet. For an overview-local App, use http://overview-web.
 
+views.DocumentSet.show.DocumentDisplayPreferences.dropdown.title=Document Options
 views.DocumentSet.show.DocumentDisplayPreferences.sidebar=Show sidebar next to document
 views.DocumentSet.show.DocumentDisplayPreferences.text.disabled=Overview can only show this document as plain text
 views.DocumentSet.show.DocumentDisplayPreferences.text.false=Document
 views.DocumentSet.show.DocumentDisplayPreferences.text.true=Text
 views.DocumentSet.show.DocumentDisplayPreferences.wrap=Wrap long lines of text
 views.DocumentSet.show.DocumentDisplayPreferences.openInNewTab=Open in new tab
+views.DocumentSet.show.DocumentDisplayPreferences.downloadOriginal=Download {0}
 
 views.DocumentSet.show.MetadataSchemaEditor.App.close=Close
 views.DocumentSet.show.MetadataSchemaEditor.App.title=Edit Fields

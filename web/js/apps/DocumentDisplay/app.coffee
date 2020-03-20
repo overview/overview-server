@@ -51,7 +51,7 @@ export default class App extends Backbone.View
     # opening in new tab. That's fine, I guess. But why does the _display_
     # app have to write to the _preferences_ app? Whatever's setting the
     # document on the display app should write to the preferences app.
-    @preferences.set({ documentUrl: document?.get('url') })
+    @preferences.set({ documentUrl: document?.get('url'), rootFile: document?.get('rootFile') })
 
   # If there's a PDF window open, tell it to begin creating a Note
   beginCreatePdfNote: ->

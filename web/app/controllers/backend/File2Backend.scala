@@ -18,6 +18,9 @@ trait File2Backend extends Backend {
 
   /** Returns a BlobStorageRef to the given File2's Thumbnail. */
   def lookupThumbnailBlobAndContentType(file2Id: Long): Future[Option[(BlobStorageRef,String)]]
+
+  /** Return a lookup map from leaf-file2 ID to root-file2. */
+  def indexRoots(leafFile2Ids: Vector[Long]): Future[Map[Long,File2]]
 }
 
 class DbFile2Backend @Inject() (val database: Database) extends File2Backend with DbBackend {
@@ -62,5 +65,10 @@ class DbFile2Backend @Inject() (val database: Database) extends File2Backend wit
       }
       case _ => None
     })
+  }
+
+  override def indexRoots(file2Ids: Vector[Long]) = {
+    val leafsWithRoots = File2s.filter(_.id inSet file2Ids).join(File2s).on((leaf, root) => leaf.rootFile2Id === root.id)
+    database.seq(leafsWithRoots.map(tup => (tup._1.id, tup._2))).map(_.toMap)
   }
 }

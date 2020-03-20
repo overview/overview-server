@@ -7,7 +7,7 @@ import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 import play.api.libs.json.{Json,Writes}
 
-import com.overviewdocs.models.{PdfNote,PdfNoteCollection}
+import com.overviewdocs.models.{File2,PdfNote,PdfNoteCollection}
 import com.overviewdocs.query.Field
 import com.overviewdocs.searchindex.{SearchWarning,Utf16Highlight,Utf16Snippet}
 import com.overviewdocs.test.factories.{PodoFactory => factory}
@@ -22,8 +22,8 @@ class showSpec extends Specification with JsonMatchers {
     def warnings: List[SelectionWarning] = List()
     def selection = InMemorySelection(selectionId, Vector(doc1.id, doc2.id), warnings)
 
-    def doc1AndIds = (doc1, None.asInstanceOf[Option[String]], Vector[Long](), Vector[Long](), Vector[Utf16Snippet]())
-    def doc2AndIds = (doc2, None.asInstanceOf[Option[String]], Vector[Long](), Vector[Long](), Vector[Utf16Snippet]())
+    def doc1AndIds = (doc1, None.asInstanceOf[Option[String]], Vector[Long](), Vector[Long](), Vector[Utf16Snippet](), None.asInstanceOf[Option[File2]])
+    def doc2AndIds = (doc2, None.asInstanceOf[Option[String]], Vector[Long](), Vector[Long](), Vector[Utf16Snippet](), None.asInstanceOf[Option[File2]])
     def docsAndIds = Vector(doc1AndIds, doc2AndIds)
 
     def resultPage = Page(docsAndIds)
@@ -77,12 +77,12 @@ class showSpec extends Specification with JsonMatchers {
     }
 
     "set node IDs" in new BaseScope {
-      override def doc1AndIds = (doc1, None, Vector[Long](5L, 6L, 7L), Vector[Long](), Vector[Utf16Snippet]())
+      override def doc1AndIds = (doc1, None, Vector[Long](5L, 6L, 7L), Vector[Long](), Vector[Utf16Snippet](), None)
       result must /("documents") /#(0) /("nodeids") /#(1) /(6)
     }
 
     "set tag IDs" in new BaseScope {
-      override def doc1AndIds = (doc1, None, Vector[Long](), Vector[Long](5L, 6L, 7L), Vector[Utf16Snippet]())
+      override def doc1AndIds = (doc1, None, Vector[Long](), Vector[Long](5L, 6L, 7L), Vector[Utf16Snippet](), None)
       result must /("documents") /#(0) /("tagids") /#(1) /(6)
     }
 
@@ -92,25 +92,25 @@ class showSpec extends Specification with JsonMatchers {
     }
 
     "show a thumbnail" in new BaseScope {
-      override def doc1AndIds = (doc1, Some("https://thumbnail-url"), Vector(), Vector(), Vector())
+      override def doc1AndIds = (doc1, Some("https://thumbnail-url"), Vector(), Vector(), Vector(), None)
 
       result must /("documents") /#(0) /("thumbnailUrl" -> "https://thumbnail-url")
     }
 
     "show a start snippet" in new BaseScope {
-      override def doc1AndIds = (doc1.copy(text="This is a start snippet"), None, Vector(), Vector(), Vector(Utf16Snippet(0, 9, Vector(Utf16Highlight(5, 7)))))
+      override def doc1AndIds = (doc1.copy(text="This is a start snippet"), None, Vector(), Vector(), Vector(Utf16Snippet(0, 9, Vector(Utf16Highlight(5, 7)))), None)
 
       result must /("documents") /#(0) /("snippet" -> "This <em>is</em> a…")
     }
 
     "show an end snippet" in new BaseScope {
-      override def doc1AndIds = (doc1.copy(text="This is an end snippet"), None, Vector(), Vector(), Vector(Utf16Snippet(8, 22, Vector(Utf16Highlight(11, 14)))))
+      override def doc1AndIds = (doc1.copy(text="This is an end snippet"), None, Vector(), Vector(), Vector(Utf16Snippet(8, 22, Vector(Utf16Highlight(11, 14)))), None)
 
       result must /("documents") /#(0) /("snippet" -> "…an <em>end</em> snippet")
     }
 
     "HTML-escape snippets" in new BaseScope {
-      override def doc1AndIds = (doc1.copy(text="1 < <2"), None, Vector(), Vector(), Vector(Utf16Snippet(0, 6, Vector(Utf16Highlight(4, 6)))))
+      override def doc1AndIds = (doc1.copy(text="1 < <2"), None, Vector(), Vector(), Vector(Utf16Snippet(0, 6, Vector(Utf16Highlight(4, 6)))), None)
 
       result must /("documents") /#(0) /("snippet" -> "1 &lt; <em>&lt;2</em>")
     }
@@ -135,6 +135,12 @@ class showSpec extends Specification with JsonMatchers {
       result must /("documents") /#(0) /("pdfNotes") /#(0) /("x" -> 12.0)
       result must /("documents") /#(0) /("pdfNotes") /#(0) /("text" -> "Note One")
       result must /("documents") /#(0) /("pdfNotes") /#(1) /("y" -> 23.0)
+    }
+
+    "set rootFile" in new BaseScope {
+      override def doc1AndIds = (doc1, None.asInstanceOf[Option[String]], Vector[Long](), Vector[Long](), Vector[Utf16Snippet](), Some(factory.file2(id=1234L, filename="file.csv")))
+      result must /("documents") /#(0) /("rootFile") /("id" -> 1234)
+      result must /("documents") /#(0) /("rootFile") /("filename" -> "file.csv")
     }
   }
 }

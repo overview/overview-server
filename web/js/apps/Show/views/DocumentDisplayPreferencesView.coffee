@@ -14,13 +14,14 @@ define [
         /><a class="text-off"><%- t('text.false') %></a><a class="text-on"><%- t('text.true') %></a
       ></div
       ><div class="options">
-        <a href="#" class="dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+        <a href="#" class="dropdown-toggle" data-toggle="dropdown" aria-expanded="false" title="<%- t('dropdown.title') %>">
           <i class="icon icon-cog"></i>
         </a>
         <ul class="dropdown-menu dropdown-menu-right" role="menu">
           <li><a href="#"><label class="checkbox"><input type="checkbox" name="sidebar"/> <%- t('sidebar') %></label></a></li>
           <li><a href="#"><label class="checkbox"><input type="checkbox" name="wrap"/> <%- t('wrap') %></label></a></li>
           <li role="separator" class="divider"></li>
+          <li><a download class="download-root" href=""><i class="icon icon-download"></i><span></span></a></li>
           <li><a target="_blank" class="open-in-new-tab" href=""><i class="icon icon-external-link"></i><%- t('openInNewTab') %></a></li>
         </ul>
       </div>
@@ -36,7 +37,7 @@ define [
       throw 'Must pass options.model, a DocumentDisplayPreferences' if !@model
 
       @listenTo(@model, 'change:text', @render)
-      @listenTo(@model, 'change:documentUrl', @render)
+      @listenTo(@model, 'change:documentUrl change:rootFile', @render)
 
       @render()
 
@@ -47,6 +48,15 @@ define [
       @ui.sidebar.prop('checked', @model.get('sidebar'))
       @ui.wrap.prop('checked', @model.get('wrap'))
       @ui.url.attr('href', @model.get('documentUrl'))
+
+      rootFile = @model.get('rootFile')
+      if rootFile
+        @ui.download.parent().show()
+        @ui.download.find('span').text(t('downloadOriginal', rootFile.filename))
+        @ui.download.attr('href', rootFile.url)
+      else
+        @ui.download.parent().hide()
+
       @
 
     _initialRender: ->
@@ -57,6 +67,7 @@ define [
         sidebar: @$('[name=sidebar]')
         wrap: @$('[name=wrap]')
         url: @$('a.open-in-new-tab')
+        download: @$('a.download-root')
 
     _onClickText: ->
       @model.set(text: !@model.get('text'))

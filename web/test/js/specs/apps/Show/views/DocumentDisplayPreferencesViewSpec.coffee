@@ -13,11 +13,13 @@ define [
 
     beforeEach ->
       i18n.reset_messages_namespaced 'views.DocumentSet.show.DocumentDisplayPreferences',
+        'dropdown.title': 'dropdown.title'
         'text.false': 'text.false'
         'text.true': 'text.true'
         'sidebar': 'sidebar'
         'wrap': 'wrap'
         'openInNewTab': 'openInNewTab'
+        'downloadOriginal': 'downloadOriginal,{0}'
 
       @preferences = new Preferences
       @$ = (args...) => @subject.$(args...)
@@ -54,3 +56,13 @@ define [
     it 'should update openInNewTab href when documentUrl changes', ->
       @preferences.set('documentUrl': 'foobar')
       expect(@$('.open-in-new-tab').attr('href')).to.eq('foobar')
+
+    it 'should show downloadOriginal when rootFile changes', ->
+      @preferences.set('rootFile': {'filename': 'abcd', 'url': '/download/abcd'})
+      expect(@$('.download-root').parent().attr('style')).to.eq('display: list-item;')
+      expect(@$('.download-root').attr('href')).to.eq('/download/abcd')
+      expect(@$('.download-root span').text()).to.eq('downloadOriginal,abcd')
+
+    it 'should hide downloadOriginal when rootFile changes', ->
+      @preferences.set('rootFile': null)
+      expect(@$('.download-root').parent().attr('style')).to.eq('display: none;')

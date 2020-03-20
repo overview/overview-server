@@ -113,6 +113,13 @@ describe 'FileUpload' do
       page.search_for_q('face')
       page.assert_selector('#document-list-title h3', text: '4 documents')
     end
+
+    it 'should allow downloading the original' do
+      page.open_document_in_list_with_name('Cat0.pdf – page 1')
+      page.click_link('Document Options')
+      page.click_link('Download Cat0.pdf')  # test it exists
+      # TODO test contents?
+    end
   end
 
   it 'should support all file types' do

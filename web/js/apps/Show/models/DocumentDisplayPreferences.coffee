@@ -30,6 +30,7 @@ define [ 'backbone' ], (Backbone) ->
   # * `wrap`: a localStorage boolean indicating text should wrap
   # * `sidebar`: a localStorage boolean indicating we should show a sidebar
   # * `documentUrl`: the URL for opening the current document in a new tab
+  # * `rootFile`: original-file information about the current document
   #
   # You store `text`, `wrap` and `sidebar` in localStorage by calling `set()`.
   # Other than that, this object behaves like a regular Backbone.Model.

@@ -16,7 +16,7 @@ DOCKER_COMPOSE_PROJECT_NAME=overviewintegrationtester
 #
 # Another sensible name here would be "overviewlocal". Decide your project's
 # development process early: it's a pain for every developer when you change.
-DEVELOPMENT_PROJECT_NAME=overviewserver
+DEVELOPMENT_PROJECT_NAME=overview-server
 
 # Docker container version. We use semantic versioning; only the major version
 # matters, but you can be paranoid and add minor and patch versions, too.

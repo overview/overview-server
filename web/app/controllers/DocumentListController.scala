@@ -35,7 +35,7 @@ class DocumentListController @Inject() (
 
   private def buildResult(documentSetId: Long, selection: Selection, selectionRequest: SelectionRequest, pageRequest: PageRequest): Future[JsValue] = {
     documentBackend.index(selection, pageRequest, true).flatMap { page =>
-      // Collect in parallel: snippets, thumbnails, node+tag IDs.
+      // Collect in parallel: snippets, thumbnails, file2s, node+tag IDs.
 
       val snippetsFuture = (page.items.nonEmpty, selectionRequest.q) match {
         case (true, Some(q)) => highlightBackend.highlights(documentSetId, page.items.map(_.id), q)
@@ -50,17 +50,21 @@ class DocumentListController @Inject() (
 
       val thumbnailUrlsFuture = lookupThumbnailUrls(page.items)
 
+      val rootFile2sFuture = file2Backend.indexRoots(page.items.flatMap(_.file2Id))
+
       for {
         snippets <- snippetsFuture
         (nodeIds, tagIds) <- idsFutures
         thumbnailUrls <- thumbnailUrlsFuture
+        rootFile2s <- rootFile2sFuture
       } yield {
         val pageOfItems = page.map { document => (
           document,
           thumbnailUrls.get(document.id),
           nodeIds.getOrElse(document.id, Seq()),
           tagIds.getOrElse(document.id, Seq()),
-          snippets.getOrElse(document.id, Seq())
+          snippets.getOrElse(document.id, Seq()),
+          document.file2Id.flatMap(rootFile2s.get _)
         )}
 
         views.json.DocumentList.show(selection, pageOfItems)

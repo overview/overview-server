@@ -8,13 +8,21 @@ import scala.collection.immutable
 import models.pagination.Page
 import models.{Selection,SelectionWarning}
 import views.json.api.selectionWarnings
-import com.overviewdocs.models.{DocumentHeader,PdfNote,PdfNoteCollection}
+import com.overviewdocs.models.{DocumentHeader,File2,PdfNote,PdfNoteCollection}
 import com.overviewdocs.searchindex.{Highlight,Snippet}
 
 object show {
   private implicit def pdfNoteWrites: Writes[PdfNote] = Json.writes[PdfNote]
 
-  private def documentToJson(document: DocumentHeader, thumbnailUrl: Option[String], nodeIds: Seq[Long], tagIds: Seq[Long], snippets: Seq[Snippet]) : JsValue = {
+  private def fileToJson(documentSetId: Long, file2: File2) : JsValue = {
+    Json.obj(
+      "id" -> file2.id,
+      "filename" -> file2.filename,
+      "url" -> controllers.routes.DocumentSetFileController.show(documentSetId, file2.id).url
+    )
+  }
+
+  private def documentToJson(document: DocumentHeader, thumbnailUrl: Option[String], nodeIds: Seq[Long], tagIds: Seq[Long], snippets: Seq[Snippet], maybeRootFile2: Option[File2]) : JsValue = {
     Json.obj(
       "id" -> document.id,
       "documentSetId" -> document.documentSetId.toString,
@@ -26,6 +34,7 @@ object show {
       "nodeids" -> nodeIds,
       "tagids" -> tagIds,
       "snippet" -> snippetsToHtml(snippets, document.text),
+      "rootFile" -> maybeRootFile2.map(file => fileToJson(document.documentSetId, file)),
       "thumbnailUrl" -> thumbnailUrl,
       "isFromOcr" -> document.isFromOcr,
     )
@@ -45,12 +54,12 @@ object show {
     HtmlFormat.fill(htmls.to[immutable.Seq]).body
   }
 
-  def apply(selection: Selection, documents: Page[(DocumentHeader,Option[String],Seq[Long],Seq[Long],Seq[Snippet])]) = {
+  def apply(selection: Selection, documents: Page[(DocumentHeader,Option[String],Seq[Long],Seq[Long],Seq[Snippet],Option[File2])]) = {
     Json.obj(
       "selection_id" -> selection.id.toString,
       "warnings" -> selectionWarnings(selection.warnings),
       "total_items" -> documents.pageInfo.total,
-      "documents" -> documents.items.map(Function.tupled(documentToJson)).toSeq
+      "documents" -> documents.items.map(t => documentToJson(t._1, t._2, t._3, t._4, t._5, t._6)).toSeq
     )
   }
 }
