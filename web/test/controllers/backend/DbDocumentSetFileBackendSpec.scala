@@ -53,5 +53,33 @@ class DbDocumentSetFileBackendSpec extends DbBackendSpecification {
         await(backend.existsByIdAndSha1(documentSet.id + 1L, sha1)) must beEqualTo(false)
       }
     }
+
+    "#exists" should {
+      trait ExistsScope extends BaseScope {
+        val documentSet = factory.documentSet()
+      }
+
+      "return true when a file2 belongs to a document set" in new ExistsScope {
+        val file2 = factory.file2()
+        factory.documentSetFile2(documentSetId=documentSet.id, file2Id=file2.id)
+        await(backend.exists(documentSet.id, file2.id)) must beEqualTo(true)
+      }
+
+      "return false when the file2 belongs to a different document set" in new ExistsScope {
+        val documentSet2 = factory.documentSet()
+        val file2 = factory.file2()
+        factory.documentSetFile2(documentSetId=documentSet2.id, file2Id=file2.id)
+        await(backend.exists(documentSet.id, file2.id)) must beEqualTo(false)
+      }
+
+      "return false when the File2 does not exist" in new ExistsScope {
+        await(backend.exists(documentSet.id, 123L)) must beEqualTo(false)
+      }
+
+      "return false when the DocumentSet does not exist" in new ExistsScope {
+        val file2 = factory.file2() // the file *does* exist
+        await(backend.exists(documentSet.id + 1L, file2.id)) must beEqualTo(false)
+      }
+    }
   }
 }

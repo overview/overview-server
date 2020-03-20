@@ -11,6 +11,9 @@ import com.overviewdocs.models.tables.{Documents,DocumentSetFile2s,Files,File2s}
 trait DocumentSetFileBackend extends Backend {
   /** Returns true if a file with the given sha1 exists in the given docset */
   def existsByIdAndSha1(documentSetId: Long, sha1: Array[Byte]): Future[Boolean]
+
+  /** Returns true if the record exists */
+  def exists(documentSetId: Long, file2Id: Long): Future[Boolean]
 }
 
 class DbDocumentSetFileBackend @Inject() (
@@ -34,6 +37,12 @@ class DbDocumentSetFileBackend @Inject() (
     } yield (())
   }
 
+  lazy val byFile2Ids = Compiled { (documentSetId: Rep[Long], file2Id: Rep[Long]) =>
+    for {
+      documents <- DocumentSetFile2s.filter(_.file2Id === file2Id).filter(_.documentSetId === documentSetId)
+    } yield (())
+  }
+
   override def existsByIdAndSha1(documentSetId: Long, sha1: Array[Byte]) = {
     for {
       deprecated <- database.option(byIdAndSha1(documentSetId, sha1)).map(_.isDefined)
@@ -41,5 +50,9 @@ class DbDocumentSetFileBackend @Inject() (
     } yield {
       deprecated || current
     }
+  }
+
+  override def exists(documentSetId: Long, file2Id: Long) = {
+    database.option(byFile2Ids(documentSetId, file2Id)).map(_.isDefined)
   }
 }

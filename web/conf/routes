@@ -78,6 +78,7 @@ POST   /documentsets/:id/api-tokens        controllers.ApiTokenController.create
 DELETE /documentsets/:id/api-tokens/:token controllers.ApiTokenController.destroyForDocumentSet(id: Long, token: String)
 
 HEAD   /documentsets/:id/files/$sha1<[0-9a-fA-f]{40}> controllers.DocumentSetFileController.head(id: Long, sha1: Array[Byte])
+GET    /documentsets/:id/files/:file2Id controllers.DocumentSetFileController.show(id: Long, file2Id: Long)
 
 GET    /documentsets/:id/users        controllers.DocumentSetUserController.index(id: Long)
 PUT    /documentsets/:id/users/:email controllers.DocumentSetUserController.update(id: Long, email: String)
