@@ -1,10 +1,10 @@
-FROM openjdk:8u212-jdk
+FROM openjdk:8u242-jdk
 
 # Deps:
 # nodejs+build-essential+xvfb+libxss1+gtk3+nss3+asound+libgconf-2-4: for web/js tests (which run Electron and Node)
 # zip+unzip: for ./build
 RUN true \
-      && curl -sL https://deb.nodesource.com/setup_8.x | bash \
+      && curl -sL https://deb.nodesource.com/setup_12.x | bash \
       && apt-get update \
       && apt-get -y install \
         nodejs \
