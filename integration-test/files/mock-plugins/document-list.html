@@ -1,0 +1,37 @@
+<html>
+  <head>
+    <title>Test Plugin</title>
+    <meta charset="utf-8">
+  </head>
+  <body>
+    <button class=".set-search" onclick="onClickSetSearch()">Search for First OR Third</button>
+    <button class="go-to-next-document" onclick="onClickGoToNextDocument()">Go to next document</button>
+    <button class="go-to-previous-document" onclick="onClickGoToPreviousDocument()">Go to previous document</button>
+    <script>
+const main = document.querySelector('main')
+
+function onClickSetSearch() {
+  window.parent.postMessage({
+    call: 'setDocumentListParams',
+    args: [ { q: 'First OR Third' } ],
+  }, '*');
+}
+
+function onClickGoToNextDocument() {
+  window.parent.postMessage({
+    call: 'goToNextDocument',
+    args: [],
+  }, '*');
+}
+
+function onClickGoToPreviousDocument() {
+  window.parent.postMessage({
+    call: 'goToPreviousDocument',
+    args: [],
+  }, '*');
+}
+
+document.body.className = 'loaded'
+    </script>
+  </body>
+</html>

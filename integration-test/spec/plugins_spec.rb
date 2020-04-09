@@ -43,6 +43,23 @@ describe 'Plugins' do
       end
     end
 
+    describe 'with a plugin that calls setDocumentListParams' do
+      it 'should set document-list-title and navigate documents' do
+        page.with_mock_plugin_and_view('document-list', server: 'https://server') do
+          page.within_frame('view-app-iframe') do
+            page.assert_selector('body.loaded', wait: WAIT_LOAD) # wait for iframe to load
+            page.click_button('Search for First OR Third')
+          end
+          page.assert_selector('#document-list-title h3', text: '2 documents', wait: WAIT_LOAD)  # wait for search
+
+          # Jump to next document
+          click_view_button('Go to next document')  # "First"
+          click_view_button('Go to next document')  # "Third" ("Second" is not a search result)
+          page.assert_selector('.showing-document h2', text: 'Third', wait: WAIT_LOAD)  # wait for open
+        end
+      end
+    end
+
     describe 'with a plugin that calls setRightPane' do
       it 'should create a right pane' do
         page.with_mock_plugin_and_view('right-pane') do
@@ -192,7 +209,7 @@ describe 'Plugins' do
 
           # Reload page and navigate back to a document
           page.refresh
-          page.assert_selector('#document-list-title h3', text: '3 documents') # wait for page reload
+          page.assert_selector('#document-list-title h3', text: '3 documents', wait: WAIT_LOAD) # wait for page reload
           page.open_document_in_list_with_name('First')
 
           page.assert_selector('a', text: 'Text foo')
@@ -204,6 +221,7 @@ describe 'Plugins' do
           click_view_button('setUrl(foo)')
 
           # Create another view to the same thing, and click its button
+          page._HACK_hide_view_iframe_to_workaround_chromium_79_disabling_clicks_over_iframes
           page.create_custom_view(name: 'another view', url: 'http://localhost:3333')
           click_view_button('setUrl(foo, foo with different text)')
 

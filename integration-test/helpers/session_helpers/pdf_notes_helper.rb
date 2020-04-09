@@ -15,16 +15,16 @@ module SessionHelpers
         # Wait for notes feature to load
         assert_selector('#viewer .noteLayer', visible: :all, wait: WAIT_LOAD)
         # Wait for document to load
-        assert_selector('#viewer .textLayer div', text: text_to_highlight, wait: WAIT_LOAD)
+        assert_selector('#viewer .textLayer span', text: text_to_highlight, wait: WAIT_LOAD)
 
         click_button('Add Note')
         # Wait for the page to be ready for a click-and-drag
         assert_selector('#viewerContainer.addingNote', wait: WAIT_FAST)
 
         # Drag a box for the note
-        div = find('#viewer .textLayer div', text: text_to_highlight).native
+        span = find('#viewer .textLayer span', text: text_to_highlight).native
         driver.browser.action
-          .click_and_hold(div)
+          .click_and_hold(span)
           .move_by(50, 50)
           .release
           .perform

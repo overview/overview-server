@@ -107,7 +107,7 @@ describe 'Registration' do
     end
 
     it 'should not create a confirmation token' do
-      assert_equal(nil, get_confirmation_token(@user))
+      assert_nil(get_confirmation_token(@user))
     end
   end
 
@@ -150,7 +150,7 @@ describe 'Registration' do
       end
 
       it 'should disable the confirmation token' do
-        assert_equal(nil, get_confirmation_token(@user))
+        assert_nil(get_confirmation_token(@user))
       end
     end
   end

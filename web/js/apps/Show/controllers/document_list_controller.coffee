@@ -152,8 +152,6 @@ define [
       new_index = (listSelection.cursorIndex || -1) + diff
       func = up_or_down == 'down' && 'onDown' || 'onUp'
 
-      docid = state.get('documentList')?.documents?.at?(new_index)?.id
-
       listSelection[func](options)
 
     go_down = (event) -> go_up_or_down('down', event)
@@ -180,5 +178,6 @@ define [
 
     globalActions.goToNextDocument = () => go_down({})
     globalActions.goToPreviousDocument = () => go_up({})
+    globalActions.goToDocumentById = (id) => go_
     globalActions.beginCreatePdfNote = () => controller.cursorView.documentDisplayApp.beginCreatePdfNote()
     globalActions.goToPdfNote = (pdfNote) => controller.cursorView.documentDisplayApp.goToPdfNote(pdfNote)

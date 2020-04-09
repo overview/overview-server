@@ -1,11 +1,10 @@
-import NoteStore from 'apps/PdfViewer/NoteStore'
-
 const DefaultProps = {
   documentId: null,
   pdfUrl: null,
   pdfNotes: null,
   showSidebar: false,
   highlightQ: null,
+  currentNoteStoreApi: null,
 }
 
 const state = Object.assign({}, DefaultProps)
@@ -15,6 +14,7 @@ const state = Object.assign({}, DefaultProps)
  */
 function search(q) {
   const findBar = PDFViewerApplication.findBar
+  if (!findBar) return; // PDFViewerApplication hasn't been initialized yet
   if (q) {
     findBar.open()
     findBar.caseSensitive.checked = false
@@ -37,16 +37,11 @@ function search(q) {
 
 function openPdf() {
   PDFViewerApplication.open(state.pdfUrl, null)
-  search(state.highlightQ)
+    .then(() => search(state.highlightQ))
 }
 
 function toggleSidebar(want) {
   PDFViewerApplication.pdfSidebar[want ? 'open' : 'close']()
-}
-
-function setNotes(documentId, pdfNotes) {
-  // Uses our custom NoteStore
-  PDFViewerApplication.noteStore.setDocumentIdAndPdfNotes({ documentId, pdfNotes })
 }
 
 function setState({ documentId, pdfUrl, pdfNotes, showSidebar, highlightQ}) {
@@ -55,11 +50,14 @@ function setState({ documentId, pdfUrl, pdfNotes, showSidebar, highlightQ}) {
   }
   if (pdfUrl !== undefined && pdfUrl !== state.pdfUrl) {
     state.pdfUrl = pdfUrl
+    state.currentNoteStoreApi = null
     openPdf()
   }
   if (pdfNotes !== undefined && pdfNotes !== state.pdfNotes) {
     state.pdfNotes = pdfNotes
-    setNotes(state.documentId, state.pdfNotes)
+    if (state.currentNoteStoreApi && state.documentId === state.currentNoteStoreApi) {
+      state.currentNoteStoreApi.onChange(pdfNotes)
+    }
   }
   if (showSidebar !== undefined && showSidebar !== state.showSidebar) {
     state.showSidebar = showSidebar
@@ -102,7 +100,7 @@ window.addEventListener('message', function(ev) {
   }
 })
 
-// When you open a sidebar, PDFJS remembers which siebar you opened. That's
+// When you open a sidebar, PDFJS remembers which sidebar you opened. That's
 // bad if the user turns off the sidebar. So we'll implement this logic:
 //
 // * If state.showSidebar is true, initially open PDFJS's stored view for the
@@ -121,18 +119,82 @@ function monkeyPatchPdfSidebarSetInitialViewToFollowOverviewSidebarPreference() 
   }
 }
 
-window.addEventListener('load', function() {
-  monkeyPatchPdfSidebarSetInitialViewToFollowOverviewSidebarPreference()
-  PDFViewerApplication.noteStore = PDFViewerApplication.pdfViewer.noteStore = new NoteStore({
-    eventBus: PDFViewerApplication.eventBus,
-    savePdfNotes: ({ documentId, pdfNotes }) => {
-      window.parent.postMessage({
-        call: 'fromPdfViewer:savePdfNotes',
-        documentId: documentId,
-        pdfNotes: pdfNotes,
-      }, document.location.origin)
+class ErrorNoteStore {
+  constructor(message) {
+    console.error(message)
+    this.message = message
+    this.load = this.load.bind(this)
+    this.save = this.save.bind(this)
+  }
+
+  load() { return Promise.resolve([]) }
+  save(notes) { return Promise.reject(new Error(this.message)) }
+}
+
+class NoteStoreApi {
+  constructor(documentId, onChange) {
+    this.documentId = documentId;
+    this.onChange = onChange;
+    this.load = this.load.bind(this)
+    this.save = this.save.bind(this)
+  }
+
+  load() {
+    if (state.documentId !== this.documentId) {
+      return Promise.resolve([])
     }
-  })
+    return Promise.resolve(state.pdfNotes)
+  }
+
+  save(notes) {
+    window.parent.postMessage({
+      call: 'fromPdfViewer:savePdfNotes',
+      documentId: this.documentId,
+      pdfNotes: notes,
+    }, window.origin)
+    // Pretend save succeeds immediately -- as though we're synchronous
+    return Promise.resolve(null)
+  }
+}
+
+window.addEventListener('webviewerloaded', function() {
+  //monkeyPatchPdfSidebarSetInitialViewToFollowOverviewSidebarPreference()
+  PDFViewerApplication.noteStoreApiCreator = (url, { onChange }) => {
+    if (url !== state.pdfUrl) {
+      return new ErrorNoteStore(
+        `Requested note store for ${url} but we are viewing ${state.pdfurl}`
+      )
+    }
+    if (state.documentId === null) {
+      return new ErrorNoteStore(
+        `Requested note store for ${url} but we are not viewing a document`
+      )
+    }
+    state.currentNoteStoreApi = new NoteStoreApi(state.documentId, onChange)
+    return state.currentNoteStoreApi
+  }
+
+  (() => {
+    // Replaces {{arguments}} with their values.
+    function formatL10nValue(text, args) {
+      if (!args) {
+        return text;
+      }
+      return text.replace(/\{\{\s*(\w+)\s*\}\}/g, (all, name) => {
+        return name in args ? args[name] : "{{" + name + "}}";
+      });
+    }
+
+    // Test "NullL10n" -- don't download any external files
+    const NullL10n = {
+      getLanguage: () => Promise.resolve("en-us"),
+      getDirection: () => Promise.resolve("ltr"),
+      get: (property, args, fallback) => Promise.resolve(formatL10nValue(fallback, args)),
+      translate: (element) => Promise.resolve(undefined),
+    }
+
+    PDFViewerApplication.externalServices.createL10n = () => NullL10n
+  })()
 
   // Load document once PDFJS has loaded
   window.parent.postMessage({

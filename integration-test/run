@@ -5,10 +5,11 @@ ABSDIR="$(realpath "$DIR")"
 
 set -e
 
+# shellcheck source=./config
 . "$DIR"/config
 
 IMAGE_NAME=overview/overview-integration-tester:$OVERVIEW_INTEGRATION_TESTER_VERSION
-docker image ls -q $IMAGE_NAME >/dev/null || docker pull $IMAGE_NAME
+docker image ls -q "$IMAGE_NAME" >/dev/null || docker pull "$IMAGE_NAME"
 
 # [adamhooper, 2018-01-23] HEADLESS=true seems to break within_frame()
 # sporadically with Chrome 63 and Chromedriver 2.35. The closest report I can
@@ -22,7 +23,7 @@ docker image ls -q $IMAGE_NAME >/dev/null || docker pull $IMAGE_NAME
 # -e HEADLESS=false. Then, instead of "$@", use:
 # xvfb-run --server-args='-screen 0 1200x900x24' "$@"
 exec docker run --rm -it \
-  --network ${DEVELOPMENT_PROJECT_NAME}_default \
+  --network "${DEVELOPMENT_PROJECT_NAME}_default" \
   -e OVERVIEW_URL=http://overview-web \
   -e WAIT_FOR_URLS="$WAIT_FOR_URLS" \
   -e HEADLESS=false \
@@ -31,6 +32,6 @@ exec docker run --rm -it \
   -v "$ABSDIR"/reports:/app/reports \
   -v "$ABSDIR"/spec:/app/spec \
   --mount type=tmpfs,destination=/tmp \
-  --shm-size=2g \
+  --init \
   "$IMAGE_NAME" \
   sh -c "xvfb-run --server-args='-screen 0 1200x900x24' -a ${*:-./all-tests}"

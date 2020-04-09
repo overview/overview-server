@@ -18,29 +18,22 @@ Minitest::Reporters.use! [
   Minitest::Reporters::JUnitReporter.new('/app/reports')
 ]
 
-def chrome_args
-  # Dynamic: each time we call this, create a new user-data-dir
-  ret = [
-    'disable-gpu',
-    'no-sandbox',
-    "user-data-dir=/tmp/overview-integration-tester-#{rand(0xffff)}"
-  ]
-  ret << 'headless' if ENV['HEADLESS'] != 'false'
-  ret
-end
-
 Selenium::WebDriver.logger.level = "warn"
-Capybara.register_driver :selenium_chrome_headless do |app|
-  # https://robots.thoughtbot.com/headless-feature-specs-with-chrome
-  capabilities = Selenium::WebDriver::Remote::Capabilities.chrome(
-    chromeOptions: { args: chrome_args }
-  )
+Capybara.register_driver :overview_chromium do |app|
+  options = Selenium::WebDriver::Chrome::Options.new
+  options.add_argument('--disable-gpu')
+  options.add_argument('--no-sandbox') # Docker doesn't allow sandboxing
+  options.add_argument('--disable-dev-shm-usage') # https://bugs.chromium.org/p/chromium/issues/detail?id=736452
+  options.add_argument('--window-size=1200x900')
+  options.add_argument('--headless') if ENV['HEADLESS'] != 'false'
 
-  Capybara::Selenium::Driver.new app,
+  Capybara::Selenium::Driver.new(
+    app,
     browser: :chrome,
-    desired_capabilities: capabilities
+    options: options
+  )
 end
-Capybara.default_driver = :selenium_chrome_headless
+Capybara.default_driver = :overview_chromium
 Capybara.app_host = OVERVIEW_URL
 Capybara.run_server = false
 Capybara.default_max_wait_time = 0 # VERY IMPORTANT: default must be 0. Be explicit about where races are in each test!

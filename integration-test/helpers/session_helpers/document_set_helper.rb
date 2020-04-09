@@ -102,11 +102,12 @@ module SessionHelpers
     end
 
     def delete_current_view
+      _HACK_hide_view_iframe_to_workaround_chromium_79_disabling_clicks_over_iframes
       n_views_before = all('ul.view-tabs>li.view').count
       find('li.view.active .toggle-popover').click
       within('li.view.active .popover', wait: WAIT_FAST) do
         accept_confirm(wait: WAIT_FAST) do
-          click_on('Delete')
+          click_on('Delete View')
         end
       end
       # Wait for the view to disappear
@@ -155,6 +156,14 @@ module SessionHelpers
         click_link('Don’t show any more tips', wait: WAIT_FAST)
         assert_no_selector('.popover', wait: WAIT_FAST)
       end
+    end
+
+    def _HACK_hide_view_iframe_to_workaround_chromium_79_disabling_clicks_over_iframes
+      # TODO delete this function and all calls to it
+      #
+      # [2020-04-09] Chromium 79 seems to silently prevent us from clicking a
+      # popover atop an iframe. When Chromium allows this, delete the next line.
+      execute_script 'document.querySelector("#view-app-iframe").style.display = "none";'
     end
   end
 end

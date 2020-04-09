@@ -38,7 +38,7 @@ describe 'PdfNotes' do
       # Wait for notes feature to load
       page.assert_selector('#viewer .noteLayer', visible: :all, wait: WAIT_LOAD)
       # Wait for document to load
-      page.assert_selector('#viewer .textLayer div', text: 'This is the first PDF', wait: WAIT_LOAD)
+      page.assert_selector('#viewer .textLayer span', text: 'This is the first PDF', wait: WAIT_LOAD)
 
       # Wait for note to appear
       page.assert_selector('#viewer .noteLayer section', wait: WAIT_LOAD)
@@ -81,7 +81,7 @@ describe 'PdfNotes' do
       # Wait for notes feature to load
       page.assert_selector('#viewer .noteLayer', visible: :all, wait: WAIT_LOAD)
       # Wait for document to load
-      page.assert_selector('#viewer .textLayer div', text: 'This is the first PDF', wait: WAIT_LOAD)
+      page.assert_selector('#viewer .textLayer span', text: 'This is the first PDF', wait: WAIT_LOAD)
 
       # Make sure no note is rendered
       page.assert_no_selector('#viewer .noteLayer section')

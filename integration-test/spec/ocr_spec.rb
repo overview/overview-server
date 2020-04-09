@@ -41,7 +41,7 @@ describe 'OCR' do
     # Check PDF has text
     page.assert_selector('#document-contents[src="/pdf-viewer"]', wait: WAIT_FAST) # wait for iframe to appear
     page.within_frame('document-contents') do
-      page.assert_selector('.textLayer', text: /This.*is.*an.*image.*of.*text/, wait: WAIT_LOAD) # wait for pdf to load
+      page.assert_selector('.textLayer', text: /This\s+is\s+an\s+image\s+of\s+text/, wait: WAIT_LOAD) # wait for pdf to load
     end
 
     # Check text has text

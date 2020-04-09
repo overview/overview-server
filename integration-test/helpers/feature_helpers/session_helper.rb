@@ -58,16 +58,7 @@ module FeatureHelpers
 
     def quit_sessions
       for session in @sessions
-        session.driver.quit
-
-        # Delete user-data-dir to free space (or, more importantly on ramdisk, memory)
-        capabilities_json = session.driver.options[:desired_capabilities].to_json # quasi-private API
-        capabilities = JSON.load(capabilities_json)
-        data_dir = capabilities['chromeOptions']['args']
-          .select { |o| o =~ /^user-data-dir=/ }
-          .first
-          .split('=', 2).last
-        FileUtils.rm_rf(data_dir)
+        session.quit
       end
       @sessions = []
     end

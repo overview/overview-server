@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 DIR="$(dirname "$0")"
 ABSDIR="$(realpath "$DIR")"
@@ -8,29 +8,25 @@ set -e
 . "$DIR"/config
 
 IMAGE_NAME=overview/overview-integration-tester:$OVERVIEW_INTEGRATION_TESTER_VERSION
-docker image ls -q $IMAGE_NAME >/dev/null || docker pull $IMAGE_NAME
+docker image ls -q "$IMAGE_NAME" >/dev/null || docker pull "$IMAGE_NAME"
 
 if [ -z "$1" ]; then
-  SCRIPT="chromium --no-sandbox"
+  SCRIPT="chromium-browser"
 else
   SCRIPT="$(printf " %q" "$@")"
 fi
 
 COMMANDS="$(cat <<-EOT
-export DISPLAY=:1
+echo "exec $SCRIPT" > /home/chromium/.xinitrc
+chmod +x /home/chromium/.xinitrc
 
-Xvnc \
-  -Log='*:stderr:0' \
+# All commands will die once we exit
+x11vnc \
+  -create \
   -geometry 1200x900 \
-  -SecurityTypes None \
-  \$DISPLAY \
-  &
-XPID=\$!
-
-HEADLESS=false \
-$SCRIPT
-kill -9 \$XPID
-wait
+  -rfbport 5901 \
+  -quiet \
+  -nopw
 EOT
 )"
 
@@ -38,10 +34,10 @@ echo "$COMMANDS" | docker run \
   -i \
   --rm \
   --privileged \
-  --env-file "$DIR"/config \
+  --env WAIT_FOR_URLS="$WAIT_FOR_URLS" \
+  --env HEADLESS=false \
   --publish-all \
-  --network ${DEVELOPMENT_PROJECT_NAME}_default \
-  --shm-size=2g \
+  --network "$DEVELOPMENT_PROJECT_NAME"_default \
   --name overview-integration-tester-chromium \
   -v "$ABSDIR"/files:/app/files \
   -v "$ABSDIR"/helpers:/app/helpers \
@@ -56,7 +52,7 @@ sleep 2
 
 IP_AND_PORT="$(docker port overview-integration-tester-chromium 5901/tcp)"
 
-vncviewer '-Log=*:stderr:0' $IP_AND_PORT RemoteResize=0
+vncviewer -geometry 1200x900 '-Log=*:stderr:0' "$IP_AND_PORT" RemoteResize=0
 # vncviewer will die when container dies.
 
 # If we get here, then either:
