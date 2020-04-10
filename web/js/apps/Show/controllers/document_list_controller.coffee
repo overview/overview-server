@@ -178,6 +178,5 @@ define [
 
     globalActions.goToNextDocument = () => go_down({})
     globalActions.goToPreviousDocument = () => go_up({})
-    globalActions.goToDocumentById = (id) => go_
     globalActions.beginCreatePdfNote = () => controller.cursorView.documentDisplayApp.beginCreatePdfNote()
     globalActions.goToPdfNote = (pdfNote) => controller.cursorView.documentDisplayApp.goToPdfNote(pdfNote)
