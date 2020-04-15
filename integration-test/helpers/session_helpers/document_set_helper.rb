@@ -102,11 +102,11 @@ module SessionHelpers
     end
 
     def delete_current_view
-      _HACK_hide_view_iframe_to_workaround_chromium_79_disabling_clicks_over_iframes
       n_views_before = all('ul.view-tabs>li.view').count
       find('li.view.active .toggle-popover').click
       within('li.view.active .popover', wait: WAIT_FAST) do
         accept_confirm(wait: WAIT_FAST) do
+          _HACK_hide_view_iframe_to_workaround_chromium_79_disabling_clicks_over_iframes
           click_on('Delete View')
         end
       end

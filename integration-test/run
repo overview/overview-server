@@ -26,12 +26,10 @@ exec docker run --rm -it \
   --network "${DEVELOPMENT_PROJECT_NAME}_default" \
   -e OVERVIEW_URL=http://overview-web \
   -e WAIT_FOR_URLS="$WAIT_FOR_URLS" \
-  -e HEADLESS=false \
   -v "$ABSDIR"/files:/app/files \
   -v "$ABSDIR"/helpers:/app/helpers \
   -v "$ABSDIR"/reports:/app/reports \
   -v "$ABSDIR"/spec:/app/spec \
   --mount type=tmpfs,destination=/tmp \
   --init \
-  "$IMAGE_NAME" \
-  sh -c "xvfb-run --server-args='-screen 0 1200x900x24' -a ${*:-./all-tests}"
+  "$IMAGE_NAME"
