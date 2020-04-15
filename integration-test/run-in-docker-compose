@@ -40,6 +40,14 @@ docker run --rm \
 # Delete tests from previous run
 find "$DIR"/reports -name '*.xml' -exec rm -f {} \;
 
+# Allow tester to write reports
+docker_compose run \
+  --no-deps \
+  --user=root \
+  --rm \
+  integration-test \
+  chown -vR chromium:chromium reports/
+
 # integration-test will end, and one of three things will have happened:
 #
 # 1. It succeeded -- and wrote to reports/*.xml
