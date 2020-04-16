@@ -104,25 +104,6 @@ window.addEventListener('message', function(ev) {
   }
 })
 
-// When you open a sidebar, PDFJS remembers which sidebar you opened. That's
-// bad if the user turns off the sidebar. So we'll implement this logic:
-//
-// * If state.showSidebar is true, initially open PDFJS's stored view for the
-//   document (the `view` parameter) _or_ the last-opened view
-//   (pdfSidebar.active) _or_ the default, THUMBS (also pdfSidebar.active).
-// * If state.showSidebar is false, force-hide sidebar.
-function monkeyPatchPdfSidebarSetInitialViewToFollowOverviewSidebarPreference() {
-  const pdfSidebar = PDFViewerApplication.pdfSidebar
-  const originalSetInitialView = pdfSidebar.setInitialView.bind(pdfSidebar)
-  pdfSidebar.setInitialView = function(view) {
-    if (state.showSidebar) {
-      originalSetInitialView(view || this.active)
-    } else {
-      originalSetInitialView(0)
-    }
-  }
-}
-
 class ErrorNoteStore {
   constructor(message) {
     console.error(message)
@@ -162,7 +143,8 @@ class NoteStoreApi {
 }
 
 window.addEventListener('webviewerloaded', function() {
-  //monkeyPatchPdfSidebarSetInitialViewToFollowOverviewSidebarPreference()
+  PDFViewerApplication.sidebarViewOnLoad = state.showSidebar ? 1 : 0;
+
   PDFViewerApplication.noteStoreApiCreator = (url, { onChange }) => {
     if (url !== state.pdfUrl) {
       return new ErrorNoteStore(
