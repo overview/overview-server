@@ -193,14 +193,6 @@ See https://github.com/adobe-type-tools/cmap-resources
           <div id="toolbarContainer">
             <div id="toolbarViewer">
               <div id="toolbarViewerLeft">
-                <button id="sidebarToggle" class="toolbarButton" title="Toggle Sidebar" tabindex="11" data-l10n-id="toggle_sidebar">
-                  <span data-l10n-id="toggle_sidebar_label">Toggle Sidebar</span>
-                </button>
-                <div class="toolbarButtonSpacer"></div>
-                <button id="viewFind" class="toolbarButton" title="Find in Document" tabindex="12" data-l10n-id="findbar">
-                  <span data-l10n-id="findbar_label">Find</span>
-                </button>
-
                 <div id="toolbarPages">
                   <div class="toolbarPagesFullDocument">
                     <div class="splitToolbarButton hiddenSmallView">
@@ -220,7 +212,6 @@ See https://github.com/adobe-type-tools/cmap-resources
                          page ("fullDocumentInfo.pageNumber") of the "fullDocumentInfo.url" PDF. We
                          display a toolbar button that will load the full document.
                     -->
-                    <div class="toolbarButtonSpacer"></div>
                     <span class="toolbarLabel hiddenSmallView" id="fullDocumentInfo"></span>
                     <button class="toolbarButton loadFullDocument" id="loadFullDocument">
                       <span>Load all pages</span>
@@ -282,6 +273,14 @@ See https://github.com/adobe-type-tools/cmap-resources
               </div>
               <div class="features-disabled-in-overview" style="display: none;">
                 <!-- We render these toolbar buttons (albeit hidden) to reduce our PDF.js codebase changes ... even though the feature is removed. -->
+                <button id="sidebarToggle" class="toolbarButton" title="Toggle Sidebar" tabindex="11" data-l10n-id="toggle_sidebar">
+                  <span data-l10n-id="toggle_sidebar_label">Toggle Sidebar</span>
+                </button>
+                <div class="toolbarButtonSpacer"></div>
+                <button id="viewFind" class="toolbarButton" title="Find in Document" tabindex="12" data-l10n-id="findbar">
+                  <span data-l10n-id="findbar_label">Find</span>
+                </button>
+
 
                 <div class="verticalToolbarSeparator hiddenSmallView"></div>
 
