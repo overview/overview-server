@@ -52,7 +52,8 @@ class DocumentListController @Inject() (
 
       val rootFile2sFuture = file2Backend.indexRoots(page.items.flatMap(_.file2Id))
 
-      val fullDocumentInfosFuture = documentBackend.indexFullDocumentInfos(page.items.filter(_.pageNumber.isDefined).map(_.id))
+      val fullDocumentInfosFuture = documentBackend
+        .indexFullDocumentInfos(page.items.filter(_.pageNumber.isDefined).map(_.id))
 
       for {
         snippets <- snippetsFuture

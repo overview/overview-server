@@ -71,9 +71,15 @@ class showSpec extends Specification with JsonMatchers {
       result must contain(""""page_number":null""")
     }
 
-    "handle a page_number" in new BaseScope {
-      override def doc1 = factory.document(pageNumber=Some(4))
-      result must /("documents") /#(0) /("page_number" -> 4)
+    "show page_number=null when there is no fullDocumentInfo" in new BaseScope {
+      // This comes up with single-page documents. Our ingest pipeline
+      // doesn't know, when it's writing page 1, that page 1 is the final page.
+      // So the document gets created with a page number. But users don't want
+      // to _see_ the page number because it clutters the UI.
+      override def doc1 = factory.document(pageNumber=Some(1))
+      // [adamhooper, 2020-04-16] how to match `null` with specs2 JSON matchers?
+      // I give up. This is a good reason to switch frameworks.
+      result must contain("\"page_number\":null")
     }
 
     "set node IDs" in new BaseScope {
@@ -143,12 +149,26 @@ class showSpec extends Specification with JsonMatchers {
       result must /("documents") /#(0) /("rootFile") /("filename" -> "file.csv")
     }
 
-    "set fullDocumentInfo" in new BaseScope {
-      override def doc1 = factory.document(documentSetId=123L)
-      override def doc1AndIds = (doc1, None.asInstanceOf[Option[String]], Vector[Long](), Vector[Long](), Vector[Utf16Snippet](), None, Some(FullDocumentInfo(3, 4, 5L)))
-      result must /("documents") /#(0) /("fullDocumentInfo") /("pageNumber" -> 3)
+    "set fullDocumentInfo and page_number" in new BaseScope {
+      override def doc1 = factory.document(documentSetId=123L, pageNumber=Some(1))
+      override def doc1AndIds = (doc1, None.asInstanceOf[Option[String]], Vector[Long](), Vector[Long](), Vector[Utf16Snippet](), None, Some(FullDocumentInfo(1, 4, 5L)))
+      result must /("documents") /#(0) /("page_number" -> 1)
+      result must /("documents") /#(0) /("fullDocumentInfo") /("pageNumber" -> 1)
       result must /("documents") /#(0) /("fullDocumentInfo") /("nPages" -> 4)
       result must /("documents") /#(0) /("fullDocumentInfo") /("url" -> s"/documentsets/123/files/5")
+    }
+
+    "show page_number=null and fullDocumentInfo=null when fullDocumentInfo.nPages == 1" in new BaseScope {
+      // This comes up with single-page documents. Our ingest pipeline
+      // doesn't know, when it's writing page 1, that page 1 is the final page.
+      // So the document gets created with a page number. But users don't want
+      // to _see_ the page number because it clutters the UI.
+      override def doc1 = factory.document(pageNumber=Some(1))
+      override def doc1AndIds = (doc1, None.asInstanceOf[Option[String]], Vector[Long](), Vector[Long](), Vector[Utf16Snippet](), None, Some(FullDocumentInfo(1, 1, 5L)))
+      // [adamhooper, 2020-04-16] how to match `null` with specs2 JSON matchers?
+      // I give up. This is a good reason to switch frameworks.
+      result must contain("\"page_number\":null")
+      result must contain("\"fullDocumentInfo\":null")
     }
   }
 }

@@ -1,7 +1,7 @@
 package views.json.DocumentList
 
 import java.util.UUID
-import play.api.libs.json.{JsString,JsValue,Json,Writes}
+import play.api.libs.json.{JsNull,JsString,JsValue,Json,Writes}
 import play.twirl.api.{Html,HtmlFormat}
 import scala.collection.immutable
 
@@ -39,11 +39,18 @@ object show {
     maybeRootFile2: Option[File2],
     maybeFullDocumentInfo: Option[FullDocumentInfo]
   ) : JsValue = {
+    // Only show page_number when there is a fullDocumentInfo worth showing
+    val pageNumber: Option[Int] = maybeFullDocumentInfo match {
+      case None => document.pageNumber // pre-file2 docset, or docset not split by page
+      case Some(fdi) if (fdi.nPages == 1) => None
+      case Some(_) => document.pageNumber // file2 docset split by page
+    }
+
     Json.obj(
       "id" -> document.id,
       "documentSetId" -> document.documentSetId.toString,
       "title" -> document.title,
-      "page_number" -> document.pageNumber,
+      "page_number" -> pageNumber,
       "url" -> document.viewUrl,
       "metadata" -> document.metadataJson,
       "pdfNotes" -> document.pdfNotes.pdfNotes,
@@ -51,7 +58,7 @@ object show {
       "tagids" -> tagIds,
       "snippet" -> snippetsToHtml(snippets, document.text),
       "rootFile" -> maybeRootFile2.map(file => fileToJson(document.documentSetId, file)),
-      "fullDocumentInfo" -> maybeFullDocumentInfo.map(fullDocumentInfo => fullDocumentInfoToJson(document.documentSetId, fullDocumentInfo)),
+      "fullDocumentInfo" -> maybeFullDocumentInfo.filter(_.nPages != 1).map(fullDocumentInfo => fullDocumentInfoToJson(document.documentSetId, fullDocumentInfo)),
       "thumbnailUrl" -> thumbnailUrl,
       "isFromOcr" -> document.isFromOcr,
     )
