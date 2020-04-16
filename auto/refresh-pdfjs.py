@@ -90,6 +90,9 @@ def copy_viewer_html_scala(source, destination):
         1,
     )
     data = data.replace(
+        b'"viewer.css"', b'"@assets.path("pdfjs/web/viewer.css")"'
+    )
+    data = data.replace(
         b'"../build/pdf.js"', b'"@assets.path("pdfjs/build/pdf.js")"', 1
     )
     data = data.replace(b'"viewer.js"', b'"@assets.path("pdfjs/web/viewer.js")"', 1)
