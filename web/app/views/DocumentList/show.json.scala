@@ -8,7 +8,7 @@ import scala.collection.immutable
 import models.pagination.Page
 import models.{Selection,SelectionWarning}
 import views.json.api.selectionWarnings
-import com.overviewdocs.models.{DocumentHeader,File2,PdfNote,PdfNoteCollection}
+import com.overviewdocs.models.{DocumentHeader,FullDocumentInfo,File2,PdfNote,PdfNoteCollection}
 import com.overviewdocs.searchindex.{Highlight,Snippet}
 
 object show {
@@ -22,7 +22,23 @@ object show {
     )
   }
 
-  private def documentToJson(document: DocumentHeader, thumbnailUrl: Option[String], nodeIds: Seq[Long], tagIds: Seq[Long], snippets: Seq[Snippet], maybeRootFile2: Option[File2]) : JsValue = {
+  private def fullDocumentInfoToJson(documentSetId: Long, info: FullDocumentInfo) : JsValue = {
+    Json.obj(
+      "nPages" -> info.nPages,
+      "pageNumber" -> info.pageNumber,
+      "url" -> controllers.routes.DocumentSetFileController.show(documentSetId, info.fullDocumentFile2Id).url
+    )
+  }
+
+  private def documentToJson(
+    document: DocumentHeader,
+    thumbnailUrl: Option[String],
+    nodeIds: Seq[Long],
+    tagIds: Seq[Long],
+    snippets: Seq[Snippet],
+    maybeRootFile2: Option[File2],
+    maybeFullDocumentInfo: Option[FullDocumentInfo]
+  ) : JsValue = {
     Json.obj(
       "id" -> document.id,
       "documentSetId" -> document.documentSetId.toString,
@@ -35,6 +51,7 @@ object show {
       "tagids" -> tagIds,
       "snippet" -> snippetsToHtml(snippets, document.text),
       "rootFile" -> maybeRootFile2.map(file => fileToJson(document.documentSetId, file)),
+      "fullDocumentInfo" -> maybeFullDocumentInfo.map(fullDocumentInfo => fullDocumentInfoToJson(document.documentSetId, fullDocumentInfo)),
       "thumbnailUrl" -> thumbnailUrl,
       "isFromOcr" -> document.isFromOcr,
     )
@@ -54,12 +71,12 @@ object show {
     HtmlFormat.fill(htmls.to[immutable.Seq]).body
   }
 
-  def apply(selection: Selection, documents: Page[(DocumentHeader,Option[String],Seq[Long],Seq[Long],Seq[Snippet],Option[File2])]) = {
+  def apply(selection: Selection, documents: Page[(DocumentHeader,Option[String],Seq[Long],Seq[Long],Seq[Snippet],Option[File2], Option[FullDocumentInfo])]) = {
     Json.obj(
       "selection_id" -> selection.id.toString,
       "warnings" -> selectionWarnings(selection.warnings),
       "total_items" -> documents.pageInfo.total,
-      "documents" -> documents.items.map(t => documentToJson(t._1, t._2, t._3, t._4, t._5, t._6)).toSeq
+      "documents" -> documents.items.map(t => documentToJson(t._1, t._2, t._3, t._4, t._5, t._6, t._7)).toSeq
     )
   }
 }

@@ -1,6 +1,6 @@
 export default {
   /**
-   * Returns { id, displayType, displayUrl, pdfNotes, isFromOcr, rootFile }
+   * Returns { id, displayType, displayUrl, pdfNotes, isFromOcr, rootFile, fullDocumentInfo }
    *
    * Arguments:
    *
@@ -14,6 +14,7 @@ export default {
         displayUrl: null,
         pdfNotes: null,
         isFromOcr: null,
+        fullDocumentInfo: null,
       }
     }
 
@@ -22,6 +23,7 @@ export default {
       pdfNotes: document.pdfNotes,
       isFromOcr: document.isFromOcr,
       rootFile: document.rootFile,
+      fullDocumentInfo: document.fullDocumentInfo,
     }, urlPropertiesExtractor.urlToProperties(document.url))
   }
 }

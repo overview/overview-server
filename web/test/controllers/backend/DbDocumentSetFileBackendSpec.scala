@@ -54,31 +54,46 @@ class DbDocumentSetFileBackendSpec extends DbBackendSpecification {
       }
     }
 
-    "#exists" should {
-      trait ExistsScope extends BaseScope {
+    "#existsForRoot" should {
+      trait ExistsForRootScope extends BaseScope {
         val documentSet = factory.documentSet()
       }
 
-      "return true when a file2 belongs to a document set" in new ExistsScope {
+      "return true when a file2 belongs to a document set" in new ExistsForRootScope {
         val file2 = factory.file2()
         factory.documentSetFile2(documentSetId=documentSet.id, file2Id=file2.id)
-        await(backend.exists(documentSet.id, file2.id)) must beEqualTo(true)
+        await(backend.existsForRoot(documentSet.id, file2.id)) must beEqualTo(true)
       }
 
-      "return false when the file2 belongs to a different document set" in new ExistsScope {
+      "return false when the file2 belongs to a different document set" in new ExistsForRootScope {
         val documentSet2 = factory.documentSet()
         val file2 = factory.file2()
         factory.documentSetFile2(documentSetId=documentSet2.id, file2Id=file2.id)
-        await(backend.exists(documentSet.id, file2.id)) must beEqualTo(false)
+        await(backend.existsForRoot(documentSet.id, file2.id)) must beEqualTo(false)
       }
 
-      "return false when the File2 does not exist" in new ExistsScope {
-        await(backend.exists(documentSet.id, 123L)) must beEqualTo(false)
+      "return true with a non-root file2" in new ExistsForRootScope {
+        val root = factory.file2()
+        val child = factory.file2(rootFile2Id=Some(root.id))
+        factory.documentSetFile2(documentSetId=documentSet.id, file2Id=root.id)
+        await(backend.existsForRoot(documentSet.id, child.id)) must beEqualTo(true)
       }
 
-      "return false when the DocumentSet does not exist" in new ExistsScope {
+      "return false when a non-root file2 root belongs to a different document set" in new ExistsForRootScope {
+        val documentSet2 = factory.documentSet()
+        val root = factory.file2()
+        val child = factory.file2(rootFile2Id=Some(root.id))
+        factory.documentSetFile2(documentSetId=documentSet2.id, file2Id=root.id)
+        await(backend.existsForRoot(documentSet.id, child.id)) must beEqualTo(false)
+      }
+
+      "return false when the File2 does not exist" in new ExistsForRootScope {
+        await(backend.existsForRoot(documentSet.id, 123L)) must beEqualTo(false)
+      }
+
+      "return false when the DocumentSet does not exist" in new ExistsForRootScope {
         val file2 = factory.file2() // the file *does* exist
-        await(backend.exists(documentSet.id + 1L, file2.id)) must beEqualTo(false)
+        await(backend.existsForRoot(documentSet.id + 1L, file2.id)) must beEqualTo(false)
       }
     }
   }

@@ -9,7 +9,7 @@ import scala.concurrent.Future
 
 import models.pagination.{Page,PageInfo,PageRequest}
 import models.Selection
-import com.overviewdocs.models.{Document,PdfNote,PdfNoteCollection}
+import com.overviewdocs.models.{Document,FullDocumentInfo,PdfNote,PdfNoteCollection}
 import com.overviewdocs.models.tables.Documents
 import com.overviewdocs.query.{Field,PhraseQuery,Query}
 
@@ -104,6 +104,56 @@ class DbDocumentBackendSpec extends DbBackendSpecification with Mockito {
         val notDoc = factory.document(documentSetId=documentSet.id)
 
         index(Vector(doc.id)) must beEqualTo(Vector(doc))
+      }
+    }
+
+    "#indexFullDocumentInfos" should {
+      trait IndexFullDocumentInfosScope extends BaseScope {
+        val documentSet = factory.documentSet()
+        def indexFullDocumentInfos(documentIds: Vector[Long]) = await(backend.indexFullDocumentInfos(documentIds))
+      }
+
+      "work with 0 IDs" in new IndexFullDocumentInfosScope {
+        indexFullDocumentInfos(Vector()) must beEqualTo(Map())
+      }
+
+      "include the given documents" in new IndexFullDocumentInfosScope {
+        val pdf1 = factory.file2(nChildren=Some(3))
+        val pdf1p1 = factory.file2(parentFile2Id=Some(pdf1.id), indexInParent=0)
+        val pdf1p2 = factory.file2(parentFile2Id=Some(pdf1.id), indexInParent=1)
+        val pdf1p3 = factory.file2(parentFile2Id=Some(pdf1.id), indexInParent=2)
+        val pdf2 = factory.file2(nChildren=Some(2))
+        val pdf2p1 = factory.file2(parentFile2Id=Some(pdf2.id), indexInParent=0)
+        val pdf2p2 = factory.file2(parentFile2Id=Some(pdf2.id), indexInParent=1)
+
+        val doc1 = factory.document(documentSetId=documentSet.id, pageNumber=Some(1), file2Id=Some(pdf1p1.id))
+        val doc2 = factory.document(documentSetId=documentSet.id, pageNumber=Some(2), file2Id=Some(pdf1p2.id))
+        val doc3 = factory.document(documentSetId=documentSet.id, pageNumber=Some(3), file2Id=Some(pdf1p3.id))
+        val doc4 = factory.document(documentSetId=documentSet.id, pageNumber=Some(1), file2Id=Some(pdf2p1.id))
+        val doc5 = factory.document(documentSetId=documentSet.id, pageNumber=Some(2), file2Id=Some(pdf2p2.id))
+
+        indexFullDocumentInfos(Vector(doc1.id, doc3.id, doc4.id, doc5.id)) must beTypedEqualTo(Map(
+          doc1.id -> FullDocumentInfo(1, 3, pdf1.id),
+          doc3.id -> FullDocumentInfo(3, 3, pdf1.id),
+          doc4.id -> FullDocumentInfo(1, 2, pdf2.id),
+          doc5.id -> FullDocumentInfo(2, 2, pdf2.id),
+        ))
+      }
+
+      "exclude documents without pageNumber" in new IndexFullDocumentInfosScope {
+        val pdf1 = factory.file2(nChildren=Some(0))
+        val pdf2 = factory.file2(nChildren=Some(2))
+        val pdf2p1 = factory.file2(parentFile2Id=Some(pdf2.id), indexInParent=0)
+        val pdf2p2 = factory.file2(parentFile2Id=Some(pdf2.id), indexInParent=1)
+
+        val doc1 = factory.document(documentSetId=documentSet.id, pageNumber=None, file2Id=Some(pdf1.id))
+        val doc2 = factory.document(documentSetId=documentSet.id, pageNumber=Some(1), file2Id=Some(pdf2p1.id))
+        val doc3 = factory.document(documentSetId=documentSet.id, pageNumber=Some(2), file2Id=Some(pdf2p2.id))
+
+        indexFullDocumentInfos(Vector(doc1.id, doc2.id, doc3.id)) must beTypedEqualTo(Map(
+          doc2.id -> FullDocumentInfo(1, 2, pdf2.id),
+          doc3.id -> FullDocumentInfo(2, 2, pdf2.id),
+        ))
       }
     }
 

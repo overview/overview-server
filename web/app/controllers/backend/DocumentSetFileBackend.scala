@@ -13,7 +13,7 @@ trait DocumentSetFileBackend extends Backend {
   def existsByIdAndSha1(documentSetId: Long, sha1: Array[Byte]): Future[Boolean]
 
   /** Returns true if the record exists */
-  def exists(documentSetId: Long, file2Id: Long): Future[Boolean]
+  def existsForRoot(documentSetId: Long, file2Id: Long): Future[Boolean]
 }
 
 class DbDocumentSetFileBackend @Inject() (
@@ -37,9 +37,10 @@ class DbDocumentSetFileBackend @Inject() (
     } yield (())
   }
 
-  lazy val byFile2Ids = Compiled { (documentSetId: Rep[Long], file2Id: Rep[Long]) =>
+  lazy val byNonRootChildId = Compiled { (documentSetId: Rep[Long], file2Id: Rep[Long]) =>
+    val rootIds = DocumentSetFile2s.filter(_.documentSetId === documentSetId).map(_.file2Id)
     for {
-      documents <- DocumentSetFile2s.filter(_.file2Id === file2Id).filter(_.documentSetId === documentSetId)
+      file2s <- File2s.filter(f => (f.id in rootIds) || (f.rootFile2Id in rootIds))
     } yield (())
   }
 
@@ -52,7 +53,7 @@ class DbDocumentSetFileBackend @Inject() (
     }
   }
 
-  override def exists(documentSetId: Long, file2Id: Long) = {
-    database.option(byFile2Ids(documentSetId, file2Id)).map(_.isDefined)
+  override def existsForRoot(documentSetId: Long, file2Id: Long) = {
+    database.option(byNonRootChildId(documentSetId, file2Id)).map(_.isDefined)
   }
 }

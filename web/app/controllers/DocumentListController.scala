@@ -52,11 +52,14 @@ class DocumentListController @Inject() (
 
       val rootFile2sFuture = file2Backend.indexRoots(page.items.flatMap(_.file2Id))
 
+      val fullDocumentInfosFuture = documentBackend.indexFullDocumentInfos(page.items.filter(_.pageNumber.isDefined).map(_.id))
+
       for {
         snippets <- snippetsFuture
         (nodeIds, tagIds) <- idsFutures
         thumbnailUrls <- thumbnailUrlsFuture
         rootFile2s <- rootFile2sFuture
+        fullDocumentInfos <- fullDocumentInfosFuture
       } yield {
         val pageOfItems = page.map { document => (
           document,
@@ -64,7 +67,8 @@ class DocumentListController @Inject() (
           nodeIds.getOrElse(document.id, Seq()),
           tagIds.getOrElse(document.id, Seq()),
           snippets.getOrElse(document.id, Seq()),
-          document.file2Id.flatMap(rootFile2s.get _)
+          document.file2Id.flatMap(rootFile2s.get _),
+          fullDocumentInfos.get(document.id)
         )}
 
         views.json.DocumentList.show(selection, pageOfItems)

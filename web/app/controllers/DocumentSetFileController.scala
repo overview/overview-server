@@ -29,7 +29,7 @@ class DocumentSetFileController @Inject() (
   }
 
   def show(documentSetId: Long, file2Id: Long) = authorizedAction(userViewingDocumentSet(documentSetId)).async {
-    documentSetFileBackend.exists(documentSetId, file2Id).flatMap(_ match {
+    documentSetFileBackend.existsForRoot(documentSetId, file2Id).flatMap(_ match {
       case false => Future.successful(NotFound)
       case true => file2Backend.lookup(file2Id).map(_ match {
         case None => NotFound

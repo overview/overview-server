@@ -9,10 +9,11 @@ import scala.collection.immutable
 import scala.collection.mutable.Buffer
 import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.Future
+import slick.jdbc.GetResult
 
 import com.overviewdocs.database.Database
-import com.overviewdocs.models.{Document,DocumentDisplayMethod,DocumentHeader,PdfNoteCollection}
-import com.overviewdocs.models.tables.{DocumentInfos,DocumentInfosImpl,Documents,DocumentsImpl,DocumentTags,Tags}
+import com.overviewdocs.models.{Document,DocumentDisplayMethod,DocumentHeader,FullDocumentInfo,PdfNoteCollection}
+import com.overviewdocs.models.tables.{DocumentInfos,DocumentInfosImpl,Documents,DocumentsImpl,DocumentTags,File2s,Tags}
 import com.overviewdocs.query.{Query=>SearchQuery}
 import com.overviewdocs.searchindex.SearchResult
 import com.overviewdocs.util.Logger
@@ -33,6 +34,23 @@ trait DocumentBackend {
 
   /** Streams all requested Documents, in the requested order. */
   def stream(documentSetId: Long, documentIds: Vector[Long]): Source[Document, akka.NotUsed]
+
+  /** Looks up FullDocumentInfos for the requested Documents.
+    *
+    * Documents without `.pageNumber` will not appear in the return value.
+    *
+    * Assumptions:
+    *
+    * * Only uses the File2 table (not its predecessor).
+    * * Assumes if doc.pageNumber exists, doc.file2.parentFile2 is the "full"
+    *   document. (In other words, assumes our ingest pipeline looks like
+    *   "1. convert to PDF; 2. split into pages" for any document that has
+    *   a .pageNumber.
+    * * Assumes a PDF file2's nChildren is the PDF's number of pages. (This
+    *   would break if, for instance, some pages were errors and subsequent
+    *   pages weren't. But [2020-04-16] that doesn't happen.)
+    */
+  def indexFullDocumentInfos(documentIds: Vector[Long]): Future[Map[Long,FullDocumentInfo]]
 
   /** Returns a single Document.
     *
@@ -121,6 +139,27 @@ class DbDocumentBackend @Inject() (
     database.seq(byDocumentSetIdAndIds(documentSetId, documentIds)).map { documents =>
       val map: Map[Long,Document] = documents.map((d) => (d.id -> d)).toMap
       documentIds.collect(map)
+    }
+  }
+
+  override def indexFullDocumentInfos(documentIds: Vector[Long]): Future[Map[Long,FullDocumentInfo]] = {
+    if (documentIds.isEmpty) return Future.successful(Map.empty[Long,FullDocumentInfo])
+
+    implicit val getResult = GetResult[Tuple2[Long,FullDocumentInfo]](r => (r.nextLong, FullDocumentInfo(r.nextInt, r.nextInt, r.nextLong)))
+    val tuplesQuery = sql"""
+      SELECT
+        document.id,
+        document.page_number,
+        parentfile.n_children AS n_pages,
+        file2.parent_file2_id
+      FROM document
+      INNER JOIN file2 ON document.file2_id = file2.id
+      INNER JOIN file2 parentfile ON file2.parent_file2_id = parentfile.id
+      WHERE document.id IN (#${documentIds.mkString(",")})
+    """.as[Tuple2[Long,FullDocumentInfo]]
+    database.run(tuplesQuery).map { records =>
+      val map: Map[Long,FullDocumentInfo] = records.toMap
+      map
     }
   }
 

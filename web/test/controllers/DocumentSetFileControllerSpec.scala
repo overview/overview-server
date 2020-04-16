@@ -49,12 +49,12 @@ class DocumentSetFileControllerSpec extends ControllerSpecification with Mockito
     }
 
     "return 404 Not Found when DocumentSetFile2 does not exist" in new ShowScope {
-      mockDocumentSetFileBackend.exists(documentSetId, file2.id) returns Future.successful(false)
+      mockDocumentSetFileBackend.existsForRoot(documentSetId, file2.id) returns Future.successful(false)
       h.status(result) must beEqualTo(h.NOT_FOUND)
     }
 
     "return data" in new ShowScope {
-      mockDocumentSetFileBackend.exists(documentSetId, file2.id) returns Future.successful(true)
+      mockDocumentSetFileBackend.existsForRoot(documentSetId, file2.id) returns Future.successful(true)
       mockFile2Backend.lookup(file2.id) returns Future.successful(Some(file2))
       mockBytes("s3:hi:there", "hi there")
       h.contentType(result) must beSome("application/content-type")

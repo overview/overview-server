@@ -31,6 +31,7 @@ define [
       metadata: {}
       pdfNotes: []
       rootFile: null
+      fullDocumentInfo: null
 
     url: -> "/documentsets/#{@get('documentSetId')}/documents/#{@id}"
 
@@ -52,6 +53,7 @@ define [
       isFromOcr: json.isFromOcr || false
       thumbnailUrl: json.thumbnailUrl || null
       rootFile: json.rootFile || null
+      fullDocumentInfo: json.fullDocumentInfo || null
 
     initialize: (attributes, options) ->
       super(attributes, options)

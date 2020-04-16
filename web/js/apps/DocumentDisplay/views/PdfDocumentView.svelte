@@ -8,6 +8,7 @@
       documentId: document ? document.id : null,
       pdfUrl: document ? document.displayUrl : null,
       pdfNotes: document ? document.pdfNotes : null,
+      fullDocumentInfo: document ? document.fullDocumentInfo : null,
     }
   }
 

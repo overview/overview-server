@@ -143,6 +143,9 @@ function getViewerConfiguration() {
       customScaleOption: document.getElementById("customScaleOption"),
       previous: document.getElementById("previous"),
       next: document.getElementById("next"),
+      pagesContainer: document.getElementById("toolbarPages"),
+      fullDocumentInfo: document.getElementById("fullDocumentInfo"),
+      loadFullDocument: document.getElementById("loadFullDocument"),
       zoomIn: document.getElementById("zoomIn"),
       zoomOut: document.getElementById("zoomOut"),
       viewFind: document.getElementById("viewFind"),
@@ -904,7 +907,7 @@ const PDFViewerApplication = {
 
     loadingTask.onUnsupportedFeature = this.fallback.bind(this);
     return loadingTask.promise.then(pdfDocument => {
-      this.load(pdfDocument);
+      this.load(pdfDocument, (args || {}).fullDocumentInfo || null);
     }, exception => {
       if (loadingTask !== this.pdfLoadingTask) {
         return undefined;
@@ -1070,8 +1073,9 @@ const PDFViewerApplication = {
     }
   },
 
-  load(pdfDocument) {
+  load(pdfDocument, fullDocumentInfo) {
     this.pdfDocument = pdfDocument;
+    this.fullDocumentInfo = fullDocumentInfo;
     pdfDocument.getDownloadInfo().then(() => {
       this.downloadComplete = true;
       this.loadingBar.hide();
@@ -1085,6 +1089,7 @@ const PDFViewerApplication = {
     const pageModePromise = pdfDocument.getPageMode().catch(function () {});
     const openActionPromise = pdfDocument.getOpenAction().catch(function () {});
     this.toolbar.setPagesCount(pdfDocument.numPages, false);
+    this.toolbar.setFullDocumentInfo(fullDocumentInfo);
     this.secondaryToolbar.setPagesCount(pdfDocument.numPages);
     const store = this.store = new _view_history.ViewHistory(pdfDocument.fingerprint);
     let baseDocumentUrl;
@@ -1092,7 +1097,7 @@ const PDFViewerApplication = {
     this.pdfLinkService.setDocument(pdfDocument, baseDocumentUrl);
     this.pdfDocumentProperties.setDocument(pdfDocument, this.url);
     const pdfViewer = this.pdfViewer;
-    pdfViewer.setDocument(pdfDocument, this.url);
+    pdfViewer.setDocument(pdfDocument, this.url, fullDocumentInfo);
     const {
       firstPagePromise,
       onePageRendered,
@@ -1540,6 +1545,8 @@ const PDFViewerApplication = {
 
     eventBus._on("previouspage", webViewerPreviousPage);
 
+    eventBus._on("loadfulldocument", webViewerLoadFullDocument);
+
     eventBus._on("zoomin", webViewerZoomIn);
 
     eventBus._on("zoomout", webViewerZoomOut);
@@ -1668,6 +1675,8 @@ const PDFViewerApplication = {
 
     eventBus._off("previouspage", webViewerPreviousPage);
 
+    eventBus._off("loadfulldocument", webViewerLoadFullDocument);
+
     eventBus._off("zoomin", webViewerZoomIn);
 
     eventBus._off("zoomout", webViewerZoomOut);
@@ -1785,10 +1794,20 @@ function loadAndEnablePDFBug(enabledTabs) {
 function webViewerInitialized() {
   const appConfig = PDFViewerApplication.appConfig;
   let file;
+  let fullDocumentInfo = null;
   const queryString = document.location.search.substring(1);
   const params = (0, _ui_utils.parseQueryString)(queryString);
   file = "file" in params ? params.file : _app_options.AppOptions.get("defaultUrl");
   validateFileURL(file);
+
+  if (params["fulldocumentinfo.npages"] && params["fulldocumentinfo.pagenumber"] && params["fulldocumentinfo.url"]) {
+    fullDocumentInfo = {
+      nPages: parseFloat(params["fulldocumentinfo.npages"]),
+      pageNumber: parseFloat(params["fulldocumentinfo.pagenumber"]),
+      url: params["fulldocumentinfo.url"]
+    };
+  }
+
   const fileInput = document.createElement("input");
   fileInput.id = appConfig.openFileInputName;
   fileInput.className = "fileInput";
@@ -1864,7 +1883,9 @@ function webViewerInitialized() {
   }, true);
 
   try {
-    webViewerOpenFileViaURL(file);
+    webViewerOpenFileViaURL(file, {
+      fullDocumentInfo
+    });
   } catch (reason) {
     PDFViewerApplication.l10n.get("loading_error", null, "An error occurred while loading the PDF.").then(msg => {
       PDFViewerApplication.error(msg, reason);
@@ -1874,7 +1895,7 @@ function webViewerInitialized() {
 
 let webViewerOpenFileViaURL;
 {
-  webViewerOpenFileViaURL = function (file) {
+  webViewerOpenFileViaURL = function (file, args) {
     if (file && file.lastIndexOf("file:", 0) === 0) {
       PDFViewerApplication.setTitleUsingUrl(file);
       const xhr = new XMLHttpRequest();
@@ -1890,7 +1911,7 @@ let webViewerOpenFileViaURL;
     }
 
     if (file) {
-      PDFViewerApplication.open(file);
+      PDFViewerApplication.open(file, args);
     }
   };
 }
@@ -2153,6 +2174,30 @@ function webViewerNextPage() {
 
 function webViewerPreviousPage() {
   PDFViewerApplication.page--;
+}
+
+function webViewerLoadFullDocument() {
+  const {
+    fullDocumentInfo,
+    pdfViewer
+  } = PDFViewerApplication;
+  const {
+    pageNumber,
+    url
+  } = fullDocumentInfo;
+  const {
+    _location
+  } = pdfViewer;
+
+  const hash = _location.pdfOpenParams.slice(1);
+
+  PDFViewerApplication.initialRotation = _location.rotation;
+  PDFViewerApplication.initialBookmark = hash.replace(/page=\d+/, `page=${pageNumber}`);
+  PDFViewerApplication.open(url, {
+    fullDocumentInfo: Object.assign(fullDocumentInfo, {
+      partialUrl: PDFViewerApplication.pdfDocument._transport._params.url
+    })
+  });
 }
 
 function webViewerZoomIn() {
@@ -5016,13 +5061,7 @@ class EditNoteTool {
   }
 
   get noteStore() {
-    const pageView = this.pdfViewer.getPageView(0);
-
-    if (!pageView) {
-      return null;
-    }
-
-    return pageView.noteLayerFactory ? pageView.noteLayerFactory.noteStore : null;
+    return this.pdfViewer.noteStore;
   }
 
   moveToPrevious() {
@@ -10541,7 +10580,7 @@ class BaseViewer {
     throw new Error("Not implemented: _setDocumentViewerElement");
   }
 
-  setDocument(pdfDocument, url) {
+  setDocument(pdfDocument, url, fullDocumentInfo) {
     if (this.pdfDocument) {
       this._cancelRendering();
 
@@ -10560,11 +10599,24 @@ class BaseViewer {
 
     const pagesCount = pdfDocument.numPages;
     const firstPagePromise = pdfDocument.getPage(1);
-    const noteStore = url && this.noteStoreApiCreator ? new _note_store.NoteStore({
-      eventBus: this.eventBus,
-      apiCreator: this.noteStoreApiCreator,
-      pdfUrl: url
-    }) : null;
+    this.noteStore = null;
+
+    if (url && this.noteStoreApiCreator) {
+      let focusPageNumber = null;
+      let pdfUrl = url;
+
+      if (fullDocumentInfo && pagesCount > 1) {
+        focusPageNumber = fullDocumentInfo.pageNumber;
+        pdfUrl = fullDocumentInfo.partialUrl;
+      }
+
+      this.noteStore = new _note_store.NoteStore({
+        eventBus: this.eventBus,
+        apiCreator: this.noteStoreApiCreator,
+        focusPageNumber,
+        pdfUrl
+      });
+    }
 
     this._pagesCapability.promise.then(() => {
       this.eventBus.dispatch("pagesloaded", {
@@ -10609,6 +10661,18 @@ class BaseViewer {
       const textLayerFactory = this.textLayerMode !== _ui_utils.TextLayerMode.DISABLE ? this : null;
 
       for (let pageNum = 1; pageNum <= pagesCount; ++pageNum) {
+        let noteLayerFactory = null;
+
+        if (this.noteStore) {
+          const {
+            focusPageNumber
+          } = this.noteStore;
+
+          if (focusPageNumber === null || focusPageNumber === pageNum) {
+            noteLayerFactory = new _note_layer_builder.NoteLayerFactory(this.noteStore);
+          }
+        }
+
         const pageView = new _pdf_page_view.PDFPageView({
           container: this._setDocumentViewerElement,
           eventBus: this.eventBus,
@@ -10619,7 +10683,7 @@ class BaseViewer {
           textLayerFactory,
           textLayerMode: this.textLayerMode,
           annotationLayerFactory: this,
-          noteLayerFactory: noteStore ? new _note_layer_builder.NoteLayerFactory(noteStore) : null,
+          noteLayerFactory,
           imageResourcesPath: this.imageResourcesPath,
           renderInteractiveForms: this.renderInteractiveForms,
           renderer: this.renderer,
@@ -11620,14 +11684,16 @@ class NoteStore {
   constructor({
     eventBus,
     apiCreator,
+    focusPageNumber,
     pdfUrl
   }) {
     this.eventBus = eventBus;
+    this.focusPageNumber = focusPageNumber;
     this.api = apiCreator(pdfUrl, {
-      onChange: notes => this._setData(decode(notes))
+      onChange: notes => this._setData(this.decode(notes))
     });
     this.loaded = this.api.load().then(notes => {
-      this._setData(decode(notes));
+      this._setData(this.decode(notes));
     });
     this._lastSave = this.loaded;
     this._nextSave = null;
@@ -11649,7 +11715,7 @@ class NoteStore {
 
   async _doSave() {
     try {
-      await this.api.save(encode(this._data));
+      await this.api.save(this.encode(this._data));
     } catch (err) {
       console.error(err);
     }
@@ -11762,6 +11828,28 @@ class NoteStore {
 
     this.eventBus.dispatch("noteschanged");
     return this._save();
+  }
+
+  decode(arr) {
+    if (this.focusPageNumber) {
+      arr = arr.map(note => Object.assign(note, {
+        pageIndex: this.focusPageNumber - 1
+      }));
+    }
+
+    return decode(arr);
+  }
+
+  encode(notes) {
+    let arr = encode(notes);
+
+    if (this.focusPageNumber) {
+      arr = arr.map(note => Object.assign(note, {
+        pageIndex: 0
+      }));
+    }
+
+    return arr;
   }
 
 }
@@ -13257,6 +13345,9 @@ class Toolbar {
       element: options.next,
       eventName: "nextpage"
     }, {
+      element: options.loadFullDocument,
+      eventName: "loadfulldocument"
+    }, {
       element: options.zoomIn,
       eventName: "zoomin"
     }, {
@@ -13293,8 +13384,11 @@ class Toolbar {
       scaleSelectContainer: options.scaleSelectContainer,
       scaleSelect: options.scaleSelect,
       customScaleOption: options.customScaleOption,
+      pagesContainer: options.pagesContainer,
       previous: options.previous,
       next: options.next,
+      fullDocumentInfo: options.fullDocumentInfo,
+      loadFullDocument: options.loadFullDocument,
       zoomIn: options.zoomIn,
       zoomOut: options.zoomOut,
       addNote: options.addNote,
@@ -13316,6 +13410,12 @@ class Toolbar {
     this._updateUIState(false);
   }
 
+  setFullDocumentInfo(fullDocumentInfo) {
+    this.fullDocumentInfo = fullDocumentInfo;
+
+    this._updateUIState(true);
+  }
+
   setPagesCount(pagesCount, hasPageLabels) {
     this.pagesCount = pagesCount;
     this.hasPageLabels = hasPageLabels;
@@ -13334,6 +13434,7 @@ class Toolbar {
     this.pageNumber = 0;
     this.pageLabel = null;
     this.hasPageLabels = false;
+    this.fullDocumentInfo = null;
     this.pagesCount = 0;
     this.pageScaleValue = _ui_utils.DEFAULT_SCALE_VALUE;
     this.pageScale = _ui_utils.DEFAULT_SCALE;
@@ -13430,6 +13531,7 @@ class Toolbar {
     }
 
     const {
+      fullDocumentInfo,
       pageNumber,
       pagesCount,
       pageScaleValue,
@@ -13450,6 +13552,13 @@ class Toolbar {
       }
 
       items.pageNumber.max = pagesCount;
+
+      if (fullDocumentInfo && pagesCount === 1) {
+        items.pagesContainer.classList.add("viewingPartialDocument");
+        items.fullDocumentInfo.textContent = `${fullDocumentInfo.pageNumber} of ${fullDocumentInfo.nPages}`;
+      } else {
+        items.pagesContainer.classList.remove("viewingPartialDocument");
+      }
     }
 
     if (this.hasPageLabels) {

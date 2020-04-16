@@ -1,6 +1,7 @@
 const DefaultProps = {
   documentId: null,
   pdfUrl: null,
+  fullDocumentInfo: null,
   pdfNotes: null,
   showSidebar: false,
   highlightQ: null,
@@ -36,7 +37,7 @@ function search(q) {
 }
 
 function openPdf() {
-  PDFViewerApplication.open(state.pdfUrl, null)
+  PDFViewerApplication.open(state.pdfUrl, { fullDocumentInfo: state.fullDocumentInfo })
     .then(() => search(state.highlightQ))
 }
 
@@ -44,12 +45,13 @@ function toggleSidebar(want) {
   PDFViewerApplication.pdfSidebar[want ? 'open' : 'close']()
 }
 
-function setState({ documentId, pdfUrl, pdfNotes, showSidebar, highlightQ}) {
+function setState({ documentId, pdfUrl, fullDocumentInfo, pdfNotes, showSidebar, highlightQ}) {
   if (documentId !== undefined && documentId !== state.documentId) {
     state.documentId = documentId
   }
   if (pdfUrl !== undefined && pdfUrl !== state.pdfUrl) {
     state.pdfUrl = pdfUrl
+    state.fullDocumentInfo = fullDocumentInfo
     state.currentNoteStoreApi = null
     openPdf()
   }
@@ -74,6 +76,8 @@ function beginCreatePdfNote() {
 }
 
 function goToPdfNote(pdfNote) {
+  // TODO make this work when "full document" is loaded (see
+  // the "partial document"/"full document" feature of overview-pdf-viewer)
   PDFViewerApplication.editNoteTool.setNote(pdfNote)
 }
 

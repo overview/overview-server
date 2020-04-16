@@ -1678,6 +1678,7 @@ html[dir='rtl'] .toolbarButton.pageDown::before {
 @media (min-width: 780px) {
   /* Display the "Add Note" (and "Click and drag...") inline */
   .toolbarButton.addNote::before {
+    left: auto;
     right: -1px;
   }
 
@@ -1750,6 +1751,46 @@ html[dir="rtl"] #viewOutline.toolbarButton::before {
 
 #viewFind.toolbarButton::before {
   content: url(images/toolbarButton-search.png);
+}
+
+#toolbarPages {
+  display: contents;
+}
+
+html[dir='ltr'] #toolbarPages > * > * {
+  position: relative;
+  float: left;
+}
+
+html[dir='rtl'] #toolbarPages > * > * {
+  position: relative;
+  float: right;
+}
+
+#toolbarPages .toolbarPagesFullDocument {
+  display: contents;
+}
+
+#toolbarPages .toolbarPagesPartialDocument {
+  display: none;
+}
+
+#toolbarPages.viewingPartialDocument .toolbarPagesFullDocument {
+  display: none;
+}
+
+#toolbarPages.viewingPartialDocument .toolbarPagesPartialDocument {
+  display: contents;
+}
+
+#toolbarPages .toolbarButton.loadFullDocument  {
+  width: auto;
+}
+
+#toolbarPages .toolbarButton.loadFullDocument > span {
+  width: auto;
+  height: auto;
+  white-space: nowrap;
 }
 
 .toolbarButton.pdfSidebarNotification::after {
