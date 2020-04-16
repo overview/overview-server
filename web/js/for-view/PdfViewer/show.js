@@ -143,6 +143,7 @@ class NoteStoreApi {
 }
 
 window.addEventListener('webviewerloaded', function() {
+  PDFViewerApplicationOptions.set('workerSrc', window.PDFJS.workerSrc);
   PDFViewerApplication.sidebarViewOnLoad = state.showSidebar ? 1 : 0;
 
   PDFViewerApplication.noteStoreApiCreator = (url, { onChange }) => {
