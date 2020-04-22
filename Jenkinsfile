@@ -40,7 +40,7 @@ node('test-slave') {
     }
 
     stage('Publish') {
-      if (currentBuild.result == null || currentBuild.result == 'SUCCESS') {
+      if (env.BRANCH_NAME == 'master' && (currentBuild.result == null || currentBuild.result == 'SUCCESS')) {
         withCredentials([usernamePassword(credentialsId: 'docker-hub', usernameVariable: 'DOCKER_HUB_USERNAME', passwordVariable: 'DOCKER_HUB_PASSWORD')]) {
           sh 'docker/push && (cd kubernetes && ./deploy)'
         }
