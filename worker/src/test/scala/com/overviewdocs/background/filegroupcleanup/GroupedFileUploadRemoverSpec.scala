@@ -42,7 +42,6 @@ class GroupedFileUploadRemoverSpec extends DbSpecification with Mockito with Awa
   trait GroupedFileUploadScope extends DbScope {
     val numberOfUploads = 3
     val contentOids: Seq[Long] = Seq.range(1, numberOfUploads)
-    val contentLocations = contentOids.map(coid => s"pglo:$coid")
 
     val fileGroup = factory.fileGroup(deleted = true)
     val uploads = contentOids.map(coid =>
