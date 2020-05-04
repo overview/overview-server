@@ -1,14 +1,12 @@
 # This build depends on "archive.tar.gz" being in the build context.
 # Something like https://github.com/moby/moby/issues/2745#issuecomment-319816125:
 # tar -c ./* -C $SOME_OTHER_DIRECTORY some_files_from_other_directory | docker build -
-FROM alpine:3.9.4
+FROM alpine:3.11.6
 
-# Need to install NSS manually -- https://bugs.alpinelinux.org/issues/10126
 # openssl is for FALLBACK_SECRET in run-web
 RUN set -x \
       && apk add --update --no-cache \
         openjdk8-jre-base \
-        nss \
         ca-certificates \
         openssl
 
