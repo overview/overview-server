@@ -15,7 +15,7 @@ class WelcomeController @Inject() (
 ) extends BaseController {
   val loginForm = controllers.forms.LoginForm()
   val userForm = controllers.forms.UserForm()
-  val banner = configuration.get[String]("overview.welcome_banner")
+  val banner = configuration.get[String]("branding.welcome_banner")
   val allowRegistration = configuration.get[Boolean]("overview.allow_registration")
   lazy val is32BitJava = sys.props.get("overview.is32BitJava").isDefined
 

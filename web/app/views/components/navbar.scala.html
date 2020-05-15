@@ -1,4 +1,5 @@
 @this(
+  assets: AssetsFinder,
   configuration: play.api.Configuration,
   intercomConfiguration: IntercomConfiguration
 )
@@ -7,10 +8,19 @@
   optionalDocumentSet: Option[com.overviewdocs.models.DocumentSet]=None
 )(implicit messages: Messages, request: RequestHeader)
 @import play.api.Play
+@firstNonEmpty(values: String*) = @{ values.find(_.nonEmpty).getOrElse("") }
 @defining(scopedMessages("views.components.navbar")) { m =>
   <nav class="navbar navbar-static-top">
-    <h1 class="navbar-header">
-      <a class="logo" href="@routes.WelcomeController.show()">@t("brand.name")</a>
+    <h1>
+      <a class="logo" href="@routes.WelcomeController.show()">
+        <img
+          alt="@t("brand.name")"
+          src="@firstNonEmpty(configuration.get[String]("branding.logo_h40px_url"), assets.path("images/logo-small.png"))"
+          srcset="@firstNonEmpty(configuration.get[String]("branding.logo_h40px_url"), assets.path("images/logo-small.png")) 1x, @firstNonEmpty(configuration.get[String]("branding.logo_h40px_2x_url"), configuration.get[String]("branding.logo_h40px_url"), assets.path("images/logo-small-2x.png")) 2x"
+          height="40"
+          width="@firstNonEmpty(configuration.get[String]("branding.logo_h40px_width_px"))"
+        />
+      </a>
     </h1>
     <ul class="nav navbar-nav">
       <li><a href="https://blog.overviewdocs.com/help" target="_blank">@m("link_help")</a></li>
