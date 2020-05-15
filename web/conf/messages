@@ -152,7 +152,6 @@ views.components.navbar.header.documentSet=Document Set
 views.components.navbar.link_admin_jobs=Jobs
 views.components.navbar.link_admin_plugins=Plugins
 views.components.navbar.link_admin_users=Users
-views.components.navbar.link_blog=Blog
 views.components.navbar.link_contact=Contact us
 views.components.navbar.link_intercom=Talk to us
 views.components.navbar.link_help=Help
