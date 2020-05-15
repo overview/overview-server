@@ -30,7 +30,10 @@
           <a id="Intercom" href="mailto:@(intercom.appId)@@incoming.intercom.io">@m("link_intercom")</a>
         }
         case None => {
-          <a href="https://blog.overviewdocs.com/contact/" target="_blank">@m("link_contact")</a>
+          @configuration.get[String]("overview.contact_url") match {
+            case "" => {}
+            case href => { <a href="@href" target="_blank">@m("link_contact")</a> }
+          }
         }
       }
       </li>
