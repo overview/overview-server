@@ -6,6 +6,7 @@ import org.specs2.mock.Mockito
 import scala.concurrent.Future
 
 import com.overviewdocs.blobstorage.BlobStorage
+import com.overviewdocs.models.BlobStorageRef
 import models.ArchiveEntry
 
 class DbArchiveEntryBackendSpec extends DbBackendSpecification with Mockito {
@@ -56,6 +57,24 @@ class DbArchiveEntryBackendSpec extends DbBackendSpecification with Mockito {
         ArchiveEntry(document.id, "foo-p2.pdf".getBytes("utf-8"), 234)
       ))
     }
+
+    "create a .pdf from a File2 that is not a page" in new BaseScope {
+      val documentSet = factory.documentSet()
+      val file2 = factory.file2(blob=Some(BlobStorageRef(location="file:a:b", nBytes=123L)))
+      val document = factory.document(documentSetId=documentSet.id, title="foo.c", text="foobar", file2Id=Some(file2.id), pageNumber=None)
+      await(backend.showMany(documentSet.id, Vector(document.id))) must beEqualTo(Vector(
+        ArchiveEntry(document.id, "foo.pdf".getBytes("utf-8"), 123)
+      ))
+    }
+
+    "create a .pdf from a File2 that is a page" in new BaseScope {
+      val documentSet = factory.documentSet()
+      val file2 = factory.file2(blob=Some(BlobStorageRef(location="file:a:b", nBytes=123L)))
+      val document = factory.document(documentSetId=documentSet.id, title="foo.c", text="foobar", file2Id=Some(file2.id), pageNumber=Some(2))
+      await(backend.showMany(documentSet.id, Vector(document.id))) must beEqualTo(Vector(
+        ArchiveEntry(document.id, "foo-p2.pdf".getBytes("utf-8"), 123)
+      ))
+    }
   }
 
   "#streamBytes" should {
@@ -100,6 +119,14 @@ class DbArchiveEntryBackendSpec extends DbBackendSpecification with Mockito {
       val documentSet = factory.documentSet()
       val file = factory.file(viewLocation="file:a:b")
       val document = factory.document(documentSetId=documentSet.id, fileId=Some(file.id), text="foo")
+      mockBytes("file:a:b", "bar")
+      consume(documentSet.id, document.id) must beEqualTo("bar")
+    }
+
+    "return file2 contents" in new StreamBytesScope {
+      val documentSet = factory.documentSet()
+      val file2 = factory.file2(blob=Some(BlobStorageRef(location="file:a:b", nBytes=3)))
+      val document = factory.document(documentSetId=documentSet.id, file2Id=Some(file2.id), text="foo")
       mockBytes("file:a:b", "bar")
       consume(documentSet.id, document.id) must beEqualTo("bar")
     }

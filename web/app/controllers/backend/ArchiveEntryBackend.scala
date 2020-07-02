@@ -64,11 +64,12 @@ class DbArchiveEntryBackend @Inject() (
         SELECT
           d.id,
           COALESCE(d.title, ''),
-          d.file_id IS NOT NULL AS is_pdf,
+          (d.file2_id IS NOT NULL OR d.file_id IS NOT NULL) AS is_pdf,
           d.page_number,
-          COALESCE(p.data_size, f.view_size, octet_length(d.text)) AS n_bytes
+          COALESCE(f2.blob_n_bytes, p.data_size, f.view_size, octet_length(d.text)) AS n_bytes
         FROM selection
         INNER JOIN document d ON selection.id = d.id
+        LEFT JOIN file2 f2 ON d.file2_id = f2.id
         LEFT JOIN file f ON d.file_id = f.id
         LEFT JOIN page p ON d.page_id = p.id
         WHERE d.document_set_id = $documentSetId
@@ -143,8 +144,9 @@ class DbArchiveEntryBackend @Inject() (
 
     val q = sql"""
       SELECT
-        document.file_id IS NOT NULL AS is_location,
+        (document.file2_id IS NOT NULL OR document.file_id IS NOT NULL) AS is_location,
         CASE
+          WHEN document.file2_id IS NOT NULL THEN (SELECT blob_location FROM file2 WHERE id = document.file2_id)
           WHEN document.page_id IS NOT NULL THEN (SELECT data_location FROM page WHERE id = document.page_id)
           WHEN document.file_id IS NOT NULL THEN (SELECT view_location FROM file WHERE id = document.file_id)
           ELSE COALESCE(document.text, '')
