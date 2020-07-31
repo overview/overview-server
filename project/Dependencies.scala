@@ -4,6 +4,7 @@ import play.sbt.PlayImport.{guice,filters,ws}
 object Dependencies {
   val AkkaVersion = "2.6.3"
   val Specs2Version = "4.8.3"
+  val AwsVersion = "1.11.830"
 
   private object deps {
     // shared dependencies
@@ -16,8 +17,8 @@ object Dependencies {
     val akkaStreamTestkit = "com.typesafe.akka" %% "akka-stream-testkit" % AkkaVersion
     val akkaSlf4j = "com.typesafe.akka" %% "akka-slf4j" % AkkaVersion
     val asyncHttpClient = "com.ning" % "async-http-client" % "1.9.31"
-    val awsCore = "com.amazonaws" % "aws-java-sdk-core" % "1.11.232"
-    val awsS3 = "com.amazonaws" % "aws-java-sdk-s3" % "1.11.232"
+    val awsCore = "com.amazonaws" % "aws-java-sdk-core" % AwsVersion
+    val awsS3 = "com.amazonaws" % "aws-java-sdk-s3" % AwsVersion
     val bcrypt = "com.github.t3hnar" %% "scala-bcrypt" % "3.1"
     val config = "com.typesafe" % "config" % "1.3.0"
     // Watch out for Flyway 5.0.0. From docs at
