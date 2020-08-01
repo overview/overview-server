@@ -10,40 +10,31 @@ if [ ! -d ~/bin ]; then
 fi
 export PATH="$HOME/bin:$PATH"
 
-if [ ! -x ~/bin/kops ]; then
-  curl -L https://github.com/kubernetes/kops/releases/download/1.8.1/kops-linux-amd64 > ~/bin/kops
-  chmod +x ~/bin/kops
-fi
-
-if [ ! -x ~/bin/kubectl ]; then
-  curl -L https://storage.googleapis.com/kubernetes-release/release/v1.9.1/bin/linux/amd64/kubectl > ~/bin/kubectl
-  chmod +x ~/bin/kubectl
-fi
-
-kops export kubecfg \
-  --state s3://kops-state.production.overviewdocs.com \
-  --name production.overviewdocs.com
-
-DIR="$(dirname "$0")"
-ENVIRONMENT=production
-# We're in Jenkins, so HEAD is the version we want to push.
-# Jenkins guarantees that at the time we call this, images have been pushed to
-# Docker Hub.
-VERSION=$(git rev-parse HEAD)
-. "$DIR"/common
-
-echo "Updating db-evolution-applier, web and worker to version ${SHA1}"
-
-evolve_database
-
-apply_template web.yml
-apply_template worker.yml
-apply_template convert-archive.yml
-apply_template convert-email.yml
-apply_template convert-html.yml
-apply_template convert-image.yml
-apply_template convert-office.yml
-apply_template convert-pdf.yml
-apply_template convert-pdfocr.yml
-apply_template convert-pst.yml
-apply_template convert-text.yml
+# if [ ! -x ~/bin/kubectl ]; then
+#   curl -L https://storage.googleapis.com/kubernetes-release/release/v1.17.5/bin/linux/amd64/kubectl > ~/bin/kubectl
+#   chmod +x ~/bin/kubectl
+# fi
+# 
+# DIR="$(dirname "$0")"
+# ENVIRONMENT=production
+# # We're in Jenkins, so HEAD is the version we want to push.
+# # Jenkins guarantees that at the time we call this, images have been pushed to
+# # Docker Hub.
+# VERSION=$(git rev-parse HEAD)
+# . "$DIR"/common
+# 
+# echo "Updating db-evolution-applier, web and worker to version ${SHA1}"
+# 
+# evolve_database
+# 
+# apply_template web.yml
+# apply_template worker.yml
+# apply_template convert-archive.yml
+# apply_template convert-email.yml
+# apply_template convert-html.yml
+# apply_template convert-image.yml
+# apply_template convert-office.yml
+# apply_template convert-pdf.yml
+# apply_template convert-pdfocr.yml
+# apply_template convert-pst.yml
+# apply_template convert-text.yml
