@@ -10,6 +10,8 @@ import java.nio.file.{Files,Path}
 import scala.concurrent.{Future,blocking}
 import scala.util.{Failure,Success,Try}
 
+import com.overviewdocs.util.Logger
+
 /** Stores blobs, which are like files without the file part.
   *
   * Blobs are stored in "buckets", enumerated in BlobBucket. You create a blob
@@ -25,6 +27,7 @@ import scala.util.{Failure,Success,Try}
   * avoid this problem; strategies must minimize the risk.
   */
 trait BlobStorage {
+  protected val logger: Logger
   protected val config: BlobStorageConfig
   protected val strategyFactory: StrategyFactory
 
@@ -40,6 +43,7 @@ trait BlobStorage {
     * @throws InvalidArgumentException if <tt>location</tt> is invalid
     */
   def get(location: String): Source[ByteString, NotUsed] = {
+    logger.info("get {}", location)
     strategyFactory.forLocation(location).get(location)
   }
 
@@ -55,6 +59,7 @@ trait BlobStorage {
     * @throws InvalidArgumentException if <tt>location</tt> is invalid
     */
   def getBytes(location: String, maxNBytes: Int): Future[Array[Byte]] = {
+    logger.info("getBytes {}", location)
     strategyFactory.forLocation(location).getBytes(location, maxNBytes)
   }
 
@@ -75,6 +80,7 @@ trait BlobStorage {
     * @throws InvalidArgumentException if <tt>location</tt> is invalid
     */
   def getUrl(location: String, mimeType: String): Future[String] = {
+    logger.info("getUrl {}", location)
     strategyFactory.forLocation(location).getUrl(location, mimeType)
   }
 
@@ -94,6 +100,7 @@ trait BlobStorage {
     * @throws InvalidArgumentException if <tt>location</tt> is invalid
     */
   def getUrlOpt(location: String, mimeType: String): Future[Option[String]] = {
+    logger.info("getUrlOpt {}", location)
     strategyFactory.forLocation(location).getUrlOpt(location, mimeType)
   }
 
@@ -140,6 +147,7 @@ trait BlobStorage {
     * @throws InvalidArgumentException if <tt>location</tt> is invalid
     */
   def delete(location: String): Future[Unit] = {
+    logger.info("delete {}", location)
     strategyFactory.forLocation(location).delete(location)
   }
 
@@ -167,6 +175,8 @@ trait BlobStorage {
     * @throws InvalidArgumentException if a <tt>location</tt> is invalid
     */
   def deleteMany(locations: Seq[String]): Future[Unit] = {
+    logger.info("deleteMany {}; first: {}", locations.size, locations.headOption.getOrElse(""))
+
     import scala.concurrent.ExecutionContext.Implicits.global
     def itemToFuture(item: Tuple2[BlobStorageStrategy,Seq[String]]): Future[Unit] = item._1.deleteMany(item._2)
 
@@ -188,6 +198,7 @@ trait BlobStorage {
     */
   def create(bucket: BlobBucketId, dataPath: Path): Future[String] = {
     val prefix = config.getPreferredPrefix(bucket)
+    logger.info("create {}/{}", prefix, dataPath)
     strategyFactory.forLocation(prefix).create(prefix, dataPath)
   }
 }
@@ -195,6 +206,7 @@ trait BlobStorage {
 object BlobStorage extends BlobStorage {
   override protected val config = BlobStorageConfig
   override protected val strategyFactory = StrategyFactory
+  override protected val logger = Logger.forClass(getClass)
 
   private def createTempFile(location: String, source: Source[ByteString, _])(implicit system: ActorSystem) : Future[File] = {
     import system.dispatcher

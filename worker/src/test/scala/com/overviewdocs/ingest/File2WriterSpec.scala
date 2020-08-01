@@ -91,6 +91,7 @@ class File2WriterSpec extends DbSpecification with Mockito {
         class MockBlobStorage extends BlobStorage {
           override protected val config = null
           override protected val strategyFactory = null
+          override protected val logger = null
 
           val deletes = ArrayBuffer.empty[String]
           val creates = ArrayBuffer.empty[(BlobBucketId,Path,Array[Byte])]

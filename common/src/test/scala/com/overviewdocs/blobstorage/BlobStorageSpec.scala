@@ -10,6 +10,7 @@ import org.specs2.mutable.{After,Specification}
 import org.specs2.specification.Scope
 import scala.concurrent.{Await,Future}
 import scala.concurrent.duration.Duration
+import com.overviewdocs.util.Logger
 
 class BlobStorageSpec extends Specification with Mockito {
   def await[T](future: Future[T]): T = Await.result(future, Duration.Inf)
@@ -18,9 +19,11 @@ class BlobStorageSpec extends Specification with Mockito {
     trait BaseScope extends Scope {
       val mockConfig = mock[BlobStorageConfig]
       val mockStrategyFactory = mock[StrategyFactory]
+      val mockLogger = mock[Logger]
       object TestBlobStorage extends BlobStorage {
         override protected val config = mockConfig
         override protected val strategyFactory = mockStrategyFactory
+        override protected val logger = mockLogger
       }
     }
 
