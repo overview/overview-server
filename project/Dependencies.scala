@@ -19,6 +19,7 @@ object Dependencies {
     val asyncHttpClient = "com.ning" % "async-http-client" % "1.9.31"
     val awsCore = "com.amazonaws" % "aws-java-sdk-core" % AwsVersion
     val awsS3 = "com.amazonaws" % "aws-java-sdk-s3" % AwsVersion
+    val awsSts = "com.amazonaws" % "aws-java-sdk-sts" % AwsVersion
     val bcrypt = "com.github.t3hnar" %% "scala-bcrypt" % "3.1"
     val config = "com.typesafe" % "config" % "1.3.0"
     // Watch out for Flyway 5.0.0. From docs at
@@ -64,6 +65,7 @@ object Dependencies {
     deps.akkaRemote,
     deps.akkaStream,
     deps.awsS3,
+    deps.awsSts, // So Kubernetes pods can authenticate. https://github.com/aws/aws-sdk-java/issues/2136
     deps.guava, // Textify
     deps.icu4j, // Document.tokens
     deps.logback,
