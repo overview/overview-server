@@ -1,0 +1,9 @@
+#!/bin/bash
+
+set -e
+
+DIR="$(dirname "$0")"
+VERSION="$(git rev-parse HEAD)"
+. "$DIR"/common
+
+evolve_database "$*"

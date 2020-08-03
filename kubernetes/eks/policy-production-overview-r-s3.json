@@ -1,0 +1,18 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "OverviewProductionReadFiles",
+            "Effect": "Allow",
+            "Action": [
+                "s3:GetObject",
+                "s3:GetBucketLocation"
+            ],
+            "Resource": [
+                "arn:aws:s3:::overview-production-file-contents/*",
+                "arn:aws:s3:::overview-production-page-data/*",
+                "arn:aws:s3:::overview-production-file-view/*"
+            ]
+        }
+    ]
+}

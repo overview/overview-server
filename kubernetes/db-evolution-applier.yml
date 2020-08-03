@@ -11,4 +11,18 @@ spec:
       containers:
       - name: db-evolution-applier
         image: overview/overview-db-evolution-applier:VERSION
+        envFrom:
+        - configMapRef:
+            name: database-config
+        env:
+        - name: DATABASE_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: overviewmigrate-db-user
+              key: username
+        - name: DATABASE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: overviewmigrate-db-user
+              key: password
       restartPolicy: Never

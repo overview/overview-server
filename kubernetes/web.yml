@@ -1,4 +1,4 @@
-apiVersion: apps/v1beta2
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: web-deployment
@@ -15,15 +15,17 @@ spec:
     metadata:
       labels:
         app: web
-      annotations:
-        iam.amazonaws.com/role: overview-ENVIRONMENT-web
     spec:
+      serviceAccountName: web
       containers:
       - name: web
         image: overview/overview-web:VERSION
         ports:
         - containerPort: 80
         - containerPort: 9031
+        envFrom:
+        - configMapRef:
+            name: database-config
         env:
         - name: MESSAGE_BROKER_HOSTNAME
           value: overview-worker
@@ -94,6 +96,23 @@ spec:
           value: s3:BLOB_STORAGE_FILE_CONTENTS_S3_BUCKET
         - name: BLOB_STORAGE_FILE_VIEW_LOCATION
           value: s3:BLOB_STORAGE_FILE_VIEW_S3_BUCKET
+        - name: DATABASE_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: overview-db-user
+              key: username
+        - name: DATABASE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: overview-db-user
+              key: password
+        resources:
+          requests:
+            cpu: 1000m
+            memory: 2Gi
+          limits:
+            cpu: 2000m
+            memory: 2Gi
 ---
 apiVersion: v1
 kind: Service

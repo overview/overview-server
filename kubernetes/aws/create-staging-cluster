@@ -1,8 +1,0 @@
-#!/bin/bash
-
-set -e
-
-./create-cluster
-./create-roles
-./create-ingress-security-group
-ENVIRONMENT=staging ./load-k8s-config

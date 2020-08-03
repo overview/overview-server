@@ -8,9 +8,6 @@ DIR="$(dirname "$0")"
 echo "Specifying volumes..."
 apply_template $ENVIRONMENT-volumes.yml
 
-echo "Starting Postgres..."
-apply_template postgres.yml 
-
 evolve_database
 echo "Database evolved. Starting Overview..."
 

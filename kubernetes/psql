@@ -1,0 +1,28 @@
+#!/bin/bash
+
+set -e
+
+kubectl run \
+  -i \
+  -t \
+  --restart=Never \
+  --rm \
+  --image postgres \
+  --overrides='{
+  "spec": {
+    "containers": [
+      {
+        "name":"psql",
+        "image":"postgres",
+        "args":[ "psql", "-U", "overviewmigrate", "overview" ],
+        "env": [
+          {"name":"PGPASSWORD","valueFrom":{"secretKeyRef":{"name":"overviewmigrate-db-user","key":"password"}}},
+          {"name":"PGHOST","valueFrom":{"configMapKeyRef":{"name":"database-config","key":"DATABASE_SERVER_NAME"}}}
+        ],
+        "stdin": true,
+        "tty": true
+      }
+    ]
+  }
+}' \
+  psql
