@@ -4,7 +4,7 @@ import akka.actor.{ActorRef,ActorSystem}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Route
 import akka.stream.{FlowShape,Graph,Materializer}
-import akka.stream.scaladsl.{Flow,GraphDSL,Keep,MergePreferred,Source,Sink}
+import akka.stream.scaladsl.{Flow,GraphDSL,Keep,Merge,MergePreferred,Partition,Source,Sink}
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.duration.{Duration,FiniteDuration}
 import scala.concurrent.{ExecutionContext,Future}
@@ -38,13 +38,15 @@ class FileGroupImportMonitor(
   private val database = file2Writer.database
   private val blobStorage = file2Writer.blobStorage
   private val logger = Logger.forClass(getClass)
-  private val inProgress = ArrayBuffer.empty[ResumedFileGroupJob]
 
   private val fileGroupSource = new FileGroupSource(database, reportProgress _)
 
   private def reportProgress(progressState: FileGroupProgressState): Unit = {
     progressReporter ! progressState
   }
+  private def noOpCancel(fileGroupId: Long): Unit = {}
+
+  @volatile var cancelFileGroupJob: (Long => Unit) = noOpCancel _
 
   def enqueueFileGroup(
     fileGroup: FileGroup,
@@ -124,13 +126,12 @@ class FileGroupImportMonitor(
     }
   }
 
-  def cancelFileGroupJob(fileGroupId: Long): Unit = synchronized {
-    inProgress
-      .filter(_.fileGroup.id == fileGroupId)
-      .foreach(job => job.cancel)
-  }
-
-  def graph: Flow[ResumedFileGroupJob, IngestedRootFile2, Route] = {
+  /** For each ResumedFileGroupJob, emits an IngestedRootFile2 each time an ingest finishes.
+    *
+    * A ResumedFileGroupJob might not have any ingests remaining; if that's the case,
+    * this graph will emit nothing.
+    */
+  def groupFile2Graph: Flow[ResumedFileGroupJob, IngestedRootFile2, Route] = {
     val groupedFileUploadToFile2 = new GroupedFileUploadToFile2(database, blobStorage)
 
     val processorFlowWithMat = new Processor(file2Writer, nDeciders, recurseBufferSize).flow(steps)
@@ -150,9 +151,64 @@ class FileGroupImportMonitor(
     })
   }
 
-  private def addInProgress(job: ResumedFileGroupJob): Unit = synchronized { inProgress.+=(job) }
-  private def removeInProgress(job: ResumedFileGroupJob): Unit = synchronized { inProgress.-=(job) }
-  private def isInProgress(job: ResumedFileGroupJob): Boolean = synchronized { inProgress.contains(job) }
+  /** Emits each input ResumedFileGroupJob when there is nothing left to ingest.
+    *
+    * Materializes to a Route (for an HTTP server) and a cancel function (accepts a
+    * fileGroupId).
+    */
+  def groupGraph: Flow[ResumedFileGroupJob, ResumedFileGroupJob, (Route, Long => Unit)] = {
+    val inProgress = ArrayBuffer.empty[ResumedFileGroupJob]
+
+    def cancelFileGroupJobByFileGroupId(fileGroupId: Long): Unit = synchronized {
+      inProgress
+        .filter(_.fileGroup.id == fileGroupId)
+        .foreach(job => job.cancel)
+    }
+    def addInProgress(job: ResumedFileGroupJob) = synchronized { inProgress.+=(job); job }
+
+    def shouldEmit(job: ResumedFileGroupJob) = synchronized {
+      if (job.isComplete) {
+        1
+      } else {
+        0
+      }
+    }
+
+    val filterAndRemoveInProgress: PartialFunction[ResumedFileGroupJob, ResumedFileGroupJob] = synchronized {
+      // Only pass-through jobs that are in progress and switching to completed.
+      //
+      // Behaves correctly with:
+      //
+      // * Canceled jobs (a canceled job will still complete)
+      // * Completed jobs (once; then inProgress doesn't contain them)
+      // * Unfinished jobs (they'll be swallowed)
+      case job if (inProgress.contains(job) && shouldEmit(job) == 1) => {
+        inProgress.-=(job)
+        job
+      }
+    }
+
+    Flow.fromGraph(GraphDSL.create(groupFile2Graph) { implicit builder => file2Flow =>
+      // Emit a Job immediately if it's complete. Otherwise, emit the Job each
+      // time any file is ingested.
+      //
+      // (Cancelling a job doesn't alter any logic. It just makes ingests faster.)
+      import GraphDSL.Implicits._
+
+      val input = builder.add(Flow[ResumedFileGroupJob].map(addInProgress _))
+      val markFileIngested = builder.add(Flow[IngestedRootFile2].map(markFileIngestedInJob _))
+      val splitEmptyJob = builder.add(Partition[ResumedFileGroupJob](2, shouldEmit))
+      val merge = builder.add(Merge[ResumedFileGroupJob](2))
+
+
+      input ~> splitEmptyJob
+               splitEmptyJob.out(0) ~> file2Flow ~> markFileIngested ~> merge
+               splitEmptyJob.out(1) ~> merge
+      new FlowShape(input.in, merge.out)
+    })
+      .collect(filterAndRemoveInProgress)
+      .mapMaterializedValue(route => (route, cancelFileGroupJobByFileGroupId))
+  }
 
   private def startHttpServer(route: Route): Future[Http.ServerBinding] = {
     httpWorkerServer.bindAndHandle(route)
@@ -161,23 +217,24 @@ class FileGroupImportMonitor(
   def run: Future[akka.Done] = {
     val (futureBinding: Future[Http.ServerBinding], futureDone: Future[akka.Done]) =
       fileGroupSource.source // ResumedFileGroupJob
-        .log("FileGroupImportMonitor.run start")
-        .map { job => addInProgress(job); job }
-        .viaMat(graph)((_, route) => startHttpServer(route)) // IngestedFile2Root
-        .map(markFileIngestedInJob _)                        // ResumedFileGroupJob
-        .filter(_.isComplete)                                // Complete ResumedFileGroupJob
-        .filter(isInProgress _)                              // avoid a warning
-        .map { job => removeInProgress(job); job }
-        .mapAsync(1)(finishFileGroupJob _)                   // Unit -- now the FileGroup is deleted
-        .log("FileGroupImportMonitor.run finish")
-        .toMat(Sink.ignore)(Keep.both)
+        .viaMat(groupGraph)((_, tup) => {
+          val route: Route = tup._1
+          val cancelFileGroupJobByFileGroupId: Long => Unit = tup._2
+          cancelFileGroupJob = cancelFileGroupJobByFileGroupId
+          startHttpServer(route)
+        })
+        .named("FileGroupImportMonitor")
+        .toMat(Sink.foreach(finishFileGroupJob _))(Keep.both)
         .run
 
     for {
       binding <- futureBinding
       _ <- futureDone
       _ <- binding.unbind
-    } yield akka.Done
+    } yield {
+      cancelFileGroupJob = noOpCancel _
+      akka.Done
+    }
   }
 }
 

@@ -46,6 +46,7 @@ class FileGroupSource(
     )
       .mapMaterializedValue(mat => { sourceActorRef = mat; akka.NotUsed })
       .mapAsync(1)(resumeFileGroupJob _)
+      .named("FileGroupSource")
   }
 
   /** Actor which accepts FileGroups for emitting.
