@@ -50,7 +50,9 @@ pipeline {
         branch 'master'
       }
       steps {
-        sh 'cd kubernetes && ./deploy'
+        withKubeConfig([credentialsId: 'overview-production-kubernetes', serverUrl: 'https://45EBEF84BD339E0D3D9716507CE1C450.yl4.us-east-1.eks.amazonaws.com']) {
+          sh 'kubernetes/deploy'
+        }
       }
     }
   }

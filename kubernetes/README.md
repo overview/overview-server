@@ -14,6 +14,18 @@ To change cluster configuration
 To deploy new images
 --------------------
 
-TODO give Jenkins a way to trigger deployment.
+`kubectl apply -f jenkins-deploy-rbac.yml` to build a service account for
+Jenkins to deploy with.
 
-In the meantime: `VERSION=$(git rev-parse HEAD) ./apply`
+This will create a secret token for Jenkins. Get it:
+
+```
+JENKINS_TOKEN_NAME=$(kubectl get sa jenkins-ci -o go-template --template='{{range .secrets}}{{.name}}{{"\n"}}{{end}}') \
+  kubectl get secrets $JENKINS_TOKEN_NAME -o go-template --template '{{index .data "token"}}' \
+  | base64 -d \
+  && echo
+```
+
+Add to jenkins using instructions at
+https://github.com/overview/overview-server/wiki/How-we-set-up-continuous-integration-on-Jenkins
+(Ref: https://plugins.jenkins.io/kubernetes-cli/)

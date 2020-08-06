@@ -44,10 +44,6 @@ apply_template() {
   pipe_template "$@" | kubectl apply -f -
 }
 
-replace_template() {
-  pipe_template "$@" | kubectl replace -f -
-}
-
 evolve_database() {
   echo "Evolving database..."
   echo "For detailed status, run 'kubectl attach jobs/db-evolution-applier"
