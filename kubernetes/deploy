@@ -3,7 +3,8 @@
 # This is run by Jenkins. It should update the Overview cluster to the latest version
 
 set -e
-#set -x
+set -x
+set -u
 
 if [ ! -d ~/bin ]; then
   mkdir -p ~/bin
@@ -15,28 +16,39 @@ if [ ! -x ~/bin/kubectl ]; then
   chmod +x ~/bin/kubectl
 fi
 
-cd "$(dirname "$0")"
-DIR="."
-ENVIRONMENT=production
-
 # We're in Jenkins, so HEAD is the version we want to push.
 # Jenkins guarantees that at the time we call this, images have been pushed to
 # Docker Hub.
 VERSION=$(git rev-parse HEAD)
-. ./common
 
-echo "Updating db-evolution-applier, web and worker to version ${SHA1}"
+evolve_database() {
+  echo "Evolving database..."
+  echo "For detailed status, run 'kubectl attach jobs/db-evolution-applier"
+  kubectl delete job db-evolution-applier || true
+  kubectl delete pod -lapp=db-evolution-applier || true
+
+  cat "$(dirname "$0")"/db-evolution-applier.yml \
+    | sed -e "s@VERSION@$VERSION@" \
+    | kubectl apply -f -
+  until [ "$(kubectl get jobs db-evolution-applier --no-headers -o custom-columns=status:status.succeeded)" = "1" ]; do
+    sleep 1
+  done
+}
+
+echo "Updating db-evolution-applier, web and worker to version ${VERSION}"
 
 evolve_database
 
-apply_template web.yml
-apply_template worker.yml
-apply_template convert-archive.yml
-apply_template convert-email.yml
-apply_template convert-html.yml
-apply_template convert-image.yml
-apply_template convert-office.yml
-apply_template convert-pdf.yml
-apply_template convert-pdfocr.yml
-apply_template convert-pst.yml
-apply_template convert-text.yml
+. "$(dirname "$0")"/../container_versions.env
+
+kubectl set image deployment/web-deployment web=overview/overview-web:$VERSION
+kubectl set image deployment/worker-deployment worker=overview/overview-worker:$VERSION
+kubectl set image deployment/convert-archive-deployment convert-archive=$CONVERT_ARCHIVE_IMAGE
+kubectl set image deployment/convert-email-deployment convert-email=$CONVERT_EMAIL_IMAGE
+kubectl set image deployment/convert-html-deployment convert-html=$CONVERT_HTML_IMAGE
+kubectl set image deployment/convert-image-deployment convert-image=$CONVERT_IMAGE_IMAGE
+kubectl set image deployment/convert-office-deployment convert-office=$CONVERT_OFFICE_IMAGE
+kubectl set image deployment/convert-pdf-deployment convert-pdf=$CONVERT_PDF_IMAGE
+kubectl set image deployment/convert-pdfocr-deployment convert-pdfocr=$CONVERT_PDFOCR_IMAGE
+kubectl set image deployment/convert-pst-deployment convert-pst=$CONVERT_PST_IMAGE
+kubectl set image deployment/convert-text-deployment convert-text=$CONVERT_TEXT_IMAGE
