@@ -16,14 +16,14 @@ if [ ! -x ~/bin/kubectl ]; then
 fi
 
 cd "$(dirname "$0")"
-DIR="$(dirname "$0")"
+DIR="."
 ENVIRONMENT=production
 
 # We're in Jenkins, so HEAD is the version we want to push.
 # Jenkins guarantees that at the time we call this, images have been pushed to
 # Docker Hub.
 VERSION=$(git rev-parse HEAD)
-. "$DIR"/common
+. ./common
 
 echo "Updating db-evolution-applier, web and worker to version ${SHA1}"
 
