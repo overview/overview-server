@@ -13,10 +13,18 @@ echo "Database evolved. Starting Overview..."
 
 apply_template redis.yml
 apply_template worker.yml
+apply_template worker-service.yml
 apply_template web.yml
+apply_template web-service.yml
 apply_template convert-archive.yml
+apply_template convert-email.yml
+apply_template convert-html.yml
 apply_template convert-image.yml
 apply_template convert-office.yml
+apply_template convert-pdf.yml
+apply_template convert-pdfocr.yml
+apply_template convert-pst.yml
+apply_template convert-text.yml
 
 echo "Building ingress..."
 apply_template $ENVIRONMENT-ingress.yml
