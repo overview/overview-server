@@ -39,5 +39,5 @@ spec:
     kind: Deployment
     name: convert-pdfocr-deployment
   minReplicas: 1
-  maxReplicas: 8
+  maxReplicas: 32
   targetCPUUtilizationPercentage: 50

@@ -35,7 +35,7 @@ aws eks create-cluster \
   --region us-east-1 \
   --name production-overview \
   --kubernetes-version 1.17 \
-  --scaling-config minSize=1,maxSize=4,desiredSize=3 \
+  --scaling-config minSize=1,maxSize=10,desiredSize=3 \
   --role-arn "$(aws iam get-role --role-name production-overview-eksClusterRole --query 'Role.Arn' --output text)"  \
   --resources-vpc-config "subnetIds=$(aws ec2 describe-subnets --filters Name=availabilityZone,Values=us-east-1a,us-east-1b,us-east-1c --query 'Subnets[*].SubnetId' --output text | sed -e 's/\t/,/g'),securityGroupIds=$(aws ec2 describe-security-groups --group-names production-overview-eks --output text --query 'SecurityGroups[0].GroupId')"
 
