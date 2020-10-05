@@ -22,8 +22,8 @@ spec:
           value: http://overview-worker:9032/PdfOcr
         resources:
           requests:
-            cpu: 50m
-            memory: 50Mi
+            cpu: 800m
+            memory: 1536Mi # total guess
           limits:
             cpu: 1
             memory: 1536Mi # total guess

@@ -22,8 +22,8 @@ spec:
           value: http://overview-worker:9032/Office
         resources:
           requests:
-            cpu: 50m
-            memory: 50Mi
+            cpu: 1
+            memory: 500Mi # total guess
           limits:
             cpu: 1
             memory: 500Mi # total guess
