@@ -25,7 +25,7 @@ Try Overview
   computer](https://github.com/overview/overview-local). This is great if you
   have spotty Internet connectivity -- or if you're staying off the Internet
   (on an "airgapped" computer) to keep your documents private.
-* Read more [documentation](http://blog.overviewdocs.com).
+* Read more [documentation](http://help.overviewdocs.com).
 * Peruse [News
   stories](https://github.com/overview/overview-server/wiki/News-stories)
   researched with Overview
@@ -45,10 +45,8 @@ we compare to the other services vying for your attention.
   like Overview). But Overview is far, far faster at flipping between documents.
 * [DocumentCloud.org](https://www.documentcloud.org/) is perfect for publishing
   documents on news websites. It also has rudimentary search tools. Overview
-  has more advanced
-  [Search](https://blog.overviewdocs.com/2015/05/29/overviews-search-syntax/)
-  features, and it's faster at flipping through hundreds, thousands or millions
-  of documents.
+  has more advanced search features, and it's faster at flipping through
+  hundreds, thousands or millions of documents.
 
 Develop Overview
 ================
