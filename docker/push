@@ -31,7 +31,8 @@ REPOSITORY="overview"
 
 IMAGES="overview-database overview-redis overview-db-evolution-applier overview-web overview-worker"
 for image in $IMAGES; do
-  docker tag "$image:$SHA1" "$REPOSITORY/$image:latest"
   docker tag "$image:$SHA1" "$REPOSITORY/$image:$SHA1"
-  docker push "$REPOSITORY/$image"
+  docker push "$REPOSITORY/$image:$SHA1"
+  docker tag "$image:$SHA1" "$REPOSITORY/$image:latest"
+  docker push "$REPOSITORY/$image:latest"
 done
