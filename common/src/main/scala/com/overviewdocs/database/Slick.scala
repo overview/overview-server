@@ -2,7 +2,6 @@ package com.overviewdocs.database
 
 import com.github.tminglei.slickpg._
 import java.nio.charset.Charset
-import java.time.Instant
 import play.api.libs.json.{ JsObject, Json }
 
 import com.overviewdocs.metadata.MetadataSchema
@@ -28,14 +27,6 @@ trait MyPostgresProfile extends ExPostgresProfile
 
     implicit val intArrayColumnType = MappedColumnType.base[Array[Int], List[Int]](_.toList, _.toArray)
     implicit val intVectorColumnType = new SimpleArrayJdbcType[Int]("int4").to(_.toVector)
-
-    implicit val instantColumnType = MappedColumnType.base[Instant, java.sql.Timestamp](
-      { i => new java.sql.Timestamp(i.toEpochMilli) },
-      { t => Instant.ofEpochMilli(t.getTime) }
-    )
-
-    implicit val instantOptionColumnType = instantColumnType.optionType
-
     implicit val userRoleColumnType = MappedColumnType.base[UserRole.Value, Int](_.id, UserRole(_))
 
     implicit val documentSetUserRoleColumnType = MappedColumnType.base[DocumentSetUser.Role, Int](

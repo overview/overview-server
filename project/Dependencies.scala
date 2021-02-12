@@ -43,7 +43,7 @@ object Dependencies {
     val mockito = "org.mockito" % "mockito-all" % "1.10.19"
     val owaspEncoder = "org.owasp.encoder" % "encoder" % "1.2.1"
     val parserCombinators = "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.6" // QueryParser
-    val pgSlick = "com.github.tminglei" %% "slick-pg" % "0.16.0"
+    val pgSlick = "com.github.tminglei" %% "slick-pg" % "0.19.4"
     val playJson = "com.typesafe.play" %% "play-json" % "2.6.9"
     val playMailer = "com.typesafe.play" %% "play-mailer" % "6.0.1"
     val playMailerGuice = "com.typesafe.play" %% "play-mailer-guice" % "6.0.1"
@@ -51,8 +51,8 @@ object Dependencies {
     val postgresql = "org.postgresql" % "postgresql" % "42.1.1"
     val re2j = "com.google.re2j" % "re2j" % "1.1"
     val redis = "com.github.etaty" %% "rediscala" % "1.8.0"
-    val slick = "com.typesafe.slick" %% "slick" % "3.2.3"
-    val slickHikariCp = "com.typesafe.slick" %% "slick-hikaricp" % "3.2.3"
+    val slick = "com.typesafe.slick" %% "slick" % "3.3.3"
+    val slickHikariCp = "com.typesafe.slick" %% "slick-hikaricp" % "3.3.3"
     val specs2Core = "org.specs2" %% "specs2-core" % Specs2Version
     val specs2Junit = "org.specs2" %% "specs2-junit" % Specs2Version // for XML reporting, for Jenkins
     val specs2MatcherExtra = "org.specs2" %% "specs2-matcher-extra" % Specs2Version
